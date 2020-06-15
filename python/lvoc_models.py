@@ -125,11 +125,48 @@ class LVOC(Learner):
         if self.vicarious_learning:
             self.update_params(term_features, term_reward)
 
+    def store_best_paths(self, env):
+        branch_map = env.present_trial.branch_map
+        trial = env.present_trial
+        node_map = trial.node_map
+        path_sums = {}
+        for branch in range(1, len(branch_map) + 1):
+            total_sum = 0
+            for node in branch_map[branch]:
+                if node_map[node].observed:
+                    total_sum += node_map[node].value
+                else:
+                    if node!=0:
+                        total_sum += node_map[node].expected_value
+            path_sums[branch] = total_sum
+        max_path_sum = max(path_sums.values())
+        best_paths = [branch_map[k][1:] for k, v in path_sums.items() if v==max_path_sum]
+        self.previous_best_paths = best_paths
+    
+    def get_best_paths_expectation(self, env):
+        if len(self.previous_best_paths) == 0:
+            return 0
+        else:
+            trial = env.present_trial
+            node_map = trial.node_map
+            path_values = []
+            for path in self.previous_best_paths:
+                path_value = 0
+                for node in path:
+                    if node_map[node].observed:
+                        path_value += node_map[node].value
+                    else:
+                        path_value += node_map[node].expected_value
+                path_values.append(path_value)
+            return np.mean(path_values)
+
     def perform_action_updates(self, env, next_features, reward, term_features, term_reward, features):
         q = np.dot(self.mean, next_features)
         pr = 0
         if self.use_pseudo_rewards:
-            pr = self.get_term_reward(env) - self.pr_weight*self.term_rewards[-1]
+            #comp_value = self.pr_weight*self.term_rewards[-1]
+            comp_value = self.pr_weight*self.get_best_paths_expectation(env)
+            pr = self.get_term_reward(env) - comp_value
         self.update_rewards.append(reward + pr - self.subjective_cost)
         value_estimate = (q + (reward - self.subjective_cost) + pr)
         self.update_params(features, value_estimate)
@@ -146,20 +183,21 @@ class LVOC(Learner):
         delay = env.present_trial.get_action_feedback(taken_path)
         pr = 0
         if self.use_pseudo_rewards:
-            pr = self.get_term_reward(env) - self.pr_weight*self.term_rewards[-1]
+            #comp_value = self.pr_weight*self.term_rewards[-1]
+            comp_value = self.pr_weight*self.get_best_paths_expectation(env)
+            pr = self.get_term_reward(env) - comp_value
         value_estimate = reward + pr - self.delay_scale*delay
         self.update_params(features, value_estimate)
         self.update_rewards.append(reward - self.delay_scale*delay)
         self.perform_montecarlo_updates()
-
+    
     def act_and_learn(self, env, end_episode=False):
         if not end_episode:       
             action, features = self.get_action_details(env)
-
             term_reward = self.get_term_reward(env)
             term_features = self.get_term_features(env)
             self.term_rewards.append(term_reward)
-
+            self.store_best_paths(env)
             s_next, reward, done, info = env.step(action)
             taken_path = info
             taken_action = action
@@ -182,6 +220,7 @@ class LVOC(Learner):
         term_reward = self.get_term_reward(env)
         term_features = self.get_term_features(env)
         self.term_rewards.append(term_reward)
+        self.store_best_paths(env)
         _, _, done, _ = env.step(given_action)
         if not done:
             features_next = self.get_action_features(env)[next_action]
@@ -238,6 +277,7 @@ class LVOC(Learner):
         all_trials_data = participant.all_trials_data
 
         for trial_num in range(num_trials):
+            self.previous_best_paths = []
             self.num_actions = len(env.get_available_actions())
             trials_data['w'].append(self.get_current_weights())
             self.update_rewards, self.update_features = [], []

@@ -54,7 +54,7 @@ def main():
     rewards = []
 
     num_simulations = 10
-    num_evals = 200 # For hyperopt only
+    num_evals = 40 # For hyperopt only
     excluded_trials = None
     if exp_num in ["c1.1"]:
         excluded_trials = list(range(30))
@@ -130,10 +130,10 @@ def main():
         create_dir(f"results/{exp_num}_plots")
         reward_data = optimizer.plot_rewards(i=min_index, path=f"results/{exp_num}_plots/{pid}.png")
         #pickle_save(reward_data, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
-                                                        num_simulations=30)
-        pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
+        #pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
+        #(r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
+        #                                                num_simulations=30)
+        #pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
         # optimizer.plot_history(res, prior, obj_fn)
     # bms = BayesianModelSelection(models, attributes, participant, env,
     #                            optimization_criterion, num_simulations)
