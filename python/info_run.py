@@ -54,7 +54,7 @@ def main():
     rewards = []
 
     num_simulations = 10
-    num_evals = 40 # For hyperopt only
+    num_evals = 100 # For hyperopt only
     excluded_trials = None
     if exp_num in ["c1.1"]:
         excluded_trials = list(range(30))
@@ -135,7 +135,7 @@ def main():
         #pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
         (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
-        print(sim_data['info'], len(sim_data['info']))
+        #print(sim_data['info'], len(sim_data['info']))
         pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
         #pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
         # optimizer.plot_history(res, prior, obj_fn)

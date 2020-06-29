@@ -34,7 +34,7 @@ class Learner(ABC):
         simulations_data = defaultdict(list)
         for _ in range(num_simulations):
             trials_data = self.simulate(env, compute_likelihood=compute_likelihood, participant=participant)
-            for param in ['r', 'w', 'a', 'loss', 'decision_params', 's']:
+            for param in ['r', 'w', 'a', 'loss', 'decision_params', 's', 'info']:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
         total_m_mers = []
