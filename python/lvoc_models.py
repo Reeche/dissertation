@@ -168,7 +168,7 @@ class LVOC(Learner):
             comp_value = self.pr_weight*self.get_best_paths_expectation(env)
             pr = self.get_term_reward(env) - comp_value
         self.update_rewards.append(reward + pr - self.subjective_cost)
-        self.rpe = reward - q
+        self.rpe = reward - q 
         self.pseudo_reward = pr
         value_estimate = (q + (reward - self.subjective_cost) + pr)
         self.update_params(features, value_estimate)
@@ -314,7 +314,12 @@ class LVOC(Learner):
                     #print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
                     rewards.append(reward)
                     actions.append(action)
-                    info_data.append([info_value, node_value, self.pseudo_reward, self.rpe])
+                    if not done:
+                        _, f = self.get_action_details(env)
+                        new_q = np.dot(self.mean, f)
+                    else:
+                        new_q = self.get_term_reward(env)
+                    info_data.append([info_value, node_value, self.pseudo_reward, self.rpe + new_q]) # Here self.rpe = r-q
             trials_data['r'].append(np.sum(rewards))
             trials_data['a'].append(actions)
             trials_data['info'].append(info_data)
