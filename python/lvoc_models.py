@@ -47,6 +47,14 @@ class LVOC(Learner):
     def get_current_weights(self):
         return self.mean.tolist()
 
+    def get_best_paths(self, env):
+        trial = env.present_trial
+        expected_path_values = trial.get_path_expected_values()
+        node_paths = trial.reverse_branch_map[0]
+        best_paths = [k for k, v in expected_path_values.items(
+        ) if v == max(expected_path_values.values())]
+        return set(best_paths)
+
     def sample_weights(self):
         """Sample weights from the posterior distribution"""
         sampled_weights = sample_coeffs(
@@ -307,9 +315,12 @@ class LVOC(Learner):
                 while not done:
                     info = False
                     previous_best_path_value = self.get_term_reward(env)
+                    previous_best_paths = self.get_best_paths(env)
                     action, reward, done, taken_path = self.act_and_learn(env)
                     current_best_path_value = self.get_term_reward(env)
-                    info_value = current_best_path_value - previous_best_path_value
+                    current_best_paths = self.get_best_paths(env)
+                    #info_value = current_best_path_value - previous_best_path_value
+                    info_value = previous_best_paths == current_best_paths
                     node_value = env.present_trial.node_map[action].value
                     #print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
                     rewards.append(reward)
