@@ -10,7 +10,7 @@
         },
         "pr_weight": {
             "type" : "uniform",
-            "range": [-5, 5]
+            "range": [0.01, 5]
         },
         "delay_scale": {
             "type": "loguniform",

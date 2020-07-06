@@ -99,6 +99,8 @@ def main():
 
         use_pseudo_rewards = learner_attributes['use_pseudo_rewards']
         pr_weight = learner_attributes['pr_weight']
+        if not pr_weight:
+            learner_attributes['pr_weight'] = 1
         if not use_pseudo_rewards and pr_weight:
             continue
 

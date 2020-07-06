@@ -166,7 +166,7 @@ class LVOC(Learner):
                     else:
                         path_value += node_map[node].expected_value
                 path_values.append(path_value)
-            return np.mean(path_values)
+            return np.max(path_values) #Changed from np.mean
 
     def perform_action_updates(self, env, next_features, reward, term_features, term_reward, features):
         q = np.dot(self.mean, next_features)
@@ -174,7 +174,8 @@ class LVOC(Learner):
         if self.use_pseudo_rewards:
             #comp_value = self.pr_weight*self.term_rewards[-1]
             comp_value = self.pr_weight*self.get_best_paths_expectation(env)
-            pr = self.get_term_reward(env) - comp_value
+            mer = self.get_term_reward(env)
+            pr = mer - comp_value
         self.update_rewards.append(reward + pr - self.subjective_cost)
         self.rpe = reward - q 
         self.pseudo_reward = pr
@@ -195,7 +196,8 @@ class LVOC(Learner):
         if self.use_pseudo_rewards:
             #comp_value = self.pr_weight*self.term_rewards[-1]
             comp_value = self.pr_weight*self.get_best_paths_expectation(env)
-            pr = self.get_term_reward(env) - comp_value
+            mer = self.get_term_reward(env)
+            pr = mer - comp_value
         value_estimate = reward + pr - self.delay_scale*delay
         self.update_params(features, value_estimate)
         self.update_rewards.append(reward - self.delay_scale*delay)

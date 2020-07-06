@@ -101,6 +101,8 @@ def main():
         pr_weight = learner_attributes['pr_weight']
         if not use_pseudo_rewards and pr_weight:
             continue
+        if not pr_weight:
+            del learner_attributes['pr_weight']
 
         # if "rssl" in learner or optimization_criterion in ["strategy_accuracy", "strategy_transitions"]:
         #     if strategy_space_type == "microscope":
@@ -133,7 +135,10 @@ def main():
         # reward_data = optimizer.plot_rewards(i=min_index, path=f"results/{exp_num}_plots/{pid}.png")
         #pickle_save(reward_data, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
         #pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
+        best_params = res[0]
+        if 'pr_weight' not in best_params:
+            best_params['pr_weight'] = 1
+        (r_data, sim_data), p_data = optimizer.run_hp_model(best_params, optimization_criterion,
                                                         num_simulations=30)
         #print(sim_data['info'], len(sim_data['info']))
         pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
