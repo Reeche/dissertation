@@ -173,9 +173,9 @@ class LVOC(Learner):
         pr = 0
         if self.use_pseudo_rewards:
             #comp_value = self.pr_weight*self.term_rewards[-1]
-            comp_value = self.pr_weight*self.get_best_paths_expectation(env)
+            comp_value = self.get_best_paths_expectation(env)
             mer = self.get_term_reward(env)
-            pr = mer - comp_value
+            pr = self.pr_weight*(mer - comp_value)
         self.update_rewards.append(reward + pr - self.subjective_cost)
         self.rpe = reward - q 
         self.pseudo_reward = pr
@@ -195,9 +195,9 @@ class LVOC(Learner):
         pr = 0
         if self.use_pseudo_rewards:
             #comp_value = self.pr_weight*self.term_rewards[-1]
-            comp_value = self.pr_weight*self.get_best_paths_expectation(env)
+            comp_value = self.get_best_paths_expectation(env)
             mer = self.get_term_reward(env)
-            pr = mer - comp_value
+            pr = self.pr_weight*(mer - comp_value)
         value_estimate = reward + pr - self.delay_scale*delay
         self.update_params(features, value_estimate)
         self.update_rewards.append(reward - self.delay_scale*delay)
@@ -322,7 +322,7 @@ class LVOC(Learner):
                     current_best_path_value = self.get_term_reward(env)
                     current_best_paths = self.get_best_paths(env)
                     #info_value = current_best_path_value - previous_best_path_value
-                    info_value = previous_best_paths == current_best_paths
+                    info_value = (previous_best_paths == current_best_paths)
                     node_value = env.present_trial.node_map[action].value
                     #print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
                     rewards.append(reward)
@@ -332,7 +332,8 @@ class LVOC(Learner):
                         new_q = np.dot(self.mean, f)
                     else:
                         new_q = self.get_term_reward(env)
-                    info_data.append([info_value, node_value, self.pseudo_reward, self.rpe + new_q]) # Here self.rpe = r-q
+                    if not done:
+                        info_data.append([info_value, node_value, self.pseudo_reward, self.rpe + new_q]) # Here self.rpe = r-q
             trials_data['r'].append(np.sum(rewards))
             trials_data['a'].append(actions)
             trials_data['info'].append(info_data)
