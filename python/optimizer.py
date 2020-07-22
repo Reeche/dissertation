@@ -298,6 +298,14 @@ class ParameterOptimizer:
         data = self.objective_fn(params, get_sim_data=True)
         return data, p_data
 
+    def run_hp_model_nop(self, params, objective, num_simulations=1):
+        self.objective = objective
+        self.num_simulations = num_simulations
+        #p_data = construct_p_data(self.participant, self.pipeline)
+        p_data = {}
+        data = self.objective_fn(params, get_sim_data=True)
+        return data, p_data
+
     def plot_rewards(self, i=0, path=""):
         data = []
         # for i in range(len(self.reward_data)):

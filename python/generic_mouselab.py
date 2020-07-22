@@ -161,3 +161,29 @@ class DummyParticipant():
                       'taken_paths': {}, 'strategies': {},
                       'temperature':{}}
         return total_data
+
+class DummyParticipantNew():
+    """ Creates a participant object which contains all details about the participant
+
+    Returns:
+        Participant -- Contains details such as envs, scores, clicks, taken paths,
+                       strategies and weights at each trial.
+    """
+
+    def __init__(self, pipeline, num_trials):
+        self.num_trials = num_trials
+        self.pipeline = pipeline
+        self.envs = GenericMouselabEnv(self.num_trials, self.pipeline)
+        self.clicks = []
+        self.strategies = []
+        self.scores = []
+        self.weights = []
+        self.all_trials_data = self.get_all_trials_data()
+
+    def get_all_trials_data(self):
+        actions = {} if not self.clicks else self.clicks
+        rewards = {} if not self.scores else self.scores
+        total_data = {'actions': {}, 'rewards': {},
+                      'taken_paths': {}, 'strategies': {},
+                      'temperature':{}}
+        return total_data
