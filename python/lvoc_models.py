@@ -278,14 +278,29 @@ class LVOC(Learner):
         return given_action, feature_vals[action_index]
 
     def simulate(self, env, compute_likelihood=False, participant=None):
+        '''
+        :param env: OpenAI-gym-compatible mouse lab environment using the GenericMouselabEnv class or a derived class
+        :param compute_likelihood: whether or not to compute the likelihood for inputted participant data
+        :param participant: #TODOCUMENT participant data description, dictionary that contains all_trials_data which contains keys actions, rewards and taken paths for each trial
+        :return: a dictionary of trial data with keys w (weights), r (rewards), a (actions), info (list: [info #TODOCUMENT what is this, node value, pseudorward, rpe]), loss (#TODOCUMENT) which all contain an entry for each trial
+        '''
         #TODO:
         # Fix update features
+        #OPTIMIZE we can just remove the computer_likelihood and check if participant is none since that data is only used when that's True
+
+        #Participant-level model priors
         self.init_model_params()
+
+        #initialize trial data, get number of trials
         trials_data = defaultdict(list)
         num_trials = env.num_trials
+
+        #reset env, clear pdf caches
         env.reset()
         get_log_norm_pdf.cache_clear()
         get_log_norm_cdf.cache_clear()
+
+        #extract participant data
         all_trials_data = participant.all_trials_data
 
         for trial_num in range(num_trials):
@@ -295,6 +310,7 @@ class LVOC(Learner):
             self.update_rewards, self.update_features = [], []
             actions, rewards, self.term_rewards = [], [], []
             if compute_likelihood:
+                # step through participant data (using the method take_action_and_learn)
                 trial_actions = all_trials_data['actions'][trial_num]
                 trial_rewards = all_trials_data['rewards'][trial_num]
                 trial_path = all_trials_data['taken_paths'][trial_num]
@@ -310,6 +326,7 @@ class LVOC(Learner):
                     rewards.append(reward)
                     self.take_action_and_learn(env, action, reward, next_action, trial_path)
             else:
+                # step through using the method act_and_learn (#TODOCUMENT what is it doing - optimal action according to LVOC in get_action_details ?)
                 done = False
                 self.pseudo_reward = 0
                 self.rpe = 0
