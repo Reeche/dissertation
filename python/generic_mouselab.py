@@ -2,7 +2,7 @@ import gym
 import numpy as np
 from gym import spaces
 from random import choice
-from modified_mouselab import TrialSequence, reward_val
+from .modified_mouselab import TrialSequence, reward_val
 
 
 class GenericMouselabEnv(gym.Env):
@@ -16,10 +16,15 @@ class GenericMouselabEnv(gym.Env):
         super(GenericMouselabEnv, self).__init__()
         self.pipeline = pipeline
         self.ground_truth = ground_truth
-        self.cost = cost
         self.num_trials = num_trials
         self.render_path = render_path
-        self.repeat_cost = -self.cost*10
+
+        if isinstance(self.cost, list):
+            self.cost = lambda action: cost
+            self.repeat_cost = 0
+        else: #should be a scalar
+            self.cost = lambda action : cost
+            self.repeat_cost = -cost * 10
         self.construct_env()
 
     def custom_same_env_init(self, env, num_trials):
@@ -84,7 +89,7 @@ class GenericMouselabEnv(gym.Env):
 
     def step(self, action):
         info = {}
-        reward = -self.cost
+        reward = -self.cost(self.present_trial.node_map[action].depth)
         done = False
         if action in self.observed_action_list:
             return self._state, self.repeat_cost, False, {}

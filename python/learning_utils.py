@@ -9,8 +9,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from scipy.stats import gamma
-from analysis_utils import get_data
-from distributions import Categorical, Normal
+from .analysis_utils import get_data
+from .distributions import Categorical, Normal
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import time
 from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
@@ -97,7 +97,15 @@ def pickle_load(file_path):
             Unpickled object
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"{file_path} not found.")
+        head, tail = os.path.split(__file__)
+        if file_path[0] == "/":
+            new_path = os.path.join(head, file_path[1:])
+        else:
+            new_path = os.path.join(head, file_path)
+        if os.path.exists(new_path):
+            file_path = new_path
+        else:
+            raise FileNotFoundError(f"{file_path} not found.")
     obj = pickle.load(open(file_path, "rb"))
     return obj
 
