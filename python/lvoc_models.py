@@ -300,9 +300,6 @@ class LVOC(Learner):
         get_log_norm_pdf.cache_clear()
         get_log_norm_cdf.cache_clear()
 
-        #extract participant data
-        all_trials_data = participant.all_trials_data
-
         for trial_num in range(num_trials):
             self.previous_best_paths = []
             self.num_actions = len(env.get_available_actions())
@@ -310,6 +307,9 @@ class LVOC(Learner):
             self.update_rewards, self.update_features = [], []
             actions, rewards, self.term_rewards = [], [], []
             if compute_likelihood:
+                # extract participant data
+                all_trials_data = participant.all_trials_data
+
                 # step through participant data (using the method take_action_and_learn)
                 trial_actions = all_trials_data['actions'][trial_num]
                 trial_rewards = all_trials_data['rewards'][trial_num]
