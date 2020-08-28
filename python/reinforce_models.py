@@ -4,11 +4,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from collections import defaultdict
-from base_learner import Learner
+from .base_learner import Learner
 from torch import autograd
 from torch.autograd import Variable
 from torch.distributions import Categorical
-from learning_utils import get_normalized_feature_values
+from .learning_utils import get_normalized_feature_values
 
 class Policy(nn.Module):
     """ Softmax Policy of the REINFORCE model
