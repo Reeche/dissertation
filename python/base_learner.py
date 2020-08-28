@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from learning_utils import get_normalized_feature_values
-from modified_mouselab import get_termination_mers
+from .learning_utils import get_normalized_feature_values
+from .modified_mouselab import get_termination_mers
 
 class Learner(ABC):
     """Base class of RL models implemented for the Mouselab-MDP paradigm."""
