@@ -1,4 +1,5 @@
 import pyabc
+import os
 import inspect
 import hyperopt
 import json
@@ -7,23 +8,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from functools import partial
 from hyperopt import hp, fmin, tpe, Trials
-from generic_mouselab import GenericMouselabEnv
-from sequence_utils import get_termination_mers
-from learning_utils import pickle_load, compute_objective, get_relevant_data
-from lvoc_models import LVOC
-from reinforce_models import REINFORCE, BaselineREINFORCE
-from rssl_models import RSSL
-from sdss_models import SDSS
-from hierarchical_models import HierarchicalLearner
+from .generic_mouselab import GenericMouselabEnv
+from .sequence_utils import get_termination_mers
+from .learning_utils import pickle_load, compute_objective, get_relevant_data
+from .lvoc_models import LVOC
+from .reinforce_models import REINFORCE, BaselineREINFORCE
+from .rssl_models import RSSL
+from .sdss_models import SDSS
+from .hierarchical_models import HierarchicalLearner
 from pyabc.transition import MultivariateNormalTransition
 import seaborn as sns
 
 models = {'lvoc': LVOC, 'rssl': RSSL, 'hierarchical_learner': HierarchicalLearner,
           'sdss': SDSS, 'reinforce': REINFORCE, 'baseline_reinforce': BaselineREINFORCE}
 
-param_config = json.load(open("param_search_space.json"))
-model_config = json.load(open("model_params.json"))
-model_details = json.load(open("models.json"))
+curr_dir = os.path.abspath(os.path.dirname(__file__))
+param_config = json.load(open(os.path.join(curr_dir,"param_search_space.json")))
+model_config = json.load(open(os.path.join(curr_dir,"model_params.json")))
+model_details = json.load(open(os.path.join(curr_dir,"models.json")))
 
 def hyperopt_space(params_list):
     """Should return a dict of the form required by hyperopt
