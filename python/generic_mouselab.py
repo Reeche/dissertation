@@ -90,11 +90,6 @@ class GenericMouselabEnv(gym.Env):
 
     def step(self, action):
         info = {}
-        print(self.present_trial)
-        print(self.present_trial.node_map)
-        print(self.present_trial.node_map[action])
-        print(self.present_trial.node_map[action].depth)
-        print(self.cost(self.present_trial.node_map[action].depth))
         reward = self.cost(self.present_trial.node_map[action].depth)
         done = False
         if action in self.observed_action_list:
