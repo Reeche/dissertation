@@ -58,10 +58,13 @@ def parse_json(df):
         except:
             pass
 
-def get_data(version, data_path='../data'): 
+def get_data(version, data_path='data'):
+    curr_dir = os.path.abspath(os.path.dirname(__file__))
+    head, tail = os.path.split(curr_dir)
+
     data = {}
-    for file in glob('{}/human/{}/*.csv'
-                     .format(data_path, version)):
+    for file in glob(os.path.join(head, '{}/human/{}/*.csv'
+                     .format(data_path, version))):
         name = os.path.basename(file)[:-4]
         df = pd.read_csv(file)
         parse_json(df)
@@ -71,7 +74,7 @@ def get_data(version, data_path='../data'):
     # complete = df.pid.value_counts(sort=False).where(lambda x: x==n_trials).dropna().index
     # df = df.set_index('pid').ix[complete].reset_index()
     # pdf = pdf.ix[complete]
-    
+
     return data
 
 
