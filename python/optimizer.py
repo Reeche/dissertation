@@ -8,14 +8,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from functools import partial
 from hyperopt import hp, fmin, tpe, Trials
-from .generic_mouselab import GenericMouselabEnv
-from .sequence_utils import get_termination_mers
-from .learning_utils import pickle_load, compute_objective, get_relevant_data
-from .lvoc_models import LVOC
-from .reinforce_models import REINFORCE, BaselineREINFORCE
-from .rssl_models import RSSL
-from .sdss_models import SDSS
-from .hierarchical_models import HierarchicalLearner
+from generic_mouselab import GenericMouselabEnv
+from sequence_utils import get_termination_mers
+from learning_utils import pickle_load, compute_objective, get_relevant_data
+from lvoc_models import LVOC
+from reinforce_models import REINFORCE, BaselineREINFORCE
+from rssl_models import RSSL
+from sdss_models import SDSS
+from hierarchical_models import HierarchicalLearner
 from pyabc.transition import MultivariateNormalTransition
 import seaborn as sns
 

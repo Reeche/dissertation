@@ -1,12 +1,12 @@
 import numpy as np
-from .base_learner import Learner
-from .sequence_utils import get_clicks
-from .learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
+from base_learner import Learner
+from sequence_utils import get_clicks
+from learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
     get_log_beta_cdf
 from collections import defaultdict
-from .reinforce_models import REINFORCE, BaselineREINFORCE
-from .lvoc_models import LVOC
-from .rssl_models import RSSL
+from reinforce_models import REINFORCE, BaselineREINFORCE
+from lvoc_models import LVOC
+from rssl_models import RSSL
 
 # TODO:
 # Implement Gaussian DS - Requires knowledge of how to remove the influence of past observations

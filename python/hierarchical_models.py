@@ -1,10 +1,10 @@
 import numpy as np
 import scipy as sp
 from collections import defaultdict
-from .learning_utils import temp_sigmoid, rows_mean, \
+from learning_utils import temp_sigmoid, rows_mean, \
     get_normalized_feature_values, get_log_beta_pdf, \
     get_log_beta_cdf, get_log_norm_pdf, get_log_norm_cdf
-from .base_learner import Learner
+from base_learner import Learner
 
 normalize = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
              2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 72.0, 2.0, 2.0]

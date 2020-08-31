@@ -1,8 +1,8 @@
 import numpy as np
 import mpmath as mp
-from .base_learner import Learner
+from base_learner import Learner
 from collections import defaultdict
-from .learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
+from learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
                             get_normalized_feature_values, break_ties_random, \
                             get_log_norm_pdf, get_log_norm_cdf
 
