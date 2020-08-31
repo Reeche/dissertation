@@ -3,8 +3,9 @@ import mpmath as mp
 from base_learner import Learner
 from collections import defaultdict
 from learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
-                            get_normalized_feature_values, break_ties_random, \
-                            get_log_norm_pdf, get_log_norm_cdf
+    get_normalized_feature_values, break_ties_random, \
+    get_log_norm_pdf, get_log_norm_cdf
+
 
 class LVOC(Learner):
     """Base class of the LVOC model"""
@@ -39,7 +40,7 @@ class LVOC(Learner):
     def init_model_params(self):
         """Initialize model parameters and initialize weights with participant priors"""
         self.mean = self.init_weights
-        self.precision = np.diag([1/(self.standard_dev)**2]*self.num_features)
+        self.precision = np.diag([1 / (self.standard_dev) ** 2] * self.num_features)
         self.gamma_a = 1
         self.gamma_b = 1
         self.action_log_probs = []
@@ -104,7 +105,7 @@ class LVOC(Learner):
             term_reward = current_trial.node_map[0].calculate_max_expected_return()
             q[0] = term_reward
 
-        if self.no_term: # LVOC doesn't terminate (used by the 2-stage model)
+        if self.no_term:  # LVOC doesn't terminate (used by the 2-stage model)
             if len(available_actions) != 1:
                 available_actions.remove(0)
                 best_index = break_ties_random(q[1:].tolist())
@@ -127,7 +128,7 @@ class LVOC(Learner):
         action, _ = self.get_action_details(env)
         return action
 
-    #Verify this
+    # Verify this
     def perform_first_action_updates(self, env, reward, term_features, term_reward):
         self.update_rewards.append(reward - self.subjective_cost)
         if self.vicarious_learning:
@@ -144,13 +145,13 @@ class LVOC(Learner):
                 if node_map[node].observed:
                     total_sum += node_map[node].value
                 else:
-                    if node!=0:
+                    if node != 0:
                         total_sum += node_map[node].expected_value
             path_sums[branch] = total_sum
         max_path_sum = max(path_sums.values())
-        best_paths = [branch_map[k][1:] for k, v in path_sums.items() if v==max_path_sum]
+        best_paths = [branch_map[k][1:] for k, v in path_sums.items() if v == max_path_sum]
         self.previous_best_paths = best_paths
-    
+
     def get_best_paths_expectation(self, env):
         if len(self.previous_best_paths) == 0:
             return 0
@@ -166,24 +167,24 @@ class LVOC(Learner):
                     else:
                         path_value += node_map[node].expected_value
                 path_values.append(path_value)
-            return np.max(path_values) #Changed from np.mean
+            return np.max(path_values)  # Changed from np.mean
 
     def perform_action_updates(self, env, next_features, reward, term_features, term_reward, features):
         q = np.dot(self.mean, next_features)
         pr = 0
         if self.use_pseudo_rewards:
-            #comp_value = self.pr_weight*self.term_rewards[-1]
+            # comp_value = self.pr_weight*self.term_rewards[-1]
             comp_value = self.get_best_paths_expectation(env)
             mer = self.get_term_reward(env)
-            pr = self.pr_weight*(mer - comp_value)
+            pr = self.pr_weight * (mer - comp_value)
         self.update_rewards.append(reward + pr - self.subjective_cost)
-        self.rpe = reward - q 
+        self.rpe = reward - q
         self.pseudo_reward = pr
         value_estimate = (q + (reward - self.subjective_cost) + pr)
         self.update_params(features, value_estimate)
         if self.vicarious_learning:
             self.update_params(term_features, term_reward)
-    
+
     def perform_montecarlo_updates(self):
         if self.monte_carlo_updates:
             for i in range(len(self.update_features) - 1):
@@ -194,17 +195,17 @@ class LVOC(Learner):
         delay = env.present_trial.get_action_feedback(taken_path)
         pr = 0
         if self.use_pseudo_rewards:
-            #comp_value = self.pr_weight*self.term_rewards[-1]
+            # comp_value = self.pr_weight*self.term_rewards[-1]
             comp_value = self.get_best_paths_expectation(env)
             mer = self.get_term_reward(env)
-            pr = self.pr_weight*(mer - comp_value)
-        value_estimate = reward + pr - self.delay_scale*delay
+            pr = self.pr_weight * (mer - comp_value)
+        value_estimate = reward + pr - self.delay_scale * delay
         self.update_params(features, value_estimate)
-        self.update_rewards.append(reward - self.delay_scale*delay)
+        self.update_rewards.append(reward - self.delay_scale * delay)
         self.perform_montecarlo_updates()
-    
+
     def act_and_learn(self, env, end_episode=False):
-        if not end_episode:       
+        if not end_episode:
             action, features = self.get_action_details(env)
             term_reward = self.get_term_reward(env)
             term_features = self.get_term_features(env)
@@ -225,7 +226,7 @@ class LVOC(Learner):
             return taken_action, reward, done, taken_path
         else:
             return None, None, None, None
-    
+
     def take_action_and_learn(self, env, given_action, reward, next_action, trial_path):
         action_features = self.get_action_features(env)
         features = action_features[given_action]
@@ -262,18 +263,19 @@ class LVOC(Learner):
         sigmas = np.sqrt(dists[:, 1])
 
         # Very important to select good bounds for proper sampling.
-        ub = np.max(means+5*sigmas)
-        lb = np.min(means-5*sigmas)
+        ub = np.max(means + 5 * sigmas)
+        lb = np.min(means - 5 * sigmas)
 
         if num_available_actions == 1:
             probs = [1.0]
         else:
-            probs = np.array([mp.quad(lambda x: integrate(x, i, means, sigmas), [lb, ub]) for i in range(num_available_actions)])
+            probs = np.array(
+                [mp.quad(lambda x: integrate(x, i, means, sigmas), [lb, ub]) for i in range(num_available_actions)])
 
         action_index = available_actions.index(given_action)
         selected_action_prob = probs[action_index]
         eps = self.eps
-        log_prob = float(str(mp.log((1-eps)*selected_action_prob + eps*(1/num_available_actions))))
+        log_prob = float(str(mp.log((1 - eps) * selected_action_prob + eps * (1 / num_available_actions))))
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
 
@@ -284,18 +286,18 @@ class LVOC(Learner):
         :param participant: #TODOCUMENT participant data description, dictionary that contains all_trials_data which contains keys actions, rewards and taken paths for each trial
         :return: a dictionary of trial data with keys w (weights), r (rewards), a (actions), info (list: [info #TODOCUMENT what is this, node value, pseudorward, rpe]), loss (#TODOCUMENT) which all contain an entry for each trial
         '''
-        #TODO:
+        # TODO:
         # Fix update features
-        #OPTIMIZE we can just remove the computer_likelihood and check if participant is none since that data is only used when that's True
+        # OPTIMIZE we can just remove the computer_likelihood and check if participant is none since that data is only used when that's True
 
-        #Participant-level model priors
+        # Participant-level model priors
         self.init_model_params()
 
-        #initialize trial data, get number of trials
+        # initialize trial data, get number of trials
         trials_data = defaultdict(list)
         num_trials = env.num_trials
 
-        #reset env, clear pdf caches
+        # reset env, clear pdf caches
         env.reset()
         get_log_norm_pdf.cache_clear()
         get_log_norm_cdf.cache_clear()
@@ -318,16 +320,17 @@ class LVOC(Learner):
                     action = trial_actions[i]
                     reward = trial_rewards[i]
                     self.store_action_likelihood(env, action)
-                    if i == len(trial_actions)-1:
+                    if i == len(trial_actions) - 1:
                         next_action = None
                     else:
-                        next_action = trial_actions[i+1]
+                        next_action = trial_actions[i + 1]
                     actions.append(action)
                     rewards.append(reward)
                     self.take_action_and_learn(env, action, reward, next_action, trial_path)
             else:
                 # step through using the method act_and_learn (#TODOCUMENT what is it doing - optimal action according to LVOC in get_action_details ?)
                 done = False
+                paths = []
                 self.pseudo_reward = 0
                 self.rpe = 0
                 info_data = []
@@ -338,32 +341,37 @@ class LVOC(Learner):
                     action, reward, done, taken_path = self.act_and_learn(env)
                     current_best_path_value = self.get_term_reward(env)
                     current_best_paths = self.get_best_paths(env)
-                    #info_value = current_best_path_value - previous_best_path_value
+                    # info_value = current_best_path_value - previous_best_path_value
                     info_value = (previous_best_paths == current_best_paths)
                     node_value = env.present_trial.node_map[action].value
-                    #print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
+                    # print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
                     rewards.append(reward)
                     actions.append(action)
+                    paths.append(taken_path)
                     if not done:
                         _, f = self.get_action_details(env)
                         new_q = np.dot(self.mean, f)
                     else:
                         new_q = self.get_term_reward(env)
                     if not done:
-                        info_data.append([info_value, node_value, self.pseudo_reward, self.rpe + new_q]) # Here self.rpe = r-q
+                        info_data.append(
+                            [info_value, node_value, self.pseudo_reward, self.rpe + new_q])  # Here self.rpe = r-q
             trials_data['r'].append(np.sum(rewards))
             trials_data['a'].append(actions)
+            trials_data['taken_paths'].append(paths)
             trials_data['info'].append(info_data)
             env.get_next_trial()
 
+        trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data['loss'] = -np.sum(self.action_log_probs)
         else:
             trials_data['loss'] = None
         return dict(trials_data)
 
+
 class simLVOC(LVOC):
-    def __init__(self, params, attributes, max_iters = int(5e2)):
+    def __init__(self, params, attributes, max_iters=int(5e2)):
         super().__init__(params, attributes)
         self.max_iters = max_iters
 
@@ -382,12 +390,13 @@ class simLVOC(LVOC):
                 count += 1
         selected_action_prob = (count + 1) / (max_iters + num_available_actions)
         eps = self.eps
-        log_prob = np.log((1-eps)*selected_action_prob + eps*(1/num_available_actions))
+        log_prob = np.log((1 - eps) * selected_action_prob + eps * (1 / num_available_actions))
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
-    
+
+
 class ibsLVOC(LVOC):
-    def __init__(self, params, attributes, max_k_iters = int(5e4)):
+    def __init__(self, params, attributes, max_k_iters=int(5e4)):
         super().__init__(params, attributes)
         self.max_k_iters = max_k_iters
 
@@ -405,18 +414,18 @@ class ibsLVOC(LVOC):
         for _ in range(num_repeats):
             # IBS sampling
             k = 0
-            while(1):
+            while (1):
                 k += 1
                 s = self.get_action(env)
                 if s == given_action or k == max_k_iters:
                     break
-            #print(f"-----k is {k}------")
-            if k!=1:
+            # print(f"-----k is {k}------")
+            if k != 1:
                 L = np.array(list(range(1, k)))
-                L = 1/L
+                L = 1 / L
                 ll += np.sum(L)
-        selected_action_prob = np.exp(-ll/num_repeats)
+        selected_action_prob = np.exp(-ll / num_repeats)
         eps = self.eps
-        log_prob = np.log((1-eps)*selected_action_prob + eps*(1/num_available_actions))
+        log_prob = np.log((1 - eps) * selected_action_prob + eps * (1 / num_available_actions))
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
