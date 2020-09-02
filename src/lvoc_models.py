@@ -352,10 +352,14 @@ class LVOC(Learner):
                         new_q = np.dot(self.mean, f)
                     else:
                         new_q = self.get_term_reward(env)
+                        paths.append(taken_path)
                     if not done:
                         info_data.append(
                             [info_value, node_value, self.pseudo_reward, self.rpe + new_q])  # Here self.rpe = r-q
+                trials_data['info'].append(info_data)
+                trials_data['taken_paths'].append(paths)
             trials_data['r'].append(np.sum(rewards))
+            trials_data['rewards'].append(rewards)
             trials_data['a'].append(actions)
 
             env.get_next_trial()
