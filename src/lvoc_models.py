@@ -5,7 +5,7 @@ from collections import defaultdict
 from learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
     get_normalized_feature_values, break_ties_random, \
     get_log_norm_pdf, get_log_norm_cdf
-
+from rl_models import integrate
 
 class LVOC(Learner):
     """Base class of the LVOC model"""
@@ -347,7 +347,6 @@ class LVOC(Learner):
                     # print(f"Info: {info_value}, Node value: {node_value}, PR: {self.pseudo_reward}, RPE: {self.rpe}")
                     rewards.append(reward)
                     actions.append(action)
-                    paths.append(taken_path)
                     if not done:
                         _, f = self.get_action_details(env)
                         new_q = np.dot(self.mean, f)
@@ -358,8 +357,7 @@ class LVOC(Learner):
                             [info_value, node_value, self.pseudo_reward, self.rpe + new_q])  # Here self.rpe = r-q
             trials_data['r'].append(np.sum(rewards))
             trials_data['a'].append(actions)
-            trials_data['taken_paths'].append(paths)
-            trials_data['info'].append(info_data)
+
             env.get_next_trial()
 
         trials_data["envs"] = env.ground_truth
