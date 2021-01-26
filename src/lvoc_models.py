@@ -318,7 +318,7 @@ class LVOC(Learner):
                 trial_path = all_trials_data['taken_paths'][trial_num]
                 for i in range(len(trial_actions)):
                     action = trial_actions[i]
-                    reward = trial_rewards[i]
+                    reward =  env.cost(env.present_trial.node_map[action].depth)
                     self.store_action_likelihood(env, action)
                     if i == len(trial_actions) - 1:
                         next_action = None
