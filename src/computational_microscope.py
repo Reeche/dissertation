@@ -1,23 +1,15 @@
-import os
 import sys
-import numpy as np
+import sys
 from collections import defaultdict
-from joblib import load
-from scipy.special import softmax
-from modified_mouselab import TrialSequence, reward_val, normal_reward_val
-from learning_utils import generate_small_envs, pickle_load, pickle_save, get_normalized_features, construct_reward_function, reward_levels, \
-                            reward_type, construct_repeated_pipeline
-from sequence_utils import get_clicks, compute_log_likelihood, compute_trial_features, compute_trial_feature_log_likelihood
-from planning_strategies import strategy_dict
-from random import shuffle
-from numpy.random import choice
-import pandas as pd
-from hyperopt import hp, fmin, tpe, Trials
-from functools import partial
-import scipy.linalg as LA
-from sklearn.metrics import confusion_matrix
-import time
+
+import numpy as np
+from hyperopt import hp, fmin, tpe
 from hyperopt.fmin import generate_trials_to_calculate
+from learning_utils import get_normalized_features, construct_reward_function, reward_levels, \
+    construct_repeated_pipeline
+from modified_mouselab import TrialSequence
+from sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
+
 
 # To ignore warnings of the computational microscope
 # np.seterr(all = 'ignore')
@@ -196,24 +188,21 @@ def get_modified_vals(strategy_space, distances, weights):
     return D, W
     
 if __name__ == "__main__":
-    strategy_num = int(sys.argv[1]) + 1
+    from global_vars import strategies, structure, features
+
+    strategy_num = int(sys.argv[1]) + 1 #strategies are 1-indexed
     num_simulations = int(sys.argv[2])
-    features = load("data/microscope_features.pkl")
-    strategy_weights = load("data/microscope_weights.pkl")
-    strategy_distances = pickle_load("data/L2_distances.pkl")
+
+
     exp_num = "F1"
-    branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2]}
-    branching = branchings[exp_num]
+
+    branching = structure.branchings[exp_num]
     reward_function = construct_reward_function(reward_levels['high_increasing'], 'categorical')
     pipeline = construct_repeated_pipeline(branching, reward_function, num_simulations)
     normalized_features = get_normalized_features("high_increasing")
-    num_strategies = 89
-    strategy_space = list(range(1, num_strategies+1))
-    problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83]
-    for s in problematic_strategies:
-        strategy_space.remove(s)
-    if strategy_num not in strategy_space:
+
+    if strategy_num not in strategies.strategy_spaces["participant"]:
         exit()
-    D = strategy_distances
-    D, W = get_modified_vals(strategy_space, D, strategy_weights)
-    num_features = len(features)
+    D = strategies.strategy_distances
+    D, W = get_modified_vals(strategies.strategy_spaces["participant"], D, strategies.strategy_weights)
+    num_features = len(features.features)

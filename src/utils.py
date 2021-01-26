@@ -1,9 +1,9 @@
 import itertools as it
+
 import numpy as np
-
-
 # ---------- Functional utils ---------- #
 from toolz.curried import *
+
 max = curry(max)
 min = curry(min)
 call = lambda f: f()

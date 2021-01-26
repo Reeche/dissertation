@@ -1,11 +1,13 @@
-import numpy as np
-import mpmath as mp
-from base_learner import Learner
 from collections import defaultdict
+
+import mpmath as mp
+import numpy as np
+from base_learner import Learner
 from learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
     get_normalized_feature_values, break_ties_random, \
     get_log_norm_pdf, get_log_norm_cdf
 from rl_models import integrate
+
 
 class LVOC(Learner):
     """Base class of the LVOC model"""

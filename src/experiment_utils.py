@@ -1,20 +1,16 @@
-import operator
 import itertools
+import operator
+from collections import defaultdict, Counter
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import numpy.linalg as LA
-import matplotlib.pyplot as plt
 import seaborn as sns
-from collections import defaultdict, Counter
-from scipy.special import softmax
-from sklearn.cluster import KMeans
-from statsmodels.stats.proportion import proportions_ztest, proportions_chisquare
-from statsmodels.formula.api import ols
 from analysis_utils import get_data
-from computational_microscope import ComputationalMicroscope
+from learning_utils import sidak_value
 from sequence_utils import get_acls
-from learning_utils import pickle_load, pickle_save, get_normalized_features,\
-                            create_dir, get_strategy_counts, sidak_value
+from sklearn.cluster import KMeans
+from statsmodels.stats.proportion import proportions_chisquare
 
 # Matplotlib no grid
 plt.rcParams["axes.grid"] = False

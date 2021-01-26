@@ -19,7 +19,6 @@ from collections import defaultdict
 from hyperopt import hp, fmin, tpe, Trials
 from functools import partial
 from generic_mouselab import GenericMouselabEnv
-from modified_mouselab import normal_reward_val, reward_val
 from sequence_utils import compute_log_likelihood, get_clicks
 from scipy.integrate import quad
 from scipy.stats import norm

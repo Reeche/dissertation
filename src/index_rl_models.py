@@ -1,34 +1,19 @@
 import sys
-from collections import defaultdict
-import matplotlib.pyplot as plt
-from optimizer import ParameterOptimizer, BayesianModelSelection, plot_model_selection_results
-from modified_mouselab import reward_val, normal_reward_val
-from learning_utils import string_to_bool, pickle_load, pickle_save, \
-    get_normalized_features, Participant, create_dir, rows_mean
-from sequence_utils import get_termination_mers
-from generic_mouselab import GenericMouselabEnv
-import pyabc
-import logging
-import seaborn as sns
-import pandas as pd
-from random import choices
-import numpy as np
 
-logger = logging.getLogger()
-#logger.setLevel(logging.CRITICAL)
-strategy_spaces = {'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56, 57, 58,
-                                    63, 64, 65, 67, 70, 76, 79, 87, 88],
-                  'microscope': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32,
-                                33, 34, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
-                                63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
+import numpy as np
+import pandas as pd
+from generic_mouselab import GenericMouselabEnv
+from learning_utils import pickle_load, pickle_save, \
+    get_normalized_features, Participant, create_dir
+from optimizer import ParameterOptimizer
+
 
 def expand_path(path, v, s):
     if v:
         path+= s
     return path
 
-control_pids = [1, 2, 6, 9, 11, 14, 18, 21, 24, 27, 37, 38, 44, 50, 55, 56, 58, 66, 76, 79, 85, 89, 90, 98, 99,
-                100, 104, 111, 113, 118, 119, 123, 126, 129, 139, 142, 144, 153, 154]
+
 
 def main():
     exp_pipelines = pickle_load("data/exp_pipelines.pkl")

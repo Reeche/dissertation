@@ -1,10 +1,12 @@
-import numpy as np
 import operator
-from scipy.special import softmax, logsumexp
-from learning_utils import get_normalized_feature_values, get_counts
-from modified_mouselab import TrialSequence, get_termination_mers
+
+import numpy as np
 from generic_mouselab import GenericMouselabEnv
+from learning_utils import get_normalized_feature_values, get_counts
+from modified_mouselab import TrialSequence
 from planning_strategies import strategy_dict
+from scipy.special import softmax, logsumexp
+
 
 def get_accuracy_position(position, ground_truth, clicks, pipeline, features, normalized_features, W):
     num_features = len(features)

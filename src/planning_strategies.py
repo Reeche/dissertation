@@ -1,8 +1,8 @@
-import gym
-from generic_mouselab import GenericMouselabEnv
 from random import shuffle, choice
 from queue import PriorityQueue
-from modified_mouselab import TrialSequence, reward_val, approx_max, approx_min
+from random import shuffle, choice
+
+from modified_mouselab import TrialSequence, approx_max
 from numpy import argsort
 
 """ This file contains the 89 algorithmic strategies implemented for

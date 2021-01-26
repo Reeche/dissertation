@@ -1,13 +1,13 @@
-import numpy as np
 import random
 from collections import defaultdict
 from functools import lru_cache
-from scipy.special import logsumexp
 from statistics import mean
-from toolz import get
 from typing import List
-from learning_utils import get_normalized_feature_values
+
+import numpy as np
 from distributions import sample, Normal, Categorical
+from learning_utils import get_normalized_feature_values
+from toolz import get
 
 """ This file defines the node, trial and trial sequence class for the 
     feature based representation of the Mouselab-MDP. This assumes that

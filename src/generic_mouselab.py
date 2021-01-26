@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 from gym import spaces
-from random import choice
 from modified_mouselab import TrialSequence, reward_val
 
 

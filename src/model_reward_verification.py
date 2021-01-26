@@ -1,5 +1,3 @@
-import os
-import sys
 from condor_utils import create_sub_file, submit_sub_file
 
 model_nums = [0, 1, 64, 65, 128, 129, 576, 577, 640, 641, 

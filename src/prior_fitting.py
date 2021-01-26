@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+
 path_to_toolbox = os.path.join("/home/vfelso","Rationality-Enhancement-Toolbox/")
 sys.path.append(path_to_toolbox)
 

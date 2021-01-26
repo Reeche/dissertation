@@ -1,11 +1,12 @@
-import numpy as np
-import mpmath as mp
-from base_learner import Learner
 from collections import defaultdict
-from planning_strategies import strategy_dict
+
+import mpmath as mp
+import numpy as np
+from base_learner import Learner
 from learning_utils import get_normalized_features, pickle_load, \
     norm_integrate, beta_integrate, get_log_beta_pdf, get_log_beta_cdf, \
     get_log_norm_pdf, get_log_norm_cdf
+from planning_strategies import strategy_dict
 
 NS = 79
 precision_epsilon = 1e-4

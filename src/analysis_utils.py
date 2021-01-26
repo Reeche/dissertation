@@ -1,10 +1,11 @@
-from toolz import curry
+import os
+import re
+
 import numpy as np
 import pandas as pd
-import re
-import os
-
+from toolz import curry
 from utils import *
+
 
 # ---------- Data wrangling ---------- #
 
@@ -217,7 +218,6 @@ def get_rtable(results, p_col=None):
 
 # ---------- Plotting ---------- #
 
-import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style('white')

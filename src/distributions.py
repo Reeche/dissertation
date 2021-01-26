@@ -1,9 +1,10 @@
-import numpy as np
-from collections import Counter
 import itertools as it
-from toolz import reduce
+from collections import Counter
+from functools import total_ordering, lru_cache
+
+import numpy as np
 import scipy.stats
-from functools import total_ordering, partial, lru_cache
+from toolz import reduce
 
 LARGE_CACHE_SIZE = int(2**20)
 CACHE_SIZE = int(2**14)

@@ -1,8 +1,6 @@
 import sys
-from collections import defaultdict
 import matplotlib.pyplot as plt
-from optimizer import ParameterOptimizer, BayesianModelSelection, plot_model_selection_results
-from modified_mouselab import reward_val, normal_reward_val
+from optimizer import ParameterOptimizer, plot_model_selection_results
 from learning_utils import string_to_bool, pickle_load, pickle_save, \
     get_normalized_features, Participant, create_dir, rows_mean
 from sequence_utils import get_termination_mers

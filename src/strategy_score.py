@@ -2,27 +2,22 @@ import operator
 import sys
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 from random import choice
 from collections import defaultdict, Counter
 from analysis_utils import get_data
-from learning_utils import pickle_load, pickle_save, construct_pipeline, Participant, get_normalized_features,\
-                            get_normalized_feature_values, construct_reward_function, reward_levels, reward_type, \
-                            construct_repeated_pipeline, create_dir, get_strategy_counts, get_cluster_dict, \
-                            get_modified_weights
+from learning_utils import pickle_load, pickle_save, construct_pipeline, Participant, get_normalized_feature_values, \
+    reward_type, \
+    create_dir, get_strategy_counts, get_modified_weights
 from sequence_utils import compute_average_click_likelihoods
 from generic_mouselab import GenericMouselabEnv
-from modified_mouselab import TrialSequence, reward_val, normal_reward_val, constant_reward_val, decreasing_reward_val
 from planning_strategies import strategy_dict
-from computational_microscope import ComputationalMicroscope
 from statsmodels.stats.proportion import proportions_ztest, proportions_chisquare
 from scipy.stats import ttest_ind, pearsonr
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import numpy.linalg as LA
 from scipy.special import softmax
-from IPython.core.display import display, HTML
 from experiment_utils import Experiment
 
 strategy = int(sys.argv[1])

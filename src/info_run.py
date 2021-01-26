@@ -1,17 +1,10 @@
 import sys
-from collections import defaultdict
-import matplotlib.pyplot as plt
-from optimizer import ParameterOptimizer, BayesianModelSelection, plot_model_selection_results
-from modified_mouselab import reward_val, normal_reward_val
-from learning_utils import string_to_bool, pickle_load, pickle_save, \
-    get_normalized_features, Participant, create_dir, rows_mean
-from sequence_utils import get_termination_mers
+from optimizer import ParameterOptimizer
+from learning_utils import pickle_load, pickle_save, \
+    get_normalized_features, Participant, create_dir
 from generic_mouselab import GenericMouselabEnv
-import pyabc
 import logging
-import seaborn as sns
 import pandas as pd
-from random import choices
 import numpy as np
 
 logger = logging.getLogger()

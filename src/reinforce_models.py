@@ -1,14 +1,15 @@
-import torch
-import numpy as np
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 from collections import defaultdict
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 from base_learner import Learner
-from torch import autograd
+from learning_utils import get_normalized_feature_values
 from torch.autograd import Variable
 from torch.distributions import Categorical
-from learning_utils import get_normalized_feature_values
+
 
 class Policy(nn.Module):
     """ Softmax Policy of the REINFORCE model

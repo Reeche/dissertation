@@ -1,15 +1,12 @@
+from collections import defaultdict
+
 import numpy as np
 import scipy as sp
-from collections import defaultdict
-from learning_utils import temp_sigmoid, rows_mean, \
-    get_normalized_feature_values, get_log_beta_pdf, \
-    get_log_beta_cdf, get_log_norm_pdf, get_log_norm_cdf
 from base_learner import Learner
+from global_vars import hierarchical_params
+from learning_utils import temp_sigmoid, rows_mean, \
+    get_log_norm_pdf, get_log_norm_cdf
 
-normalize = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 72.0, 2.0, 2.0]
-precision_epsilon = 1e-4
-quadrature_max_degree = 1e5
 
 class HierarchicalAgent():
     """Agent that performs the decision to terminate or continue"""
@@ -179,11 +176,11 @@ class HierarchicalLearner(Learner):
                     if action != 0:
                         action_prob = 1 - p_stop
                         if 1 - p_stop == 0:
-                            action_prob = precision_epsilon
+                            action_prob = hierarchical_params.precision_epsilon
                     else:
                         action_prob = p_stop
                         if p_stop == 0:
-                            action_prob = precision_epsilon
+                            action_prob = hierarchical_params.precision_epsilon
                     self.decision_agent.action_log_probs.append(np.log(action_prob))
                     rewards.append(reward)
                     actions.append(action)
