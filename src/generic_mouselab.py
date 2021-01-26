@@ -21,7 +21,7 @@ class GenericMouselabEnv(gym.Env):
 
         if isinstance(cost, list):
             cost_weight, depth_weight = cost
-            self.cost = lambda depth: - (1 * cost_weight + depth * depth_weight)
+            self.cost = lambda depth: - (1 * cost_weight +  (depth - 1) * depth_weight)
             self.repeat_cost = - float("inf")
         else: #should be a scalar
             self.cost = lambda depth : - (1 * cost)
