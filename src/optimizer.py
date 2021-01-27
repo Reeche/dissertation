@@ -15,7 +15,7 @@ from pyabc.transition import MultivariateNormalTransition
 from reinforce_models import REINFORCE, BaselineREINFORCE
 from rssl_models import RSSL
 from sdss_models import SDSS
-from sequence_utils import get_termination_mers
+from modified_mouselab import get_termination_mers
 
 models = {'lvoc': LVOC, 'rssl': RSSL, 'hierarchical_learner': HierarchicalLearner,
           'sdss': SDSS, 'reinforce': REINFORCE, 'baseline_reinforce': BaselineREINFORCE}
