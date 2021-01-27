@@ -17,7 +17,9 @@ from scipy.spatial.distance import squareform
 from scipy.stats import gamma
 from scipy.stats import norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from global_vars import misc, structure
+
+num_strategies = 89 #TODO move to global_vars after separating out analysis utils and learning utils
+machine_eps = np.finfo(float).eps  # machine epsilon
 
 @lru_cache(maxsize=None)
 def get_log_norm_pdf(y, m, v):
@@ -73,7 +75,7 @@ def softmax(x):
 
 def pickle_load(file_path):
     """
-        Load the pickle file localted at 'filepath'
+        Load the pickle file located at 'filepath'
         Params:
             file_path  -- Location of the file to be loaded.
         Returns:
@@ -99,9 +101,6 @@ def create_dir(file_path):
     """
     if not os.path.exists(file_path):
         os.makedirs(file_path)
-
-
-implemented_features = pickle_load(f"data/implemented_features.pkl")
 
 
 def pickle_save(obj, file_path):
@@ -404,31 +403,31 @@ def break_ties_random(a):
     return random_max
 
 
-def get_random_small_env():
-    """
-        Generate a random environment of the general Mouselab-MDP
-        Returns:
-            env : Mouselab-MDP trial generated using the value distribution specified in level values global variable
-    """
-    env = []
-    for index in range(0, 13):
-        env.append(np.random.choice(structure.level_values[structure.small_level_map[index]]))
-    return env
-
-
-def generate_small_envs(num_envs):
-    """
-        Generate multiple small random environments
-        Params:
-            num_envs: Number of random environments to generate
-        Returns:
-            List of random environments
-    """
-    envs_list = []
-    for _ in range(num_envs):
-        env = get_random_small_env()
-        envs_list.append(env)
-    return envs_list
+# def get_random_small_env():
+#     """
+#         Generate a random environment of the general Mouselab-MDP
+#         Returns:
+#             env : Mouselab-MDP trial generated using the value distribution specified in level values global variable
+#     """
+#     env = []
+#     for index in range(0, 13):
+#         env.append(np.random.choice(structure.level_values[structure.small_level_map[index]]))
+#     return env
+#
+#
+# def generate_small_envs(num_envs):
+#     """
+#         Generate multiple small random environments
+#         Params:
+#             num_envs: Number of random environments to generate
+#         Returns:
+#             List of random environments
+#     """
+#     envs_list = []
+#     for _ in range(num_envs):
+#         env = get_random_small_env()
+#         envs_list.append(env)
+#     return envs_list
 
 
 def get_proportion_dict(data):
@@ -725,7 +724,7 @@ def get_strategy_counts(S):
     num_participants = S.shape[0]
     num_runs = S.shape[1]
     num_trials = S.shape[2]
-    strategy_count = np.zeros((num_trials, misc.num_strategies))
+    strategy_count = np.zeros((num_trials, num_strategies))
     for i in range(num_participants):
         for j in range(num_runs):
             for k in range(num_trials):
