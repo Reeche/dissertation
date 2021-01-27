@@ -1,11 +1,23 @@
+import numpy as np
+import seaborn as sns
 from learning_utils import pickle_load
+
 
 class structure:
     branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2]}
+    level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
+    reward_levels = {'high_increasing': level_values[1:], 'high_decreasing': level_values[1:][::-1],
+                     'low_constant': const_var_values * 3, 'large_increasing': list(zip(np.zeros(5), [1, 2, 4, 8, 32]))}
 
+    reward_type = {'F1': 'categorical', 'c1.1': 'categorical', 'c2.1': 'categorical', 'T1.1': 'normal',
+                   'v1.0': 'categorical'}
+
+    small_level_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 3,
+                       5: 1, 6: 2, 7: 3, 8: 3, 9: 1, 10: 2, 11: 3, 12: 3}
+    const_var_values = [[-10, -5, 5, 10]]
 
 class strategies:
-    # num_strategies = 89
+    num_strategies = 89
     # strategy_space = list(range(1, num_strategies + 1))
     # problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83] #the microscope strategies are obtained from this
     strategy_spaces = {'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56, 57, 58,
@@ -28,3 +40,8 @@ class hierarchical_params:
 class misc:
     control_pids = [1, 2, 6, 9, 11, 14, 18, 21, 24, 27, 37, 38, 44, 50, 55, 56, 58, 66, 76, 79, 85, 89, 90, 98, 99,
                     100, 104, 111, 113, 118, 119, 123, 126, 129, 139, 142, 144, 153, 154]
+    machine_eps = np.finfo(float).eps #machine epsilon
+
+
+class plotting:
+    sns.set_style('whitegrid')
