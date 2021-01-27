@@ -200,6 +200,16 @@ def construct_repeated_pipeline(branching, reward_function, num_trials):
 def construct_pipeline(branchings, reward_distributions):
     return list(zip(branchings, reward_distributions))
 
+def get_number_of_actions_from_branching(branching):
+    '''
+    Get number of actions for a given experiment/environment's branching info
+    :param branching: branching info as list, e.g. [3,1,2]
+    :return: number of actions a participant could take, e.g. 13 for the example (3+3*1+3*1*2=12 nodes to inspect, 1 termination action)
+    '''
+    number_of_nodes = np.sum([np.product(branching[:idx]) for idx in range(1,len(branching)+1)]) #same as sum of products until each level
+    number_of_actions = number_of_nodes+1 #include ending planning phase action
+    return number_of_actions
+
 def reward_function(depth, level_distributions):
     if depth > 0:
         return level_distributions[depth - 1]
