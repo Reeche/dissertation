@@ -3,6 +3,7 @@ import pickle
 from collections import defaultdict, Counter
 from functools import partial, lru_cache
 
+import mpmath as mp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,22 +17,7 @@ from scipy.spatial.distance import squareform
 from scipy.stats import gamma
 from scipy.stats import norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
-
-sns.set_style('whitegrid')
-small_level_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 3,
-                   5: 1, 6: 2, 7: 3, 8: 3, 9: 1, 10: 2, 11: 3, 12: 3}
-level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
-const_var_values = [[-10, -5, 5, 10]]
-
-reward_levels = {'high_increasing': level_values[1:], 'high_decreasing': level_values[1:][::-1],
-                'low_constant': const_var_values*3, 'large_increasing': list(zip(np.zeros(5), [1,2,4,8,32]))}
-
-reward_type = {'F1': 'categorical', 'c1.1': 'categorical', 'c2.1': 'categorical', 'T1.1': 'normal',
-                'v1.0': 'categorical'}
-
-num_strategies = 89
-
-eps = np.finfo(float).eps
+from global_vars import misc, structure
 
 @lru_cache(maxsize=None)
 def get_log_norm_pdf(y, m, v):
@@ -416,7 +402,7 @@ def get_random_small_env():
     """
     env = []
     for index in range(0, 13):
-        env.append(np.random.choice(level_values[small_level_map[index]]))
+        env.append(np.random.choice(structure.level_values[structure.small_level_map[index]]))
     return env
 
 
@@ -729,7 +715,7 @@ def get_strategy_counts(S):
     num_participants = S.shape[0]
     num_runs = S.shape[1]
     num_trials = S.shape[2]
-    strategy_count = np.zeros((num_trials, num_strategies))
+    strategy_count = np.zeros((num_trials, misc.num_strategies))
     for i in range(num_participants):
         for j in range(num_runs):
             for k in range(num_trials):
@@ -811,7 +797,7 @@ def sample_coeffs(prior_mean, prior_precision, a, b, n_samples=1):
         TODO:
     """
     gamma_rvs = gamma.rvs(a*np.ones(n_samples), scale=(1/b)*np.ones(n_samples))
-    k = np.maximum(gamma_rvs, eps)
+    k = np.maximum(gamma_rvs, machine_eps)
     k = np.reshape(k, (-1, 1))
     samples = []
     for i in range(n_samples):
@@ -1231,7 +1217,7 @@ def get_strategy_sequences(env, trials_data):
     """
     modified_actions = convert_zeros_to_none(trials_data['a'])
     cm = ComputationalMicroscope(
-        38, weight_MAP, "small", distances_path=None, prior_path="data/gradual_transitions.pkl")
+        38, weight_MAP, "small", distances_path=None, prior_path="data/gradual_transitions.pkl") #TODO what is weight_MAP?
     strategy_info = cm.infer_sequences(
         modified_actions, env.get_ground_truth())
     trials_data['s'] = strategy_info[0]
