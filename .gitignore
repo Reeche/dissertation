@@ -4,4 +4,4 @@ python/results/*/*.pkl
 *.DS_Store
 *.pyc
 src/__pycache__/*.pyc
-data/human/val1/mouselab-mdp.csv
+data/human/IRL1/mouselab-mdp.csv
