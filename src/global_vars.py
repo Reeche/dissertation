@@ -1,7 +1,29 @@
+import os
 import numpy as np
 import seaborn as sns
 import pandas as pd
 import dill as pickle
+
+def pickle_load(file_path):
+    """
+        Load the pickle file located at 'filepath'
+        Params:
+            file_path  -- Location of the file to be loaded.
+        Returns:
+            Unpickled object
+    """
+    if not os.path.exists(file_path):
+        head, tail = os.path.split(__file__)
+        if file_path[0] == "/":
+            new_path = os.path.join(head, file_path[1:])
+        else:
+            new_path = os.path.join(head, file_path)
+        if os.path.exists(new_path):
+            file_path = new_path
+        else:
+            raise FileNotFoundError(f"{file_path} not found.")
+    obj = pickle_load(file_path)
+    return obj
 
 
 class structure:
@@ -25,7 +47,7 @@ class structure:
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     '''
-    exp_pipelines = pickle.load(open("data/exp_pipelines.pkl","rb"))
+    exp_pipelines = pickle_load("data/exp_pipelines.pkl","rb"))
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {'v1.0': 'high_increasing',
@@ -54,13 +76,13 @@ class strategies:
                        60, 61, 62,
                        63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
 
-    strategy_weights = pickle.load(open("data/microscope_weights.pkl", "rb"))
-    strategy_distances = pickle.load(open("data/L2_distances.pkl", "rb"))
+    strategy_weights = pickle_load("data/microscope_weights.pkl")
+    strategy_distances = pickle_load("data/L2_distances.pkl")
 
 
 class features:
-    microscope = pickle.load(open("data/microscope_features.pkl", "rb")) # this is 51 features
-    implemented = pickle.load(open(f"data/implemented_features.pkl", "rb"))  # this is 56 features
+    microscope = pickle_load("data/microscope_features.pkl") # this is 51 features
+    implemented = pickle_load(f"data/implemented_features.pkl")  # this is 56 features
 
 
 class hierarchical_params:
