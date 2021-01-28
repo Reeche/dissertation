@@ -231,6 +231,7 @@ class REINFORCE(Learner):
                             self.delay_scale*delay
                         break
             trials_data['r'].append(np.sum(rewards))
+            trials_data['rewards'].append(rewards)
             trials_data['a'].append(actions)
             env.get_next_trial()
             policy_loss += self.finish_episode()
