@@ -42,7 +42,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, optimization_p
                             get_strategies=False)
     participant.first_trial_data = participant.get_first_trial_data()
     participant.all_trials_data = participant.get_all_trials_data()
-
+    print(len(participant.all_trials_data["actions"]))
     env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
                                     ground_truth=participant.envs)
 
