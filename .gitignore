@@ -5,3 +5,4 @@ python/results/*/*.pkl
 *.pyc
 src/__pycache__/*.pyc
 data/human/IRL1/mouselab-mdp.csv
+src/results/*/*.pkl
