@@ -8,7 +8,7 @@ The algorithms implemented are:
 4. RSSL
 5. Hybrid model combining Strategy selection algorithm (RSSL) with Strategy Discovery algorithms (LVOC, REINFORCE)
 
-# Directory Structure
+# Directory Structure (to be adjusted)
 
 ```
 +--README.md									<-- this file
