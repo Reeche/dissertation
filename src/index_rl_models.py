@@ -16,6 +16,7 @@ Run this using: python3 index_rl_models.py <model_index> <exp_num> <optimization
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 Example: python3 index_rl_models.py 1 v1.0 pseudo_likelihood 1
 """
+#todo: not all optimization methods with all models. Need to add this somewhere in the code
 
 # todo: strategy_spaces was removed but it caused an error in the code, therefore added back. What is this? Is this needed?
 strategy_spaces = {'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56, 57, 58,
@@ -37,8 +38,8 @@ def main():
     exp_reward_structures = learning_utils.pickle_load("data/exp_reward_structures.pkl")
     features = learning_utils.pickle_load(f"data/implemented_features.pkl")
 
-    exp_num = "v1.0"
-    model_index = 1
+    exp_num = "c1.1"
+    model_index = 2092
     optimization_criterion = "pseudo_likelihood"
     pid = 1
 
@@ -51,10 +52,6 @@ def main():
 
     model_attributes = pd.read_csv("models/rl_models.csv")
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
-
-    #pid = control_pids[int(sys.argv[1])]
-    #pid = int(sys.argv[4])
-    #optimization_criterion = sys.argv[3]
     
     #model_index = int(sys.argv[2])
     num_models = len(model_attributes)
@@ -62,7 +59,7 @@ def main():
 
 
     num_simulations = 10
-    num_evals = 40 # For hyperopt only
+    num_evals = 30 # For hyperopt only
     excluded_trials = None
     if exp_num in ["c1.1"]:
         excluded_trials = list(range(30))
@@ -140,7 +137,7 @@ def main():
         print(f"Loss: {min(losses)}")
         min_index = np.argmin(losses)
         learning_utils.create_dir(f"../results/{exp_num}_plots")
-        # reward_data = optimizer.plot_rewards(i=min_index, path=f"../results/{exp_num}_plots/{pid}.png")
+        reward_data = optimizer.plot_rewards(i=min_index, path=f"../results/{exp_num}_plots/{pid}.png")
         #pickle_save(reward_data, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
         #pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
         (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
