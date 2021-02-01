@@ -7,15 +7,15 @@ import numpy as np
 import pandas as pd
 import pyabc
 import seaborn as sns
-from hierarchical_models import HierarchicalLearner
+from models.hierarchical_models import HierarchicalLearner
 from hyperopt import hp, fmin, tpe, Trials
-from learning_utils import compute_objective, get_relevant_data
-from lvoc_models import LVOC
+from utils.learning_utils import compute_objective, get_relevant_data
+from models.lvoc_models import LVOC
 from pyabc.transition import MultivariateNormalTransition
-from reinforce_models import REINFORCE, BaselineREINFORCE
-from rssl_models import RSSL
-from sdss_models import SDSS
-from modified_mouselab import get_termination_mers
+from models.reinforce_models import REINFORCE, BaselineREINFORCE
+from models.rssl_models import RSSL
+from models.sdss_models import SDSS
+from env.modified_mouselab import get_termination_mers
 
 models = {'lvoc': LVOC, 'rssl': RSSL, 'hierarchical_learner': HierarchicalLearner,
           'sdss': SDSS, 'reinforce': REINFORCE, 'baseline_reinforce': BaselineREINFORCE}
@@ -23,7 +23,7 @@ models = {'lvoc': LVOC, 'rssl': RSSL, 'hierarchical_learner': HierarchicalLearne
 curr_dir = os.path.abspath(os.path.dirname(__file__))
 param_config = json.load(open(os.path.join(curr_dir,"param_search_space.json")))
 model_config = json.load(open(os.path.join(curr_dir,"model_params.json")))
-model_details = json.load(open(os.path.join(curr_dir,"models.json")))
+model_details = json.load(open(os.path.join(curr_dir, "models/models.json")))
 
 def hyperopt_space(params_list):
     """Should return a dict of the form required by hyperopt

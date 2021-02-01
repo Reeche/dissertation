@@ -2,11 +2,11 @@ from collections import defaultdict
 
 import mpmath as mp
 import numpy as np
-from base_learner import Learner
-from learning_utils import get_normalized_features, pickle_load, \
+from src.models.base_learner import Learner
+from src.utils.learning_utils import get_normalized_features, pickle_load, \
     norm_integrate, beta_integrate, get_log_beta_pdf, get_log_beta_cdf, \
     get_log_norm_pdf, get_log_norm_cdf
-from planning_strategies import strategy_dict
+from utils.planning_strategies import strategy_dict
 
 NS = 79
 precision_epsilon = 1e-4
@@ -33,8 +33,8 @@ class RSSL(Learner):
             self.priors = np.exp(self.priors)
         # TODO:
         # Pass features and strategy weights to the model. For now, using a hack
-        self.strategy_weights = pickle_load("data/microscope_weights.pkl")
-        self.features = pickle_load("data/microscope_features.pkl")
+        self.strategy_weights = pickle_load("../data/microscope_weights.pkl")
+        self.features = pickle_load("../data/microscope_features.pkl")
         self.variance = 1 #Variance of the gaussian likelihood function
         self.stochastic_updating = attributes['stochastic_updating']
         if 'subjective_cost' in params:

@@ -1,31 +1,23 @@
-import os
-import gym
 import torch
-import numpy as np
 import scipy as sp
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import mpmath as mp
-import seaborn as sns
-import hyperopt
 import inspect
 from torch import autograd
 from torch.autograd import Variable
-from learning_utils import *
+from src.utils.learning_utils import *
 from torch.distributions import Categorical
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from hyperopt import hp, fmin, tpe, Trials
 from functools import partial
-from generic_mouselab import GenericMouselabEnv
-from sequence_utils import compute_log_likelihood, get_clicks
-from scipy.integrate import quad
+from src.env.generic_mouselab import GenericMouselabEnv
+from utils.sequence_utils import compute_log_likelihood, get_clicks
 from scipy.stats import norm
 from scipy.special import logsumexp
-from numba import jit
 from functools import lru_cache
-from planning_strategies import strategy_dict
+from utils.planning_strategies import strategy_dict
 from math import sqrt
 
 normalize = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
@@ -129,8 +121,8 @@ class BaseRSSL(Learner):
         self.gaussian = False
         # TODO:
         # Pass features and strategy weights to the model. For now, using a hack
-        self.strategy_weights = pickle_load("data/microscope_weights.pkl")
-        self.features = pickle_load("data/microscope_features.pkl")
+        self.strategy_weights = pickle_load("../data/microscope_weights.pkl")
+        self.features = pickle_load("../data/microscope_features.pkl")
         self.variance = 1 #Variance of the gaussian likelihood function
         self.action_log_probs = []
 

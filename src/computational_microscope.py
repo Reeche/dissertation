@@ -1,14 +1,13 @@
 import sys
-import sys
 from collections import defaultdict
 
 import numpy as np
 from hyperopt import hp, fmin, tpe
 from hyperopt.fmin import generate_trials_to_calculate
-from learning_utils import get_normalized_features, construct_reward_function, reward_levels, \
+from src.utils.learning_utils import get_normalized_features, construct_reward_function, reward_levels, \
     construct_repeated_pipeline
-from modified_mouselab import TrialSequence
-from sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
+from src.env.modified_mouselab import TrialSequence
+from src.utils.sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
 
 
 # To ignore warnings of the computational microscope

@@ -2,7 +2,8 @@ import os
 import numpy as np
 import seaborn as sns
 import pandas as pd
-import dill as pickle
+import pickle
+#import dill as pickle
 
 def pickle_load(file_path):
     """
@@ -22,7 +23,7 @@ def pickle_load(file_path):
             file_path = new_path
         else:
             raise FileNotFoundError(f"{file_path} not found.")
-    obj = pickle_load(file_path)
+    obj = pickle.load(open(file_path, "rb"))
     return obj
 
 
@@ -47,7 +48,7 @@ class structure:
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     '''
-    exp_pipelines = pickle_load("data/exp_pipelines.pkl","rb"))
+    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {'v1.0': 'high_increasing',
@@ -58,7 +59,7 @@ class structure:
 
 
 class model:
-    model_attributes = pd.read_csv("rl_models.csv", index_col=0)
+    model_attributes = pd.read_csv("models/rl_models.csv", index_col=0)
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
 

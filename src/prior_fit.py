@@ -1,7 +1,7 @@
 import sys
 
-from generic_mouselab import GenericMouselabEnv
-from learning_utils import pickle_load, pickle_save, \
+from src.env.generic_mouselab import GenericMouselabEnv
+from src.utils.learning_utils import pickle_save, \
     get_normalized_features, Participant, create_dir, get_number_of_actions_from_branching
 from optimizer import ParameterOptimizer
 from global_vars import *

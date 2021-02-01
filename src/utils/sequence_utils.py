@@ -1,10 +1,10 @@
 import operator
 
 import numpy as np
-from generic_mouselab import GenericMouselabEnv
-from learning_utils import get_normalized_feature_values, get_counts
-from modified_mouselab import TrialSequence
-from planning_strategies import strategy_dict
+from src.env.generic_mouselab import GenericMouselabEnv
+from src.utils.learning_utils import get_normalized_feature_values, get_counts
+from src.env.modified_mouselab import TrialSequence
+from utils.planning_strategies import strategy_dict
 from scipy.special import softmax, logsumexp
 
 

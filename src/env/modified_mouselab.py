@@ -5,8 +5,8 @@ from statistics import mean
 from typing import List
 
 import numpy as np
-from distributions import sample, Normal, Categorical
-from learning_utils import get_normalized_feature_values
+from utils.distributions import sample, Normal, Categorical
+from utils.learning_utils import get_normalized_feature_values
 from toolz import get
 
 """ This file defines the node, trial and trial sequence class for the 

@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from base_learner import Learner
-from learning_utils import get_normalized_feature_values
+from src.models.base_learner import Learner
+from src.utils.learning_utils import get_normalized_feature_values
 from torch.autograd import Variable
 from torch.distributions import Categorical
 

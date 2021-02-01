@@ -2,11 +2,11 @@ from collections import defaultdict
 
 import mpmath as mp
 import numpy as np
-from base_learner import Learner
-from learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
+from src.models.base_learner import Learner
+from src.utils.learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
     get_normalized_feature_values, break_ties_random, \
     get_log_norm_pdf, get_log_norm_cdf
-from rl_models import integrate
+from src.models.rl_models import integrate
 
 
 class LVOC(Learner):

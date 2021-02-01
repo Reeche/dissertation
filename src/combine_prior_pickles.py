@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from learning_utils import pickle_load, pickle_save, create_dir
+from src.utils.learning_utils import pickle_load, pickle_save, create_dir
 
 exp_name = "v1.0"
 blocks = {"IRL1":{"test":30} , "v1.0":{"test":20}} #block name and expected number of trials

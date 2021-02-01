@@ -59,7 +59,7 @@ def parse_json(df):
         except:
             pass
 
-def get_data(version, data_path='data'):
+def get_data(version, data_path='../data'):
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     head, tail = os.path.split(curr_dir)
 

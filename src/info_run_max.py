@@ -1,15 +1,10 @@
 import sys
-import matplotlib.pyplot as plt
-from optimizer import ParameterOptimizer, plot_model_selection_results
-from learning_utils import string_to_bool, pickle_load, pickle_save, \
-    get_normalized_features, Participant, create_dir, rows_mean
-from sequence_utils import get_termination_mers
-from generic_mouselab import GenericMouselabEnv
-import pyabc
+from optimizer import ParameterOptimizer
+from src.utils.learning_utils import pickle_load, pickle_save, \
+    get_normalized_features, Participant, create_dir
+from src.env.generic_mouselab import GenericMouselabEnv
 import logging
-import seaborn as sns
 import pandas as pd
-from random import choices
 import numpy as np
 
 logger = logging.getLogger()
@@ -38,7 +33,7 @@ def main():
     pipeline = exp_pipelines[exp_num]
     num_trials = 30
 
-    model_attributes = pd.read_csv("rl_models.csv")
+    model_attributes = pd.read_csv("models/rl_models.csv")
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
     pid = int(sys.argv[4])
@@ -114,7 +109,7 @@ def main():
 
         num_trials = 1000
         pipeline=[pipeline[0]]*num_trials
-        from generic_mouselab import DummyParticipantNew
+        from src.env.generic_mouselab import DummyParticipantNew
         participant = DummyParticipantNew(pipeline, num_trials)
         env = GenericMouselabEnv(num_trials, pipeline)
         optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)

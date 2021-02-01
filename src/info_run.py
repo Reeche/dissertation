@@ -1,8 +1,8 @@
 import sys
 from optimizer import ParameterOptimizer
-from learning_utils import pickle_load, pickle_save, \
+from src.utils.learning_utils import pickle_load, pickle_save, \
     get_normalized_features, Participant, create_dir
-from generic_mouselab import GenericMouselabEnv
+from src.env.generic_mouselab import GenericMouselabEnv
 import logging
 import pandas as pd
 import numpy as np
@@ -35,7 +35,7 @@ def main():
     #pipeline = transfer_pipeline
     num_trials = 30
 
-    model_attributes = pd.read_csv("rl_models.csv")
+    model_attributes = pd.read_csv("models/rl_models.csv")
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
     #pid = control_pids[int(sys.argv[1])]

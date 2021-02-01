@@ -1,24 +1,9 @@
-import operator
 import sys
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from random import choice
-from collections import defaultdict, Counter
-from analysis_utils import get_data
-from learning_utils import pickle_load, pickle_save, construct_pipeline, Participant, get_normalized_feature_values, \
-    reward_type, \
-    create_dir, get_strategy_counts, get_modified_weights
-from sequence_utils import compute_average_click_likelihoods
-from generic_mouselab import GenericMouselabEnv
-from planning_strategies import strategy_dict
-from statsmodels.stats.proportion import proportions_ztest, proportions_chisquare
-from scipy.stats import ttest_ind, pearsonr
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-import numpy.linalg as LA
-from scipy.special import softmax
-from experiment_utils import Experiment
+from collections import defaultdict
+from src.utils.learning_utils import pickle_load, pickle_save, create_dir
+from src.env.generic_mouselab import GenericMouselabEnv
+from src.utils.planning_strategies import strategy_dict
 
 strategy = int(sys.argv[1])
 exp_num = sys.argv[2]

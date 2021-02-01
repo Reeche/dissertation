@@ -10,8 +10,8 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-from analysis_utils import get_data
-from distributions import Categorical, Normal
+from .analysis_utils import get_data
+from .distributions import Categorical, Normal
 from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma
