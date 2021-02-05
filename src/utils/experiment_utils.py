@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from src.utils.analysis_utils import get_data
-from src.utils.learning_utils import sidak_value
-from sequence_utils import get_acls
+from utils.analysis_utils import get_data
+from utils.learning_utils import sidak_value
+from utils.sequence_utils import get_acls
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 

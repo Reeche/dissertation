@@ -5,7 +5,6 @@ import sys, os
 #import os
 import numpy as np
 import pandas as pd
-print(os.getcwd())
 from env.generic_mouselab import GenericMouselabEnv
 from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
