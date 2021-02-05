@@ -148,4 +148,5 @@ results/*
 
 */import_data/data/*
 
-#todo: do we want to keep the data of the experiments or remove them?
+# the data folder
+data/human/*

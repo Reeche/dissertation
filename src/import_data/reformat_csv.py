@@ -4,7 +4,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 import numpy as np
 import json
-
+import os
 
 data = pd.read_csv("data/dataclips.csv", sep=',')
 
@@ -29,9 +29,9 @@ def split_participants_df_into_conditions(df):
     df_decreasing = df[df['condition'] == 1]
     df_constant = df[df['condition'] == 2]
 
-    df_increasing.to_csv("../human/v1.0/participants.csv", sep=",", index=False)
-    df_decreasing.to_csv("../human/c2.1/participants.csv", sep=",", index=False)
-    df_constant.to_csv("../human/c1.1/participants.csv", sep=",", index=False)
+    df_increasing.to_csv("../../data/human/v1.0/participants.csv", sep=",", index=False)
+    df_decreasing.to_csv("../../data/human/c2.1/participants.csv", sep=",", index=False)
+    df_constant.to_csv("../../data/human/c1.1/participants.csv", sep=",", index=False)
 
 def flatten(d, sep="_"):
     """
@@ -138,10 +138,9 @@ def split_mouselab_df_into_conditions(df):
     df_increasing = df[df['condition'] == 0]
     df_decreasing = df[df['condition'] == 1]
     df_constant = df[df['condition'] == 2]
-
-    df_increasing.to_csv("../human/v1.0/mouselab-mdp.csv", sep=",", index=False)
-    df_decreasing.to_csv("../human/c2.1/mouselab-mdp.csv", sep=",", index=False)
-    df_constant.to_csv("../human/c1.1/mouselab-mdp.csv", sep=",", index=False)
+    df_increasing.to_csv("../../data/human/v1.0/mouselab-mdp.csv", sep=",", index=False)
+    df_decreasing.to_csv("../../data/human/c2.1/mouselab-mdp.csv", sep=",", index=False)
+    df_constant.to_csv("../../data/human/c1.1/mouselab-mdp.csv", sep=",", index=False)
 
 
 def save_to_df(participant_dict, name_mapping):
