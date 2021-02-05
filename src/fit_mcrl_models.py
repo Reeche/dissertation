@@ -1,18 +1,22 @@
-import sys
+import sys, os
+#sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+#import sys
+#import os
 import numpy as np
 import pandas as pd
+print(os.getcwd())
 from env.generic_mouselab import GenericMouselabEnv
 from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from optimizer import ParameterOptimizer
+from mcrl_modelling.optimizer import ParameterOptimizer
 
 
 """
-Run this using: python3 index_rl_models.py <model_index> <exp_num> <optimization_criterion> <pid>
+Run this using: python3 fit_mcrl_models.py <model_index> <exp_num> <optimization_criterion> <pid>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 index_rl_models.py 1 v1.0 pseudo_likelihood 1
+Example: python3 fit_mcrl_models.py 1 v1.0 pseudo_likelihood 1
 """
 #todo: not all optimization methods with all models. Need to add this somewhere in the code
 

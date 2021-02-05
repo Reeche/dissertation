@@ -1,14 +1,13 @@
 import sys
-from collections import defaultdict
-
 import numpy as np
+from collections import defaultdict
+from joblib import load
+from env.modified_mouselab import TrialSequence
+from utils.learning_utils import pickle_load, construct_reward_function, reward_levels, \
+    construct_repeated_pipeline
+from utils.sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
 from hyperopt import hp, fmin, tpe
 from hyperopt.fmin import generate_trials_to_calculate
-from src.utils.learning_utils import get_normalized_features, construct_reward_function, reward_levels, \
-    construct_repeated_pipeline
-from src.env.modified_mouselab import TrialSequence
-from src.utils.sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
-
 
 # To ignore warnings of the computational microscope
 # np.seterr(all = 'ignore')
@@ -157,7 +156,6 @@ class ComputationalMicroscope():
             best_params = fmin(fn=nll, space = parameter_space, algo=algo, trials=trials, max_evals=max_evals-1)
             self.set_strategy_T(best_params['strategy_T'])
         strategies, nll, weights = self.apply_microscope(click_sequences, envs)
-        print(strategies)
         return strategies, nll, weights, self.strategy_T
 
     def infer_participant_sequences(self, pids, p_envs, p_clicks, max_evals = 100, fit_strategy_temperature=True, show_pids=True):
@@ -174,7 +172,7 @@ class ComputationalMicroscope():
                 S, _, _, T = self.infer_sequences(clicks, envs, fit_strategy_temperature=fit_strategy_temperature, max_evals=max_evals)
                 strategies[pid] = S
                 temperatures[pid] = T
-                print(S, T)
+                print("S AND T", S, T)
         return strategies, temperatures
 
 def get_modified_vals(strategy_space, distances, weights):
@@ -187,21 +185,23 @@ def get_modified_vals(strategy_space, distances, weights):
     return D, W
     
 if __name__ == "__main__":
-    from global_vars import strategies, structure, features
-
-    strategy_num = int(sys.argv[1]) + 1 #strategies are 1-indexed
+    strategy_num = int(sys.argv[1]) + 1
     num_simulations = int(sys.argv[2])
-
-
+    features = load("data/microscope_features.pkl")
+    strategy_weights = load("data/microscope_weights.pkl")
+    strategy_distances = pickle_load("data/L2_distances.pkl")
     exp_num = "F1"
-
-    branching = structure.branchings[exp_num]
+    branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1_old': [3, 1, 2], 'c2.1': [3, 1, 2]}
+    branching = branchings[exp_num]
     reward_function = construct_reward_function(reward_levels['high_increasing'], 'categorical')
     pipeline = construct_repeated_pipeline(branching, reward_function, num_simulations)
-    normalized_features = get_normalized_features("high_increasing")
-
-    if strategy_num not in strategies.strategy_spaces["participant"]:
+    num_strategies = 89
+    strategy_space = list(range(1, num_strategies+1))
+    problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83]
+    for s in problematic_strategies:
+        strategy_space.remove(s)
+    if strategy_num not in strategy_space:
         exit()
-    D = strategies.strategy_distances
-    D, W = get_modified_vals(strategies.strategy_spaces["participant"], D, strategies.strategy_weights)
-    num_features = len(features.features)
+    D = strategy_distances
+    D, W = get_modified_vals(strategy_space, D, strategy_weights)
+    num_features = len(features)

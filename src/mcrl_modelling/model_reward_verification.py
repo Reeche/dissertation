@@ -6,6 +6,6 @@ model_nums = [0, 1, 64, 65, 128, 129, 576, 577, 640, 641,
 num_runs = 40
 for model in model_nums:
     args = ["mer_performance_error", model]
-    sub_file = create_sub_file("index_rl_models.py", args, process_arg = True, num_runs = num_runs,
+    sub_file = create_sub_file("fit_mcrl_models.py", args, process_arg = True, num_runs = num_runs,
                                 num_cpus=1)
     submit_sub_file(sub_file, 20)

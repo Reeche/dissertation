@@ -6,13 +6,13 @@ import torch.nn.functional as F
 import inspect
 from torch import autograd
 from torch.autograd import Variable
-from src.utils.learning_utils import *
+from utils.learning_utils import *
 from torch.distributions import Categorical
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from hyperopt import hp, fmin, tpe, Trials
 from functools import partial
-from src.env.generic_mouselab import GenericMouselabEnv
+from env.generic_mouselab import GenericMouselabEnv
 from utils.sequence_utils import compute_log_likelihood, get_clicks
 from scipy.stats import norm
 from scipy.special import logsumexp

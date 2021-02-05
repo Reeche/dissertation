@@ -1,7 +1,7 @@
 import numpy as np
-from src.models.base_learner import Learner
+from models.base_learner import Learner
 from utils.sequence_utils import get_clicks
-from src.utils.learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
+from utils.learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
     get_log_beta_cdf
 from collections import defaultdict
 from models.rssl_models import RSSL

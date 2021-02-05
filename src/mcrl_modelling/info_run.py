@@ -24,9 +24,9 @@ control_pids = [1, 2, 6, 9, 11, 14, 18, 21, 24, 27, 37, 38, 44, 50, 55, 56, 58, 
                 100, 104, 111, 113, 118, 119, 123, 126, 129, 139, 142, 144, 153, 154]
 
 def main():
-    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
-    exp_reward_structures = pickle_load("data/exp_reward_structures.pkl")
-    features = pickle_load(f"data/implemented_features.pkl")
+    exp_pipelines = pickle_load("../data/exp_pipelines.pkl")
+    exp_reward_structures = pickle_load("../data/exp_reward_structures.pkl")
+    features = pickle_load(f"../data/implemented_features.pkl")
 
     exp_num = sys.argv[1]
     normalized_features = get_normalized_features(exp_reward_structures[exp_num])
@@ -35,7 +35,7 @@ def main():
     #pipeline = transfer_pipeline
     num_trials = 30
 
-    model_attributes = pd.read_csv("models/rl_models.csv")
+    model_attributes = pd.read_csv("../models/rl_models.csv")
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
     #pid = control_pids[int(sys.argv[1])]
