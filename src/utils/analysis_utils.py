@@ -15,24 +15,30 @@ def mostly_nan(col):
     except:
         return False
 
+
 def drop_nan_cols(df):
     return df[[name for name, col in df.iteritems()
                if not mostly_nan(col)]]
+
 
 def query_subset(df, col, subset):
     idx = df[col].apply(lambda x: x in subset)
     return df[idx].copy()
 
+
 def rowapply(df, f):
     return [f(row) for i, row in df.iterrows()]
+
 
 def to_snake_case(name):
     name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     name = re.sub(r'[.:\/]', '_', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
+
 def to_camel_case(snake_str):
     return ''.join(x.title() for x in snake_str.split('_'))
+
 
 def reformat_name(name):
     return re.sub('\W', '', to_snake_case(name))
@@ -43,6 +49,8 @@ def reformat_name(name):
 from glob import glob
 import json
 import ast
+
+
 def parse_json(df):
     def can_eval(x):
         try:
@@ -51,7 +59,6 @@ def parse_json(df):
         except:
             return False
 
-
     to_eval = df.columns[df.iloc[0].apply(can_eval)]
     for col in to_eval:
         try:
@@ -59,13 +66,13 @@ def parse_json(df):
         except:
             pass
 
-def get_data(version, data_path='../data'):
-    curr_dir = os.path.abspath(os.path.dirname(__file__))
-    head, tail = os.path.split(curr_dir)
 
+def get_data(version, data_path='data'):
+    curr_dir = os.path.abspath(os.path.dirname(__file__))
+    head, _ = os.path.split(curr_dir)
+    head, _ = os.path.split(head)
     data = {}
-    for file in glob(os.path.join(head, '{}/human/{}/*.csv'
-                     .format(data_path, version))):
+    for file in glob(os.path.join(head, '{}/human/{}/*.csv'.format(data_path, version))):
         name = os.path.basename(file)[:-4]
         df = pd.read_csv(file)
         parse_json(df)
@@ -79,17 +86,13 @@ def get_data(version, data_path='../data'):
     return data
 
 
-
-
-
-
 @curry
 def load(file, version=None, func=lambda x: x):
     if not file or type(file) == float:
         return None
     else:
         base = '.archive/{}/'.format(version) if version else ''
-        with open('{}experiment/{}'.format(base, file)) as f: 
+        with open('{}experiment/{}'.format(base, file)) as f:
             return func(json.load(f))
 
 
@@ -98,6 +101,7 @@ def load(file, version=None, func=lambda x: x):
 try:
     import rpy2.robjects as ro
     from rpy2.robjects import pandas2ri
+
     pandas2ri.activate()
     from rpy2.robjects.conversion import ri2py
 except:
@@ -110,12 +114,14 @@ else:
             tbl['signif'] = tbl[reformat_name(p_col)].apply(pval)
         return tbl
 
+
 def df2r(df, cols):
     df = df[cols].copy()
     for name, col in df.iteritems():
         if col.dtype == bool:
             df[name] = col.astype(int)
     return df
+
 
 def pval(x):
     if x < 0.0001:
@@ -131,15 +137,17 @@ def pval(x):
     else:
         return float('nan')
 
-# ---------- Saving results ---------- #
 
+# ---------- Saving results ---------- #
 
 
 class Tex:
     chi2 = r"$\chi^2({df:.0f})={chisq:.2f},\ {signif}$"
 
+
 class Variables():
     """Saves variables for use in external documents."""
+
     def __init__(self, path='.'):
         # os.makedirs(path, exist_ok=True)
         self.path = path
@@ -176,7 +184,6 @@ class Variables():
                 key = to_camel_case(key)
                 f.write(r'\newcommand{\%s}{%s}' % (key, val) + '\n')
 
-
     def save_analysis(self, table, tex, name='', idx='{index}', display_tex=True):
         if display_tex:
             from IPython.display import Latex, display
@@ -187,27 +194,27 @@ class Variables():
             if idx is not None:
                 n += '_' + (idx(row) if callable(idx) else idx)
             n = reformat_name(n.format_map(row)).upper()
-            
+
             t = tex(row) if callable(tex) else tex
             t = t.format_map(row)
-            
+
             self.write(n, t)
             if display_tex:
                 display(Latex(t))
-        
-        self.save()
 
+        self.save()
 
     def write_lm(self, model, var, name):
         beta = np.round(model.params[var], 2)
         se = np.round(model.bse[var], 2)
         p = model.pvalues[var]
         p_desc = pval(p)
-        
+
         self.write_var(
             '{}_RESULT'.format(name),
             r'$\\beta = %s,\\ \\text{SE} = %s,\\ %s$' % (beta, se, p_desc)
         )
+
 
 def get_rtable(results, p_col=None):
     tbl = ri2py(results)
@@ -216,21 +223,24 @@ def get_rtable(results, p_col=None):
         tbl['signif'] = tbl[reformat_name(p_col)].apply(pval)
     return tbl
 
+
 # ---------- Plotting ---------- #
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 sns.set_style('white')
 sns.set_context('notebook', font_scale=1.4)
 sns.set_palette('deep', color_codes=True)
 
+
 class Figures(object):
     """Plots and saves figures."""
+
     def __init__(self, path='figs/', formats=['eps']):
         self.path = path
         self.formats = formats
         os.makedirs(path, exist_ok=True)
-
 
     def savefig(self, name):
         name = name.lower()
@@ -238,10 +248,11 @@ class Figures(object):
             path = os.path.join(self.path, name + '.' + fmt)
             print(path)
             plt.savefig(path, bbox_inches='tight')
-    
+
     def plot(self, **kwargs1):
         """Decorator that calls a plotting function and saves the result."""
-        def decorator(func):        
+
+        def decorator(func):
             def wrapped(*args, **kwargs):
                 kwargs.update(kwargs1)
                 params = [v for v in kwargs1.values() if v is not None]
@@ -251,7 +262,8 @@ class Figures(object):
                     name = name[len('plot_'):]
                 func(*args, **kwargs)
                 self.savefig(name)
+
             wrapped()
             return wrapped
-        
+
         return decorator

@@ -15,7 +15,7 @@ How To Use This
 ---------------
 
 ### Installation
-Run `src/requirements.txt` to install the dependencies. 
+Run `requirements.txt` to install the dependencies. 
 
 ### Import data
 Assuming you are working with the Mouselab-MDP repository and with a postgres database: 

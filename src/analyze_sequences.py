@@ -5,7 +5,7 @@ sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from src.utils.learning_utils import pickle_load, get_normalized_features,\
 #                             get_modified_weights
-from computational_microscope import ComputationalMicroscope
+from computational_microscope.computational_microscope import ComputationalMicroscope
 from utils.experiment_utils import Experiment
 
 """

@@ -2,8 +2,6 @@ import sys
 from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-# from utils.learning_utils import pickle_load, pickle_save, get_normalized_features, \
-#     get_modified_weights, create_dir
 from computational_microscope.computational_microscope import ComputationalMicroscope
 from utils.experiment_utils import Experiment
 
