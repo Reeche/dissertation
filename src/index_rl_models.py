@@ -3,8 +3,6 @@ import sys
 import numpy as np
 import pandas as pd
 from env.generic_mouselab import GenericMouselabEnv
-# from utils.learning_utils import pickle_load, pickle_save, \
-#     get_normalized_features, Participant, create_dir
 from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
