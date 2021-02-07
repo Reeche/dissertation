@@ -496,7 +496,7 @@ class Experiment():
             plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
         # plt.show()
 
-    def plot_strategy_proportions(self, S, suffix=""):
+    def plot_strategy_proportions_pertrial(self, S, suffix=""):
         if not hasattr(self, 'trial_strategy_proportions'):
             self.get_strategy_proportions(trial_wise=True)
         self.plot_proportions(self.trial_strategy_proportions, S, title="Strategy proportions", suffix=suffix)
@@ -651,7 +651,6 @@ class Experiment():
                                   "Model-free values and heuristics",
                                   "Pavlovian", "Satisficing and stopping"]
         data_columns = ['Experiment', 'Trial', 'Decision System', 'Relative Influence (%)']
-        #print(data_columns)
 
         def get_ds_data(strategies, experiment_num):
             data = []
@@ -662,8 +661,6 @@ class Experiment():
                                           DS_proportions[strategies[pid][i] - 1][j] * 100])
             return data
 
-        #strategies = pickle_load(f"../results/inferred_strategies/{experiment_num}_training/strategies.pkl")
-
         data = get_ds_data(self.participant_strategies, self.exp_num)
 
         df = pd.DataFrame(data, columns=data_columns)
@@ -671,7 +668,34 @@ class Experiment():
         plt.ylim(top=60)
         sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
         #plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/structure_influence_ds.pdf", bbox_inches='tight')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.pdf", bbox_inches='tight')
+
+    def plot_strategies_proportions(self):
+        reward_structures_count = self.get_strategy_proportions()
+
+        strategies_set = self.get_top_k_strategies(k=3)
+        strategies_list = sorted(list(strategies_set))
+
+        reward_structures = self.exp_num
+        data = []
+        columns = ['Experiment', 'Strategy', 'Proportion (%)']
+        # todo: does this make sense?
+        strategy_labels = ["Random search for best possible final outcome", "Myopic Forward planning with satisficing", "No planning", "Satisficing Best First Search", "Excessive goal-setting",
+                           "Some immediate outcomes after all final outcomes", "Immediate and final outcomes with satisficing", "Intermediate outcome of the best immediate outcome"]
+
+        for strategy in strategies_list:
+            #data.append([reward_structures, strategy_labels[strategies_list.index(strategy)], reward_structures[strategy]*100])
+            data.append([reward_structures, strategy, reward_structures_count[strategy]*100])
+        df = pd.DataFrame(data, columns=columns)
+        plt.figure(figsize=(12, 9))
+        sns.barplot(x = 'Experiment', y='Proportion (%)', hue='Strategy', data=df)
+        #plt.show()
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/strategy_proportion_total.pdf", bbox_inches='tight')
+
+    #todo: def plot_clusters_proportions(self):
+
+    #todo: def change_frequencies_per_trial(self):
+
 
     def summarize(self, features, normalized_features, strategy_weights,
                   decision_systems, W_DS,
@@ -717,7 +741,8 @@ class Experiment():
 
         # plot regarding the strategies
         S = self.get_top_k_strategies(k=5)
-        self.plot_strategy_proportions(S)
+        self.plot_strategy_proportions_pertrial(S)
+        self.plot_strategies_proportions()
         self.plot_strategy_scores(strategy_scores) # not saved as plot
 
         # plot regarding strategy clusters
