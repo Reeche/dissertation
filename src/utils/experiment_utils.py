@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from utils.analysis_utils import get_data
-from utils.learning_utils import sidak_value
+from utils.learning_utils import sidak_value, pickle_load
 from utils.sequence_utils import get_acls
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
@@ -167,6 +167,16 @@ class Experiment():
         self.pids = pids
 
     def get_transition_frequencies(self, trial_wise=False, pids=None, clusters=False):
+        """
+        Counting the occurance of pairwise strategies
+        Args:
+            trial_wise:
+            pids:
+            clusters:
+
+        Returns:
+
+        """
         if not self.participant_strategies:
             raise (ValueError("Please update participant strategies"))
         if not pids:
@@ -189,7 +199,6 @@ class Experiment():
                     strategy_pairs[i].append((first, second))
             strategy_pair_counts = {k: Counter(v) for k, v in strategy_pairs.items()}
         return strategy_pair_counts
-
 
     def perform_chi2_conditions(self, t_a, t_b):
         t_a = defaultdict(int, t_a)
@@ -214,13 +223,13 @@ class Experiment():
                 insignificant_transitions.append((transition, freq, chi2, p))
         return significant_transitions, insignificant_transitions, alpha_sidak
 
-
     def strategy_transitions_chi2(self, trial_wise=False, clusters=False, print_results=True):
         condition_wise_pids = defaultdict(list)
         for pid in self.pids:
             condition_wise_pids[self.participants[pid].condition].append(pid)
-        condition_wise_transitions = {k: self.get_transition_frequencies(trial_wise=trial_wise, pids=v, clusters=clusters)
-                                      for k, v in condition_wise_pids.items()}
+        condition_wise_transitions = {
+            k: self.get_transition_frequencies(trial_wise=trial_wise, pids=v, clusters=clusters)
+            for k, v in condition_wise_pids.items()}
         conditions = list(condition_wise_pids.keys())
         condition_combinations = list(itertools.combinations(conditions, 2))
         results = defaultdict(lambda: defaultdict())
@@ -238,7 +247,6 @@ class Experiment():
                 print("Significant transitions:", significant_transitions)
                 print("\n")
         return results
-
 
     # The strategy scores should vary with reward structure
     # Catch error when there is no significant transition
@@ -268,7 +276,6 @@ class Experiment():
             print("\n")
         return performance_results
 
-
     # Should we also add constant case?
     def frequency_transitions_chi2(self, clusters=False, trial_wise=False):
         frequency_results = defaultdict(lambda: defaultdict())
@@ -285,7 +292,6 @@ class Experiment():
             print("\n")
         return frequency_results
 
-
     def make_trajectory(self, strategy_sequence):
         previous_strategy = -1
         trajectory = []
@@ -294,7 +300,6 @@ class Experiment():
                 trajectory.append(s)
                 previous_strategy = s
         return tuple(trajectory)
-
 
     def get_trajectories(self, clusters=False, pids=None):
         if not pids:
@@ -306,13 +311,11 @@ class Experiment():
         trajectories = [self.make_trajectory(S) for S in sequences]
         return trajectories
 
-
     def get_trajectory_counts(self, clusters=False, pids=None):
         trajectories = self.get_trajectories(clusters, pids)
         trajectory_counts = Counter(trajectories)
         # print(sorted(trajectory_counts.items(), key=operator.itemgetter(1), reverse=True))
         return trajectory_counts
-
 
     def get_condition_trajectory_counts(self, clusters=False):
         condition_wise_pids = defaultdict(list)
@@ -323,7 +326,6 @@ class Experiment():
             trajectory_counts = self.get_trajectory_counts(clusters=clusters, pids=condition_wise_pids[condition])
         condition_trajectory_counts[condition] = trajectory_counts
         return condition_trajectory_counts
-
 
     def get_paths_to_optimal(self, clusters=False, optimal_S=21, optimal_C=10):
         trajectory_counts = self.get_trajectory_counts(clusters=clusters)
@@ -345,7 +347,6 @@ class Experiment():
         print(sorted(optimal_trajectories.items(), key=operator.itemgetter(1), reverse=True))
         return optimal_trajectories
 
-
     def init_feature_properties(self, features, normalized_features, strategy_weights):
         if not hasattr(self, 'participant_strategies'):
             raise ValueError("Strategies not found. Please initialize strategies before initializing the weights.")
@@ -362,7 +363,6 @@ class Experiment():
         if no_inference:
             self.infer_strategies(precomputed_strategies=self.participant_strategies)
             self.init_feature_properties(features, normalized_features, strategy_weights)
-
 
     def init_decision_system_properties(self, decision_systems, decision_weights, decision_proportions):
         if not hasattr(self, 'participant_strategies'):
@@ -382,33 +382,15 @@ class Experiment():
         #     self.infer_strategies(precomputed_strategies=self.participant_strategies)
         #     self.init_decision_system_properties(decision_systems, decision_weights, decision_proportions)
 
-
-    def get_mean_DSW(self):
-        DSW = []
-        num_trials = self.num_trials
-        for pid in self.pids:
-            decision_systems = self.participants[pid].decision_systems
-            ds_prop = self.participants[pid].decision_system_proportions
-            if len(ds_prop) == num_trials:
-                DSW.append(ds_prop)
-        decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
-        num_decision_systems = len(decision_systems)
-        mean_dsw = np.mean(DSW, axis=0)
-        return mean_dsw
-
-
-    def get_DSW(self):
-        DSW = []
-        num_trials = self.num_trials
-        for pid in self.pids:
-            decision_systems = self.participants[pid].decision_systems
-            ds_prop = self.participants[pid].decision_system_proportions
-            if len(ds_prop) == num_trials:
-                DSW.append(ds_prop)
-        return DSW
-
-
     def plot_average_ds(self, suffix=""):
+        """
+        Plot the averaged decision system proportions
+        Args:
+            suffix:
+
+        Returns: plots
+
+        """
         DSP = []
         num_trials = self.num_trials
         for pid in self.pids:
@@ -428,8 +410,7 @@ class Experiment():
         # plt.title("Decision system proportions", fontsize=24)
         plt.ylim(top=np.max(mean_dsw) + 0.2)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_decision_plots_{suffix}.png", bbox_inches='tight')
-
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png", bbox_inches='tight')
 
     def get_proportions(self, strategies, trial_wise=False):
         strategies_list = [strategies[pid] for pid in self.pids]
@@ -452,7 +433,6 @@ class Experiment():
             strategy_proportions = dict(strategy_proportions)
         return strategy_proportions
 
-
     def get_strategy_proportions(self, trial_wise=False):
         if not trial_wise:
             if hasattr(self, 'strategy_proportions'):
@@ -466,7 +446,6 @@ class Experiment():
         else:
             self.trial_strategy_proportions = strategy_proportions
         return strategy_proportions
-
 
     def get_adjusted_strategy_proportions(self, trial_wise=False, confusions={}):
         proportions = self.get_strategy_proportions(trial_wise=trial_wise)
@@ -490,7 +469,6 @@ class Experiment():
             self.adjusted_trial_strategy_proportions = adjusted_proportions
         return adjusted_proportions
 
-
     def plot_proportions(self, trial_prop, S, title="", suffix="", cluster=False):
         S_proportions = []
         for t in trial_prop.keys():
@@ -513,23 +491,22 @@ class Experiment():
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         if cluster:
-            plt.savefig(f"../results/{self.exp_num}_cluster_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
         else:
-            plt.savefig(f"../results/{self.exp_num}_strategy_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
-        #plt.show()
-
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
+        # plt.show()
 
     def plot_strategy_proportions(self, S, suffix=""):
         if not hasattr(self, 'trial_strategy_proportions'):
             self.get_strategy_proportions(trial_wise=True)
         self.plot_proportions(self.trial_strategy_proportions, S, title="Strategy proportions", suffix=suffix)
 
-
     ### Emperical validations
     def plot_strategy_scores(self, strategy_scores):
         # This is a sanity check
         if not hasattr(self, 'participant_strategy_scores'):
-            self.participant_strategy_scores = {pid: [strategy_scores[s] for s in self.participants[pid].strategies] for pid
+            self.participant_strategy_scores = {pid: [strategy_scores[s] for s in self.participants[pid].strategies] for
+                                                pid
                                                 in self.pids}
         num_trials = self.num_trials  # Change this
         scores = list(self.participant_strategy_scores.values())
@@ -541,13 +518,11 @@ class Experiment():
         sns.lmplot(x="trial", y=r"$Score_t$", data=df)
         plt.title("Score as a function of trial number")
 
-
     def init_strategy_clusters(self, cluster_map):
         self.participant_clusters = {}
         for pid in self.pids:
             self.participants[pid].attach_clusters(cluster_map)
             self.participant_clusters[pid] = self.participants[pid].clusters
-
 
     # Fix this
     def get_cluster_proportions(self, trial_wise=False):
@@ -563,7 +538,6 @@ class Experiment():
         else:
             self.trial_cluster_proportions = cluster_proportions
         return cluster_proportions
-
 
     def get_adjusted_cluster_proportions(self, trial_wise=False, confusions={}):
         proportions = self.get_cluster_proportions(trial_wise=trial_wise)
@@ -589,16 +563,13 @@ class Experiment():
 
         return adjusted_proportions
 
-
     def plot_cluster_proportions(self, C):
         if not hasattr(self, 'trial_cluster_proportions'):
             self.get_cluster_proportions(trial_wise=True)
         self.plot_proportions(self.trial_cluster_proportions, C, title="Cluster Proportions", cluster=True)
 
-
     def attach_pipeline(self, pipeline):
         self.pipeline = pipeline
-
 
     def get_acls(self):
         acls, random_acls = get_acls(self.participant_strategies,
@@ -606,8 +577,8 @@ class Experiment():
                                      self.pipeline, self.features, self.normalized_features, self.strategy_weights)
         return acls, random_acls
 
-
-    def get_proportion_clusters(self, mode='participant', plot=False, show_clusters=False, n_clusters=2, max_clusters=10):
+    def get_proportion_clusters(self, mode='participant', plot=True, show_clusters=False, n_clusters=2,
+                                max_clusters=10):
         decision_proportions = []
         considered_pids = []
         for pid in self.pids:
@@ -631,6 +602,7 @@ class Experiment():
             plt.plot(range(2, len(errors) + 2), errors)
             plt.xlabel("Number of clusters")
             plt.ylabel("Error (Inertia)")
+            # plt.show()
         if n_clusters:
             kmeans = KMeans(n_clusters=n_clusters)
             kmeans.fit(decision_proportions)
@@ -661,12 +633,12 @@ class Experiment():
             cluster_dict = dict(cluster_dict)
             return cluster_dict
 
-
     def get_top_k_strategies(self, k=3):
         trial_wise_strategy_proportions = self.get_strategy_proportions(trial_wise=True)
         total_set = set()
         for t in trial_wise_strategy_proportions.keys():
-            sorted_indices = sorted(trial_wise_strategy_proportions[t].items(), key=operator.itemgetter(1), reverse=True)[
+            sorted_indices = sorted(trial_wise_strategy_proportions[t].items(), key=operator.itemgetter(1),
+                                    reverse=True)[
                              :k]
             for s, v in sorted_indices:
                 if v > 0:
@@ -674,6 +646,32 @@ class Experiment():
         S = list(total_set)
         return S
 
+    def plot_decision_systems_proportions(self, DS_proportions):
+        decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
+                                  "Model-free values and heuristics",
+                                  "Pavlovian", "Satisficing and stopping"]
+        data_columns = ['Experiment', 'Trial', 'Decision System', 'Relative Influence (%)']
+        #print(data_columns)
+
+        def get_ds_data(strategies, experiment_num):
+            data = []
+            for pid in strategies.keys():
+                for i in range(len(strategies[pid])):
+                    for j in range(len(decision_system_labels)):
+                        data.append([experiment_num, i, decision_system_labels[j],
+                                          DS_proportions[strategies[pid][i] - 1][j] * 100])
+            return data
+
+        #strategies = pickle_load(f"../results/inferred_strategies/{experiment_num}_training/strategies.pkl")
+
+        data = get_ds_data(self.participant_strategies, self.exp_num)
+
+        df = pd.DataFrame(data, columns=data_columns)
+        plt.figure(figsize=(15, 9))
+        plt.ylim(top=60)
+        sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
+        #plt.show()
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/structure_influence_ds.pdf", bbox_inches='tight')
 
     def summarize(self, features, normalized_features, strategy_weights,
                   decision_systems, W_DS,
@@ -694,18 +692,15 @@ class Experiment():
             print("\n", dict(self.participant_strategies), "\n")
         self.init_feature_properties(features, normalized_features, strategy_weights)
         self.init_decision_system_properties(decision_systems, W_DS, DS_proportions)
-        # clusters = self.get_proportion_clusters(mode=cluster_mode, show_clusters=True, plot=False,
-        #                                         n_clusters = n_clusters, max_clusters=max_clusters)
+        # clusters = self.get_proportion_clusters(mode=cluster_mode, show_clusters=True, plot=True,
+        #                                         n_clusters=n_clusters, max_clusters=max_clusters)
         # print("Clusters:", clusters, "\n")
         self.pipeline = self.cm.pipeline
         # acls, random_acls = self.get_acls()
         # mean_acl = np.mean(acls)
         # mean_random_acl = np.mean(random_acls)
         # print("ACL:", mean_acl, "ACL-Random:", mean_random_acl, "\n")
-        # print(f"ACL factor: {mean_acl/mean_random_acl}", "\n")
-
-        # plot the averaged influence of decision systems
-        self.plot_average_ds()
+        # print(f"ACL factor: {mean_acl / mean_random_acl}", "\n")
 
         self.strategy_transitions_chi2()
         self.performance_transitions_chi2(strategy_scores=strategy_scores)
@@ -713,14 +708,21 @@ class Experiment():
 
         self.init_strategy_clusters(cluster_map)
         self.strategy_transitions_chi2(clusters=True)
-        self.performance_transitions_chi2(cluster_scores = cluster_scores)
+        self.performance_transitions_chi2(cluster_scores=cluster_scores)
         self.frequency_transitions_chi2(clusters=True)
+
+        # plot regarding decision systems
+        self.plot_average_ds()
+        self.plot_decision_systems_proportions(DS_proportions)
+
+        # plot regarding the strategies
         S = self.get_top_k_strategies(k=5)
-        # plot the averaged strategy prportionate and saves as pdf
         self.plot_strategy_proportions(S)
+        self.plot_strategy_scores(strategy_scores) # not saved as plot
 
-        # not saved as plot
-        self.plot_strategy_scores(strategy_scores)
-
+        # plot regarding strategy clusters
         self.plot_cluster_proportions(C=plot_clusters)
+
+
         # self.plot_parallel_coordinates(mode=cluster_mode)
+
