@@ -410,7 +410,8 @@ class Experiment():
         # plt.title("Decision system proportions", fontsize=24)
         plt.ylim(top=np.max(mean_dsw) + 0.2)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png", bbox_inches='tight')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
+                    bbox_inches='tight')
 
     def get_proportions(self, strategies, trial_wise=False):
         strategies_list = [strategies[pid] for pid in self.pids]
@@ -491,9 +492,11 @@ class Experiment():
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         if cluster:
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
+                        dpi=400, bbox_inches='tight')
         else:
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png", dpi=400, bbox_inches='tight')
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
+                        dpi=400, bbox_inches='tight')
         # plt.show()
 
     def plot_strategy_proportions_pertrial(self, S, suffix=""):
@@ -646,7 +649,7 @@ class Experiment():
         S = list(total_set)
         return S
 
-    def plot_decision_systems_proportions(self, DS_proportions):
+    def plot_decision_systems_proportions_intotal(self, DS_proportions):
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
                                   "Model-free values and heuristics",
                                   "Pavlovian", "Satisficing and stopping"]
@@ -658,7 +661,7 @@ class Experiment():
                 for i in range(len(strategies[pid])):
                     for j in range(len(decision_system_labels)):
                         data.append([experiment_num, i, decision_system_labels[j],
-                                          DS_proportions[strategies[pid][i] - 1][j] * 100])
+                                     DS_proportions[strategies[pid][i] - 1][j] * 100])
             return data
 
         data = get_ds_data(self.participant_strategies, self.exp_num)
@@ -667,35 +670,52 @@ class Experiment():
         plt.figure(figsize=(15, 9))
         plt.ylim(top=60)
         sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
-        #plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.pdf", bbox_inches='tight')
+        # plt.show()
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png", bbox_inches='tight')
 
-    def plot_strategies_proportions(self):
-        reward_structures_count = self.get_strategy_proportions()
+    def plot_strategies_proportions_intotal(self):
+        reward_structures_count = self.get_strategy_proportions()  # porportion of strategies
 
         strategies_set = self.get_top_k_strategies(k=3)
-        strategies_list = sorted(list(strategies_set))
+        strategies_list = sorted(list(strategies_set))  # get top k strategies
 
-        reward_structures = self.exp_num
         data = []
         columns = ['Experiment', 'Strategy', 'Proportion (%)']
         # todo: does this make sense?
-        strategy_labels = ["Random search for best possible final outcome", "Myopic Forward planning with satisficing", "No planning", "Satisficing Best First Search", "Excessive goal-setting",
-                           "Some immediate outcomes after all final outcomes", "Immediate and final outcomes with satisficing", "Intermediate outcome of the best immediate outcome"]
+        strategy_labels = ["Random search for best possible final outcome", "Myopic Forward planning with satisficing",
+                           "No planning", "Satisficing Best First Search", "Excessive goal-setting",
+                           "Some immediate outcomes after all final outcomes",
+                           "Immediate and final outcomes with satisficing",
+                           "Intermediate outcome of the best immediate outcome"]
 
         for strategy in strategies_list:
-            #data.append([reward_structures, strategy_labels[strategies_list.index(strategy)], reward_structures[strategy]*100])
-            data.append([reward_structures, strategy, reward_structures_count[strategy]*100])
+            # data.append([reward_structures, strategy_labels[strategies_list.index(strategy)], reward_structures[strategy]*100])
+            data.append([self.exp_num, strategy, reward_structures_count[strategy] * 100])
         df = pd.DataFrame(data, columns=columns)
         plt.figure(figsize=(12, 9))
-        sns.barplot(x = 'Experiment', y='Proportion (%)', hue='Strategy', data=df)
+        sns.barplot(x='Experiment', y='Proportion (%)', hue='Strategy', data=df)
+        # plt.show()
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/strategy_proportion_total.png", bbox_inches='tight')
+
+    def plot_clusters_proportions_intotal(self):
+        reward_structures_count = self.get_cluster_proportions()
+        data = []
+        columns = ['Experiment', 'Cluster Type', 'Proportion (%)']
+        # cluster_labels = ["Immediate outcomes of the best final outcomes", "Local Search", "Frugal planning", "Maximizing goal-setting without backward planning", "Other Goal setting strategies", "Miscellaneous strategies"]
+
+        # t_prop = 0
+        for keys, values in reward_structures_count.items():
+            data.append([self.exp_num, keys, values * 100])
+            # t_prop += reward_structures_count[cluster]
+        df = pd.DataFrame(data, columns=columns)
+
+        plt.figure(figsize=(12, 9))
+        sns.barplot(x='Experiment', y='Proportion (%)', hue='Cluster Type', data=df) #todo: add actual numbers to the plot
+        plt.ylim(top=60)
         #plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/strategy_proportion_total.pdf", bbox_inches='tight')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
-    #todo: def plot_clusters_proportions(self):
-
-    #todo: def change_frequencies_per_trial(self):
-
+    # todo: def change_frequencies_per_trial_intotal(self):
 
     def summarize(self, features, normalized_features, strategy_weights,
                   decision_systems, W_DS,
@@ -737,17 +757,18 @@ class Experiment():
 
         # plot regarding decision systems
         self.plot_average_ds()
-        self.plot_decision_systems_proportions(DS_proportions)
+        self.plot_decision_systems_proportions_intotal(DS_proportions)
 
         # plot regarding the strategies
         S = self.get_top_k_strategies(k=5)
         self.plot_strategy_proportions_pertrial(S)
-        self.plot_strategies_proportions()
-        self.plot_strategy_scores(strategy_scores) # not saved as plot
+        self.plot_strategies_proportions_intotal()
+        self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
         # plot regarding strategy clusters
         self.plot_cluster_proportions(C=plot_clusters)
-
+        self.plot_clusters_proportions_intotal()
 
         # self.plot_parallel_coordinates(mode=cluster_mode)
 
+    #todo: def statistical_tests(self):

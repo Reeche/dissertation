@@ -83,5 +83,7 @@ if __name__ == "__main__":
                   precomputed_temperatures=temperatures,
                   show_pids=False)
 
+    #exp.statistical_tests()
+
 
 # todo: somehow this script causes python to crash/exit itself.
