@@ -1,5 +1,6 @@
 import sys
 from utils import learning_utils, distributions
+
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from src.utils.learning_utils import pickle_load, get_normalized_features,\
@@ -83,7 +84,8 @@ if __name__ == "__main__":
                   precomputed_temperatures=temperatures,
                   show_pids=False)
 
-    #exp.statistical_tests()
-
-
-# todo: somehow this script causes python to crash/exit itself.
+    print(exp.statistical_kpis(features, normalized_features, strategy_weights,
+                                     decision_systems, W_DS, DS_proportions, strategy_scores,
+                                     cluster_scores, cluster_map, precomputed_strategies=strategies,
+                                     precomputed_temperatures=temperatures,
+                                     show_pids=False))

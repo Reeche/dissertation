@@ -413,6 +413,7 @@ class Experiment():
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
 
+
     def get_proportions(self, strategies, trial_wise=False):
         strategies_list = [strategies[pid] for pid in self.pids]
         total_S = []
@@ -710,9 +711,10 @@ class Experiment():
         df = pd.DataFrame(data, columns=columns)
 
         plt.figure(figsize=(12, 9))
-        sns.barplot(x='Experiment', y='Proportion (%)', hue='Cluster Type', data=df) #todo: add actual numbers to the plot
+        sns.barplot(x='Experiment', y='Proportion (%)', hue='Cluster Type',
+                    data=df)  # todo: add actual numbers to the plot
         plt.ylim(top=60)
-        #plt.show()
+        # plt.show()
         plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
     # todo: def change_frequencies_per_trial_intotal(self):
@@ -729,6 +731,34 @@ class Experiment():
                   precomputed_strategies=None,
                   precomputed_temperatures=None
                   ):
+        """
+        Creates plots about 1. strategy development over trials and overall frequency, 2. strategy cluster development over trials and overall frequency,
+        3. decision system development over trials and overall frequency (6 plots in total).
+        The plots can be found in the results folder
+        Args:
+            features:
+            normalized_features:
+            strategy_weights:
+            decision_systems:
+            W_DS:
+            DS_proportions:
+            strategy_scores:
+            cluster_scores:
+            cluster_map:
+            max_evals:
+            plot_strategies:
+            plot_clusters:
+            n_clusters:
+            max_clusters:
+            cluster_mode:
+            show_pids:
+            show_strategies:
+            precomputed_strategies:
+            precomputed_temperatures:
+
+        Returns:
+
+        """
         self.infer_strategies(precomputed_strategies=precomputed_strategies,
                               precomputed_temperatures=precomputed_temperatures,
                               max_evals=max_evals, show_pids=show_pids)
@@ -771,4 +801,49 @@ class Experiment():
 
         # self.plot_parallel_coordinates(mode=cluster_mode)
 
-    #todo: def statistical_tests(self):
+    def statistical_kpis(self, features, normalized_features, strategy_weights,
+                         decision_systems, W_DS,
+                         DS_proportions, strategy_scores, cluster_scores, cluster_map,
+                         max_evals=20,
+                         show_pids=True,
+                         show_strategies=False,
+                         precomputed_strategies=None,
+                         precomputed_temperatures=None
+                         ):
+
+        self.infer_strategies(precomputed_strategies=precomputed_strategies,
+                              precomputed_temperatures=precomputed_temperatures,
+                              max_evals=max_evals, show_pids=show_pids)
+        if show_strategies:
+            print("\n", dict(self.participant_strategies), "\n")
+        self.init_feature_properties(features, normalized_features, strategy_weights)
+        self.init_decision_system_properties(decision_systems, W_DS, DS_proportions)
+
+        self.pipeline = self.cm.pipeline
+
+
+        self.strategy_transitions_chi2()
+        self.performance_transitions_chi2(strategy_scores=strategy_scores)
+        self.frequency_transitions_chi2()
+
+        self.init_strategy_clusters(cluster_map)
+        self.strategy_transitions_chi2(clusters=True)
+        self.performance_transitions_chi2(cluster_scores=cluster_scores)
+        self.frequency_transitions_chi2(clusters=True)
+
+
+
+        # strategies
+        S = self.get_top_k_strategies(k=5)
+        strategy_proportions = self.get_strategy_proportions()
+
+        # clusters
+        cluster_proportions = self.get_cluster_proportions()
+
+        # decision systems
+        #decision_system_proportions = self.plot_average_ds()
+        decision_system_proportions = self.participants[1]
+
+        return strategy_proportions, cluster_proportions, decision_system_proportions
+
+
