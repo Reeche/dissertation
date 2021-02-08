@@ -384,7 +384,7 @@ class Experiment():
 
     def plot_average_ds(self, suffix=""):
         """
-        Plot the averaged decision system proportions
+        Plot the averaged decision system proportions per trial
         Args:
             suffix:
 
@@ -650,7 +650,7 @@ class Experiment():
         S = list(total_set)
         return S
 
-    def plot_decision_systems_proportions_intotal(self, DS_proportions):
+    def plot_decision_systems_proportions_intotal(self, DS_proportions, plot=True):
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
                                   "Model-free values and heuristics",
                                   "Pavlovian", "Satisficing and stopping"]
@@ -666,13 +666,16 @@ class Experiment():
             return data
 
         data = get_ds_data(self.participant_strategies, self.exp_num)
-
         df = pd.DataFrame(data, columns=data_columns)
-        plt.figure(figsize=(15, 9))
-        plt.ylim(top=60)
-        sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
-        # plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png", bbox_inches='tight')
+        if plot is True:
+            plt.figure(figsize=(15, 9))
+            plt.ylim(top=60)
+            sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
+            # plt.show()
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png", bbox_inches='tight')
+        else:
+            df = df.groupby('Decision System').mean()
+            return df
 
     def plot_strategies_proportions_intotal(self):
         reward_structures_count = self.get_strategy_proportions()  # porportion of strategies
@@ -822,19 +825,19 @@ class Experiment():
         self.pipeline = self.cm.pipeline
 
 
-        self.strategy_transitions_chi2()
-        self.performance_transitions_chi2(strategy_scores=strategy_scores)
-        self.frequency_transitions_chi2()
+        # self.strategy_transitions_chi2()
+        # self.performance_transitions_chi2(strategy_scores=strategy_scores)
+        # self.frequency_transitions_chi2()'
 
         self.init_strategy_clusters(cluster_map)
-        self.strategy_transitions_chi2(clusters=True)
-        self.performance_transitions_chi2(cluster_scores=cluster_scores)
-        self.frequency_transitions_chi2(clusters=True)
+        # self.strategy_transitions_chi2(clusters=True)
+        # self.performance_transitions_chi2(cluster_scores=cluster_scores)
+        # self.frequency_transitions_chi2(clusters=True)
 
 
 
         # strategies
-        S = self.get_top_k_strategies(k=5)
+        #S = self.get_top_k_strategies(k=5)
         strategy_proportions = self.get_strategy_proportions()
 
         # clusters
@@ -842,7 +845,8 @@ class Experiment():
 
         # decision systems
         #decision_system_proportions = self.plot_average_ds()
-        decision_system_proportions = self.participants[1]
+        decision_system_proportions = self.plot_decision_systems_proportions_intotal(DS_proportions, plot=False)
+        #decision_system_proportions = self.participants[1].decision_system_proportions
 
         return strategy_proportions, cluster_proportions, decision_system_proportions
 
