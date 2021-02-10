@@ -9,6 +9,7 @@ import seaborn as sns
 from utils.analysis_utils import get_data
 from utils.learning_utils import sidak_value, pickle_load
 from utils.sequence_utils import get_acls
+from utils.statistics_utils import create_comparable_data
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
@@ -401,7 +402,8 @@ class Experiment():
         decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
-        plt.figure(figsize=(15, 10))
+        #plt.ioff()
+        fig = plt.figure(figsize=(15, 10))
         for i in range(num_decision_systems):
             plt.plot(range(1, num_trials + 1), mean_dsw[:, i], label=decision_system_labels[i], linewidth=3.0)
         plt.xlabel("Trial Number", size=24)
@@ -412,7 +414,8 @@ class Experiment():
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
-
+        plt.close(fig)
+        return mean_dsw
 
     def get_proportions(self, strategies, trial_wise=False):
         strategies_list = [strategies[pid] for pid in self.pids]
@@ -480,7 +483,7 @@ class Experiment():
             S_proportions.append(props)
         S_proportions = np.array(S_proportions)
         # labels = ["Myopic Forward Planning", "Goal setting with additional immediate exploration", "Postive satisificing with two additional nodes", "Exploring parent of best leaf", "No planning", "Optimal Planning"]
-        plt.figure(figsize=(15, 10))
+        fig = plt.figure(figsize=(15, 10))
         prefix = "Strategy"
         if cluster:
             prefix = "Cluster"
@@ -499,6 +502,7 @@ class Experiment():
             plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
                         dpi=400, bbox_inches='tight')
         # plt.show()
+        plt.close(fig)
 
     def plot_strategy_proportions_pertrial(self, S, suffix=""):
         if not hasattr(self, 'trial_strategy_proportions'):
@@ -569,8 +573,9 @@ class Experiment():
 
     def plot_cluster_proportions(self, C):
         if not hasattr(self, 'trial_cluster_proportions'):
-            self.get_cluster_proportions(trial_wise=True)
+            cluster_proportions = self.get_cluster_proportions(trial_wise=True)
         self.plot_proportions(self.trial_cluster_proportions, C, title="Cluster Proportions", cluster=True)
+        return cluster_proportions
 
     def attach_pipeline(self, pipeline):
         self.pipeline = pipeline
@@ -672,7 +677,8 @@ class Experiment():
             plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
             # plt.show()
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png", bbox_inches='tight')
+            plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
+                        bbox_inches='tight')
         else:
             df = df.groupby('Decision System').mean()
             return df
@@ -720,7 +726,52 @@ class Experiment():
         # plt.show()
         plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
-    # todo: def change_frequencies_per_trial_intotal(self):
+    def trial_decision_system_change_rate(self, decision_system_by_trial):
+        difference = np.diff(decision_system_by_trial)
+        #difference_sum = np.sum(difference, axis=1)
+
+        fig = plt.figure(figsize=(15, 10))
+        prefix = "Decision System"
+        for i in range(difference.shape[1]):
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i}", linewidth=3.0)
+        plt.xlabel("Trial Number", fontsize=24)
+        plt.ylabel("Rate of change of decision systems", fontsize=24)
+        # plt.title(title, fontsize=24)
+        plt.ylim(top=1.0)
+        plt.tick_params(labelsize=22)
+        plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
+                    bbox_inches='tight')
+        # plt.show()
+        plt.close(fig)
+
+
+    #todo: both change rate functions use the same plot function as plot_proportions. Clean repetitive code
+
+    def trial_cluster_change_rate(self, clusters_by_trial):
+        temp_dict = list(clusters_by_trial.values())
+        all_list = []
+        for i in range(0, len(temp_dict)):
+            _dict = create_comparable_data(temp_dict[i], 13)
+            all_list.append(list(_dict.values()))
+        cluster_array = np.asarray(all_list)
+
+        difference = np.diff(cluster_array)
+        #difference_sum = np.sum(difference, axis=1)
+        fig = plt.figure(figsize=(15, 10))
+        prefix = "Strategy"
+        for i in range(difference.shape[1]):
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i}", linewidth=3.0)
+        plt.xlabel("Trial Number", fontsize=24)
+        plt.ylabel("Rate of change of strategy clusters", fontsize=24)
+        # plt.title(title, fontsize=24)
+        plt.ylim(top=1.0)
+        plt.tick_params(labelsize=22)
+        plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
+                    bbox_inches='tight')
+        # plt.show()
+        plt.close(fig)
 
     def summarize(self, features, normalized_features, strategy_weights,
                   decision_systems, W_DS,
@@ -788,8 +839,15 @@ class Experiment():
         self.performance_transitions_chi2(cluster_scores=cluster_scores)
         self.frequency_transitions_chi2(clusters=True)
 
+        # plot regarding strategy clusters
+        cluster_proportions = self.plot_cluster_proportions(C=plot_clusters)
+        #print(cluster_proportions)
+        self.trial_cluster_change_rate(cluster_proportions)
+        self.plot_clusters_proportions_intotal()
+
         # plot regarding decision systems
-        self.plot_average_ds()
+        mean_dsw = self.plot_average_ds()
+        self.trial_decision_system_change_rate(mean_dsw)
         self.plot_decision_systems_proportions_intotal(DS_proportions)
 
         # plot regarding the strategies
@@ -798,9 +856,7 @@ class Experiment():
         self.plot_strategies_proportions_intotal()
         self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
-        # plot regarding strategy clusters
-        self.plot_cluster_proportions(C=plot_clusters)
-        self.plot_clusters_proportions_intotal()
+
 
         # self.plot_parallel_coordinates(mode=cluster_mode)
 
@@ -824,7 +880,6 @@ class Experiment():
 
         self.pipeline = self.cm.pipeline
 
-
         # self.strategy_transitions_chi2()
         # self.performance_transitions_chi2(strategy_scores=strategy_scores)
         # self.frequency_transitions_chi2()'
@@ -834,20 +889,16 @@ class Experiment():
         # self.performance_transitions_chi2(cluster_scores=cluster_scores)
         # self.frequency_transitions_chi2(clusters=True)
 
-
-
         # strategies
-        #S = self.get_top_k_strategies(k=5)
+        # S = self.get_top_k_strategies(k=5)
         strategy_proportions = self.get_strategy_proportions()
 
         # clusters
         cluster_proportions = self.get_cluster_proportions()
 
         # decision systems
-        #decision_system_proportions = self.plot_average_ds()
+        # decision_system_proportions = self.plot_average_ds()
         decision_system_proportions = self.plot_decision_systems_proportions_intotal(DS_proportions, plot=False)
-        #decision_system_proportions = self.participants[1].decision_system_proportions
+        # decision_system_proportions = self.participants[1].decision_system_proportions
 
         return strategy_proportions, cluster_proportions, decision_system_proportions
-
-

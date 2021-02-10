@@ -74,9 +74,14 @@ if __name__ == "__main__":
         print("Exception", e)
         # exit()
 
-    save_path = f"../results/{exp_num}"
-    if block:
-        save_path += f"_{block}"
+    if exp_num == "c2.1_dec":
+        save_path = f"../results/c2.1"
+        if block:
+            save_path += f"_{block}"
+    else:
+        save_path = f"../results/{exp_num}"
+        if block:
+            save_path += f"_{block}"
     learning_utils.create_dir(save_path)
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
@@ -84,8 +89,14 @@ if __name__ == "__main__":
                   precomputed_temperatures=temperatures,
                   show_pids=False)
 
-    print(exp.statistical_kpis(features, normalized_features, strategy_weights,
-                                     decision_systems, W_DS, DS_proportions, strategy_scores,
-                                     cluster_scores, cluster_map, precomputed_strategies=strategies,
-                                     precomputed_temperatures=temperatures,
-                                     show_pids=False))
+    # strategy_proportions, cluster_proportions, decision_system_proportions = exp.statistical_kpis(features,
+    #                                                                                               normalized_features,
+    #                                                                                               strategy_weights,
+    #                                                                                               decision_systems,
+    #                                                                                               W_DS, DS_proportions,
+    #                                                                                               strategy_scores,
+    #                                                                                               cluster_scores,
+    #                                                                                               cluster_map,
+    #                                                                                               precomputed_strategies=strategies,
+    #                                                                                               precomputed_temperatures=temperatures,
+    #                                                                                               show_pids=False)
