@@ -62,6 +62,8 @@ class Participant():
                                           decision_system_proportions):
         self.decision_systems = decision_systems
         self.decision_system_weights = np.array([decision_system_weights[s - 1] for s in self.strategies])
+        #print("PORPORTIONS", np.sum(decision_system_proportions, axis= 1))
+        #print(decision_system_proportions.shape)
         self.decision_system_proportions = np.array([decision_system_proportions[s - 1] for s in self.strategies])
 
     def attach_clusters(self, cluster_map):
@@ -395,13 +397,16 @@ class Experiment():
         DSP = []
         num_trials = self.num_trials
         for pid in self.pids:
-            decision_systems = self.participants[pid].decision_systems
-            ds_prop = self.participants[pid].decision_system_proportions
+            decision_systems = self.participants[pid].decision_systems #the names  ['mental_effort_avoidance', 'model_based', 'pavlovian', 'pruning', 'relational', 'satisficing', 'stopping_criteria', 'structural']
+            ds_prop = self.participants[pid].decision_system_proportions #todo: they do not sum up to one? shape 35,8
+            #print("DS_PROP", ds_prop.shape)
+            #print("DS SUM", np.sum(ds_prop))
             if len(ds_prop) == num_trials:
                 DSP.append(ds_prop)
         decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
+        #print("MEAN", np.sum(mean_dsw, axis=1))
         #plt.ioff()
         fig = plt.figure(figsize=(15, 10))
         for i in range(num_decision_systems):
@@ -415,6 +420,7 @@ class Experiment():
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
         plt.close(fig)
+        #print(mean_dsw.shape)
         return mean_dsw
 
     def get_proportions(self, strategies, trial_wise=False):
@@ -669,16 +675,16 @@ class Experiment():
                         data.append([experiment_num, i, decision_system_labels[j],
                                      DS_proportions[strategies[pid][i] - 1][j] * 100])
             return data
-
         data = get_ds_data(self.participant_strategies, self.exp_num)
         df = pd.DataFrame(data, columns=data_columns)
         if plot is True:
-            plt.figure(figsize=(15, 9))
-            plt.ylim(top=60)
+            fig = plt.figure(figsize=(15, 9))
+            #plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
             # plt.show()
             plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                         bbox_inches='tight')
+            plt.close(fig)
         else:
             df = df.groupby('Decision System').mean()
             return df
@@ -727,49 +733,51 @@ class Experiment():
         plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
     def trial_decision_system_change_rate(self, decision_system_by_trial):
-        difference = np.diff(decision_system_by_trial)
+        #print(decision_system_by_trial)
+        difference = np.diff(decision_system_by_trial, axis=0)
         #difference_sum = np.sum(difference, axis=1)
-
+        decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
+                                  "Model-free values and heuristics",
+                                  "Pavlovian", "Satisficing and stopping"]
         fig = plt.figure(figsize=(15, 10))
         prefix = "Decision System"
         for i in range(difference.shape[1]):
-            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i}", linewidth=3.0)
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=decision_system_labels[i], linewidth=3.0)
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Rate of change of decision systems", fontsize=24)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=1.0)
+        plt.ylim(top=0.4)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
-                    bbox_inches='tight')
+                    dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
 
+    #todo: Clean repetitive code
 
-    #todo: both change rate functions use the same plot function as plot_proportions. Clean repetitive code
 
-    def trial_cluster_change_rate(self, clusters_by_trial):
-        temp_dict = list(clusters_by_trial.values())
-        all_list = []
-        for i in range(0, len(temp_dict)):
-            _dict = create_comparable_data(temp_dict[i], 13)
-            all_list.append(list(_dict.values()))
-        cluster_array = np.asarray(all_list)
-
-        difference = np.diff(cluster_array)
-        #difference_sum = np.sum(difference, axis=1)
+    def trial_cluster_change_rate(self, trial_prop, C):
+        C_proportions = []
+        for t in trial_prop.keys():
+            props = []
+            for clusters in C:
+                props.append(trial_prop[t].get(clusters, 0))
+            C_proportions.append(props)
+        C_proportions = np.array(C_proportions)
+        difference = np.diff(C_proportions, axis=0)
         fig = plt.figure(figsize=(15, 10))
-        prefix = "Strategy"
+        prefix = "Cluster"
         for i in range(difference.shape[1]):
-            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i}", linewidth=3.0)
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i+1}", linewidth=3.0)
         plt.xlabel("Trial Number", fontsize=24)
-        plt.ylabel("Rate of change of strategy clusters", fontsize=24)
+        plt.ylabel("Rate of change of clusters", fontsize=24)
         # plt.title(title, fontsize=24)
         plt.ylim(top=1.0)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
-                    bbox_inches='tight')
+                    dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
 
@@ -777,7 +785,7 @@ class Experiment():
                   decision_systems, W_DS,
                   DS_proportions, strategy_scores, cluster_scores, cluster_map,
                   max_evals=20,
-                  plot_strategies=[21, 30], plot_clusters=list(range(1, 11)),
+                  plot_strategies=[21, 30], plot_clusters=list(range(1, 14)),
                   n_clusters=None, max_clusters=10,
                   cluster_mode="participant",  # Can also take time,
                   show_pids=True,
@@ -842,7 +850,8 @@ class Experiment():
         # plot regarding strategy clusters
         cluster_proportions = self.plot_cluster_proportions(C=plot_clusters)
         #print(cluster_proportions)
-        self.trial_cluster_change_rate(cluster_proportions)
+        #self.trial_cluster_change_rate(cluster_proportions)
+        self.trial_cluster_change_rate(self.trial_cluster_proportions, C=plot_clusters)
         self.plot_clusters_proportions_intotal()
 
         # plot regarding decision systems

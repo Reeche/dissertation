@@ -1,7 +1,7 @@
 import sys
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
-
+import numpy as np
 from utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
@@ -96,6 +96,9 @@ decreasing = create_comparable_data(cluster_proportions_decreasing, len=14)
 constant = create_comparable_data(cluster_proportions_constant, len=14)
 
 print(" ----------------- Clusters -----------------")
+print(np.sum(list(increasing.values())))
+print(np.sum(list(decreasing.values())))
+print(np.sum(list(constant.values())))
 stat, p = friedmanchisquare(list(increasing.values()), list(decreasing.values()), list(constant.values()))
 print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
 
@@ -111,6 +114,9 @@ print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 
 print(" ----------------- Decision systems -----------------")
+print(np.sum(decision_system_proportions_increasing["Relative Influence (%)"].tolist()))
+print(np.sum(decision_system_proportions_decreasing["Relative Influence (%)"].tolist()))
+print(np.sum(decision_system_proportions_constant["Relative Influence (%)"].tolist()))
 stat, p = friedmanchisquare(decision_system_proportions_increasing["Relative Influence (%)"].tolist(),
                             decision_system_proportions_decreasing["Relative Influence (%)"].tolist(),
                             decision_system_proportions_constant["Relative Influence (%)"].tolist())
@@ -124,3 +130,5 @@ print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 stat, p = mannwhitneyu(decision_system_proportions_decreasing["Relative Influence (%)"].tolist(), decision_system_proportions_constant["Relative Influence (%)"].tolist())
 print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+
+#todo: statistical tests comparing the beginning of the trial and end of the trial: decision system and cluster proportions

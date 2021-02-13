@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 from utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
@@ -83,20 +84,9 @@ if __name__ == "__main__":
         if block:
             save_path += f"_{block}"
     learning_utils.create_dir(save_path)
+    #print("DS", np.sum(DS_proportions, axis = 1))
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
                   cluster_scores, cluster_map, precomputed_strategies=strategies,
                   precomputed_temperatures=temperatures,
                   show_pids=False)
-
-    # strategy_proportions, cluster_proportions, decision_system_proportions = exp.statistical_kpis(features,
-    #                                                                                               normalized_features,
-    #                                                                                               strategy_weights,
-    #                                                                                               decision_systems,
-    #                                                                                               W_DS, DS_proportions,
-    #                                                                                               strategy_scores,
-    #                                                                                               cluster_scores,
-    #                                                                                               cluster_map,
-    #                                                                                               precomputed_strategies=strategies,
-    #                                                                                               precomputed_temperatures=temperatures,
-    #                                                                                               show_pids=False)
