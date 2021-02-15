@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 from utils import learning_utils, distributions
-
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from src.utils.learning_utils import pickle_load, get_normalized_features,\
@@ -16,10 +15,12 @@ Example: python3 analyze_sequences.py increasing_variance training none
 """
 
 if __name__ == "__main__":
-    reward_structure = sys.argv[1]
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    # reward_structure = sys.argv[1]
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+    reward_structure = "increasing_variance"
+    block ="training"
 
     # Initializations
     strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")

@@ -397,16 +397,17 @@ class Experiment():
         DSP = []
         num_trials = self.num_trials
         for pid in self.pids:
-            decision_systems = self.participants[pid].decision_systems #the names  ['mental_effort_avoidance', 'model_based', 'pavlovian', 'pruning', 'relational', 'satisficing', 'stopping_criteria', 'structural']
-            ds_prop = self.participants[pid].decision_system_proportions #todo: they do not sum up to one? shape 35,8
-            #print("DS_PROP", ds_prop.shape)
-            #print("DS SUM", np.sum(ds_prop))
+            decision_systems = self.participants[pid].decision_systems
+            ds_prop = self.participants[pid].decision_system_proportions
             if len(ds_prop) == num_trials:
                 DSP.append(ds_prop)
-        decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
+        decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
+                                  "Model-free values and heuristics",
+                                  "Pavlovian", "Satisficing and stopping"]
+        #decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
-        #print("MEAN", np.sum(mean_dsw, axis=1))
+        print(np.sum(mean_dsw, axis=1))
         #plt.ioff()
         fig = plt.figure(figsize=(15, 10))
         for i in range(num_decision_systems):
@@ -675,9 +676,10 @@ class Experiment():
                         data.append([experiment_num, i, decision_system_labels[j],
                                      DS_proportions[strategies[pid][i] - 1][j] * 100])
             return data
+
         data = get_ds_data(self.participant_strategies, self.exp_num)
         df = pd.DataFrame(data, columns=data_columns)
-        if plot is True:
+        if plot:
             fig = plt.figure(figsize=(15, 9))
             #plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
@@ -686,8 +688,11 @@ class Experiment():
                         bbox_inches='tight')
             plt.close(fig)
         else:
-            df = df.groupby('Decision System').mean()
-            return df
+            #averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
+            aggregated_df = df.groupby('Decision System').sum()
+            averaged_df = (aggregated_df/35)/15 # divided by number of participants and trials
+            #print("AVERAGED DF", averaged_df)
+            return averaged_df
 
     def plot_strategies_proportions_intotal(self):
         reward_structures_count = self.get_strategy_proportions()  # porportion of strategies
@@ -753,9 +758,6 @@ class Experiment():
                     dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
-
-    #todo: Clean repetitive code
-
 
     def trial_cluster_change_rate(self, trial_prop, C):
         C_proportions = []
@@ -849,15 +851,13 @@ class Experiment():
 
         # plot regarding strategy clusters
         cluster_proportions = self.plot_cluster_proportions(C=plot_clusters)
-        #print(cluster_proportions)
-        #self.trial_cluster_change_rate(cluster_proportions)
         self.trial_cluster_change_rate(self.trial_cluster_proportions, C=plot_clusters)
         self.plot_clusters_proportions_intotal()
 
         # plot regarding decision systems
         mean_dsw = self.plot_average_ds()
         self.trial_decision_system_change_rate(mean_dsw)
-        self.plot_decision_systems_proportions_intotal(DS_proportions)
+        self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
 
         # plot regarding the strategies
         S = self.get_top_k_strategies(k=5)
@@ -906,8 +906,14 @@ class Experiment():
         cluster_proportions = self.get_cluster_proportions()
 
         # decision systems
-        # decision_system_proportions = self.plot_average_ds()
+        mean_DSW = self.plot_average_ds()
+        #print("mean_DSW", np.sum(mean_DSW, axis=1))
         decision_system_proportions = self.plot_decision_systems_proportions_intotal(DS_proportions, plot=False)
         # decision_system_proportions = self.participants[1].decision_system_proportions
 
-        return strategy_proportions, cluster_proportions, decision_system_proportions
+        #mean_dsw = self.plot_average_ds()
+        #print(np.sum(mean_dsw, axis=1))
+
+        return strategy_proportions, cluster_proportions, mean_DSW
+
+    #todo: Clean repetitive code
