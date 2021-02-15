@@ -43,7 +43,12 @@ def analyze_trajectory(trajectory, print_trajectories=False):
                 print("Trajectory:", tr[0][0])
                 print("Repetition Frequency:", tr[0][1])
                 print("Freq:", tr[1], "\n")
-            final_repetition_count.append(tr[0][1][-1])
+            temp = list(tr[0][1])
+            temp.pop()
+            number_of_trials_before_last_trial = np.sum(temp)
+            #final_repetition_count.append(tr[0][1][-1])
+            final_repetition_count.append(number_of_trials_before_last_trial)
+            #print("The last item in Repetition Frequency", tr[0][1][-1])
 
     average_trials_repetition = np.mean(final_repetition_count)
     median_trials_repetition = np.median(final_repetition_count)
@@ -53,7 +58,7 @@ def analyze_trajectory(trajectory, print_trajectories=False):
 
 # Load your experiment strategies here as a dict
 #strategies = learning_utils.pickle_load("../results/final_strategy_inferences/v1.0_strategies.pkl")
-strategies = learning_utils.pickle_load("../results/inferred_strategies/constant_variance_training/strategies.pkl")
+strategies = learning_utils.pickle_load("../results/inferred_strategies/decreasing_variance_training/strategies.pkl")
 
 clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
 cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")

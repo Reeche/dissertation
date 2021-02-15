@@ -1,14 +1,18 @@
 import sys
+import pandas as pd
+import numpy as np
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
-import numpy as np
+import pymannkendall as mk
 from utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
+
 from utils.experiment_utils import Experiment
 from computational_microscope.computational_microscope import ComputationalMicroscope
 from utils.statistics_utils import create_comparable_data
+
 """
 This script runs statistical tests that tests whether:
 1. strategy development and overall strategy frequency is significantly different across conditions
@@ -68,67 +72,156 @@ def get_data_of_cluster_decision_system(keys, values):
     except Exception as e:
         print("Exception", e)
 
-    strategy_proportions, cluster_proportions, decision_system_proportions = exp.statistical_kpis(features,
-                                                                                                  normalized_features,
-                                                                                                  strategy_weights,
-                                                                                                  decision_systems,
-                                                                                                  W_DS, DS_proportions,
-                                                                                                  strategy_scores,
-                                                                                                  cluster_scores,
-                                                                                                  cluster_map,
-                                                                                                  precomputed_strategies=strategies,
-                                                                                                  precomputed_temperatures=temperatures,
-                                                                                                  show_pids=False)
-    return strategy_proportions, cluster_proportions, decision_system_proportions
-
+    strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw = exp.statistical_kpis(
+        features,
+        normalized_features,
+        strategy_weights,
+        decision_systems,
+        W_DS, DS_proportions,
+        strategy_scores,
+        cluster_scores,
+        cluster_map,
+        precomputed_strategies=strategies,
+        precomputed_temperatures=temperatures,
+        show_pids=False)
+    return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
 
 # for keys, values in reward_exps.items():
-strategy_proportions_increasing, cluster_proportions_increasing, decision_system_proportions_increasing = get_data_of_cluster_decision_system(
+strategy_proportions_increasing, strategy_proportions_trialwise_increasing, cluster_proportions_increasing, cluster_proportions_trialwise_increasing, decision_system_proportions_increasing, mean_dsw_increasing = get_data_of_cluster_decision_system(
     "increasing_variance", "v1.0")
-strategy_proportions_constant, cluster_proportions_constant, decision_system_proportions_constant = get_data_of_cluster_decision_system(
+strategy_proportions_constant, strategy_proportions_trialwise_constant, cluster_proportions_constant, cluster_proportions_trialwise_constant, decision_system_proportions_constant, mean_dsw_constant = get_data_of_cluster_decision_system(
     "constant_variance", "c1.1")
-strategy_proportions_decreasing, cluster_proportions_decreasing, decision_system_proportions_decreasing = get_data_of_cluster_decision_system(
+strategy_proportions_decreasing, strategy_proportions_trialwise_decreasing, cluster_proportions_decreasing, cluster_proportions_trialwise_decreasing, decision_system_proportions_decreasing, mean_dsw_decreasing = get_data_of_cluster_decision_system(
     "decreasing_variance", "c2.1")
 
-increasing = create_comparable_data(cluster_proportions_increasing, len=14)
-decreasing = create_comparable_data(cluster_proportions_decreasing, len=14)
-constant = create_comparable_data(cluster_proportions_constant, len=14)
+# create the data
+increasing_cluster = create_comparable_data(cluster_proportions_increasing, len=14)
+decreasing_cluster = create_comparable_data(cluster_proportions_decreasing, len=14)
+constant_cluster = create_comparable_data(cluster_proportions_constant, len=14)
+
+increasing_ds = decision_system_proportions_increasing["Relative Influence (%)"].tolist()
+decreasing_ds = decision_system_proportions_decreasing["Relative Influence (%)"].tolist()
+constant_ds = decision_system_proportions_constant["Relative Influence (%)"].tolist()
+
+### Statistical differences between the conditions
+print(" ----------------- Difference between Clusters -----------------")
+# print(np.sum(list(increasing.values())))
+# print(np.sum(list(decreasing.values())))
+# print(np.sum(list(constant.values())))
+stat, p = friedmanchisquare(list(increasing_cluster.values()), list(decreasing_cluster.values()),
+                            list(constant_cluster.values()))
+print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(list(increasing_cluster.values()), list(decreasing_cluster.values()))
+print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(list(increasing_cluster.values()), list(constant_cluster.values()))
+print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(list(decreasing_cluster.values()), list(constant_cluster.values()))
+print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+
+print(" ----------------- Difference between Decision systems -----------------")
+# print(np.sum(decision_system_proportions_increasing["Relative Influence (%)"].tolist()))
+# print(np.sum(decision_system_proportions_decreasing["Relative Influence (%)"].tolist()))
+# print(np.sum(decision_system_proportions_constant["Relative Influence (%)"].tolist()))
+
+stat, p = friedmanchisquare(increasing_ds, decreasing_ds, constant_ds)
+print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(increasing_ds, decreasing_ds)
+print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(increasing_ds, constant_ds)
+print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+
+stat, p = mannwhitneyu(decreasing_ds, constant_ds)
+print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+
+### Seasonality
+print(" ----------------- Seasonality -----------------")
+
+print(" ----------------- Strategies -----------------")
+# # Strategies
+# strategy_list_increasing = []
+# strategy_list_decreasing = []
+# strategy_list_constant = []
+# for i in range(0, len(strategy_proportions_trialwise_increasing)):
+#     strategy_list_increasing.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_increasing[i], len=79).values()))
+#     strategy_list_decreasing.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_decreasing[i], len=79).values()))
+#     strategy_list_constant.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_constant[i], len=79).values()))
+#
+# strategy_array_increasing = np.array(strategy_list_increasing)
+# strategy_array_decreasing = np.array(strategy_list_decreasing)
+# strategy_array_constant = np.array(strategy_list_constant)
+#
+# for i in range(0, 79):
+#     increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
+#     print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
+#     print("Mann Kendall Test: Increasing Strategies: ", i, decreasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
+#     print("Mann Kendall Test: Increasing Strategies: ", i, constant_strategy_trend)
 
 print(" ----------------- Clusters -----------------")
-print(np.sum(list(increasing.values())))
-print(np.sum(list(decreasing.values())))
-print(np.sum(list(constant.values())))
-stat, p = friedmanchisquare(list(increasing.values()), list(decreasing.values()), list(constant.values()))
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+cluster_mapping = ["Goal-setting with exhaustive backward planning",
+                   "Forward planning strategies similar to Breadth First Search",
+                   "Middle-out planning",
+                   "Forward planning strategies similar to Best First Search",
+                   "Local search",
+                   "Maximizing Goal-setting with exhaustive backward planning",
+                   "Frugal planning",
+                   "Myopic planning",
+                   "Maximizing goal-setting with limited backward planning",
+                   "Frugal goal-setting strategies",
+                   "Strategy that explores immediate outcomes on the paths to the best final outcomes",
+                   "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing",
+                   "Miscellaneous strategies"]
 
-stat, p = mannwhitneyu(list(increasing.values()), list(decreasing.values()))
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+cluster_list_increasing = []
+cluster_list_decreasing = []
+cluster_list_constant = []
+for i in range(0, len(cluster_proportions_trialwise_increasing)):
+    cluster_list_increasing.append(
+        list(create_comparable_data(cluster_proportions_trialwise_increasing[i], len=13).values()))
+    cluster_list_decreasing.append(
+        list(create_comparable_data(cluster_proportions_trialwise_decreasing[i], len=13).values()))
+    cluster_list_constant.append(
+        list(create_comparable_data(cluster_proportions_trialwise_constant[i], len=13).values()))
 
-stat, p = mannwhitneyu(list(increasing.values()), list(constant.values()))
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+cluster_array_increasing = np.array(cluster_list_increasing)
+cluster_array_decreasing = np.array(cluster_list_decreasing)
+cluster_array_constant = np.array(cluster_list_constant)
 
-stat, p = mannwhitneyu(list(decreasing.values()), list(constant.values()))
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+for i in range(0, 13):
+    increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
+    print("Mann Kendall Test: Increasing Cluster: ", cluster_mapping[i], increasing_cluster_trend)
 
+for i in range(0, 13):
+    decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
+    print("Mann Kendall Test: Decreasing Cluster: ", cluster_mapping[i], decreasing_cluster_trend)
 
+for i in range(0, 13):
+    constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
+    print("Mann Kendall Test: Constant Cluster: ", cluster_mapping[i], constant_cluster_trend)
 
-print(" ----------------- Decision systems -----------------")
-print(np.sum(decision_system_proportions_increasing["Relative Influence (%)"].tolist()))
-print(np.sum(decision_system_proportions_decreasing["Relative Influence (%)"].tolist()))
-print(np.sum(decision_system_proportions_constant["Relative Influence (%)"].tolist()))
-stat, p = friedmanchisquare(decision_system_proportions_increasing["Relative Influence (%)"].tolist(),
-                            decision_system_proportions_decreasing["Relative Influence (%)"].tolist(),
-                            decision_system_proportions_constant["Relative Influence (%)"].tolist())
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+print(" ----------------- Decision System -----------------")
+for i in range(0, 5):
+    increasing_ds_trend = mk.original_test(list(mean_dsw_increasing[:, i]))
+    print("Mann Kendall Test: Increasing Decision System: ", i, increasing_ds_trend)
 
-stat, p = mannwhitneyu(decision_system_proportions_increasing["Relative Influence (%)"].tolist(), decision_system_proportions_decreasing["Relative Influence (%)"].tolist())
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+for i in range(0, 5):
+    decreasing_ds_trend = mk.original_test(list(mean_dsw_decreasing[:, i]))
+    print("Mann Kendall Test: Decreasing Decision System: ", i, decreasing_ds_trend)
 
-stat, p = mannwhitneyu(decision_system_proportions_increasing["Relative Influence (%)"].tolist(), decision_system_proportions_constant["Relative Influence (%)"].tolist())
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(decision_system_proportions_decreasing["Relative Influence (%)"].tolist(), decision_system_proportions_constant["Relative Influence (%)"].tolist())
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-#todo: statistical tests comparing the beginning of the trial and end of the trial: decision system and cluster proportions
+for i in range(0, 5):
+    constant_ds_trend = mk.original_test(list(mean_dsw_constant[:, i]))
+    print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)

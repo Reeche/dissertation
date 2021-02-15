@@ -407,8 +407,6 @@ class Experiment():
         #decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
-        print(np.sum(mean_dsw, axis=1))
-        #plt.ioff()
         fig = plt.figure(figsize=(15, 10))
         for i in range(num_decision_systems):
             plt.plot(range(1, num_trials + 1), mean_dsw[:, i], label=decision_system_labels[i], linewidth=3.0)
@@ -751,7 +749,7 @@ class Experiment():
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Rate of change of decision systems", fontsize=24)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=0.4)
+        plt.ylim(top=0.2)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
@@ -775,7 +773,7 @@ class Experiment():
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Rate of change of clusters", fontsize=24)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=1.0)
+        plt.ylim(top=0.4)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
@@ -901,19 +899,16 @@ class Experiment():
         # strategies
         # S = self.get_top_k_strategies(k=5)
         strategy_proportions = self.get_strategy_proportions()
+        strategy_proportions_trialwise = self.get_strategy_proportions(trial_wise=True)
 
         # clusters
         cluster_proportions = self.get_cluster_proportions()
+        cluster_proportions_trialwise = self.get_cluster_proportions(trial_wise=True)
 
         # decision systems
-        mean_DSW = self.plot_average_ds()
-        #print("mean_DSW", np.sum(mean_DSW, axis=1))
         decision_system_proportions = self.plot_decision_systems_proportions_intotal(DS_proportions, plot=False)
-        # decision_system_proportions = self.participants[1].decision_system_proportions
+        mean_dsw = self.plot_average_ds()
 
-        #mean_dsw = self.plot_average_ds()
-        #print(np.sum(mean_dsw, axis=1))
-
-        return strategy_proportions, cluster_proportions, mean_DSW
+        return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
     #todo: Clean repetitive code
