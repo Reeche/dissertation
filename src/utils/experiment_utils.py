@@ -62,8 +62,6 @@ class Participant():
                                           decision_system_proportions):
         self.decision_systems = decision_systems
         self.decision_system_weights = np.array([decision_system_weights[s - 1] for s in self.strategies])
-        #print("PORPORTIONS", np.sum(decision_system_proportions, axis= 1))
-        #print(decision_system_proportions.shape)
         self.decision_system_proportions = np.array([decision_system_proportions[s - 1] for s in self.strategies])
 
     def attach_clusters(self, cluster_map):
@@ -689,7 +687,6 @@ class Experiment():
             #averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
             aggregated_df = df.groupby('Decision System').sum()
             averaged_df = (aggregated_df/35)/15 # divided by number of participants and trials
-            #print("AVERAGED DF", averaged_df)
             return averaged_df
 
     def plot_strategies_proportions_intotal(self):
@@ -736,7 +733,6 @@ class Experiment():
         plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
     def trial_decision_system_change_rate(self, decision_system_by_trial):
-        #print(decision_system_by_trial)
         difference = np.diff(decision_system_by_trial, axis=0)
         #difference_sum = np.sum(difference, axis=1)
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",

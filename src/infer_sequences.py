@@ -6,7 +6,7 @@ from computational_microscope.computational_microscope import ComputationalMicro
 from utils.experiment_utils import Experiment
 
 """
-Run this file to infer the averaged(?) sequences of the participants. 
+Run this file to infer the averaged sequences of the participants. 
 Format: python3 infer_sequences.py <reward_structure> <block> <pid>
 Example: python3 infer_sequences.py increasing_variance training none
 """

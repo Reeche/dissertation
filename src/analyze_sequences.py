@@ -85,7 +85,6 @@ if __name__ == "__main__":
         if block:
             save_path += f"_{block}"
     learning_utils.create_dir(save_path)
-    #print("DS", np.sum(DS_proportions, axis = 1))
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
                   cluster_scores, cluster_map, precomputed_strategies=strategies,

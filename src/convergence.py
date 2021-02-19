@@ -58,7 +58,7 @@ def analyze_trajectory(trajectory, print_trajectories=False):
 
 # Load your experiment strategies here as a dict
 #strategies = learning_utils.pickle_load("../results/final_strategy_inferences/v1.0_strategies.pkl")
-strategies = learning_utils.pickle_load("../results/inferred_strategies/decreasing_variance_training/strategies.pkl")
+strategies = learning_utils.pickle_load("../results/inferred_strategies/constant_variance_training/strategies.pkl")
 
 clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
 cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")

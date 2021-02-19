@@ -370,6 +370,7 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
     return normalized_features
     
 def get_normalized_features(exp_num):
+    print(exp_num)
     max_feature_values = pickle_load(f"data/normalized_values/{exp_num}/max.pkl")
     min_feature_values = pickle_load(f"data/normalized_values/{exp_num}/min.pkl")
     return max_feature_values, min_feature_values
