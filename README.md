@@ -37,10 +37,10 @@ for each condition as well as an overall file
 Note: you might have to use your own import code depending on your requirements. 
 
 ### Analysis modules
-1. Navigate to `src/`
-2. Run `src/infer_participant_sequences.py` to analyse the click sequence of each participant
-3. Run `src/infer_participant.py` to analyse the click sequence average over conditions
-4. Run `src/fit_mcrl_models.py` to fit the MCRL models
+1. Navigate to `mcl_toolbox/`
+2. Run `mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
+3. Run `mcl_toolbox/infer_participant.py` to analyse the click sequence average over conditions
+4. Run `mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
 
 Note: see each folder or each file for detailed instructions. 
 
