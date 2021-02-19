@@ -1,6 +1,7 @@
 import os
 import re
 
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from toolz import curry
@@ -69,9 +70,7 @@ def parse_json(df):
 
 
 def get_data(version, data_path='data'):
-    curr_dir = os.path.abspath(os.path.dirname(__file__))
-    head, _ = os.path.split(curr_dir)
-    head, _ = os.path.split(head)
+    head = Path(__file__).parents[2]
     data = {}
     for file in glob(os.path.join(head, '{}/human/{}/*.csv'.format(data_path, version))):
         name = os.path.basename(file)[:-4]
