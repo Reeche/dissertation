@@ -1,5 +1,8 @@
 from setuptools import setup
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name='mcl_toolbox',
     version='',
@@ -9,5 +12,6 @@ setup(
     license='',
     author='Ruiqi He, Yash Raj Jain',
     author_email='',
-    description=''
+    description='',
+    install_requires=requirements
 )
