@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+file_location = Path(__file__).parents[0]
+
 #RenameUnpickler from https://stackoverflow.com/a/53327348
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -68,6 +70,7 @@ class structure:
     exp_reward_structures = {'v1.0': 'high_increasing',
                              'F1': 'high_increasing',
                              'c1.1': 'low_constant',
+                             "c2.1_dec":"high_decreasing",
                              'T1.1': 'large_increasing',
                              'IRL1': 'high_increasing'}
 
@@ -78,7 +81,9 @@ class structure:
 
 
 class model:
-    model_attributes = pd.read_csv(os.path.join(Path(__file__).parents[0], "models/rl_models.csv"), index_col=0)
+    model_attributes = pd.read_csv(os.path.join(file_location, "models/rl_models.csv"), index_col=0)
+    #TODO quick fix, we need to rename this column as it breaks the fit_mcrl_models.py code
+    model_attributes.columns = ['habitual_features' if col == 'features' else col for col in model_attributes.columns]
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
 
@@ -86,6 +91,7 @@ class strategies:
     num_strategies = 89
     # strategy_space = list(range(1, num_strategies + 1))
     # problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83] #the microscope strategies are obtained from this
+    strategy_space = pickle_load(os.path.join(file_location, "data/strategy_space.pkl"))
     strategy_spaces = {
         'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56,
                         57, 58,
@@ -96,13 +102,13 @@ class strategies:
                        60, 61, 62,
                        63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
 
-    strategy_weights = pickle_load("data/microscope_weights.pkl")
-    strategy_distances = pickle_load("data/L2_distances.pkl")
+    strategy_weights = pickle_load(os.path.join(file_location,"data/microscope_weights.pkl"))
+    strategy_distances = pickle_load(os.path.join(file_location,"data/L2_distances.pkl"))
 
 
 class features:
-    microscope = pickle_load("data/microscope_features.pkl") # this is 51 features
-    implemented = pickle_load(f"data/implemented_features.pkl")  # this is 56 features
+    microscope = pickle_load(os.path.join(file_location,"data/microscope_features.pkl") )# this is 51 features
+    implemented = pickle_load(os.path.join(file_location,"data/implemented_features.pkl") ) # this is 56 features
 
 
 class hierarchical_params:
