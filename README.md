@@ -15,7 +15,17 @@ How To Use This
 ---------------
 
 ### Installation
-Run `requirements.txt` to install the dependencies. 
+If not running as a package, install the dependencies with:
+```
+pip install -r requirements.txt
+```
+
+To install as a package:
+```
+git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
+cd mcl_toolbox
+pip install -e .
+```
 
 ### Import data
 Assuming you are working with the Mouselab-MDP repository and with a postgres database: 
