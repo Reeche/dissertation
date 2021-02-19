@@ -1,157 +1,121 @@
-import sys
+import sys, os
+from pathlib import Path
 
-# import sys
-# import os
-import numpy as np
-import pandas as pd
-
+from mcl_toolbox.global_vars import *
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils import learning_utils, distributions
-
-# sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.modules["learning_utils"] = learning_utils
-sys.modules["distributions"] = distributions
+from mcl_toolbox.utils.learning_utils import pickle_save, \
+    get_normalized_features, Participant, create_dir, get_number_of_actions_from_branching
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
-
 
 """
 Run this using: python3 fit_mcrl_models.py <model_index> <exp_num> <optimization_criterion> <pid>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 fit_mcrl_models.py 1 v1.0 pseudo_likelihood 1
+Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1
+
+Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 #todo: not all optimization methods with all models. Need to add this somewhere in the code
 
-# todo: strategy_spaces was removed but it caused an error in the code, therefore added back. What is this? Is this needed?
-strategy_spaces = {'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56, 57, 58,
-                                   63, 64, 65, 67, 70, 76, 79, 87, 88],
-                   'microscope': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32,
-                                  33, 34, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
-                                  63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
+
+def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = False, optimization_params = {'optimizer':"hyperopt", 'num_simulations': 5, 'max_evals': 200}):
+    '''
+
+    :param exp_name: experiment name, which is the folder name of the experiment in ../data/human/
+    :param model_index: model index, as displayed in rl_models.csv
+    :param optimization_criterion: as string, choose one of ["pseudo_likelihood", "mer_performance_error", "performance_error"]
+    :param pid: participant id, as int
+    :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
+    :return:
+    '''
+
+    # create directory to save priors in
+    curr_directory = Path(__file__).parents[0]
+    prior_directory = os.path.join(curr_directory,"results/{exp_name}_priors")
+    create_dir(prior_directory)
+    #and directory to save fit model info in
+    model_info_directory = os.path.join(curr_directory, "../results/info_{exp_num}_data")
+    create_dir(model_info_directory)
+
+    #add directory for reward plots, if plotting
+    if plotting:
+        plot_directory = os.path.join(curr_directory,"../results/{exp_num}_plots")
+        create_dir(plot_directory)
+
+    #load experiment specific info
+    normalized_features = get_normalized_features(structure.exp_reward_structures[exp_name])
+    pipeline = structure.exp_pipelines[exp_name]
+    branching = structure.branchings[exp_name]
+    excluded_trials = structure.excluded_trials[exp_name]
+
+    #load model specific info
+    learner_attributes = model.model_attributes.iloc[model_index].to_dict()
+    learner = learner_attributes['model']
+
+    #load strategy space based on model parameters
+    strategy_space_type = learner_attributes['strategy_space_type']
+    strategy_space_type = strategy_space_type if strategy_space_type else 'microscope'
+    strategy_space = strategies.strategy_spaces[strategy_space_type]
 
 
-def expand_path(path, v, s):
-    if v:
-        path+= s
-    return path
-
-
-
-def main():
-    exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
-    exp_reward_structures = learning_utils.pickle_load("data/exp_reward_structures.pkl")
-    features = learning_utils.pickle_load(f"data/implemented_features.pkl")
-
-    exp_num = "c1.1"
-    model_index = 2092
-    optimization_criterion = "pseudo_likelihood"
-    pid = 1
-
-    #exp_num = sys.argv[1]
-    normalized_features = learning_utils.get_normalized_features(exp_reward_structures[exp_num])
-    pipeline = exp_pipelines[exp_num]
-    #transfer_pipeline = [exp_pipelines["T1.1"][21]] + exp_pipelines["F1"][:10] + exp_pipelines["T1.1"][:20]
-    #pipeline = transfer_pipeline
-    num_trials = 30
-
-    model_attributes = pd.read_csv("..models/rl_models.csv")
-    model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
-    
-    #model_index = int(sys.argv[2])
-    num_models = len(model_attributes)
-    rewards = []
-
-
-    num_simulations = 10
-    num_evals = 30 # For hyperopt only
-    excluded_trials = None
-    if exp_num in ["c1.1"]:
-        excluded_trials = list(range(30))
-    participant = learning_utils.Participant(exp_num, pid, excluded_trials=excluded_trials,
+    #prepare participant and env for the optimization
+    participant = Participant(exp_name, pid, excluded_trials=excluded_trials,
                             get_strategies=False)
-    participant_trials = True
-    if participant_trials:
-        env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
+    participant.first_trial_data = participant.get_first_trial_data()
+    participant.all_trials_data = participant.get_all_trials_data()
+    print(len(participant.all_trials_data["actions"]))
+    env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
                                     ground_truth=participant.envs)
+
+    #TODO document why
+    if learner == "rssl":
+        num_priors = 2*len(strategy_space)
     else:
-        num_trials = 100
-        env = GenericMouselabEnv(num_trials, pipeline=[pipeline[0]]*num_trials)
+        num_priors = len(features.implemented)
 
-    models = []
-    attributes = []
-    #for model_index in choices(list(range(num_models)), k=10):
-    #model_indices = [0, 1, 64, 65, 65, 65, 1728, 1729]
-    #model_indices = [0, 1, 65, 1825, 1728, 1729]
-    model_indices = [model_index]
-    #model_indices = [model_index]
-    d = f"../results/info_{exp_num}"
-    #d = f"../results/model_performance_error_{exp_num}"
-    #d2 = f"../results/model_performance_error_{exp_num}_data"
-    d2 = f"../results/info_{exp_num}_data"
-    learning_utils.create_dir(d)
-    learning_utils.create_dir(d2)
-    for model_index in model_indices:
-        print(f"::::::::::::::Model Number {model_index}:::::::::::::::")
-        learner_attributes = model_attributes.iloc[model_index].to_dict()
-        learner = learner_attributes['model']
-        print(learner, learner_attributes)
+    #TODO document why
+    use_pseudo_rewards = learner_attributes['use_pseudo_rewards']
+    pr_weight = learner_attributes['pr_weight']
+    if not pr_weight:
+        learner_attributes['pr_weight'] = 1
+    if not use_pseudo_rewards and pr_weight:
+        raise AssertionError("Not sure why this is not allowed #TODO")
 
-        num_actions = 13 # Find out number of actions
-        strategy_space_type = learner_attributes['strategy_space_type']
-        strategy_space_type = strategy_space_type if strategy_space_type else 'microscope'
-        strategy_space = strategy_spaces[strategy_space_type]
+    #prepare learner_attributes
+    num_actions = get_number_of_actions_from_branching(branching)  # Find out number of actions
+    if learner_attributes["habitual_features"] == "habitual":
+        curr_features = features.implemented
+    else:
+        curr_features = features.microscope
 
-        if learner == "rssl":
-            num_priors = 2*len(strategy_space)
-        else:
-            num_priors = len(features)
+    learner_attributes = dict(features=curr_features, normalized_features=normalized_features,
+            num_priors=num_priors,
+            strategy_space=strategy_space,
+            no_term = not learner_attributes['term'],
+            num_actions = num_actions,
+            **learner_attributes)
+    del learner_attributes['term'] #TODO why do we delete "term" and put in "no_term"
 
-        use_pseudo_rewards = learner_attributes['use_pseudo_rewards']
-        pr_weight = learner_attributes['pr_weight']
-        if not pr_weight:
-            learner_attributes['pr_weight'] = 1
-        if not use_pseudo_rewards and pr_weight:
-            continue
+    #optimization
+    optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)
+    res, prior, obj_fn = optimizer.optimize(optimization_criterion, **optimization_params)
+    print(res[0])
+    losses = [trial['result']['loss'] for trial in res[1]]
+    print(f"Loss: {min(losses)}")
+    min_index = np.argmin(losses)
+    if plotting:
+        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,"{pid}.png"))
+    #save priors
+    pickle_save((res, prior), os.path.join(prior_directory,"{d}/{pid}_{optimization_criterion}_{model_index}.pkl"))
 
-        # if "rssl" in learner or optimization_criterion in ["strategy_accuracy", "strategy_transitions"]:
-        #     if strategy_space_type == "microscope":
-        #         participant.strategies = pickle_load(f"../results/final_strategy_inferences/{exp_num}_strategies.pkl")[pid]
-        #         participant.temperature = pickle_load(f"../results/final_strategy_inferences/{exp_num}_temperatures.pkl")[pid]
-        #     else:
-        #         participant.strategies = pickle_load(f"../results/final_strategy_inferences/{exp_num}_{strategy_space_type}_strategies.pkl")[pid]
-        #         participant.temperature = pickle_load(f"../results/final_strategy_inferences/{exp_num}_{strategy_space_type}_temperatures.pkl")[pid]
-        participant.first_trial_data = participant.get_first_trial_data()
-        participant.all_trials_data = participant.get_all_trials_data()
-
-        learner_attributes = dict(features=features, normalized_features=normalized_features, 
-                num_priors=num_priors,
-                strategy_space=strategy_space,
-                no_term = not learner_attributes['term'],
-                num_actions = num_actions,
-                **learner_attributes)
-        del learner_attributes['term']
-        models.append(learner)
-        attributes.append(learner_attributes)
-        optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)
-        res, prior, obj_fn = optimizer.optimize(optimization_criterion, num_simulations=num_simulations, 
-                    optimizer="hyperopt",
-                            max_evals=num_evals)
-        print(res[0])
-        losses = [trial['result']['loss'] for trial in res[1]]
-        print(f"Loss: {min(losses)}")
-        min_index = np.argmin(losses)
-        learning_utils.create_dir(f"../results/{exp_num}_plots")
-        reward_data = optimizer.plot_rewards(i=min_index, path=f"../results/{exp_num}_plots/{pid}.png")
-        #pickle_save(reward_data, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        #pickle_save(res, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
+    #TODO: document what is this? Is this running simulations given priors?
+    (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
-        print(sim_data['info'], len(sim_data['info']))
-        learning_utils.pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        #pickle_save(sim_data, f"{d2}/{pid}_{optimization_criterion}_{model_index}.pkl")
-        # optimizer.plot_history(res, prior, obj_fn)
-    # bms = BayesianModelSelection(models, attributes, participant, env,
-    #                            optimization_criterion, num_simulations)
-    # history = bms.model_selection()
-    # plot_model_selection_results(history, models)
+    print(sim_data['info'], len(sim_data['info']))
+    pickle_save(sim_data, os.path.join(model_info_directory,"{pid}_{optimization_criterion}_{model_index}.pkl"))
+
 if __name__ == "__main__":
-    main()
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    prior_fit(exp_name, model_index, optimization_criterion, pid)
