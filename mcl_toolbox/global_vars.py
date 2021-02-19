@@ -50,7 +50,7 @@ class structure:
     reward_levels = {'high_increasing': level_values[1:], 'high_decreasing': level_values[1:][::-1],
                      'low_constant': const_var_values * 3, 'large_increasing': list(zip(np.zeros(5), [1, 2, 4, 8, 32]))}
 
-    reward_type = {'F1': 'categorical', 'c1.1': 'categorical', 'c2.1': 'categorical', 'T1.1': 'normal',
+    reward_exps = {'F1': 'categorical', 'c1.1': 'categorical', 'c2.1': 'categorical', 'T1.1': 'normal',
                    'v1.0': 'categorical', "IRL1": 'categorical'}
 
     small_level_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 3,
@@ -62,7 +62,7 @@ class structure:
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     '''
-    exp_pipelines = pickle_load("../data/exp_pipelines.pkl")
+    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {'v1.0': 'high_increasing',
@@ -71,9 +71,14 @@ class structure:
                              'T1.1': 'large_increasing',
                              'IRL1': 'high_increasing'}
 
+    normalized_value_directories = {'increasing_variance': 'high_increasing',
+                             'constant_variance': 'low_constant',
+                             'decreasing_variance': 'high_decreasing',
+                             'transfer_task': 'large_increasing'}
+
 
 class model:
-    model_attributes = pd.read_csv(os.path.join(Path(__file__).parents[1], "models/rl_models.csv"), index_col=0)
+    model_attributes = pd.read_csv(os.path.join(Path(__file__).parents[0], "models/rl_models.csv"), index_col=0)
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
 
@@ -91,13 +96,13 @@ class strategies:
                        60, 61, 62,
                        63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
 
-    strategy_weights = pickle_load("../data/microscope_weights.pkl")
-    strategy_distances = pickle_load("../data/L2_distances.pkl")
+    strategy_weights = pickle_load("data/microscope_weights.pkl")
+    strategy_distances = pickle_load("data/L2_distances.pkl")
 
 
 class features:
-    microscope = pickle_load("../data/microscope_features.pkl") # this is 51 features
-    implemented = pickle_load(f"../data/implemented_features.pkl")  # this is 56 features
+    microscope = pickle_load("data/microscope_features.pkl") # this is 51 features
+    implemented = pickle_load(f"data/implemented_features.pkl")  # this is 56 features
 
 
 class hierarchical_params:
