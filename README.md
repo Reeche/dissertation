@@ -15,11 +15,6 @@ How To Use This
 ---------------
 
 ### Installation
-If not running as a package, install the dependencies with:
-```
-pip install -r requirements.txt
-```
-
 To install as a package:
 ```
 git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
@@ -38,9 +33,9 @@ Note: you might have to use your own import code depending on your requirements.
 
 ### Analysis modules
 1. Navigate to `mcl_toolbox/`
-2. Run `mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
-3. Run `mcl_toolbox/infer_participant.py` to analyse the click sequence average over conditions
-4. Run `mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
+2. Run `python mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
+3. Run `python mcl_toolbox/infer_sequences.py` to analyse the click sequence average over conditions
+4. Run `python mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
 
 Note: see each folder or each file for detailed instructions. 
 
