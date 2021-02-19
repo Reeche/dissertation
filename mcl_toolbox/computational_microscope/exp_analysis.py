@@ -1,6 +1,6 @@
 import sys
 
-from . import ComputationalMicroscope
+from mcl_toolbox.computational_microscope import ComputationalMicroscope
 from mcl_toolbox.utils import Experiment
 from mcl_toolbox.utils.learning_utils import pickle_load, pickle_save, get_normalized_features, \
     get_modified_weights, create_dir

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 
-from ..env.modified_mouselab import get_termination_mers
-from ..utils.learning_utils import get_normalized_feature_values
+from mcl_toolbox.env.modified_mouselab import get_termination_mers
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 
 class Learner(ABC):

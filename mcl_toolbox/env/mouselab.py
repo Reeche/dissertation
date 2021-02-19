@@ -6,7 +6,7 @@ import numpy as np
 from contracts import contract
 from gym import spaces
 from toolz import memoize, get
-from ..utils.distributions import smax, cmax, sample, expectation, PointMass
+from mcl_toolbox.utils.distributions import smax, cmax, sample, expectation, PointMass
 
 NO_CACHE = False
 if NO_CACHE:

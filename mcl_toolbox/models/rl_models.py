@@ -10,16 +10,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from ..env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from hyperopt import hp, fmin, tpe, Trials
 from scipy.special import logsumexp
 from scipy.stats import norm
 from torch import autograd
 from torch.autograd import Variable
 from torch.distributions import Categorical
-from ..utils.learning_utils import *
-from ..utils.planning_strategies import strategy_dict
-from ..utils.sequence_utils import compute_log_likelihood, get_clicks
+from mcl_toolbox.utils.learning_utils import *
+from mcl_toolbox.utils.planning_strategies import strategy_dict
+from mcl_toolbox.utils.sequence_utils import compute_log_likelihood, get_clicks
 
 normalize = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
              2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 72.0, 2.0, 2.0]

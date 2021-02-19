@@ -2,11 +2,11 @@ from collections import defaultdict
 
 import mpmath as mp
 import numpy as np
-from .base_learner import Learner
-from ..utils.learning_utils import get_normalized_features, pickle_load, \
+from mcl_toolbox.models.base_learner import Learner
+from mcl_toolbox.utils.learning_utils import get_normalized_features, pickle_load, \
     norm_integrate, beta_integrate, get_log_beta_pdf, get_log_beta_cdf, \
     get_log_norm_pdf, get_log_norm_cdf
-from ..utils.planning_strategies import strategy_dict
+from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 NS = 79
 precision_epsilon = 1e-4

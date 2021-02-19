@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from toolz import curry
 
-from . import *
+from mcl_toolbox.utils import *
 
 
 # ---------- Data wrangling ---------- #

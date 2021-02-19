@@ -2,14 +2,14 @@ import operator
 import numpy as np
 from collections import defaultdict
 import sys
-from ..utils import learning_utils, distributions
+from mcl_toolbox.utils import learning_utils, distributions
 import operator
 import sys
 from collections import defaultdict
 
 import numpy as np
 
-from ..utils import learning_utils, distributions
+from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions

@@ -1,11 +1,11 @@
 from collections import defaultdict
 
 import numpy as np
-from .base_learner import Learner
-from .rssl_models import RSSL
-from ..utils.learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
+from mcl_toolbox.models.base_learner import Learner
+from mcl_toolbox.models.rssl_models import RSSL
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values, get_log_beta_pdf, \
     get_log_beta_cdf
-from ..utils.sequence_utils import get_clicks
+from mcl_toolbox.utils.sequence_utils import get_clicks
 
 
 # TODO:

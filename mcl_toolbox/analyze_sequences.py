@@ -1,13 +1,13 @@
 import sys
 
-from ..utils import learning_utils, distributions
+from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from mcl_toolbox.utils.learning_utils import pickle_load, get_normalized_features,\
 #                             get_modified_weights
-from ..computational_microscope.computational_microscope import ComputationalMicroscope
-from ..utils.experiment_utils import Experiment
+from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 

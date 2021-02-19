@@ -1,11 +1,11 @@
 import operator
 
 import numpy as np
-from ..env.generic_mouselab import GenericMouselabEnv
-from ..env.modified_mouselab import TrialSequence
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.env.modified_mouselab import TrialSequence
 from scipy.special import softmax, logsumexp
-from .learning_utils import get_normalized_feature_values, get_counts
-from .planning_strategies import strategy_dict
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values, get_counts
+from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 
 def get_accuracy_position(position, ground_truth, clicks, pipeline, features, normalized_features, W):

@@ -1,13 +1,13 @@
 import sys
 
-from ..utils import learning_utils, distributions
+from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from mcl_toolbox.utils.learning_utils import pickle_load, pickle_save, get_normalized_features,\
 #                             get_modified_weights, create_dir
-from ..computational_microscope.computational_microscope import ComputationalMicroscope
-from ..utils.analysis_utils import get_data
+from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.utils.analysis_utils import get_data
 
 
 """

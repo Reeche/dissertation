@@ -2,9 +2,9 @@ from collections import defaultdict
 
 import mpmath as mp
 import numpy as np
-from .base_learner import Learner
-from .rl_models import integrate
-from ..utils.learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
+from mcl_toolbox.models.base_learner import Learner
+from mcl_toolbox.models.rl_models import integrate
+from mcl_toolbox.utils.learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
     get_normalized_feature_values, break_ties_random, \
     get_log_norm_pdf, get_log_norm_cdf
 

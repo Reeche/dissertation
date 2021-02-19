@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from .base_learner import Learner
+from mcl_toolbox.models.base_learner import Learner
 from torch.autograd import Variable
 from torch.distributions import Categorical
-from ..utils.learning_utils import get_normalized_feature_values
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 
 class Policy(nn.Module):

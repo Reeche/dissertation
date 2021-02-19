@@ -6,8 +6,8 @@ from typing import List
 
 import numpy as np
 from toolz import get
-from ..utils.distributions import sample, Normal, Categorical
-from ..utils.learning_utils import get_normalized_feature_values
+from mcl_toolbox.utils import distributions
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 """ This file defines the node, trial and trial sequence class for the 
     feature based representation of the Mouselab-MDP. This assumes that
@@ -38,17 +38,17 @@ def softmax(x):
 @lru_cache(maxsize=None)
 def reward_val(depth):
     if depth > 0:
-        return Categorical(distribution_by_level[depth])
+        return distributions.Categorical(distribution_by_level[depth])
     return 0.
 
 def constant_reward_val(depth):
     if depth > 0:
-        return Categorical(constant_dist_by_level[depth])
+        return distributions.Categorical(constant_dist_by_level[depth])
     return 0.
 
 def decreasing_reward_val(depth):
     if depth > 0:
-        return Categorical(decreasing_dist_by_level[depth])
+        return distributions.Categorical(decreasing_dist_by_level[depth])
     return 0.
 
 @lru_cache(maxsize=None)
@@ -60,12 +60,12 @@ def normal_reward_val(depth):
         for i, (v, p) in enumerate(zip(vals, probs)):
             val_prob[v]+= p
         vals = sorted(list(set(vals)))
-        new_dist = Categorical(vals=vals, probs=[val_prob[v] for v in vals])
+        new_dist = distributions.Categorical(vals=vals, probs=[val_prob[v] for v in vals])
         return new_dist
 
     stds = [1,2,4,8,32]
     if depth > 0:
-        dist = Normal(0, stds[depth-1]).to_discrete(n=257, max_sigma=4)
+        dist = distributions.Normal(0, stds[depth - 1]).to_discrete(n=257, max_sigma=4)
         dist.vals = tuple([int(round(val)) for val in dist.vals])
         dist = convert_dist(dist)
         return dist
@@ -146,7 +146,7 @@ class TrialSequence:
                 return my_idx
             expand(0)
             dist = (0, *init[1:])
-            return list(map(sample, dist))
+            return list(map(distributions.sample, dist))
         for trial_num in range(self.num_trials):
             gt = gen_trial_gt(trial_num)
             self.ground_truth.append(gt)

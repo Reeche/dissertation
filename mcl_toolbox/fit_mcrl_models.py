@@ -5,13 +5,13 @@ import sys
 import numpy as np
 import pandas as pd
 
-from ..env.generic_mouselab import GenericMouselabEnv
-from ..utils import learning_utils, distributions
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.utils import learning_utils, distributions
 
 # sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from ..mcrl_modelling.optimizer import ParameterOptimizer
+from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 
 
 """
