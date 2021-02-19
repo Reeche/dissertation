@@ -1,8 +1,8 @@
 import sys
-from src.utils.learning_utils import pickle_load, pickle_save, get_normalized_features,\
+from mcl_toolbox.utils.learning_utils import pickle_load, pickle_save, get_normalized_features,\
                             get_modified_weights, create_dir
 from computational_microscope import ComputationalMicroscope
-from src.utils import Experiment
+from mcl_toolbox.utils import Experiment
 
 if __name__ == "__main__":
     pid = int(sys.argv[1])

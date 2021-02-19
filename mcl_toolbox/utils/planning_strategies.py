@@ -1,5 +1,6 @@
-from random import shuffle, choice
 from queue import PriorityQueue
+from random import shuffle, choice
+
 from env.modified_mouselab import TrialSequence, approx_max
 from numpy import argsort
 
@@ -1495,7 +1496,7 @@ def leaves_middle_subtree(trial):
     return [node.label for node in trial.observed_nodes] + [0]
 
 if __name__ == "__main__":
-    from src.utils.learning_utils import Participant
+    from mcl_toolbox.utils.learning_utils import Participant
     p = Participant(exp_num='T1.1', pid=1,
                     feature_criterion='normalize', excluded_trials=list(range(11)))
     trials = p.envs
