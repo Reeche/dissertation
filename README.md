@@ -15,7 +15,7 @@ How To Use This
 ---------------
 
 ### Installation
-To install as a package:
+To install as a package in python 3.8+:
 ```
 git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
 cd mcl_toolbox
