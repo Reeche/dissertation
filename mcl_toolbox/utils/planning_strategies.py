@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 from random import shuffle, choice
 
-from env.modified_mouselab import TrialSequence, approx_max
+from ..env.modified_mouselab import TrialSequence, approx_max
 from numpy import argsort
 
 """ This file contains the 89 algorithmic strategies implemented for

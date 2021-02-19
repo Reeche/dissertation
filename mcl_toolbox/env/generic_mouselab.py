@@ -1,7 +1,7 @@
 import gym
 import numpy as np
+from .modified_mouselab import TrialSequence, reward_val
 from gym import spaces
-from env.modified_mouselab import TrialSequence, reward_val
 
 
 class GenericMouselabEnv(gym.Env):

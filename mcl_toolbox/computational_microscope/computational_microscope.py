@@ -1,13 +1,15 @@
 import sys
-import numpy as np
 from collections import defaultdict
-from joblib import load
-from env.modified_mouselab import TrialSequence
-from utils.learning_utils import pickle_load, construct_reward_function, reward_levels, \
-    construct_repeated_pipeline
-from utils.sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
+
+import numpy as np
+from ..env.modified_mouselab import TrialSequence
 from hyperopt import hp, fmin, tpe
 from hyperopt.fmin import generate_trials_to_calculate
+from joblib import load
+from ..utils.learning_utils import pickle_load, construct_reward_function, reward_levels, \
+    construct_repeated_pipeline
+from ..utils.sequence_utils import compute_trial_features, compute_trial_feature_log_likelihood
+
 
 # To ignore warnings of the computational microscope
 # np.seterr(all = 'ignore')

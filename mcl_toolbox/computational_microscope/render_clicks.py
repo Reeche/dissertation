@@ -1,9 +1,11 @@
 import os
-from graphviz import Digraph
-from mcl_toolbox.utils import Experiment
-from mcl_toolbox.env.modified_mouselab import TrialSequence
-import imageio
 import shutil
+
+import imageio
+from graphviz import Digraph
+
+from mcl_toolbox.env.modified_mouselab import TrialSequence
+from mcl_toolbox.utils import Experiment
 
 """ This file contains functions to plot/make a video of a
     click sequence in a given environment

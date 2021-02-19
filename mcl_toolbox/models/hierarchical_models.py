@@ -2,9 +2,9 @@ from collections import defaultdict
 
 import numpy as np
 import scipy as sp
-from models.base_learner import Learner
-from mcrl_modelling.global_vars import hierarchical_params
-from utils.learning_utils import temp_sigmoid, rows_mean, \
+from ..mcrl_modelling.global_vars import hierarchical_params
+from .base_learner import Learner
+from ..utils.learning_utils import temp_sigmoid, rows_mean, \
     get_log_norm_pdf, get_log_norm_cdf
 
 

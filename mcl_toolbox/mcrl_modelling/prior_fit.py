@@ -1,10 +1,11 @@
 import sys
 
+from global_vars import *
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.utils.learning_utils import pickle_save, \
     get_normalized_features, Participant, create_dir, get_number_of_actions_from_branching
 from optimizer import ParameterOptimizer
-from global_vars import *
+
 
 def prior_fit(exp_name, model_index, optimization_criterion, pid, optimization_params = {'optimizer':"hyperopt", 'num_simulations': 5, 'max_evals': 200}):
     '''

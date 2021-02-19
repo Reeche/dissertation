@@ -4,7 +4,8 @@ import re
 import numpy as np
 import pandas as pd
 from toolz import curry
-from utils import *
+
+from . import *
 
 
 # ---------- Data wrangling ---------- #

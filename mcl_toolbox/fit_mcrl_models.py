@@ -1,15 +1,17 @@
-import sys, os
-#sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
 
-#import sys
-#import os
+# import sys
+# import os
 import numpy as np
 import pandas as pd
-from env.generic_mouselab import GenericMouselabEnv
-from utils import learning_utils, distributions
+
+from ..env.generic_mouselab import GenericMouselabEnv
+from ..utils import learning_utils, distributions
+
+# sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from mcrl_modelling.optimizer import ParameterOptimizer
+from ..mcrl_modelling.optimizer import ParameterOptimizer
 
 
 """
@@ -51,7 +53,7 @@ def main():
     #pipeline = transfer_pipeline
     num_trials = 30
 
-    model_attributes = pd.read_csv("models/rl_models.csv")
+    model_attributes = pd.read_csv("..models/rl_models.csv")
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
     
     #model_index = int(sys.argv[2])

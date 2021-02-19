@@ -1,9 +1,11 @@
 import sys
-from utils import learning_utils, distributions
+
+from ..utils import learning_utils, distributions
+
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from computational_microscope.computational_microscope import ComputationalMicroscope
-from utils.experiment_utils import Experiment
+from ..computational_microscope.computational_microscope import ComputationalMicroscope
+from ..utils.experiment_utils import Experiment
 
 """
 Run this file to infer the averaged sequences of the participants. 

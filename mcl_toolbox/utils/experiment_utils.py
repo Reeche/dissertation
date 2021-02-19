@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from utils.analysis_utils import get_data
-from utils.learning_utils import sidak_value, pickle_load
-from utils.sequence_utils import get_acls
-from utils.statistics_utils import create_comparable_data
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
+from .analysis_utils import get_data
+from .learning_utils import sidak_value
+from .sequence_utils import get_acls
 
 # Matplotlib no grid
 plt.rcParams["axes.grid"] = False

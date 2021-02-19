@@ -1,5 +1,4 @@
 #import os
-import sys
 from condor_utils import create_sub_file, submit_sub_file
 
 exp_nums = ["v1.0", "c1.1_old", "c2.1_dec", "T1.1"]

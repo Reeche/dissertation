@@ -1,17 +1,18 @@
 import sys
-import pandas as pd
+
 import numpy as np
-from scipy.stats import mannwhitneyu
-from scipy.stats import friedmanchisquare
 import pymannkendall as mk
-from utils import learning_utils, distributions
+from scipy.stats import friedmanchisquare
+from scipy.stats import mannwhitneyu
+
+from ..utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 
-from utils.experiment_utils import Experiment
-from computational_microscope.computational_microscope import ComputationalMicroscope
-from utils.statistics_utils import create_comparable_data
+from ..utils.experiment_utils import Experiment
+from ..computational_microscope.computational_microscope import ComputationalMicroscope
+from ..utils.statistics_utils import create_comparable_data
 
 """
 This script runs statistical tests that tests whether:

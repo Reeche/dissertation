@@ -1,12 +1,14 @@
 import sys
-import numpy as np
 from collections import defaultdict
-from utils import learning_utils, distributions
+
+import numpy as np
+
+from ..utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from env.generic_mouselab import GenericMouselabEnv
-from utils.planning_strategies import strategy_dict
+from ..env.generic_mouselab import GenericMouselabEnv
+from ..utils.planning_strategies import strategy_dict
 
 """
 This file allows you to simulate the strategies given the environment and condition

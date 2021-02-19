@@ -7,15 +7,15 @@ import numpy as np
 import pandas as pd
 import pyabc
 import seaborn as sns
-from models.hierarchical_models import HierarchicalLearner
+from ..env.modified_mouselab import get_termination_mers
 from hyperopt import hp, fmin, tpe, Trials
-from utils.learning_utils import compute_objective, get_relevant_data
-from models.lvoc_models import LVOC
+from ..models.hierarchical_models import HierarchicalLearner
+from ..models.lvoc_models import LVOC
+from ..models.reinforce_models import REINFORCE, BaselineREINFORCE
+from ..models.rssl_models import RSSL
+from ..models.sdss_models import SDSS
 from pyabc.transition import MultivariateNormalTransition
-from models.reinforce_models import REINFORCE, BaselineREINFORCE
-from models.rssl_models import RSSL
-from models.sdss_models import SDSS
-from env.modified_mouselab import get_termination_mers
+from ..utils.learning_utils import compute_objective, get_relevant_data
 
 models = {'lvoc': LVOC, 'rssl': RSSL, 'hierarchical_learner': HierarchicalLearner,
           'sdss': SDSS, 'reinforce': REINFORCE, 'baseline_reinforce': BaselineREINFORCE}

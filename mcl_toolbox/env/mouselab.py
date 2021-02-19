@@ -1,12 +1,12 @@
-from collections import namedtuple, defaultdict, deque, Counter
 import numpy as np
-import gym
-from gym import spaces
-from utils.distributions import smax, cmax, sample, expectation, Normal, PointMass
-from toolz import memoize, get
 import random
-from contracts import contract
 
+import gym
+import numpy as np
+from contracts import contract
+from gym import spaces
+from toolz import memoize, get
+from ..utils.distributions import smax, cmax, sample, expectation, PointMass
 
 NO_CACHE = False
 if NO_CACHE:

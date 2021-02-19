@@ -3,20 +3,21 @@ import pickle
 from collections import defaultdict, Counter
 from functools import partial, lru_cache
 
-import mpmath as mp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import mpmath as mp
 import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-from .analysis_utils import get_data
-from .distributions import Categorical, Normal
 from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma
 from scipy.stats import norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
+
+from .analysis_utils import get_data
+from .distributions import Categorical, Normal
 
 num_strategies = 89 #TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon

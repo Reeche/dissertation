@@ -5,9 +5,9 @@ from statistics import mean
 from typing import List
 
 import numpy as np
-from utils.distributions import sample, Normal, Categorical
-from utils.learning_utils import get_normalized_feature_values
 from toolz import get
+from ..utils.distributions import sample, Normal, Categorical
+from ..utils.learning_utils import get_normalized_feature_values
 
 """ This file defines the node, trial and trial sequence class for the 
     feature based representation of the Mouselab-MDP. This assumes that
