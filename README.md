@@ -41,8 +41,14 @@ Note: see each folder or each file for detailed instructions.
 
 Testing
 -------
+There are very simple integration tests in tests/ to run analysis modules quickly to check whether analysis modules will run.
+To run these, run:
+```
+chmod +x test_analysis.sh
+./test_analysis.sh
+```
 
-TODO
+#TODO unit tests
 
 Development
 -----------
