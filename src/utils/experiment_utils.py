@@ -1,7 +1,6 @@
 import itertools
 import operator
-from collections import defaultdict, Counter
-
+from collections import defaultdict, Counter, OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -646,17 +645,65 @@ class Experiment():
             return cluster_dict
 
     def get_top_k_strategies(self, k=3):
+        """
+        Get the top k strategies from each trial.
+        Example: 35 trials, look at each trial and get the top k strategies in each trial and put them together in a set
+        Args:
+            k: number of strategies
+
+        Returns:
+
+        """
         trial_wise_strategy_proportions = self.get_strategy_proportions(trial_wise=True)
         total_set = set()
         for t in trial_wise_strategy_proportions.keys():
             sorted_indices = sorted(trial_wise_strategy_proportions[t].items(), key=operator.itemgetter(1),
-                                    reverse=True)[
-                             :k]
+                                    reverse=True)[:k]
             for s, v in sorted_indices:
                 if v > 0:
                     total_set.add(s)
         S = list(total_set)
         return S
+
+    def plot_adaptive_maladaptive_strategies_vs_rest(self, adaptive_strategy_list, maladaptive_strategy_list):
+        """
+        This function sums up the proportion of the top 3 strategies and plots them against the summed proportions of the rest
+        Args:
+            S: number (i.e. their name) of the strategy
+
+        Returns: a plot
+
+        """
+        strategy_proportion = self.trial_strategy_proportions
+        number_of_trials = list(range(0, self.num_trials))
+        adaptive_strategy_sum = {key: 0 for key in number_of_trials}
+        maladaptive_strategy_sum = {key: 0 for key in number_of_trials}
+        rest = {key: 0 for key in number_of_trials}
+        for trial_key, strategy_dict in strategy_proportion.items():
+            for strategy_number, strategy_value in strategy_dict.items():
+                if strategy_number in adaptive_strategy_list:
+                    adaptive_strategy_sum[trial_key] += strategy_value
+                elif strategy_number in maladaptive_strategy_list:
+                    maladaptive_strategy_sum[trial_key] += strategy_value
+                else:
+                    rest[trial_key] += strategy_value
+
+        fig = plt.figure(figsize=(15, 10))
+
+        plt.plot(range(1, self.num_trials+1), adaptive_strategy_sum.values(), label="Adaptive strategies", linewidth=3.0)
+        plt.plot(range(1, self.num_trials+1), maladaptive_strategy_sum.values(), label="Maladaptive strategies", linewidth=3.0)
+        plt.plot(range(1, self.num_trials+1), rest.values(), label="Other strategies", linewidth=3.0)
+
+        plt.xlabel("Trial Number", fontsize=24)
+        plt.ylabel("Proportion", fontsize=24)
+        # plt.title(title, fontsize=24)
+        plt.ylim(top=1.0)
+        plt.tick_params(labelsize=22)
+        plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
+        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+                    dpi=400, bbox_inches='tight')
+        plt.close(fig)
+
 
     def plot_decision_systems_proportions_intotal(self, DS_proportions, plot=True):
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
@@ -854,10 +901,26 @@ class Experiment():
         self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
 
         # plot regarding the strategies
-        S = self.get_top_k_strategies(k=5)
+        S = self.get_top_k_strategies(k=3)
         self.plot_strategy_proportions_pertrial(S)
         self.plot_strategies_proportions_intotal()
         self.plot_strategy_scores(strategy_scores)  # not saved as plot
+
+        # todo: automatically get the best performance strategies
+        # increasing
+        # manual_strategy_list = [21, 63, 51]
+        # maladaptive_strategy_list = [39, 23, 30]
+
+        # decreasing
+        # manual_strategy_list = [70, 23, 69]
+        # maladaptive_strategy_list = [39, 30, 28]
+
+        # constant
+        #manual_strategy_list = [65, 33, 34]
+        #maladaptive_strategy_list = [39, 24, 83]
+        manual_strategy_list = [22, 43, 49]
+        maladaptive_strategy_list = [39, 31, 55]
+        self.plot_adaptive_maladaptive_strategies_vs_rest(manual_strategy_list, maladaptive_strategy_list)
 
 
 
@@ -893,7 +956,7 @@ class Experiment():
         # self.frequency_transitions_chi2(clusters=True)
 
         # strategies
-        # S = self.get_top_k_strategies(k=5)
+        # S = self.get_top_k_strategies(k=3)
         strategy_proportions = self.get_strategy_proportions()
         strategy_proportions_trialwise = self.get_strategy_proportions(trial_wise=True)
 

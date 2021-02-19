@@ -22,7 +22,7 @@ Example: python3 calculate_strategy_score.py 1 c1.1 100
 # exp_num = sys.argv[2]
 # num_simulations = int(sys.argv[3])
 exp_num = "c1.1"
-num_simulations = 50000 #use 100k
+num_simulations = 500000
 
 score_list = {}
 # loops through all strategies and saves into a list
