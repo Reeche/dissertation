@@ -1,5 +1,7 @@
-import sys
+import sys, os
+from pathlib import Path
 
+from mcl_toolbox.global_vars import structure, strategies, features
 from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
@@ -9,60 +11,73 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to infer the averaged sequences of the participants. 
-Format: python3 infer_sequences.py <reward_structure> <block> <pid>
-Example: python3 infer_sequences.py increasing_variance training none
+Format: python3 infer_sequences.py <exp name> <block>
+Example: python3 infer_sequences.py T1.1 training
 """
 
-
-if __name__ == "__main__":
-    reward_structure = sys.argv[1]  # increasing_variance, decreasing_variance
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
-    # reward_structure = "increasing_variance"
-    # block = "training"
-
-
+def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, max_evals = 2, **kwargs):
+    '''
+    Infer the averaged sequences of the participants in an experiment.
+    :param exp_num: experiment name, e.g. F1
+    :param block: block, e.g. "training" or "test"
+    :param pids: list of participants to use, otherwise None. could be useful to exclude paticipants in dataframe.
+    :param max_evals: max optimization evals for fmin
+    :return: strategy and temperature dicts with a key for every pid in the experiment. The strategies are a list for each trial, the temperature is temperature over all trials.
+    Saves data either to results/inferred_strategies/<exp_num> or results/inferred_strategies/<exp_num_block>
+    '''
     # Initializations
-    strategy_space = learning_utils.pickle_load("data/strategy_space.pkl") #79 strategies out of 89
-    features = learning_utils.pickle_load("data/microscope_features.pkl") #no habitual features because each trial is considered individually
-    strategy_weights = learning_utils.pickle_load("data/microscope_weights.pkl")
-    num_features = len(features)
-    exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")  # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
-    exp_reward_structures = {'increasing_variance': 'high_increasing',
-                             'constant_variance': 'low_constant',
-                             'decreasing_variance': 'high_decreasing',
-                             'transfer_task': 'large_increasing'}
 
-    reward_exps = {"increasing_variance": "v1.0",
-                   "decreasing_variance": "c2.1_dec",
-                   "constant_variance": "c1.1",
-                   "transfer_task": "T1.1"}
+    # 79 strategies out of 89
+    strategy_space = strategies.strategy_space
+    # no habitual features because each trial is considered individually
+    microscope_features = features.microscope
+    strategy_weights = strategies.strategy_weights
 
-    exp_num = reward_exps[reward_structure]  # select experiment number, e.g. v1.0 given entered selection
-    if exp_num not in exp_pipelines:
+    # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
+    exp_pipelines = structure.exp_pipelines
+
+    if exp_num not in structure.exp_reward_structures:
         raise (ValueError, "Reward structure not found.")
+    reward_structure = structure.exp_reward_structures[exp_num]
 
+    if exp_num not in exp_pipelines:
+        raise (ValueError, "Experiment pipeline not found.")
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]  # todo: why range 100?
 
-    normalized_features = learning_utils.get_normalized_features(exp_reward_structures[reward_structure])  # tuple of 2
+    normalized_features = learning_utils.get_normalized_features(reward_structure)  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
-    cm = ComputationalMicroscope(pipeline, strategy_space, W, features, normalized_features=normalized_features)
-    pids = None
+    cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features, normalized_features=normalized_features)
+
+    #TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
-        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    exp.infer_strategies(max_evals=2, show_pids=True)
+    exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
-    save_path = f"../results/inferred_strategies/{reward_structure}"
+    #create save path
+    parent_directory = Path(__file__).parents[1]
+    save_path = os.path.join(parent_directory, "results/inferred_strategies/{exp_num}")
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
-    strategies = exp.participant_strategies
-    temperatures = exp.participant_temperatures
-    learning_utils.pickle_save(strategies, f"{save_path}/strategies.pkl")
-    learning_utils.pickle_save(temperatures, f"{save_path}/temperatures.pkl")
+
+    #save strategies, and temperatures
+    inferred_strategies = exp.participant_strategies
+    inferred_temperatures = exp.participant_temperatures
+    learning_utils.pickle_save(inferred_strategies, f"{save_path}/strategies.pkl")
+    learning_utils.pickle_save(inferred_temperatures, f"{save_path}/temperatures.pkl")
+
+    return inferred_strategies, inferred_temperatures
+
+
+if __name__ == "__main__":
+    exp_name = sys.argv[1]  # increasing_variance, decreasing_variance
+    block = None
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
+
+    infer_experiment_sequences(exp_name, block=block)
