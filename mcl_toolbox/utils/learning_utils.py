@@ -272,13 +272,13 @@ def get_participant_weights(participant_num, exp_num="F1", criterion="all_featur
     try:
         if criterion == "all_features":
             participant_weights = pickle_load(
-                f"data/starting_weights_{exp_num}.pkl")
+                f"../data/starting_weights_{exp_num}.pkl")
         elif type(criterion) == int:
             participant_weights = pickle_load(
-                f"data/starting_weights_{exp_num}_{criterion}.pkl")
+                f"../data/starting_weights_{exp_num}_{criterion}.pkl")
         elif criterion == "normalize":
             participant_weights = pickle_load(
-                f"data/starting_weights_{exp_num}_normalized.pkl")
+                f"../data/starting_weights_{exp_num}_normalized.pkl")
     except FileNotFoundError:
         print("Unable to load prior weights")
         return []
@@ -371,9 +371,8 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
     return normalized_features
     
 def get_normalized_features(exp_num):
-    print(exp_num)
-    max_feature_values = pickle_load(f"data/normalized_values/{exp_num}/max.pkl")
-    min_feature_values = pickle_load(f"data/normalized_values/{exp_num}/min.pkl")
+    max_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/max.pkl")
+    min_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/min.pkl")
     return max_feature_values, min_feature_values
 
 def get_transformed_weights(participant_num, trial_weights, trial_features, features_list):
@@ -1241,7 +1240,7 @@ def get_strategy_sequences(env, trials_data):
     """
     modified_actions = convert_zeros_to_none(trials_data['a'])
     cm = ComputationalMicroscope(
-        38, weight_MAP, "small", distances_path=None, prior_path="data/gradual_transitions.pkl") #TODO what is weight_MAP?
+        38, weight_MAP, "small", distances_path=None, prior_path="../data/gradual_transitions.pkl") #TODO what is weight_MAP?
     strategy_info = cm.infer_sequences(
         modified_actions, env.get_ground_truth())
     trials_data['s'] = strategy_info[0]
@@ -1252,7 +1251,7 @@ def get_normalized_strategy_weights():
     num_strategies = 38
     s_weights = np.zeros((38, 59))
     for s in range(num_strategies):
-        s_weights[s] = pickle_load(f"data/strategy_weights/{s}.pkl")
+        s_weights[s] = pickle_load(f"../data/strategy_weights/{s}.pkl")
     return s_weights
 
 def get_counts(strategies, num_trials):
