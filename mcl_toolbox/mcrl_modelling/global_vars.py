@@ -1,9 +1,23 @@
 import os
-import numpy as np
-import seaborn as sns
-import pandas as pd
 import pickle
-#import dill as pickle
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+
+#RenameUnpickler from https://stackoverflow.com/a/53327348
+class RenameUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        renamed_module = module
+        # we need these modules in order to load pickled files depending on them,
+        # pickled with earlier versions of the code
+        if module == "learning_utils":
+            renamed_module = "mcl_toolbox.utils.learning_utils"
+        elif module == "distributions":
+            renamed_module = "mcl_toolbox.utils.distributions"
+
+        return super(RenameUnpickler, self).find_class(renamed_module, name)
 
 def pickle_load(file_path):
     """
@@ -23,8 +37,8 @@ def pickle_load(file_path):
             file_path = new_path
         else:
             raise FileNotFoundError(f"{file_path} not found.")
-    obj = pickle.load(open(file_path, "rb"))
-    return obj
+    file_obj = open(file_path, "rb")
+    return RenameUnpickler(file_obj).load()
 
 
 class structure:
@@ -59,7 +73,7 @@ class structure:
 
 
 class model:
-    model_attributes = pd.read_csv("models/rl_models.csv", index_col=0)
+    model_attributes = pd.read_csv(os.path.join(Path(__file__).parents[1], "models/rl_models.csv"), index_col=0)
     model_attributes = model_attributes.where(pd.notnull(model_attributes), None)
 
 
