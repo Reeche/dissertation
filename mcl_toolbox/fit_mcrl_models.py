@@ -30,15 +30,15 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = Fal
 
     # create directory to save priors in
     curr_directory = Path(__file__).parents[0]
-    prior_directory = os.path.join(curr_directory,"results/{exp_name}_priors")
+    prior_directory = os.path.join(curr_directory,f"results/{exp_name}_priors")
     create_dir(prior_directory)
     #and directory to save fit model info in
-    model_info_directory = os.path.join(curr_directory, "../results/info_{exp_num}_data")
+    model_info_directory = os.path.join(curr_directory, f"../results/info_{exp_num}_data")
     create_dir(model_info_directory)
 
     #add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(curr_directory,"../results/{exp_num}_plots")
+        plot_directory = os.path.join(curr_directory,f"../results/{exp_num}_plots")
         create_dir(plot_directory)
 
     #load experiment specific info
@@ -105,13 +105,13 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = Fal
     if plotting:
         reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,"{pid}.png"))
     #save priors
-    pickle_save((res, prior), os.path.join(prior_directory,"{d}/{pid}_{optimization_criterion}_{model_index}.pkl"))
+    pickle_save((res, prior), os.path.join(prior_directory,f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl"))
 
     #TODO: document what is this? Is this running simulations given priors?
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
     print(sim_data['info'], len(sim_data['info']))
-    pickle_save(sim_data, os.path.join(model_info_directory,"{pid}_{optimization_criterion}_{model_index}.pkl"))
+    pickle_save(sim_data, os.path.join(model_info_directory,f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 if __name__ == "__main__":
     exp_name = sys.argv[1]
