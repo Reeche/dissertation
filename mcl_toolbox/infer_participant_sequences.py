@@ -13,7 +13,6 @@ Run this file to infer the averaged(?) sequences of the participants.
 Format: python3 infer_sequences.py <pid> <reward_structure> <block> 
 Example: python3 infer_participant_sequences.py 1 v1.0 training
 """
-#todo: here you have to enter v1.0 instead of increasing_variance. Need to make it consistent for both infer_sequence.py and infer_participant_sequences.py
 
 def modify_clicks(click_sequence):
     modified_clicks = []
