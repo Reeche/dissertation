@@ -401,7 +401,7 @@ class Experiment():
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
                                   "Model-free values and heuristics",
                                   "Pavlovian", "Satisficing and stopping"]
-        #decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
+        # decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
         fig = plt.figure(figsize=(15, 10))
@@ -416,7 +416,7 @@ class Experiment():
         plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
         plt.close(fig)
-        #print(mean_dsw.shape)
+        # print(mean_dsw.shape)
         return mean_dsw
 
     def get_proportions(self, strategies, trial_wise=False):
@@ -690,9 +690,11 @@ class Experiment():
 
         fig = plt.figure(figsize=(15, 10))
 
-        plt.plot(range(1, self.num_trials+1), adaptive_strategy_sum.values(), label="Adaptive strategies", linewidth=3.0)
-        plt.plot(range(1, self.num_trials+1), maladaptive_strategy_sum.values(), label="Maladaptive strategies", linewidth=3.0)
-        plt.plot(range(1, self.num_trials+1), rest.values(), label="Other strategies", linewidth=3.0)
+        plt.plot(range(1, self.num_trials + 1), adaptive_strategy_sum.values(), label="Adaptive strategies",
+                 linewidth=3.0)
+        plt.plot(range(1, self.num_trials + 1), maladaptive_strategy_sum.values(), label="Maladaptive strategies",
+                 linewidth=3.0)
+        plt.plot(range(1, self.num_trials + 1), rest.values(), label="Other strategies", linewidth=3.0)
 
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Proportion", fontsize=24)
@@ -700,10 +702,10 @@ class Experiment():
         plt.ylim(top=1.0)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
-                    dpi=400, bbox_inches='tight')
+        plt.savefig(
+            f"../results/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+            dpi=400, bbox_inches='tight')
         plt.close(fig)
-
 
     def plot_decision_systems_proportions_intotal(self, DS_proportions, plot=True):
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
@@ -724,16 +726,16 @@ class Experiment():
         df = pd.DataFrame(data, columns=data_columns)
         if plot:
             fig = plt.figure(figsize=(15, 9))
-            #plt.ylim(top=60)
+            # plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
             # plt.show()
             plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                         bbox_inches='tight')
             plt.close(fig)
         else:
-            #averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
+            # averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
             aggregated_df = df.groupby('Decision System').sum()
-            averaged_df = (aggregated_df/35)/15 # divided by number of participants and trials
+            averaged_df = (aggregated_df / 35) / 15  # divided by number of participants and trials
             return averaged_df
 
     def plot_strategies_proportions_intotal(self):
@@ -781,14 +783,15 @@ class Experiment():
 
     def trial_decision_system_change_rate(self, decision_system_by_trial):
         difference = np.diff(decision_system_by_trial, axis=0)
-        #difference_sum = np.sum(difference, axis=1)
+        # difference_sum = np.sum(difference, axis=1)
         decision_system_labels = ["Mental effort avoidance", "Model-based Metareasoning",
                                   "Model-free values and heuristics",
                                   "Pavlovian", "Satisficing and stopping"]
         fig = plt.figure(figsize=(15, 10))
         prefix = "Decision System"
         for i in range(difference.shape[1]):
-            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=decision_system_labels[i], linewidth=3.0)
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=decision_system_labels[i],
+                     linewidth=3.0)
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Rate of change of decision systems", fontsize=24)
         # plt.title(title, fontsize=24)
@@ -812,7 +815,7 @@ class Experiment():
         fig = plt.figure(figsize=(15, 10))
         prefix = "Cluster"
         for i in range(difference.shape[1]):
-            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i+1}", linewidth=3.0)
+            plt.plot(range(1, difference.shape[0] + 1), difference[:, i], label=f"{prefix} {i + 1}", linewidth=3.0)
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Rate of change of clusters", fontsize=24)
         # plt.title(title, fontsize=24)
@@ -827,6 +830,7 @@ class Experiment():
     def summarize(self, features, normalized_features, strategy_weights,
                   decision_systems, W_DS,
                   DS_proportions, strategy_scores, cluster_scores, cluster_map,
+                  manual_strategy_list=[], maladaptive_strategy_list=[],
                   max_evals=20,
                   plot_strategies=[21, 30], plot_clusters=list(range(1, 14)),
                   n_clusters=None, max_clusters=10,
@@ -834,7 +838,7 @@ class Experiment():
                   show_pids=True,
                   show_strategies=False,
                   precomputed_strategies=None,
-                  precomputed_temperatures=None
+                  precomputed_temperatures=None,
                   ):
         """
         Creates plots about 1. strategy development over trials and overall frequency, 2. strategy cluster development over trials and overall frequency,
@@ -905,24 +909,8 @@ class Experiment():
         self.plot_strategy_proportions_pertrial(S)
         self.plot_strategies_proportions_intotal()
         self.plot_strategy_scores(strategy_scores)  # not saved as plot
-
-        # todo: automatically get the best performance strategies
-        # increasing
-        # manual_strategy_list = [21, 63, 51]
-        # maladaptive_strategy_list = [39, 23, 30]
-
-        # decreasing
-        # manual_strategy_list = [70, 23, 69]
-        # maladaptive_strategy_list = [39, 30, 28]
-
-        # constant
-        #manual_strategy_list = [65, 33, 34]
-        #maladaptive_strategy_list = [39, 24, 83]
-        manual_strategy_list = [22, 43, 49]
-        maladaptive_strategy_list = [39, 31, 55]
-        self.plot_adaptive_maladaptive_strategies_vs_rest(manual_strategy_list, maladaptive_strategy_list)
-
-
+        if manual_strategy_list:
+            self.plot_adaptive_maladaptive_strategies_vs_rest(manual_strategy_list, maladaptive_strategy_list)
 
         # self.plot_parallel_coordinates(mode=cluster_mode)
 
@@ -970,4 +958,4 @@ class Experiment():
 
         return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
-    #todo: Clean repetitive code
+    # todo: Clean repetitive code

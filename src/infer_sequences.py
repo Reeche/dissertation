@@ -1,4 +1,6 @@
 import sys
+import random
+import numpy as np
 from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
@@ -11,6 +13,8 @@ Format: python3 infer_sequences.py <reward_structure> <block> <pid>
 Example: python3 infer_sequences.py increasing_variance training none
 """
 
+random.seed(0)
+np.random.seed(0)
 
 if __name__ == "__main__":
     reward_structure = sys.argv[1]  # increasing_variance, decreasing_variance
@@ -43,7 +47,7 @@ if __name__ == "__main__":
 
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    pipeline = [pipeline[0] for _ in range(100)]  # todo: why range 100?
+    pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(exp_reward_structures[reward_structure])  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)

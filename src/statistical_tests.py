@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 import numpy as np
+import random
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
 import pymannkendall as mk
@@ -24,6 +25,8 @@ A friedmanchisquare test will be used to whether the distributions of two or mor
 A Mann Kendall test is used to test for trends
 
 """
+#todo: this code seriously need some tidy up
+
 
 strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
 features = learning_utils.pickle_load("data/microscope_features.pkl")
@@ -50,6 +53,7 @@ reward_exps = {"increasing_variance": "v1.0",
 # need to get the strategy / cluster / decision system proportions from each condition
 
 def get_data_of_cluster_decision_system(keys, values):
+    random.seed(123)
     if values == "c2.1":
         pipeline = exp_pipelines["c2.1_dec"]
     else:
@@ -88,7 +92,7 @@ def get_data_of_cluster_decision_system(keys, values):
     return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
 
-# for keys, values in reward_exps.items():
+# get the data
 strategy_proportions_increasing, strategy_proportions_trialwise_increasing, cluster_proportions_increasing, cluster_proportions_trialwise_increasing, decision_system_proportions_increasing, mean_dsw_increasing = get_data_of_cluster_decision_system(
     "increasing_variance", "v1.0")
 strategy_proportions_constant, strategy_proportions_trialwise_constant, cluster_proportions_constant, cluster_proportions_trialwise_constant, decision_system_proportions_constant, mean_dsw_constant = get_data_of_cluster_decision_system(
@@ -115,51 +119,45 @@ constant_strategy = create_comparable_data(strategy_proportions_constant, len=89
 print(" ----------------- Differences -----------------")
 print(" ----------------- Difference between Strategies -----------------")
 
-stat, p = friedmanchisquare(list(increasing_strategy.values()), list(decreasing_strategy.values()),
-                            list(constant_strategy.values()))
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-stat, p = mannwhitneyu(list(increasing_strategy.values()), list(decreasing_strategy.values()))
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(increasing_strategy.values()), list(constant_strategy.values()))
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(decreasing_strategy.values()), list(constant_strategy.values()))
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+# stat, p = friedmanchisquare(list(increasing_strategy.values()), list(decreasing_strategy.values()),
+#                             list(constant_strategy.values()))
+# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+# stat, p = mannwhitneyu(list(increasing_strategy.values()), list(decreasing_strategy.values()))
+# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(list(increasing_strategy.values()), list(constant_strategy.values()))
+# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(list(decreasing_strategy.values()), list(constant_strategy.values()))
+# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 print(" ----------------- Difference between Clusters -----------------")
-# print(np.sum(list(increasing.values())))
-# print(np.sum(list(decreasing.values())))
-# print(np.sum(list(constant.values())))
-stat, p = friedmanchisquare(list(increasing_cluster.values()), list(decreasing_cluster.values()),
-                            list(constant_cluster.values()))
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
 
-stat, p = mannwhitneyu(list(increasing_cluster.values()), list(decreasing_cluster.values()))
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(increasing_cluster.values()), list(constant_cluster.values()))
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(decreasing_cluster.values()), list(constant_cluster.values()))
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+# stat, p = friedmanchisquare(list(increasing_cluster.values()), list(decreasing_cluster.values()),
+#                             list(constant_cluster.values()))
+# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(list(increasing_cluster.values()), list(decreasing_cluster.values()))
+# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(list(increasing_cluster.values()), list(constant_cluster.values()))
+# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(list(decreasing_cluster.values()), list(constant_cluster.values()))
+# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 print(" ----------------- Difference between Decision systems -----------------")
-# print(np.sum(decision_system_proportions_increasing["Relative Influence (%)"].tolist()))
-# print(np.sum(decision_system_proportions_decreasing["Relative Influence (%)"].tolist()))
-# print(np.sum(decision_system_proportions_constant["Relative Influence (%)"].tolist()))
-
-stat, p = friedmanchisquare(increasing_ds, decreasing_ds, constant_ds)
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(increasing_ds, decreasing_ds)
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(increasing_ds, constant_ds)
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(decreasing_ds, constant_ds)
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+# stat, p = friedmanchisquare(increasing_ds, decreasing_ds, constant_ds)
+# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(increasing_ds, decreasing_ds)
+# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(increasing_ds, constant_ds)
+# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+#
+# stat, p = mannwhitneyu(decreasing_ds, constant_ds)
+# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 ### Seasonality
 print(" ----------------- Trends -----------------")
@@ -177,21 +175,26 @@ for i in range(0, len(strategy_proportions_trialwise_increasing)):
     strategy_list_constant.append(
         list(create_comparable_data(strategy_proportions_trialwise_constant[i], len=79).values()))
 
+
+print(" ----------------- First vs. last trial -----------------")
+print(" ----------------- Strategies distribution -----------------")
+
+
 strategy_array_increasing = np.array(strategy_list_increasing)
 strategy_array_decreasing = np.array(strategy_list_decreasing)
 strategy_array_constant = np.array(strategy_list_constant)
 
-for i in range(0, 79):
-    increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
-    print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
-
-for i in range(0, 79):
-    decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
-    print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
-
-for i in range(0, 79):
-    constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
-    print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
+# for i in range(0, 79):
+#     increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
+#     print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
+#     print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
+#     print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
 
 print(" ----------------- Clusters -----------------")
 cluster_mapping = ["Goal-setting with exhaustive backward planning",
@@ -223,17 +226,17 @@ cluster_array_increasing = np.array(cluster_list_increasing)
 cluster_array_decreasing = np.array(cluster_list_decreasing)
 cluster_array_constant = np.array(cluster_list_constant)
 
-for i in range(0, 13):
-    increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
-    print("Mann Kendall Test: Increasing Cluster: ", i, increasing_cluster_trend)
-
-for i in range(0, 13):
-    decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
-    print("Mann Kendall Test: Decreasing Cluster: ", i, decreasing_cluster_trend)
-
-for i in range(0, 13):
-    constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
-    print("Mann Kendall Test: Constant Cluster: ", i, constant_cluster_trend)
+# for i in range(0, 13):
+#     increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
+#     print("Mann Kendall Test: Increasing Cluster: ", i, increasing_cluster_trend)
+#
+# for i in range(0, 13):
+#     decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
+#     print("Mann Kendall Test: Decreasing Cluster: ", i, decreasing_cluster_trend)
+#
+# for i in range(0, 13):
+#     constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
+#     print("Mann Kendall Test: Constant Cluster: ", i, constant_cluster_trend)
 
 # print(" ----------------- Decision System -----------------")
 # for i in range(0, 5):
@@ -247,3 +250,40 @@ for i in range(0, 13):
 # for i in range(0, 5):
 #     constant_ds_trend = mk.original_test(list(mean_dsw_constant[:, i]))
 #     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
+
+
+print(" ----------------- First vs. last trial -----------------")
+print(" ----------------- Strategies -----------------")
+n = 2
+
+average_first_n_trials = np.mean(strategy_array_increasing[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(strategy_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+
+average_first_n_trials = np.mean(strategy_array_decreasing[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(strategy_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+
+average_first_n_trials = np.mean(strategy_array_constant[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(strategy_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+
+print(" ----------------- Strategy cluster  -----------------")
+
+average_first_n_trials = np.mean(cluster_array_increasing[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(cluster_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+
+average_first_n_trials = np.mean(cluster_array_decreasing[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(cluster_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+
+average_first_n_trials = np.mean(cluster_array_constant[:n,:], axis=0) #first 5 elements
+average_last_n_trials = np.mean(cluster_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
+stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
