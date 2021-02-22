@@ -10,8 +10,9 @@ class GenericMouselabEnv(gym.Env):
         of the Mouselab-MDP. The environment structure is assumed to be a
         symmetric tree
     """
-    def __init__(self, num_trials=1, pipeline = {'0': ([3,1,2], reward_val)},
-				ground_truth=None, cost=1, render_path="mouselab_renders"):
+
+    def __init__(self, num_trials=1, pipeline={'0': ([3, 1, 2], reward_val)},
+                 ground_truth=None, cost=1, render_path="mouselab_renders"):
         super(GenericMouselabEnv, self).__init__()
         self.pipeline = pipeline
         self.ground_truth = ground_truth
@@ -20,16 +21,16 @@ class GenericMouselabEnv(gym.Env):
 
         if isinstance(cost, list):
             cost_weight, depth_weight = cost
-            self.cost = lambda depth: - (1 * cost_weight +  (depth - 1) * depth_weight)
+            self.cost = lambda depth: - (1 * cost_weight + (depth - 1) * depth_weight)
             self.repeat_cost = - float("inf")
-        else: #should be a scalar
-            self.cost = lambda depth : - (1 * cost)
+        else:  # should be a scalar
+            self.cost = lambda depth: - (1 * cost)
             self.repeat_cost = -cost * 10
         self.construct_env()
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials
-        ground_truths = [env]*self.num_trials
+        ground_truths = [env] * self.num_trials
         self.ground_truth = ground_truths
         self.construct_env()
 
@@ -45,7 +46,7 @@ class GenericMouselabEnv(gym.Env):
         self.trial_init()
         if not self.ground_truth:
             self.ground_truth = self.trial_sequence.ground_truth
-    
+
     def trial_init(self):
         trial_num = self.present_trial_num
         self.num_nodes = len(self.trial_sequence.trial_sequence[trial_num].node_map)
@@ -55,7 +56,7 @@ class GenericMouselabEnv(gym.Env):
         self.present_trial = self.trial_sequence.trial_sequence[trial_num]
         reward_function = self.pipeline[self.present_trial_num][1]
         self.node_distribution = [
-            [0]] + [reward_function(d) for d in range(1, self.present_trial.max_depth + 1)]
+                                     [0]] + [reward_function(d) for d in range(1, self.present_trial.max_depth + 1)]
         self._compute_expected_values()
         self._construct_state()
         self.observed_action_list = []
@@ -112,7 +113,7 @@ class GenericMouselabEnv(gym.Env):
         pass
 
     def get_random_env(self):
-        trial_sequence = TrialSequence(num_trials=1, pipeline = self.pipeline)
+        trial_sequence = TrialSequence(num_trials=1, pipeline=self.pipeline)
         return trial_sequence.ground_truth[0]
 
     def get_ground_truth(self):
@@ -123,9 +124,10 @@ class GenericMouselabEnv(gym.Env):
             self.num_nodes) if i not in self.observed_action_list]
         return num_list
 
+
 class ModStateGenericMouselabEnv(GenericMouselabEnv):
-    def __init__(self, num_trials=1, pipeline = {'0': ([3,1,2], reward_val)},
-				ground_truth=None, cost=1, render_path="mouselab_renders"):
+    def __init__(self, num_trials=1, pipeline={'0': ([3, 1, 2], reward_val)},
+                 ground_truth=None, cost=1, render_path="mouselab_renders"):
         super().__init__(num_trials, pipeline, ground_truth, cost, render_path)
 
     def _construct_state(self):
@@ -138,6 +140,7 @@ class ModStateGenericMouselabEnv(GenericMouselabEnv):
                 S[node] = 0
         S = np.array(S)
         return S, reward, done, info
+
 
 class DummyParticipant():
     """ Creates a participant object which contains all details about the participant
@@ -152,7 +155,7 @@ class DummyParticipant():
         self.num_trials = num_trials
         self.pipeline = pipeline
 
-    @property #This is done on purpose to induce stochasticity
+    @property  # This is done on purpose to induce stochasticity
     def envs(self):
         envs = GenericMouselabEnv(self.num_trials, self.pipeline).ground_truth
         self.trial_envs = envs
@@ -164,8 +167,9 @@ class DummyParticipant():
     def get_all_trials_data(self):
         total_data = {'actions': {}, 'rewards': {},
                       'taken_paths': {}, 'strategies': {},
-                      'temperature':{}}
+                      'temperature': {}}
         return total_data
+
 
 class DummyParticipantNew():
     """ Creates a participant object which contains all details about the participant
@@ -190,5 +194,5 @@ class DummyParticipantNew():
         rewards = {} if not self.scores else self.scores
         total_data = {'actions': {}, 'rewards': {},
                       'taken_paths': {}, 'strategies': {},
-                      'temperature':{}}
+                      'temperature': {}}
         return total_data

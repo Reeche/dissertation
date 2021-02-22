@@ -56,20 +56,60 @@ def analyze_trajectory(trajectory, print_trajectories=False):
     print("Mean final strategy usage:", average_trials_repetition)
 
 
-# Load your experiment strategies here as a dict
-#strategies = learning_utils.pickle_load("../results/final_strategy_inferences/v1.0_strategies.pkl")
-strategies = learning_utils.pickle_load("../results/inferred_strategies/constant_variance_training/strategies.pkl")
+def get_changes(input: np.array = None):
+    results = {}
+    for idx, value in enumerate(input):
+        if value == 0:
+            results[idx] = 0
+        else:
+            results[idx] = 1
+    return results
 
-clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
-cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
 
-# Get sorted trajectories
-cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+from collections import Counter
+import matplotlib.pyplot as plt
 
-print("Strategy usage:")
-analyze_trajectory(strategy_trajectory)
-print("\n")
+def difference_between_trials(strategies):
+    # returns booleans whether from one trial to the other trial there was a change
+    change_list_of_dicts = []
+    for key, value in strategies.items():
+        changes_numeric = np.diff(value)
+        changes_boolean_as_dict = get_changes(changes_numeric)
+        change_list_of_dicts.append(changes_boolean_as_dict)
+    sum_values = sum((Counter(dict(x)) for x in change_list_of_dicts), Counter())
 
-print("Cluster usage:")
-analyze_trajectory(cluster_trajectory)
-print("\n")
+    fig = plt.figure(figsize=(15, 10))
+    plt.bar(sum_values.keys(), sum_values.values(), 1, color='b')
+    plt.xlabel("Trial Number", size=24)
+    plt.ylabel("Absolute number of changes", fontsize=24)
+    plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes.png",
+                bbox_inches='tight')
+    plt.close(fig)
+    return None
+
+# Load your experiment strategies here as a dict, dict of pid and strategy sequence
+exp_num = "decreasing_variance"
+if exp_num == "constant_variance":
+    exp = "c1.1"
+elif exp_num == "increasing_variance":
+    exp = "v1.0"
+else:
+    exp = "c2.1"
+block = "training"
+strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
+difference_between_trials(strategies)
+
+
+# clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+# cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+#
+# # Get sorted trajectories
+# cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+#
+# print("Strategy usage:")
+# analyze_trajectory(strategy_trajectory)
+# print("\n")
+#
+# print("Cluster usage:")
+# analyze_trajectory(cluster_trajectory)
+# print("\n")

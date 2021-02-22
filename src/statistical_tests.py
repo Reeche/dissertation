@@ -184,17 +184,17 @@ strategy_array_increasing = np.array(strategy_list_increasing)
 strategy_array_decreasing = np.array(strategy_list_decreasing)
 strategy_array_constant = np.array(strategy_list_constant)
 
-# for i in range(0, 79):
-#     increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
-#     print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
-#
-# for i in range(0, 79):
-#     decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
-#     print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
-#
-# for i in range(0, 79):
-#     constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
-#     print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
+for i in range(0, 79):
+    increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
+    print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
+
+for i in range(0, 79):
+    decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
+    print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
+
+for i in range(0, 79):
+    constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
+    print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
 
 print(" ----------------- Clusters -----------------")
 cluster_mapping = ["Goal-setting with exhaustive backward planning",
