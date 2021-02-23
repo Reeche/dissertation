@@ -104,7 +104,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = Fal
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
     if plotting:
-        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,"{pid}.png"))
+        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,f"{pid}.png"))
     #save priors
     pickle_save((res, prior), os.path.join(prior_directory,f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
