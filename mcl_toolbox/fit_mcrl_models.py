@@ -1,5 +1,6 @@
 import sys, os
 from pathlib import Path
+import ast
 
 from mcl_toolbox.global_vars import *
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
@@ -8,16 +9,16 @@ from mcl_toolbox.utils.learning_utils import pickle_save, \
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 
 """
-Run this using: python3 fit_mcrl_models.py <model_index> <exp_num> <optimization_criterion> <pid>
+Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1
+Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
 
 Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 #todo: not all optimization methods with all models. Need to add this somewhere in the code
 
 
-def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = False, optimization_params = {'optimizer':"hyperopt", 'num_simulations': 5, 'max_evals': 200}):
+def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = False, optimization_params = {'optimizer':"hyperopt", 'num_simulations': 5, 'max_evals': 200}, **kwargs):
     '''
 
     :param exp_name: experiment name, which is the folder name of the experiment in ../data/human/
@@ -29,16 +30,16 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = Fal
     '''
 
     # create directory to save priors in
-    curr_directory = Path(__file__).parents[0]
-    prior_directory = os.path.join(curr_directory,f"results/{exp_name}_priors")
+    parent_directory = Path(__file__).parents[1]
+    prior_directory = os.path.join(parent_directory,f"results/{exp_name}_priors")
     create_dir(prior_directory)
     #and directory to save fit model info in
-    model_info_directory = os.path.join(curr_directory, f"../results/info_{exp_num}_data")
+    model_info_directory = os.path.join(parent_directory, f"results/info_{exp_name}_data")
     create_dir(model_info_directory)
 
     #add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(curr_directory,f"../results/{exp_num}_plots")
+        plot_directory = os.path.join(parent_directory,f"results/{exp_name}_plots")
         create_dir(plot_directory)
 
     #load experiment specific info
@@ -105,7 +106,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting = Fal
     if plotting:
         reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,"{pid}.png"))
     #save priors
-    pickle_save((res, prior), os.path.join(prior_directory,f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl"))
+    pickle_save((res, prior), os.path.join(prior_directory,f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
     #TODO: document what is this? Is this running simulations given priors?
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
@@ -118,4 +119,12 @@ if __name__ == "__main__":
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
-    prior_fit(exp_name, model_index, optimization_criterion, pid)
+    other_params = {}
+    if len(sys.argv)>5:
+        other_params = ast.literal_eval(sys.argv[5])
+    prior_fit(exp_name, model_index, optimization_criterion, pid, **other_params)
+
+
+
+
+
