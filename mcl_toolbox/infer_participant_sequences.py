@@ -81,7 +81,7 @@ def infer_participant_sequences(pid, exp_num, block = None):
                             W, microscope_features, normalized_features)
 
     parent_directory = Path(__file__).parents[1]
-    path = os.path.join(parent_directory,"results/inferred_participant_sequences/{exp_num}")
+    path = os.path.join(parent_directory,f"results/inferred_participant_sequences/{exp_num}")
     learning_utils.create_dir(path)
     if not block:
         learning_utils.pickle_save(inferred_strategies, f"{path}/{pid}_strategies.pkl")
