@@ -65,6 +65,9 @@ class structure:
     the function construct_repeated_pipeline is used to create a pipeline
     '''
     exp_pipelines = pickle_load("data/exp_pipelines.pkl")
+    #for some reason F1 is missing one trial
+    
+    exp_pipelines["F1"].append(exp_pipelines["F1"][0])
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {'v1.0': 'high_increasing',
