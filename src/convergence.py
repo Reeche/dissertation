@@ -1,4 +1,5 @@
-import pickle
+from collections import Counter
+import matplotlib.pyplot as plt
 import operator
 import numpy as np
 from collections import defaultdict
@@ -66,9 +67,6 @@ def get_changes(input: np.array = None):
     return results
 
 
-from collections import Counter
-import matplotlib.pyplot as plt
-
 def difference_between_trials(strategies):
     # returns booleans whether from one trial to the other trial there was a change
     change_list_of_dicts = []
@@ -100,16 +98,18 @@ strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_nu
 difference_between_trials(strategies)
 
 
-# clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
-# cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-#
-# # Get sorted trajectories
-# cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
-#
-# print("Strategy usage:")
-# analyze_trajectory(strategy_trajectory)
-# print("\n")
-#
-# print("Cluster usage:")
-# analyze_trajectory(cluster_trajectory)
-# print("\n")
+clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+
+# Get sorted trajectories
+cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+
+# show how many trials until the final strategy was used
+print("Strategy usage:")
+analyze_trajectory(strategy_trajectory)
+print("\n")
+
+# show how many trials until the final strategy cluster was used
+print("Cluster usage:")
+analyze_trajectory(cluster_trajectory)
+print("\n")

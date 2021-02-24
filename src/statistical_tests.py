@@ -162,39 +162,39 @@ print(" ----------------- Difference between Decision systems -----------------"
 ### Seasonality
 print(" ----------------- Trends -----------------")
 
-print(" ----------------- Strategies -----------------")
-# Strategies
-strategy_list_increasing = []
-strategy_list_decreasing = []
-strategy_list_constant = []
-for i in range(0, len(strategy_proportions_trialwise_increasing)):
-    strategy_list_increasing.append(
-        list(create_comparable_data(strategy_proportions_trialwise_increasing[i], len=79).values()))
-    strategy_list_decreasing.append(
-        list(create_comparable_data(strategy_proportions_trialwise_decreasing[i], len=79).values()))
-    strategy_list_constant.append(
-        list(create_comparable_data(strategy_proportions_trialwise_constant[i], len=79).values()))
+# print(" ----------------- Strategies -----------------")
+# # Strategies
+# strategy_list_increasing = []
+# strategy_list_decreasing = []
+# strategy_list_constant = []
+# for i in range(0, len(strategy_proportions_trialwise_increasing)):
+#     strategy_list_increasing.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_increasing[i], len=79).values()))
+#     strategy_list_decreasing.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_decreasing[i], len=79).values()))
+#     strategy_list_constant.append(
+#         list(create_comparable_data(strategy_proportions_trialwise_constant[i], len=79).values()))
 
 
 print(" ----------------- First vs. last trial -----------------")
 print(" ----------------- Strategies distribution -----------------")
 
-
-strategy_array_increasing = np.array(strategy_list_increasing)
-strategy_array_decreasing = np.array(strategy_list_decreasing)
-strategy_array_constant = np.array(strategy_list_constant)
-
-for i in range(0, 79):
-    increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
-    print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
-
-for i in range(0, 79):
-    decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
-    print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
-
-for i in range(0, 79):
-    constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
-    print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
+#
+# strategy_array_increasing = np.array(strategy_list_increasing)
+# strategy_array_decreasing = np.array(strategy_list_decreasing)
+# strategy_array_constant = np.array(strategy_list_constant)
+#
+# for i in range(0, 79):
+#     increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
+#     print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
+#     print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
+#
+# for i in range(0, 79):
+#     constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
+#     print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
 
 print(" ----------------- Clusters -----------------")
 cluster_mapping = ["Goal-setting with exhaustive backward planning",
@@ -216,27 +216,27 @@ cluster_list_decreasing = []
 cluster_list_constant = []
 for i in range(0, len(cluster_proportions_trialwise_increasing)):
     cluster_list_increasing.append(
-        list(create_comparable_data(cluster_proportions_trialwise_increasing[i], len=13).values()))
+        list(create_comparable_data(cluster_proportions_trialwise_increasing[i], len=14).values()))
     cluster_list_decreasing.append(
-        list(create_comparable_data(cluster_proportions_trialwise_decreasing[i], len=13).values()))
+        list(create_comparable_data(cluster_proportions_trialwise_decreasing[i], len=14).values()))
     cluster_list_constant.append(
-        list(create_comparable_data(cluster_proportions_trialwise_constant[i], len=13).values()))
+        list(create_comparable_data(cluster_proportions_trialwise_constant[i], len=14).values()))
 
 cluster_array_increasing = np.array(cluster_list_increasing)
 cluster_array_decreasing = np.array(cluster_list_decreasing)
 cluster_array_constant = np.array(cluster_list_constant)
 
-# for i in range(0, 13):
-#     increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
-#     print("Mann Kendall Test: Increasing Cluster: ", i, increasing_cluster_trend)
-#
-# for i in range(0, 13):
-#     decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
-#     print("Mann Kendall Test: Decreasing Cluster: ", i, decreasing_cluster_trend)
-#
-# for i in range(0, 13):
-#     constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
-#     print("Mann Kendall Test: Constant Cluster: ", i, constant_cluster_trend)
+for i in range(0, 14):
+    increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
+    print("Mann Kendall Test: Increasing Cluster: ", i, increasing_cluster_trend)
+
+for i in range(0, 14):
+    decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
+    print("Mann Kendall Test: Decreasing Cluster: ", i, decreasing_cluster_trend)
+
+for i in range(0, 14):
+    constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
+    print("Mann Kendall Test: Constant Cluster: ", i, constant_cluster_trend)
 
 # print(" ----------------- Decision System -----------------")
 # for i in range(0, 5):
@@ -252,38 +252,38 @@ cluster_array_constant = np.array(cluster_list_constant)
 #     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
 
 
-print(" ----------------- First vs. last trial -----------------")
-print(" ----------------- Strategies -----------------")
-n = 2
-
-average_first_n_trials = np.mean(strategy_array_increasing[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(strategy_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
-
-average_first_n_trials = np.mean(strategy_array_decreasing[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(strategy_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
-
-average_first_n_trials = np.mean(strategy_array_constant[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(strategy_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
-
-print(" ----------------- Strategy cluster  -----------------")
-
-average_first_n_trials = np.mean(cluster_array_increasing[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(cluster_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
-
-average_first_n_trials = np.mean(cluster_array_decreasing[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(cluster_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
-
-average_first_n_trials = np.mean(cluster_array_constant[:n,:], axis=0) #first 5 elements
-average_last_n_trials = np.mean(cluster_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
-stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
-print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+# print(" ----------------- First vs. last trial -----------------")
+# print(" ----------------- Strategies -----------------")
+# n = 2
+#
+# average_first_n_trials = np.mean(strategy_array_increasing[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(strategy_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+#
+# average_first_n_trials = np.mean(strategy_array_decreasing[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(strategy_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+#
+# average_first_n_trials = np.mean(strategy_array_constant[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(strategy_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+#
+# print(" ----------------- Strategy cluster  -----------------")
+#
+# average_first_n_trials = np.mean(cluster_array_increasing[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(cluster_array_increasing[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Increasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+#
+# average_first_n_trials = np.mean(cluster_array_decreasing[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(cluster_array_decreasing[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Decreasing: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))
+#
+# average_first_n_trials = np.mean(cluster_array_constant[:n,:], axis=0) #first 5 elements
+# average_last_n_trials = np.mean(cluster_array_constant[-(n+1):-1,:], axis=0) #last 5 elements
+# stat, p = mannwhitneyu(average_first_n_trials, average_last_n_trials)
+# print('Constant: First %.0f trials vs Last %.0f trials: stat=%.3f, p=%.3f' % (n, n, stat, p))

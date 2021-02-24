@@ -667,11 +667,14 @@ class Experiment():
 
     def plot_adaptive_maladaptive_strategies_vs_rest(self, adaptive_strategy_list, maladaptive_strategy_list):
         """
-        This function sums up the proportion of the top 3 strategies and plots them against the summed proportions of the rest
-        Args:
-            S: number (i.e. their name) of the strategy
+        This function sums up the proportion of the top 3 adaptive strategies and worst 3 maladaptive strategies and
+        plots them against the summed proportions of the rest
 
-        Returns: a plot
+        Args:
+            adaptive_strategy_list: Manually defined list of adaptive (good) strategies
+            maladaptive_strategy_list: Manually defined list of maladaptive (bad) strategies
+
+        Returns: None
 
         """
         strategy_proportion = self.trial_strategy_proportions
