@@ -27,6 +27,7 @@ exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
 score_list = {}
 
 # loops through all strategies and saves into a list
+# todo: change this one to not hard coded
 for strategy in range(0, 89):
     strategy_scores = defaultdict(lambda: defaultdict(int))
     scores = []

@@ -67,7 +67,7 @@ def get_changes(input: np.array = None):
     return results
 
 
-def difference_between_trials(strategies):
+def difference_between_trials(strategies, number_participants):
     # returns booleans whether from one trial to the other trial there was a change
     change_list_of_dicts = []
     for key, value in strategies.items():
@@ -77,39 +77,44 @@ def difference_between_trials(strategies):
     sum_values = sum((Counter(dict(x)) for x in change_list_of_dicts), Counter())
 
     fig = plt.figure(figsize=(15, 10))
-    plt.bar(sum_values.keys(), sum_values.values(), 1, color='b')
+    # create percentages by dividing each item in the list by number of participants (15)
+    relative_sum_values = [x / number_participants for x in list(sum_values.values())]
+    plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+    plt.ylim(top=1.0)
     plt.xlabel("Trial Number", size=24)
-    plt.ylabel("Absolute number of changes", fontsize=24)
+    plt.ylabel("Percentage of people who changed strategy", fontsize=24)
     plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes.png",
                 bbox_inches='tight')
     plt.close(fig)
     return None
 
 # Load your experiment strategies here as a dict, dict of pid and strategy sequence
-exp_num = "decreasing_variance"
+exp_num = "constant_variance"
 if exp_num == "constant_variance":
     exp = "c1.1"
 elif exp_num == "increasing_variance":
     exp = "v1.0"
 else:
     exp = "c2.1"
+
 block = "training"
 strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
-difference_between_trials(strategies)
+number_participants = 15
+difference_between_trials(strategies, number_participants)
 
-
-clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
-cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-
-# Get sorted trajectories
-cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
-
-# show how many trials until the final strategy was used
-print("Strategy usage:")
-analyze_trajectory(strategy_trajectory)
-print("\n")
-
-# show how many trials until the final strategy cluster was used
-print("Cluster usage:")
-analyze_trajectory(cluster_trajectory)
-print("\n")
+#
+# clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+# cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+#
+# # Get sorted trajectories
+# cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+#
+# # show how many trials until the final strategy was used
+# print("Strategy usage:")
+# analyze_trajectory(strategy_trajectory)
+# print("\n")
+#
+# # show how many trials until the final strategy cluster was used
+# print("Cluster usage:")
+# analyze_trajectory(cluster_trajectory)
+# print("\n")
