@@ -1,7 +1,8 @@
-import pandas as pd
-import statistics
 import os
+import statistics
+
 import numpy as np
+import pandas as pd
 
 score_list = {}
 
