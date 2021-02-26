@@ -15,7 +15,12 @@ How To Use This
 ---------------
 
 ### Installation
-Run `requirements.txt` to install the dependencies. 
+To install as a package in python 3.8+:
+```
+git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
+cd mcl_toolbox
+pip install -e .
+```
 
 ### Import data
 Assuming you are working with the Mouselab-MDP repository and with a postgres database: 
@@ -27,17 +32,23 @@ for each condition as well as an overall file
 Note: you might have to use your own import code depending on your requirements. 
 
 ### Analysis modules
-1. Navigate to `src/`
-2. Run `src/infer_participant_sequences.py` to analyse the click sequence of each participant
-3. Run `src/infer_participant.py` to analyse the click sequence average over conditions
-4. Run `src/fit_mcrl_models.py` to fit the MCRL models
+1. Navigate to `mcl_toolbox/`
+2. Run `python mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
+3. Run `python mcl_toolbox/infer_sequences.py` to analyse the click sequence average over conditions
+4. Run `python mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
 
 Note: see each folder or each file for detailed instructions. 
 
 Testing
 -------
+There are very simple integration tests in tests/ to run analysis modules quickly to check whether analysis modules will run.
+To run these, run:
+```
+chmod +x test_analysis.sh
+./test_analysis.sh
+```
 
-TODO
+#TODO unit tests
 
 Development
 -----------
