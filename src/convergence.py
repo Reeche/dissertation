@@ -8,6 +8,13 @@ from utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 
+"""
+This file outputs analysis related to convergence in learning. 
+
+Format: python3 convergence.py <reward_structure> <block> 
+Example: python3 convergence.py increasing_variance training 
+"""
+
 
 def remove_duplicates(cluster_list):
     previous_cluster = cluster_list[0]
@@ -67,8 +74,9 @@ def get_changes(input: np.array = None):
     return results
 
 
-def difference_between_trials(strategies, number_participants):
+def difference_between_trials(strategies: defaultdict, number_participants):
     # returns booleans whether from one trial to the other trial there was a change
+    # strateiges is a default dict that contains list of participants (pid) and their strategies across each trial
     change_list_of_dicts = []
     for key, value in strategies.items():
         changes_numeric = np.diff(value)
@@ -88,33 +96,42 @@ def difference_between_trials(strategies, number_participants):
     plt.close(fig)
     return None
 
-# Load your experiment strategies here as a dict, dict of pid and strategy sequence
-exp_num = "constant_variance"
-if exp_num == "constant_variance":
-    exp = "c1.1"
-elif exp_num == "increasing_variance":
-    exp = "v1.0"
-else:
-    exp = "c2.1"
 
-block = "training"
-strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
-number_participants = 15
-difference_between_trials(strategies, number_participants)
+if __name__ == "__main__":
+    # reward_structure = sys.argv[1]
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
 
-#
-# clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
-# cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-#
-# # Get sorted trajectories
-# cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
-#
-# # show how many trials until the final strategy was used
-# print("Strategy usage:")
-# analyze_trajectory(strategy_trajectory)
-# print("\n")
-#
-# # show how many trials until the final strategy cluster was used
-# print("Cluster usage:")
-# analyze_trajectory(cluster_trajectory)
-# print("\n")
+    reward_structure = "increasing_variance"
+    block = "training"
+
+    # Load your experiment strategies here as a dict, dict of pid and strategy sequence
+    exp_num = reward_structure
+    if exp_num == "constant_variance":
+        exp = "c1.1"
+    elif exp_num == "increasing_variance":
+        exp = "v1.0"
+    else:
+        exp = "c2.1"
+
+    block = "training"
+    strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
+    number_participants = 15 #todo: make this more dynamic
+    difference_between_trials(strategies, number_participants)
+
+    clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+
+    # Get sorted trajectories
+    cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+
+    # show how many trials until the final strategy was used
+    print("Strategy usage:")
+    analyze_trajectory(strategy_trajectory)
+    print("\n")
+
+    # show how many trials until the final strategy cluster was used
+    print("Cluster usage:")
+    analyze_trajectory(cluster_trajectory)
+    print("\n")
