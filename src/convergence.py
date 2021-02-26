@@ -2,6 +2,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import operator
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 import sys
 from utils import learning_utils, distributions
@@ -64,29 +65,29 @@ def analyze_trajectory(trajectory, print_trajectories=False):
     print("Mean final strategy usage:", average_trials_repetition)
 
 
-def get_changes(input: np.array = None):
-    results = {}
-    for idx, value in enumerate(input):
-        if value == 0:
-            results[idx] = 0
-        else:
-            results[idx] = 1
-    return results
-
 
 def difference_between_trials(strategies: defaultdict, number_participants):
-    # returns booleans whether from one trial to the other trial there was a change
-    # strateiges is a default dict that contains list of participants (pid) and their strategies across each trial
+    """
+    It creates a plot which shows the percentage of participants who changed their strategy across trial
+    Args:
+        strategies: A list of strategies for all participants (index is pid) across trials.
+        number_participants:
+
+    Returns:
+
+    """
     change_list_of_dicts = []
     for key, value in strategies.items():
         changes_numeric = np.diff(value)
-        changes_boolean_as_dict = get_changes(changes_numeric)
-        change_list_of_dicts.append(changes_boolean_as_dict)
-    sum_values = sum((Counter(dict(x)) for x in change_list_of_dicts), Counter())
+        # Convert result of numpy difference into dictionary that maps trial_index -> whether a change occurred (1 or 0)
+        change_count = {trial_idx: int(diff_val != 0) for trial_idx, diff_val in enumerate(list(changes_numeric))}
+        change_list_of_dicts.append(change_count) # a dict of all changes for each participant, len: 15
+    df = pd.DataFrame(change_list_of_dicts)
+    sum_values = df.sum(axis=0)
 
     fig = plt.figure(figsize=(15, 10))
     # create percentages by dividing each item in the list by number of participants (15)
-    relative_sum_values = [x / number_participants for x in list(sum_values.values())]
+    relative_sum_values = [x / number_participants for x in list(sum_values)]
     plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
     plt.ylim(top=1.0)
     plt.xlabel("Trial Number", size=24)
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
 
-    reward_structure = "increasing_variance"
+    reward_structure = "constant_variance"
     block = "training"
 
     # Load your experiment strategies here as a dict, dict of pid and strategy sequence
