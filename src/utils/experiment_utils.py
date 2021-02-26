@@ -677,27 +677,24 @@ class Experiment():
         Returns: None
 
         """
-        strategy_proportion = self.trial_strategy_proportions
         number_of_trials = list(range(0, self.num_trials))
-        adaptive_strategy_sum = {key: 0 for key in number_of_trials}
-        maladaptive_strategy_sum = {key: 0 for key in number_of_trials}
-        rest = {key: 0 for key in number_of_trials}
-        for trial_key, strategy_dict in strategy_proportion.items():
+        df = pd.DataFrame(float(0), index=number_of_trials, columns=["adaptive_strategy_sum", "maladaptive_strategy_sum", "rest"])
+        for trial_key, strategy_dict in self.trial_strategy_proportions.items():
             for strategy_number, strategy_value in strategy_dict.items():
                 if strategy_number in adaptive_strategy_list:
-                    adaptive_strategy_sum[trial_key] += strategy_value
+                    df["adaptive_strategy_sum"][trial_key] += strategy_value
                 elif strategy_number in maladaptive_strategy_list:
-                    maladaptive_strategy_sum[trial_key] += strategy_value
+                    df["maladaptive_strategy_sum"][trial_key] += strategy_value
                 else:
-                    rest[trial_key] += strategy_value
+                    df["rest"][trial_key] += strategy_value
 
         fig = plt.figure(figsize=(15, 10))
 
-        plt.plot(range(1, self.num_trials + 1), adaptive_strategy_sum.values(), label="Adaptive strategies",
+        plt.plot(range(1, self.num_trials + 1), df["adaptive_strategy_sum"], label="Adaptive strategies",
                  linewidth=3.0)
-        plt.plot(range(1, self.num_trials + 1), maladaptive_strategy_sum.values(), label="Maladaptive strategies",
+        plt.plot(range(1, self.num_trials + 1), df["maladaptive_strategy_sum"], label="Maladaptive strategies",
                  linewidth=3.0)
-        plt.plot(range(1, self.num_trials + 1), rest.values(), label="Other strategies", linewidth=3.0)
+        plt.plot(range(1, self.num_trials + 1), df["rest"], label="Other strategies", linewidth=3.0)
 
         plt.xlabel("Trial Number", fontsize=24)
         plt.ylabel("Proportion", fontsize=24)

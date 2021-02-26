@@ -89,11 +89,11 @@ if __name__ == "__main__":
     learning_utils.create_dir(save_path)
 
     # adaptive and maladaptive strategies
-    manual_strategy_list = []
-    maladaptive_strategy_list = []
+    # manual_strategy_list = []
+    # maladaptive_strategy_list = []
     # increasing
-    # manual_strategy_list = [21, 63, 40, 50, 51]
-    # maladaptive_strategy_list = [39, 23, 53, 70, 28]
+    manual_strategy_list = [21, 63, 40, 50, 51]
+    maladaptive_strategy_list = [39, 23, 53, 70, 28]
 
     # decreasing
     # manual_strategy_list = [70, 23, 69, 65, 33]

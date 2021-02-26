@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 import random
+import itertools
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
 import pymannkendall as mk
@@ -25,35 +26,31 @@ A friedmanchisquare test will be used to whether the distributions of two or mor
 A Mann Kendall test is used to test for trends
 
 """
-#todo: this code seriously need some tidy up
+# todo: this code seriously need some tidy up
 
-
-strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
-features = learning_utils.pickle_load("data/microscope_features.pkl")
-strategy_weights = learning_utils.pickle_load("data/microscope_weights.pkl")
-num_features = len(features)
-exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
-features = learning_utils.pickle_load("data/microscope_features.pkl")
-decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
-feature_systems = learning_utils.pickle_load("data/feature_systems.pkl")
-decision_system_features = learning_utils.pickle_load("data/decision_system_features.pkl")
-DS_proportions = learning_utils.pickle_load("data/strategy_decision_proportions.pkl")
-W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
-cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")
-cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
-
-block = "training"
-
-reward_exps = {"increasing_variance": "v1.0",
-               "decreasing_variance": "c2.1",
-               "constant_variance": "c1.1"}
-
-
-# need to get the strategy / cluster / decision system proportions from each condition
-
-def get_data_of_cluster_decision_system(keys, values):
+def load_data_from_computational_microscope(keys, values):
     random.seed(123)
+
+    block = "training"
+
+    reward_exps = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1",
+                   "constant_variance": "c1.1"}
+    strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
+    features = learning_utils.pickle_load("data/microscope_features.pkl")
+    strategy_weights = learning_utils.pickle_load("data/microscope_weights.pkl")
+    num_features = len(features)
+    exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
+    features = learning_utils.pickle_load("data/microscope_features.pkl")
+    decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
+    feature_systems = learning_utils.pickle_load("data/feature_systems.pkl")
+    decision_system_features = learning_utils.pickle_load("data/decision_system_features.pkl")
+    DS_proportions = learning_utils.pickle_load("data/strategy_decision_proportions.pkl")
+    W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
+    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+    strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")
+    cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
+
     if values == "c2.1":
         pipeline = exp_pipelines["c2.1_dec"]
     else:
@@ -92,15 +89,43 @@ def get_data_of_cluster_decision_system(keys, values):
     return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
 
-# get the data
-strategy_proportions_increasing, strategy_proportions_trialwise_increasing, cluster_proportions_increasing, cluster_proportions_trialwise_increasing, decision_system_proportions_increasing, mean_dsw_increasing = get_data_of_cluster_decision_system(
+# todo: change this so it can take a variable amount of args
+def test_for_equal_distribution(name_distribution_dict: dict, type: str):
+    """
+    Are the distributions of the proportions between the environments equal?
+    friedmanchisquare for all and mannwhitneyu tests for pairs
+
+    Args:
+        name_distribution_dict: a dictionary with the variance type and corresponding distribution }
+        e.g. {"increasing": [array]}
+
+    Returns: None
+
+    """
+    length_of_dict = len(name_distribution_dict)
+    print(f" === Test for Equal distributions between the {type} === ")
+
+    if length_of_dict >= 3:
+        stat, p = friedmanchisquare(*[v for k, v in name_distribution_dict.items()])
+        print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+
+    for variance_type_a, distribution_a in name_distribution_dict.items():
+        for variance_type_b, distribution_b in name_distribution_dict.items():
+            stat, p = mannwhitneyu(distribution_a, distribution_b)
+            print(f"{variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
+
+
+
+# create data
+strategy_proportions_increasing, strategy_proportions_trialwise_increasing, cluster_proportions_increasing, cluster_proportions_trialwise_increasing, decision_system_proportions_increasing, mean_dsw_increasing = load_data_from_computational_microscope(
     "increasing_variance", "v1.0")
-strategy_proportions_constant, strategy_proportions_trialwise_constant, cluster_proportions_constant, cluster_proportions_trialwise_constant, decision_system_proportions_constant, mean_dsw_constant = get_data_of_cluster_decision_system(
+strategy_proportions_constant, strategy_proportions_trialwise_constant, cluster_proportions_constant, cluster_proportions_trialwise_constant, decision_system_proportions_constant, mean_dsw_constant = load_data_from_computational_microscope(
     "constant_variance", "c1.1")
-strategy_proportions_decreasing, strategy_proportions_trialwise_decreasing, cluster_proportions_decreasing, cluster_proportions_trialwise_decreasing, decision_system_proportions_decreasing, mean_dsw_decreasing = get_data_of_cluster_decision_system(
+strategy_proportions_decreasing, strategy_proportions_trialwise_decreasing, cluster_proportions_decreasing, cluster_proportions_trialwise_decreasing, decision_system_proportions_decreasing, mean_dsw_decreasing = load_data_from_computational_microscope(
     "decreasing_variance", "c2.1")
 
 # create the data for clusters, need to make them all equal length
+# len 14 because there are 13 strategy clusters
 increasing_cluster = create_comparable_data(cluster_proportions_increasing, len=14)
 decreasing_cluster = create_comparable_data(cluster_proportions_decreasing, len=14)
 constant_cluster = create_comparable_data(cluster_proportions_constant, len=14)
@@ -110,54 +135,26 @@ decreasing_ds = decision_system_proportions_decreasing["Relative Influence (%)"]
 constant_ds = decision_system_proportions_constant["Relative Influence (%)"].tolist()
 
 # create the data for strategies, need to make them all equal length
+# len 89 because there are 89 strategies strategy clusters
 increasing_strategy = create_comparable_data(strategy_proportions_increasing, len=89)
 decreasing_strategy = create_comparable_data(strategy_proportions_decreasing, len=89)
 constant_strategy = create_comparable_data(strategy_proportions_constant, len=89)
 
 
-### Statistical differences between the conditions
-print(" ----------------- Differences -----------------")
-print(" ----------------- Difference between Strategies -----------------")
+print(" ----------------- Distribution Difference -----------------")
+strategy_difference_dict = {"increasing": list(increasing_strategy.values()), "decreasing": list(decreasing_strategy.values()),
+        "constant": list(constant_strategy.values())}
+test_for_equal_distribution(strategy_difference_dict, "Strategies")
 
-# stat, p = friedmanchisquare(list(increasing_strategy.values()), list(decreasing_strategy.values()),
-#                             list(constant_strategy.values()))
-# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-# stat, p = mannwhitneyu(list(increasing_strategy.values()), list(decreasing_strategy.values()))
-# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(list(increasing_strategy.values()), list(constant_strategy.values()))
-# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(list(decreasing_strategy.values()), list(constant_strategy.values()))
-# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+cluster_difference_dict = {"increasing": list(increasing_cluster.values()), "decreasing": list(decreasing_cluster.values()),
+                           "constant": list(constant_cluster.values())}
+test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
 
-print(" ----------------- Difference between Clusters -----------------")
+decision_system_difference_dict = {"increasing": increasing_ds, "decreasing": decreasing_ds,
+                           "constant": constant_ds}
+test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
 
-# stat, p = friedmanchisquare(list(increasing_cluster.values()), list(decreasing_cluster.values()),
-#                             list(constant_cluster.values()))
-# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(list(increasing_cluster.values()), list(decreasing_cluster.values()))
-# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(list(increasing_cluster.values()), list(constant_cluster.values()))
-# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(list(decreasing_cluster.values()), list(constant_cluster.values()))
-# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
-print(" ----------------- Difference between Decision systems -----------------")
-# stat, p = friedmanchisquare(increasing_ds, decreasing_ds, constant_ds)
-# print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(increasing_ds, decreasing_ds)
-# print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(increasing_ds, constant_ds)
-# print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-#
-# stat, p = mannwhitneyu(decreasing_ds, constant_ds)
-# print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
 
 ### Seasonality
 print(" ----------------- Trends -----------------")
