@@ -16,11 +16,12 @@ Example: python3 analyze_sequences.py increasing_variance training none
 """
 
 if __name__ == "__main__":
+    random.seed(123)
     reward_structure = sys.argv[1]
     block = None
     if len(sys.argv) > 2:
         block = sys.argv[2]
-    # reward_structure = "decreasing_variance"
+    # reward_structure = "increasing_variance"
     # block ="training"
 
     # Initializations
@@ -86,8 +87,28 @@ if __name__ == "__main__":
         if block:
             save_path += f"_{block}"
     learning_utils.create_dir(save_path)
+
+    # adaptive and maladaptive strategies
+    # manual_strategy_list = []
+    # maladaptive_strategy_list = []
+    # increasing
+    manual_strategy_list = [21, 63, 40, 50, 51]
+    maladaptive_strategy_list = [39, 23, 53, 70, 28]
+
+    # decreasing
+    # manual_strategy_list = [70, 23, 69, 65, 33]
+    # maladaptive_strategy_list = [39, 40, 50, 16, 76]
+
+    # constant
+    # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
+    # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
+    # manual_strategy_list = [65, 33, 34, 21, 69]
+    # maladaptive_strategy_list = [39, 30, 27, 28, 66]
+
+
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
-                  cluster_scores, cluster_map, precomputed_strategies=strategies,
+                  cluster_scores, cluster_map, manual_strategy_list, maladaptive_strategy_list,
+                  precomputed_strategies=strategies,
                   precomputed_temperatures=temperatures,
                   show_pids=False)

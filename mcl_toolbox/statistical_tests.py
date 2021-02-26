@@ -1,6 +1,10 @@
 import sys
-
+import pandas as pd
 import numpy as np
+import random
+import itertools
+from scipy.stats import mannwhitneyu
+from scipy.stats import friedmanchisquare
 import pymannkendall as mk
 from scipy.stats import friedmanchisquare
 from scipy.stats import mannwhitneyu
@@ -26,31 +30,29 @@ A Mann Kendall test is used to test for trends
 
 """
 
-strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
-features = learning_utils.pickle_load("data/microscope_features.pkl")
-strategy_weights = learning_utils.pickle_load("data/microscope_weights.pkl")
-num_features = len(features)
-exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
-features = learning_utils.pickle_load("data/microscope_features.pkl")
-decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
-feature_systems = learning_utils.pickle_load("data/feature_systems.pkl")
-decision_system_features = learning_utils.pickle_load("data/decision_system_features.pkl")
-DS_proportions = learning_utils.pickle_load("data/strategy_decision_proportions.pkl")
-W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
-cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")
-cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
-
-block = "training"
-
+random.seed(123)
 reward_exps = {"increasing_variance": "v1.0",
                "decreasing_variance": "c2.1",
                "constant_variance": "c1.1"}
 
 
-# need to get the strategy / cluster / decision system proportions from each condition
+def load_data_from_computational_microscope(keys, values, reward_exps):
+    block = "training"
+    strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
+    features = learning_utils.pickle_load("data/microscope_features.pkl")
+    strategy_weights = learning_utils.pickle_load("data/microscope_weights.pkl")
+    num_features = len(features)
+    exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
+    features = learning_utils.pickle_load("data/microscope_features.pkl")
+    decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
+    feature_systems = learning_utils.pickle_load("data/feature_systems.pkl")
+    decision_system_features = learning_utils.pickle_load("data/decision_system_features.pkl")
+    DS_proportions = learning_utils.pickle_load("data/strategy_decision_proportions.pkl")
+    W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
+    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+    strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")
+    cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
 
-def get_data_of_cluster_decision_system(keys, values):
     if values == "c2.1":
         pipeline = exp_pipelines["c2.1_dec"]
     else:
@@ -88,154 +90,152 @@ def get_data_of_cluster_decision_system(keys, values):
         show_pids=False)
     return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
 
+def test_for_equal_distribution(name_distribution_dict: dict, type: str):
+    """
+    Are the distributions of the proportions between the environments equal?
+    friedmanchisquare for all and mannwhitneyu tests for pairs
 
-# for keys, values in reward_exps.items():
-strategy_proportions_increasing, strategy_proportions_trialwise_increasing, cluster_proportions_increasing, cluster_proportions_trialwise_increasing, decision_system_proportions_increasing, mean_dsw_increasing = get_data_of_cluster_decision_system(
-    "increasing_variance", "v1.0")
-strategy_proportions_constant, strategy_proportions_trialwise_constant, cluster_proportions_constant, cluster_proportions_trialwise_constant, decision_system_proportions_constant, mean_dsw_constant = get_data_of_cluster_decision_system(
-    "constant_variance", "c1.1")
-strategy_proportions_decreasing, strategy_proportions_trialwise_decreasing, cluster_proportions_decreasing, cluster_proportions_trialwise_decreasing, decision_system_proportions_decreasing, mean_dsw_decreasing = get_data_of_cluster_decision_system(
-    "decreasing_variance", "c2.1")
+    Args:
+        name_distribution_dict: a dictionary with the variance type and corresponding distribution }
+        e.g. {"increasing": [array]}
 
-# create the data for clusters, need to make them all equal length
-increasing_cluster = create_comparable_data(cluster_proportions_increasing, len=14)
-decreasing_cluster = create_comparable_data(cluster_proportions_decreasing, len=14)
-constant_cluster = create_comparable_data(cluster_proportions_constant, len=14)
+    Returns: None
 
-increasing_ds = decision_system_proportions_increasing["Relative Influence (%)"].tolist()
-decreasing_ds = decision_system_proportions_decreasing["Relative Influence (%)"].tolist()
-constant_ds = decision_system_proportions_constant["Relative Influence (%)"].tolist()
+    """
+    length_of_dict = len(name_distribution_dict)
+    print(f" === Test for Equal distributions between the {type} === ")
 
-# create the data for strategies, need to make them all equal length
-increasing_strategy = create_comparable_data(strategy_proportions_increasing, len=89)
-decreasing_strategy = create_comparable_data(strategy_proportions_decreasing, len=89)
-constant_strategy = create_comparable_data(strategy_proportions_constant, len=89)
+    if length_of_dict >= 3:
+        stat, p = friedmanchisquare(*[v for k, v in name_distribution_dict.items()])
+        print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
+
+    for variance_type_a, distribution_a in name_distribution_dict.items():
+        for variance_type_b, distribution_b in name_distribution_dict.items():
+            stat, p = mannwhitneyu(distribution_a, distribution_b)
+            print(f"{variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
+
+def create_data_for_distribution_test(strategy_name_dict: dict):
+    """
+    Create data to check for equal distribution
+    Args:
+        strategy_name_dict: same as reward_exps:
+        reward_exps = {"increasing_variance": "v1.0",
+               "decreasing_variance": "c2.1",
+               "constant_variance": "c1.1"}
+
+    Returns:
+
+    """
+    # name: increasing
+    # experiment v1.0
+    column_names = ["increasing_variance", "decreasing_variance", "constant_variance"]
+    cluster_df = pd.DataFrame(columns=column_names)
+    strategy_df = pd.DataFrame(columns=column_names)
+    decision_system_df = pd.DataFrame(columns=column_names)
+
+    for name, experiment in strategy_name_dict.items():
+        strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _ = load_data_from_computational_microscope(
+            name, experiment, strategy_name_dict)
+        strategy_df[name] = list(create_comparable_data(strategy_proportions, len=89).values())
+        cluster_df[name] = list(create_comparable_data(cluster_proportions, len=14).values())
+        decision_system_df[name] = decision_system_proportions["Relative Influence (%)"].tolist()
+    return strategy_df, cluster_df, decision_system_df
+
+def create_data_for_trend_test(strategy_name_dict: dict, trend_test: True):
+    """
+    Create data for the trend tests
+    Args:
+        strategy_name_dict: reward_exps
+        reward_exps = {"increasing_variance": "v1.0",
+               "decreasing_variance": "c2.1",
+               "constant_variance": "c1.1"}
+
+    Returns: trend data as pandas dataframes
+    #todo: decision trend, not really used but might be useful for completeness
+    """
+    column_names = ["increasing_variance", "decreasing_variance", "constant_variance"]
+    cluster_trend = pd.DataFrame(columns=column_names)
+    strategy_trend = pd.DataFrame(columns=column_names)
+    # decision_trend = pd.DataFrame(columns=column_names)
+
+    for name, experiment in strategy_name_dict.items():
+        _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, mean_dsw = load_data_from_computational_microscope(
+            name, experiment, strategy_name_dict)
+
+        strategy_temp = []
+        cluster_temp = []
+        ds_temp = []
+        for i in range(0, len(strategy_proportions_trialwise)):
+            strategy_temp.append(list(create_comparable_data(strategy_proportions_trialwise[i], len=89).values()))
+        if trend_test:
+            strategy_trend[name] = list(map(list, zip(*strategy_temp)))  # transpose
+        else:
+            strategy_trend[name] = strategy_temp
+
+        for i in range(0, len(cluster_proportions_trialwise)):
+            cluster_temp.append(list(create_comparable_data(cluster_proportions_trialwise[i], len=14).values()))
+        if trend_test:
+            cluster_trend[name] = list(map(list, zip(*cluster_temp)))
+        else:
+            cluster_trend[name] = cluster_temp
+
+        # for i in range(0, len(mean_dsw)):
+        #     ds_temp.append(list(create_comparable_data(mean_dsw[i], len=5).values()))
+        # decision_trend[name] = ds_temp
+
+    return strategy_trend, cluster_trend  # , decision_trend
+
+def test_for_trend(trend, analysis_type: str):
+    # analysis_type: strategy or cluster or ds
+    for columns in trend:
+        for strategy_number in range(0, len(trend["increasing_variance"])):
+            test_results = mk.original_test(trend[columns][strategy_number])
+            print(f"Mann Kendall Test: {columns} {analysis_type}: ", strategy_number, test_results)
+
+def test_first_trials_vs_last_trials(trend, n, analysis_type):
+    """
+    This function tests whether the distributions between the first n trials and the last n trials are equal.
+    Args:
+        trend: pandas dataframe with the variance types as header and number of trials as rows
+        n: number of first and last trials to take into consideration
+        analysis_type: strategy or strategy cluster
+
+    Returns:
+
+    """
+    # todo: add decision systems
+
+    average_first_n_trials = trend.iloc[0:n].sum()  # add first n rows
+    average_last_n_trials = trend.iloc[-(n + 1):-1, :].sum()  # add last n rows
+    for columns in trend:
+        stat, p = mannwhitneyu(average_first_n_trials[columns], average_last_n_trials[columns])
+        print(f'{analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
 
 
-### Statistical differences between the conditions
-print(" ----------------- Differences -----------------")
-print(" ----------------- Difference between Strategies -----------------")
+print(" ----------------- Distribution Difference -----------------")
+strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
 
-stat, p = friedmanchisquare(list(increasing_strategy.values()), list(decreasing_strategy.values()),
-                            list(constant_strategy.values()))
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-stat, p = mannwhitneyu(list(increasing_strategy.values()), list(decreasing_strategy.values()))
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
+strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
+                            "decreasing": strategy_df["decreasing_variance"],
+                            "constant": strategy_df["constant_variance"]}
+test_for_equal_distribution(strategy_difference_dict, "Strategies")
 
-stat, p = mannwhitneyu(list(increasing_strategy.values()), list(constant_strategy.values()))
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
+                           "decreasing": cluster_df["decreasing_variance"],
+                           "constant": cluster_df["constant_variance"]}
+test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
 
-stat, p = mannwhitneyu(list(decreasing_strategy.values()), list(constant_strategy.values()))
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
+decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
+                                   "decreasing": decision_system_df["decreasing_variance"],
+                                   "constant": decision_system_df["constant_variance"]}
+test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
 
-print(" ----------------- Difference between Clusters -----------------")
-# print(np.sum(list(increasing.values())))
-# print(np.sum(list(decreasing.values())))
-# print(np.sum(list(constant.values())))
-stat, p = friedmanchisquare(list(increasing_cluster.values()), list(decreasing_cluster.values()),
-                            list(constant_cluster.values()))
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(increasing_cluster.values()), list(decreasing_cluster.values()))
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(increasing_cluster.values()), list(constant_cluster.values()))
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(list(decreasing_cluster.values()), list(constant_cluster.values()))
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-print(" ----------------- Difference between Decision systems -----------------")
-# print(np.sum(decision_system_proportions_increasing["Relative Influence (%)"].tolist()))
-# print(np.sum(decision_system_proportions_decreasing["Relative Influence (%)"].tolist()))
-# print(np.sum(decision_system_proportions_constant["Relative Influence (%)"].tolist()))
-
-stat, p = friedmanchisquare(increasing_ds, decreasing_ds, constant_ds)
-print('Friedman chi-squared tests: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(increasing_ds, decreasing_ds)
-print('Increasing vs Decreasing: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(increasing_ds, constant_ds)
-print('Increasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-stat, p = mannwhitneyu(decreasing_ds, constant_ds)
-print('Decreasing vs Constant: stat=%.3f, p=%.3f' % (stat, p))
-
-### Seasonality
 print(" ----------------- Trends -----------------")
-
-print(" ----------------- Strategies -----------------")
-# Strategies
-strategy_list_increasing = []
-strategy_list_decreasing = []
-strategy_list_constant = []
-for i in range(0, len(strategy_proportions_trialwise_increasing)):
-    strategy_list_increasing.append(
-        list(create_comparable_data(strategy_proportions_trialwise_increasing[i], len=79).values()))
-    strategy_list_decreasing.append(
-        list(create_comparable_data(strategy_proportions_trialwise_decreasing[i], len=79).values()))
-    strategy_list_constant.append(
-        list(create_comparable_data(strategy_proportions_trialwise_constant[i], len=79).values()))
-
-strategy_array_increasing = np.array(strategy_list_increasing)
-strategy_array_decreasing = np.array(strategy_list_decreasing)
-strategy_array_constant = np.array(strategy_list_constant)
-
-for i in range(0, 79):
-    increasing_strategy_trend = mk.original_test(list(strategy_array_increasing[:, i]))
-    print("Mann Kendall Test: Increasing Strategies: ", i, increasing_strategy_trend)
-
-for i in range(0, 79):
-    decreasing_strategy_trend = mk.original_test(list(strategy_array_decreasing[:, i]))
-    print("Mann Kendall Test: decreasing Strategies: ", i, decreasing_strategy_trend)
-
-for i in range(0, 79):
-    constant_strategy_trend = mk.original_test(list(strategy_array_constant[:, i]))
-    print("Mann Kendall Test: Constant Strategies: ", i, constant_strategy_trend)
-
-print(" ----------------- Clusters -----------------")
-cluster_mapping = ["Goal-setting with exhaustive backward planning",
-                   "Forward planning strategies similar to Breadth First Search",
-                   "Middle-out planning",
-                   "Forward planning strategies similar to Best First Search",
-                   "Local search",
-                   "Maximizing Goal-setting with exhaustive backward planning",
-                   "Frugal planning",
-                   "Myopic planning",
-                   "Maximizing goal-setting with limited backward planning",
-                   "Frugal goal-setting strategies",
-                   "Strategy that explores immediate outcomes on the paths to the best final outcomes",
-                   "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing",
-                   "Miscellaneous strategies"]
-
-cluster_list_increasing = []
-cluster_list_decreasing = []
-cluster_list_constant = []
-for i in range(0, len(cluster_proportions_trialwise_increasing)):
-    cluster_list_increasing.append(
-        list(create_comparable_data(cluster_proportions_trialwise_increasing[i], len=13).values()))
-    cluster_list_decreasing.append(
-        list(create_comparable_data(cluster_proportions_trialwise_decreasing[i], len=13).values()))
-    cluster_list_constant.append(
-        list(create_comparable_data(cluster_proportions_trialwise_constant[i], len=13).values()))
-
-cluster_array_increasing = np.array(cluster_list_increasing)
-cluster_array_decreasing = np.array(cluster_list_decreasing)
-cluster_array_constant = np.array(cluster_list_constant)
-
-for i in range(0, 13):
-    increasing_cluster_trend = mk.original_test(list(cluster_array_increasing[:, i]))
-    print("Mann Kendall Test: Increasing Cluster: ", i, increasing_cluster_trend)
-
-for i in range(0, 13):
-    decreasing_cluster_trend = mk.original_test(list(cluster_array_decreasing[:, i]))
-    print("Mann Kendall Test: Decreasing Cluster: ", i, decreasing_cluster_trend)
-
-for i in range(0, 13):
-    constant_cluster_trend = mk.original_test(list(cluster_array_constant[:, i]))
-    print("Mann Kendall Test: Constant Cluster: ", i, constant_cluster_trend)
-
+strategy_trend, cluster_trend = create_data_for_trend_test(reward_exps, trend_test=True)
+test_for_trend(strategy_trend, "Strategy")
+test_for_trend(cluster_trend, "Strategy Cluster")
+# test_for_trend(decision_trend, "Decision System")
+#
 # print(" ----------------- Decision System -----------------")
 # for i in range(0, 5):
 #     increasing_ds_trend = mk.original_test(list(mean_dsw_increasing[:, i]))
@@ -248,3 +248,9 @@ for i in range(0, 13):
 # for i in range(0, 5):
 #     constant_ds_trend = mk.original_test(list(mean_dsw_constant[:, i]))
 #     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
+
+print(" ----------------- First vs Last trial -----------------")
+first_last_strategies, first_last_clusters = create_data_for_trend_test(reward_exps, trend_test=False)
+test_first_trials_vs_last_trials(first_last_strategies, 2, "Strategy")
+test_first_trials_vs_last_trials(first_last_clusters, 2, "Strategy Cluster")
+# get_first_n_trials(decision_trend, 2, "Decision System")

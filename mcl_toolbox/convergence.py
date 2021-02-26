@@ -1,3 +1,4 @@
+import pickle
 import operator
 import numpy as np
 from collections import defaultdict
@@ -13,6 +14,13 @@ from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
+
+"""
+This file outputs analysis related to convergence in learning. 
+
+Format: python3 convergence.py <reward_structure> <block> 
+Example: python3 convergence.py increasing_variance training 
+"""
 
 
 def remove_duplicates(cluster_list):
@@ -63,20 +71,74 @@ def analyze_trajectory(trajectory, print_trajectories=False):
     print("Mean final strategy usage:", average_trials_repetition)
 
 
-# Load your experiment strategies here as a dict
-#strategies = learning_utils.pickle_load("../results/final_strategy_inferences/v1.0_strategies.pkl")
-strategies = learning_utils.pickle_load("../results/inferred_strategies/constant_variance_training/strategies.pkl")
 
-clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
-cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+def difference_between_trials(strategies: defaultdict, number_participants):
+    """
+    It creates a plot which shows the percentage of participants who changed their strategy across trial
+    Args:
+        strategies: A list of strategies for all participants (index is pid) across trials.
+        number_participants:
 
-# Get sorted trajectories
-cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+    Returns:
 
-print("Strategy usage:")
-analyze_trajectory(strategy_trajectory)
-print("\n")
+    """
+    change_list_of_dicts = []
+    for key, value in strategies.items():
+        changes_numeric = np.diff(value)
+        # Convert result of numpy difference into dictionary that maps trial_index -> whether a change occurred (1 or 0)
+        change_count = {trial_idx: int(diff_val != 0) for trial_idx, diff_val in enumerate(list(changes_numeric))}
+        change_list_of_dicts.append(change_count) # a dict of all changes for each participant, len: 15
+    df = pd.DataFrame(change_list_of_dicts)
+    sum_values = df.sum(axis=0)
 
-print("Cluster usage:")
-analyze_trajectory(cluster_trajectory)
-print("\n")
+    fig = plt.figure(figsize=(15, 10))
+    # create percentages by dividing each item in the list by number of participants (15)
+    relative_sum_values = [x / number_participants for x in list(sum_values)]
+    plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+    plt.ylim(top=1.0)
+    plt.xlabel("Trial Number", size=24)
+    plt.ylabel("Percentage of people who changed strategy", fontsize=24)
+    plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes.png",
+                bbox_inches='tight')
+    plt.close(fig)
+    return None
+
+
+if __name__ == "__main__":
+    # reward_structure = sys.argv[1]
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+
+    reward_structure = "constant_variance"
+    block = "training"
+
+    # Load your experiment strategies here as a dict, dict of pid and strategy sequence
+    exp_num = reward_structure
+    if exp_num == "constant_variance":
+        exp = "c1.1"
+    elif exp_num == "increasing_variance":
+        exp = "v1.0"
+    else:
+        exp = "c2.1"
+
+    block = "training"
+    strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
+    number_participants = 15 #todo: make this more dynamic
+    difference_between_trials(strategies, number_participants)
+
+    clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+
+    # Get sorted trajectories
+    cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
+
+    # show how many trials until the final strategy was used
+    print("Strategy usage:")
+    analyze_trajectory(strategy_trajectory)
+    print("\n")
+
+    # show how many trials until the final strategy cluster was used
+    print("Cluster usage:")
+    analyze_trajectory(cluster_trajectory)
+    print("\n")
