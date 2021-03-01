@@ -171,7 +171,8 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     data = get_data(exp_num)
     mdf = data['mouselab-mdp']
     participant_scores = {}
-    for participant_num in range(num_participants):
+    #for participant_num in range(num_participants):
+    for participant_num in num_participants: #changed this to output score for a set list of pid's
         score_list = list(mdf[mdf.pid == participant_num]['score'])
         participant_scores[participant_num] = score_list
     return participant_scores
