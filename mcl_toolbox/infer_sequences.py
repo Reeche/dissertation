@@ -1,13 +1,14 @@
 import sys, os
 from pathlib import Path
+import random
 
-from mcl_toolbox.global_vars import structure, strategies, features
-from mcl_toolbox.utils import learning_utils, distributions
+from global_vars import structure, strategies, features
+from utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
-from mcl_toolbox.utils.experiment_utils import Experiment
+from computational_microscope.computational_microscope import ComputationalMicroscope
+from utils.experiment_utils import Experiment
 
 """
 Run this file to infer the averaged sequences of the participants. 
@@ -52,8 +53,8 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 
     #TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
-        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
+        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
@@ -73,11 +74,14 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 
     return inferred_strategies, inferred_temperatures
 
-
 if __name__ == "__main__":
-    exp_name = sys.argv[1]  # increasing_variance, decreasing_variance
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    random.seed(123)
+    # exp_name = sys.argv[1]  # increasing_variance, decreasing_variance
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+
+    exp_name = "c2.1_dec"
+    block = "test"
 
     infer_experiment_sequences(exp_name, block=block)

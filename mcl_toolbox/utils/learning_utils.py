@@ -16,8 +16,8 @@ from scipy.stats import gamma
 from scipy.stats import norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.distributions import Categorical, Normal
+from utils.analysis_utils import get_data
+from utils.distributions import Categorical, Normal
 
 num_strategies = 89 #TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon

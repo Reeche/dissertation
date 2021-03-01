@@ -1,13 +1,13 @@
 import sys
-
-from mcl_toolbox.utils import learning_utils, distributions
+import random
+from utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 # from mcl_toolbox.utils.learning_utils import pickle_load, get_normalized_features,\
 #                             get_modified_weights
-from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
-from mcl_toolbox.utils.experiment_utils import Experiment
+from computational_microscope.computational_microscope import ComputationalMicroscope
+from utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 
@@ -17,12 +17,12 @@ Example: python3 analyze_sequences.py increasing_variance training none
 
 if __name__ == "__main__":
     random.seed(123)
-    reward_structure = sys.argv[1]
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
-    # reward_structure = "increasing_variance"
-    # block ="training"
+    # reward_structure = sys.argv[1]
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+    reward_structure = "decreasing_variance"
+    block = "test"
 
     # Initializations
     strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
@@ -63,11 +63,11 @@ if __name__ == "__main__":
 
     pids = None
     if exp_num == "c2.1_dec":
-        # exp = Experiment("c2.1", cm=cm, pids=pids, block = block, variance = 2442)
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
+        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../results/inferred_strategies/{reward_structure}"
+    dir_path = f"../results/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
@@ -89,22 +89,20 @@ if __name__ == "__main__":
     learning_utils.create_dir(save_path)
 
     # adaptive and maladaptive strategies
-    # manual_strategy_list = []
-    # maladaptive_strategy_list = []
-    # increasing
-    manual_strategy_list = [21, 63, 40, 50, 51]
-    maladaptive_strategy_list = [39, 23, 53, 70, 28]
-
-    # decreasing
-    # manual_strategy_list = [70, 23, 69, 65, 33]
-    # maladaptive_strategy_list = [39, 40, 50, 16, 76]
-
-    # constant
-    # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
-    # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
-    # manual_strategy_list = [65, 33, 34, 21, 69]
-    # maladaptive_strategy_list = [39, 30, 27, 28, 66]
-
+    if reward_structure == "increasing_variance":
+        manual_strategy_list = [21, 63, 40, 50, 51]
+        maladaptive_strategy_list = [39, 23, 53, 70, 28]
+    elif reward_structure == "decreasing_variance":
+        manual_strategy_list = [70, 23, 69, 65, 33]
+        maladaptive_strategy_list = [39, 40, 50, 16, 76]
+    elif reward_structure == "constant_variance":
+        # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
+        # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
+        manual_strategy_list = [65, 33, 34, 21, 69]
+        maladaptive_strategy_list = [39, 30, 27, 28, 66]
+    else:
+        manual_strategy_list = []
+        maladaptive_strategy_list = []
 
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
