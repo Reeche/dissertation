@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # block = None
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
-    reward_structure = "decreasing_variance"
+    reward_structure = "increasing_variance"
     block = "test"
 
     # Initializations

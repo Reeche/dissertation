@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
 
-    exp_name = "c2.1_dec"
+    exp_name = "c1.1"
     block = "test"
 
     infer_experiment_sequences(exp_name, block=block)

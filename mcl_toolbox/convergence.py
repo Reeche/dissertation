@@ -1,11 +1,7 @@
-import pickle
-import operator
-import numpy as np
-from collections import defaultdict
-import sys
-from mcl_toolbox.utils import learning_utils, distributions
 import operator
 import sys
+import matplotlib.pyplot as plt
+import pandas as pd
 from collections import defaultdict
 
 import numpy as np
@@ -38,6 +34,16 @@ def remove_duplicates(cluster_list):
     return res
 
 def get_sorted_trajectories(strategies):
+    """
+    Assign frequency to cluster and strategies
+    Args:
+        strategies: load from strategies.pkl
+
+    Returns: cluster and strategy list in list, where first list describes the cluster/strategy and second list describes
+    the frequency. Example: [((39, 37, 61, 39, 37, 39, 37, 39, 33, 49, 39), (1, 2, 1, 3, 4, 1, 4, 5, 1, 1, 12)), 1]
+    Reads: strategy 39 was used for 1 trials, then strategy 37 was used for 2 trials
+
+    """
     cluster_trajectory_frequency = defaultdict(int)
     strategy_trajectory_frequency = defaultdict(int)
     for pid, strategy_sequence in strategies.items():
@@ -72,34 +78,47 @@ def analyze_trajectory(trajectory, print_trajectories=False):
 
 
 
-def difference_between_trials(strategies: defaultdict, number_participants):
+def difference_between_trials(cluster_map, strategies: defaultdict, number_participants, cluster=False):
     """
     It creates a plot which shows the percentage of participants who changed their strategy across trial
     Args:
         strategies: A list of strategies for all participants (index is pid) across trials.
-        number_participants:
+        number_participants: fixed number of participants
 
-    Returns:
+    Returns: two plots, one that plots percentage of participants that changed their strategy and strategy cluster
 
     """
     change_list_of_dicts = []
     for key, value in strategies.items():
+        if cluster:
+            # mapping strategy to cluster
+            value = [cluster_map[strategy] for strategy in value]
+
         changes_numeric = np.diff(value)
         # Convert result of numpy difference into dictionary that maps trial_index -> whether a change occurred (1 or 0)
         change_count = {trial_idx: int(diff_val != 0) for trial_idx, diff_val in enumerate(list(changes_numeric))}
         change_list_of_dicts.append(change_count) # a dict of all changes for each participant, len: 15
+
     df = pd.DataFrame(change_list_of_dicts)
     sum_values = df.sum(axis=0)
 
     fig = plt.figure(figsize=(15, 10))
     # create percentages by dividing each item in the list by number of participants (15)
     relative_sum_values = [x / number_participants for x in list(sum_values)]
-    plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
-    plt.ylim(top=1.0)
-    plt.xlabel("Trial Number", size=24)
-    plt.ylabel("Percentage of people who changed strategy", fontsize=24)
-    plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes.png",
-                bbox_inches='tight')
+    if cluster:
+        plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+        plt.ylim(top=1.0)
+        plt.xlabel("Trial Number", size=24)
+        plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
+        plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes_cluster.png",
+                    bbox_inches='tight')
+    else:
+        plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+        plt.ylim(top=1.0)
+        plt.xlabel("Trial Number", size=24)
+        plt.ylabel("Percentage of people who changed strategy", fontsize=24)
+        plt.savefig(f"../results/{exp}_{block}/absolute_number_of_changes_strategy.png",
+                    bbox_inches='tight')
     plt.close(fig)
     return None
 
@@ -110,7 +129,7 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
 
-    reward_structure = "constant_variance"
+    reward_structure = "increasing_variance"
     block = "training"
 
     # Load your experiment strategies here as a dict, dict of pid and strategy sequence
@@ -125,20 +144,22 @@ if __name__ == "__main__":
     block = "training"
     strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
     number_participants = 15 #todo: make this more dynamic
-    difference_between_trials(strategies, number_participants)
 
     clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
     cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+
+    difference_between_trials(cluster_map, strategies, number_participants, cluster=False)
+    difference_between_trials(cluster_map, strategies, number_participants, cluster=True)
 
     # Get sorted trajectories
     cluster_trajectory, strategy_trajectory = get_sorted_trajectories(strategies)
 
     # show how many trials until the final strategy was used
     print("Strategy usage:")
-    analyze_trajectory(strategy_trajectory)
+    analyze_trajectory(strategy_trajectory, print_trajectories=False)
     print("\n")
 
     # show how many trials until the final strategy cluster was used
     print("Cluster usage:")
-    analyze_trajectory(cluster_trajectory)
+    analyze_trajectory(cluster_trajectory, print_trajectories=False)
     print("\n")
