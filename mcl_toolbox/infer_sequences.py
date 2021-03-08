@@ -66,23 +66,22 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
-
     #save strategies, and temperatures
     inferred_strategies = exp.participant_strategies
     inferred_temperatures = exp.participant_temperatures
-    learning_utils.pickle_save(inferred_strategies, f"{save_path}/strategies.pkl")
-    learning_utils.pickle_save(inferred_temperatures, f"{save_path}/temperatures.pkl")
+    learning_utils.pickle_save(inferred_strategies, f"{save_path}/teststrategies.pkl")
+    learning_utils.pickle_save(inferred_temperatures, f"{save_path}/testtemperatures.pkl")
 
     return inferred_strategies, inferred_temperatures
 
 if __name__ == "__main__":
     random.seed(123)
-    # exp_name = sys.argv[1]  # "c2.1_dec"
-    # block = None
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
+    exp_name = sys.argv[1]  # "c2.1_dec"
+    block = None
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
 
-    exp_name = "c2.1_dec"
-    block = "training"
+    # exp_name = "c2.1_dec"
+    # block = "training"
 
-    infer_experiment_sequences(exp_name, block=block, max_evals=2) #max_evals have to be at least 2
+    infer_experiment_sequences(exp_name, block=block, max_evals=2) #max_evals have to be at least 2 for testing
