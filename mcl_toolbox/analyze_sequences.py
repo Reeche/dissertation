@@ -64,7 +64,7 @@ if __name__ == "__main__":
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../results/inferred_strategies/{exp_num}"
+    dir_path = f"../results/inferred_strategies/{reward_structure}"
     if block:
         dir_path += f"_{block}"
 
