@@ -76,12 +76,12 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 
 if __name__ == "__main__":
     random.seed(123)
-    # exp_name = sys.argv[1]  # increasing_variance, decreasing_variance
-    # block = None
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
+    exp_name = sys.argv[1]  # "c2.1_dec"
+    block = None
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
 
-    exp_name = "c2.1_dec"
-    block = "training"
+    # exp_name = "c2.1_dec"
+    # block = "training"
 
     infer_experiment_sequences(exp_name, block=block, max_evals=50)
