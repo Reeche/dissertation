@@ -1,13 +1,10 @@
 import sys
 import random
-from utils import learning_utils, distributions
-
+from mcl_toolbox.utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-# from mcl_toolbox.utils.learning_utils import pickle_load, get_normalized_features,\
-#                             get_modified_weights
-from computational_microscope.computational_microscope import ComputationalMicroscope
-from utils.experiment_utils import Experiment
+from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 
@@ -21,8 +18,8 @@ if __name__ == "__main__":
     # block = None
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
-    reward_structure = "increasing_variance"
-    block = "test"
+    reward_structure = "decreasing_variance"
+    block = "training"
 
     # Initializations
     strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
@@ -63,8 +60,8 @@ if __name__ == "__main__":
 
     pids = None
     if exp_num == "c2.1_dec":
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
-        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
+        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
     dir_path = f"../results/inferred_strategies/{exp_num}"

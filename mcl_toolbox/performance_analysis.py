@@ -17,8 +17,8 @@ Idea: make this one a general analysis file, which contains several analysis
 2. Average scores 
 3. Average number of clicks
 
-Format: python3 convergence.py <reward_structure> <block> 
-Example: python3 convergence.py increasing_variance training 
+Format: python3 performance_analysis.py <reward_structure> <block> 
+Example: python3 performance_analysis.py increasing_variance training 
 """
 
 
@@ -66,7 +66,7 @@ def analyze_trajectory(trajectory, print_trajectories=False):
             if print_trajectories:
                 print("Trajectory:", tr[0][0])
                 print("Repetition Frequency:", tr[0][1])
-                print("Freq:", tr[1], "\n")
+                #print("Freq:", tr[1], "\n")
             temp = list(tr[0][1])
             temp.pop()
             number_of_trials_before_last_trial = np.sum(temp)
@@ -143,7 +143,7 @@ def analysis_change_percentage(exp_num, block):
 
     # show how many trials until the final strategy cluster was used
     print("Cluster usage:")
-    analyze_trajectory(cluster_trajectory, print_trajectories=False)
+    analyze_trajectory(cluster_trajectory, print_trajectories=True)
     print("\n")
 
 def average_score_development(exp, block, participant_data):
@@ -165,8 +165,26 @@ def average_score_development(exp, block, participant_data):
     return None
 
 
-def click_sequence():
-    learning_utils.get_clicks()
+def plot_average_clicks(exp):
+    clicks = learning_utils.get_clicks(exp)
+    participant_click_dict = {key: None for key in clicks}
+    for pid, click_sequence in clicks.items():
+        temp = []
+        for click in click_sequence: #index = trial
+            temp.append(len(click))
+        participant_click_dict[pid] = temp
+    participant_click = pd.DataFrame(participant_click_dict)
+    participant_mean = participant_click.mean(axis=1)
+
+    fig = plt.figure(figsize=(15, 10))
+    plt.plot(range(participant_click.shape[0]), participant_mean)
+    plt.ylim(top=15)
+    plt.xlabel("Trial Number", size=24)
+    plt.ylabel(f"Average number of clicks for {exp}", fontsize=24)
+    #plt.show()
+    plt.savefig(f"../results/{exp}_{block}/click_development.png",
+                bbox_inches='tight')
+    plt.close(fig)
     return None
 
 
@@ -176,7 +194,7 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
 
-    reward_structure = "constant_variance"
+    reward_structure = "decreasing_variance"
     block = "training"
 
     # Load your experiment strategies here as a dict, dict of pid and strategy sequence
@@ -189,9 +207,9 @@ if __name__ == "__main__":
         exp = "c2.1"
 
     block = "training"
-    #analysis_change_percentage(exp_num, block)
+    analysis_change_percentage(exp_num, block)
 
-    # open participants csv
     data = analysis_utils.get_data(exp)
     participant_data = data['participants']
-    average_score_development(exp, block, participant_data)
+    #average_score_development(exp, block, participant_data)
+    #plot_average_clicks(exp)

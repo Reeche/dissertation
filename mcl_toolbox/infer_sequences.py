@@ -2,13 +2,13 @@ import sys, os
 from pathlib import Path
 import random
 
-from global_vars import structure, strategies, features
-from utils import learning_utils, distributions
+from mcl_toolbox.global_vars import structure, strategies, features
+from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from computational_microscope.computational_microscope import ComputationalMicroscope
-from utils.experiment_utils import Experiment
+from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to infer the averaged sequences of the participants. 
@@ -16,7 +16,7 @@ Format: python3 infer_sequences.py <exp name> <block>
 Example: python3 infer_sequences.py T1.1 training
 """
 
-def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, max_evals = 2, **kwargs):
+def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, max_evals = 50, **kwargs):
     '''
     Infer the averaged sequences of the participants in an experiment.
     :param exp_num: experiment name, e.g. F1
@@ -45,7 +45,7 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
         raise (ValueError, "Experiment pipeline not found.")
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    pipeline = [pipeline[0] for _ in range(100)]  # todo: why range 100?
+    pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(reward_structure)  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
@@ -53,8 +53,8 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 
     #TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
-        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
+        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
 
-    exp_name = "c1.1"
-    block = "test"
+    exp_name = "c2.1_dec"
+    block = "training"
 
-    infer_experiment_sequences(exp_name, block=block)
+    infer_experiment_sequences(exp_name, block=block, max_evals=50)
