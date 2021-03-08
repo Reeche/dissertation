@@ -2,9 +2,6 @@ import sys
 import pandas as pd
 import numpy as np
 import random
-import itertools
-from scipy.stats import mannwhitneyu
-from scipy.stats import friedmanchisquare
 import pymannkendall as mk
 from scipy.stats import friedmanchisquare
 from scipy.stats import mannwhitneyu
