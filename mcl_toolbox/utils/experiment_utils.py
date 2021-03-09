@@ -226,9 +226,11 @@ class Experiment():
         condition_wise_pids = defaultdict(list)
         for pid in self.pids:
             condition_wise_pids[self.participants[pid].condition].append(pid)
-        condition_wise_transitions = {
-            k: self.get_transition_frequencies(trial_wise=trial_wise, pids=v, clusters=clusters)
-            for k, v in condition_wise_pids.items()}
+        # condition_wise_transitions = {
+        #     k: self.get_transition_frequencies(trial_wise=trial_wise, pids=v, clusters=clusters)
+        #     for k, v in condition_wise_pids.items()}
+        # copied line below from the original CM repo
+        condition_wise_transitions = {k: self.get_transition_frequencies(trial_wise=trial_wise, pids=v, clusters=clusters) for k, v in condition_wise_pids.items()}
         conditions = list(condition_wise_pids.keys())
         condition_combinations = list(itertools.combinations(conditions, 2))
         results = defaultdict(lambda: defaultdict())
@@ -403,7 +405,7 @@ class Experiment():
         # decision_system_labels = [" ".join([s.capitalize() for s in d.split("_")]) for d in decision_systems]
         num_decision_systems = len(decision_systems)
         mean_dsw = np.mean(DSP, axis=0)
-        fig = plt.figure(figsize=(15, 10))
+        fig = plt.figure(figsize=(16, 10))
         for i in range(num_decision_systems):
             plt.plot(range(1, num_trials + 1), mean_dsw[:, i], label=decision_system_labels[i], linewidth=3.0)
         plt.xlabel("Trial Number", size=24)
@@ -411,8 +413,8 @@ class Experiment():
         plt.ylabel("Relative Influence of Decision System", fontsize=24)
         # plt.title("Decision system proportions", fontsize=24)
         plt.ylim(top=np.max(mean_dsw) + 0.2)
-        plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
+        plt.legend(prop={'size': 22}, ncol=2, loc='upper center')
+        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
         plt.close(fig)
         # print(mean_dsw.shape)
@@ -438,6 +440,28 @@ class Experiment():
                 strategy_proportions[i] = {k: v / total_v for k, v in strategy_proportions[i].items()}
             strategy_proportions = dict(strategy_proportions)
         return strategy_proportions
+
+    def get_strategy_frequencies(self, strategies, trial_wise=False):
+        strategies_list = [strategies[pid] for pid in self.pids]
+        total_S = []
+        for S in strategies_list:
+            total_S += S
+        if not trial_wise:
+            num_strategies = len(total_S)
+            strategy_counts = Counter(total_S)
+            total = num_strategies
+        else:
+            strategy_counts = defaultdict(lambda: defaultdict(int))
+            for S in strategies_list:
+                for i, s in enumerate(S):
+                    strategy_counts[i][s] += 1
+            total = np.zeros(len(strategy_counts.keys()))
+            for i in strategy_counts.keys():
+                strategy_counts[i] = dict(strategy_counts[i])
+                total_v = sum(list(strategy_counts[i].values()))
+                total[i] = total_v
+            strategy_counts = dict(strategy_counts)
+        return strategy_counts, total
 
     def get_strategy_proportions(self, trial_wise=False):
         if not trial_wise:
@@ -475,43 +499,75 @@ class Experiment():
             self.adjusted_trial_strategy_proportions = adjusted_proportions
         return adjusted_proportions
 
-    def plot_proportions(self, trial_prop, S, title="", suffix="", cluster=False):
+    def plot_proportions(self, trial_prop, S, title="", suffix="", labels=[], cluster=False,
+                         combine_other=False):
         S_proportions = []
+        # the lines below are from original CM repo
+        if cluster and 13 in S:
+            index = S.index(13)
+        else:
+            index = None
+        # the lines below are from original CM repo
         for t in trial_prop.keys():
             props = []
             for s in S:
-                props.append(trial_prop[t].get(s, 0))
+                if not index or (index and s != 13):
+                    props.append(trial_prop[t].get(s, 0))
+            if index:
+                if combine_other:
+                    total_prop = np.sum(props)
+                    props.insert(index, 1-total_prop)
+                else:
+                    props.insert(index, trial_prop[t].get(13, 0))
             S_proportions.append(props)
         S_proportions = np.array(S_proportions)
-        # labels = ["Myopic Forward Planning", "Goal setting with additional immediate exploration", "Postive satisificing with two additional nodes", "Exploring parent of best leaf", "No planning", "Optimal Planning"]
-        fig = plt.figure(figsize=(15, 10))
+        #labels = ["Myopic Forward Planning", "Goal setting with additional immediate exploration", "Postive satisificing with two additional nodes", "Exploring parent of best leaf", "No planning", "Optimal Planning"]
+
+        fig = plt.figure(figsize=(16, 10))
         prefix = "Strategy"
         if cluster:
             prefix = "Cluster"
+        # the lines below are from original CM repo
         for i in range(S_proportions.shape[1]):
-            plt.plot(range(1, S_proportions.shape[0] + 1), S_proportions[:, i], label=f"{prefix} {S[i]}", linewidth=3.0)
-        plt.xlabel("Trial Number", fontsize=24)
-        plt.ylabel("Proportion", fontsize=24)
-        # plt.title(title, fontsize=24)
-        plt.ylim(top=1.0)
+            if labels:
+                label = labels[i]
+            else:
+                label = f"{prefix} {S[i]}"
+            plt.plot(range(1, S_proportions.shape[0]+1), S_proportions[:, i]*100, label=label, linewidth=3.0)
+        plt.xlabel("Trial Number", fontsize=28)
+        plt.ylabel("Proportion (%)", fontsize=28)
+        #plt.title(title, fontsize=24)
+        if not cluster:
+            plt.ylim(top=95)
+        else:
+            plt.ylim(top=95)
         plt.tick_params(labelsize=22)
-        plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
+        plt.legend(prop={'size': 22}, ncol=3, loc='upper center')
         if cluster:
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
+            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
                         dpi=400, bbox_inches='tight')
         else:
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
+            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
                         dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
 
-    def plot_strategy_proportions_pertrial(self, S, suffix=""):
+    def plot_strategy_proportions_pertrial(self, S, suffix="", labels = None):
         if not hasattr(self, 'trial_strategy_proportions'):
             self.get_strategy_proportions(trial_wise=True)
-        self.plot_proportions(self.trial_strategy_proportions, S, title="Strategy proportions", suffix=suffix)
+        self.plot_proportions(self.trial_strategy_proportions, S, title="Strategy proportions", suffix=suffix, labels=labels)
 
     ### Emperical validations
     def plot_strategy_scores(self, strategy_scores):
+        """
+        I think this one only works for the increasing variance environment (see input)
+        # todo: create strategy scores for all environment if you want to use this function
+        Args:
+            strategy_scores:  average score of each strategy on the increasing variance environment
+
+        Returns:
+
+        """
         # This is a sanity check
         if not hasattr(self, 'participant_strategy_scores'):
             self.participant_strategy_scores = {pid: [strategy_scores[s] for s in self.participants[pid].strategies] for
@@ -572,10 +628,12 @@ class Experiment():
 
         return adjusted_proportions
 
-    def plot_cluster_proportions(self, C):
+    def plot_cluster_proportions(self, C, suffix="", labels=None, combine_other=False):
         if not hasattr(self, 'trial_cluster_proportions'):
             cluster_proportions = self.get_cluster_proportions(trial_wise=True)
-        self.plot_proportions(self.trial_cluster_proportions, C, title="Cluster Proportions", cluster=True)
+        self.plot_proportions(self.trial_cluster_proportions, C, title="Cluster Proportions",
+                              suffix = suffix, labels=labels, cluster=True,
+                              combine_other=combine_other)
         return cluster_proportions
 
     def attach_pipeline(self, pipeline):
@@ -702,7 +760,7 @@ class Experiment():
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(
-            f"../results/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+            f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
             dpi=400, bbox_inches='tight')
         plt.close(fig)
 
@@ -728,7 +786,7 @@ class Experiment():
             # plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
             # plt.show()
-            plt.savefig(f"../results/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
+            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                         bbox_inches='tight')
             plt.close(fig)
         else:
@@ -759,7 +817,7 @@ class Experiment():
         plt.figure(figsize=(12, 9))
         sns.barplot(x='Experiment', y='Proportion (%)', hue='Strategy', data=df)
         # plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/strategy_proportion_total.png", bbox_inches='tight')
+        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png", bbox_inches='tight')
 
     def plot_clusters_proportions_intotal(self):
         reward_structures_count = self.get_cluster_proportions()
@@ -778,7 +836,7 @@ class Experiment():
                     data=df)  # todo: add actual numbers to the plot
         plt.ylim(top=60)
         # plt.show()
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
+        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
     def trial_decision_system_change_rate(self, decision_system_by_trial):
         difference = np.diff(decision_system_by_trial, axis=0)
@@ -797,7 +855,7 @@ class Experiment():
         plt.ylim(top=0.2)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
+        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
                     dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
@@ -821,7 +879,7 @@ class Experiment():
         plt.ylim(top=0.4)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
+        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
                     dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)

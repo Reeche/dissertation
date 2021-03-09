@@ -33,7 +33,7 @@ reward_exps = {"increasing_variance": "v1.0",
                "constant_variance": "c1.1"}
 
 
-def load_data_from_computational_microscope(keys, values, reward_exps):
+def load_data_from_computational_microscope(exp, exp_num, reward_exps):
     block = "training"
     strategy_space = learning_utils.pickle_load("data/strategy_space.pkl")
     features = learning_utils.pickle_load("data/microscope_features.pkl")
@@ -50,20 +50,23 @@ def load_data_from_computational_microscope(keys, values, reward_exps):
     strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")
     cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
 
-    if values == "c2.1":
+    if exp_num == "c2.1":
         pipeline = exp_pipelines["c2.1_dec"]
     else:
-        pipeline = exp_pipelines[values]
+        pipeline = exp_pipelines[exp_num]
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = learning_utils.get_normalized_features(reward_exps[keys])
+    normalized_features = learning_utils.get_normalized_features(reward_exps[exp])
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
 
     cm = ComputationalMicroscope(pipeline, strategy_space, W, features, normalized_features=normalized_features)
     pids = None
-    exp = Experiment(exp_num=values, cm=cm, pids=pids, block=block)
+    exp = Experiment(exp_num=exp_num, cm=cm, pids=pids, block=block)
 
-    dir_path = f"../results/inferred_strategies/{keys}"
+    if exp_num == "c2.1":
+        dir_path = f"../results/inferred_strategies/c2.1_dec"
+    else:
+        dir_path = f"../results/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
@@ -130,7 +133,7 @@ def create_data_for_distribution_test(strategy_name_dict: dict):
     strategy_df = pd.DataFrame(columns=column_names)
     decision_system_df = pd.DataFrame(columns=column_names)
 
-    for name, experiment in strategy_name_dict.items():
+    for name, experiment in strategy_name_dict.items(): #name: increasing/decreasing, experiment: v1.0
         strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _ = load_data_from_computational_microscope(
             name, experiment, strategy_name_dict)
         strategy_df[name] = list(create_comparable_data(strategy_proportions, len=89).values())
@@ -232,7 +235,7 @@ strategy_trend, cluster_trend = create_data_for_trend_test(reward_exps, trend_te
 test_for_trend(strategy_trend, "Strategy")
 test_for_trend(cluster_trend, "Strategy Cluster")
 # test_for_trend(decision_trend, "Decision System")
-#
+
 # print(" ----------------- Decision System -----------------")
 # for i in range(0, 5):
 #     increasing_ds_trend = mk.original_test(list(mean_dsw_increasing[:, i]))
