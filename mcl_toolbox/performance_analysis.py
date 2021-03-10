@@ -118,14 +118,14 @@ def plot_difference_between_trials(cluster_map, strategies: defaultdict, number_
         plt.ylim(top=1.0)
         plt.xlabel("Trial Number", size=24)
         plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
-        plt.savefig(f"../results/plots/{exp_num}_{block}/absolute_number_of_changes_cluster.png",
+        plt.savefig(f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_cluster.png",
                     bbox_inches='tight')
     else:
         plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
         plt.ylim(top=1.0)
         plt.xlabel("Trial Number", size=24)
         plt.ylabel("Percentage of people who changed strategy", fontsize=24)
-        plt.savefig(f"../results/plots/{exp_num}_{block}/absolute_number_of_changes_strategy.png",
+        plt.savefig(f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_strategy.png",
                     bbox_inches='tight')
     plt.close(fig)
     return None
@@ -172,7 +172,7 @@ def average_score_development(exp_num, block, participant_data):
     plt.ylim(top=50)
     plt.xlabel("Trial Number", size=24)
     plt.ylabel(f"Average score for {exp_num}", fontsize=24)
-    plt.savefig(f"../results/plots/{exp_num}_{block}/score_development.png",
+    plt.savefig(f"../results/cm/plots/{exp_num}_{block}/score_development.png",
                 bbox_inches='tight')
     plt.close(fig)
     return None
@@ -195,7 +195,7 @@ def plot_average_clicks(exp):
     plt.xlabel("Trial Number", size=24)
     plt.ylabel(f"Average number of clicks for {exp_num}", fontsize=24)
     # plt.show()
-    plt.savefig(f"../results/plots/{exp_num}_{block}/click_development.png",
+    plt.savefig(f"../results/cm/plots/{exp_num}_{block}/click_development.png",
                 bbox_inches='tight')
     plt.close(fig)
     return None

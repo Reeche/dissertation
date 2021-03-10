@@ -51,7 +51,7 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../results/inferred_strategies/{exp_num}"
+    dir_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
@@ -63,11 +63,11 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         # exit()
 
     if exp_num == "c2.1_dec":
-        save_path = f"../results/plots/c2.1"
+        save_path = f"../results/cm/plots/c2.1"
         if block:
             save_path += f"_{block}"
     else:
-        save_path = f"../results/plots/{exp_num}"
+        save_path = f"../results/cm/plots/{exp_num}"
         if block:
             save_path += f"_{block}"
     learning_utils.create_dir(save_path)

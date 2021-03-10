@@ -60,9 +60,9 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
     #create save path
-    # parent_directory = Path(__file__).parents[1]
-    # save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
-    save_path = f"../results/inferred_strategies/{exp_num}"
+    parent_directory = Path(__file__).parents[1]
+    save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
+    # save_path = f"../results/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)

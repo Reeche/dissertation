@@ -414,7 +414,7 @@ class Experiment():
         # plt.title("Decision system proportions", fontsize=24)
         plt.ylim(top=np.max(mean_dsw) + 0.2)
         plt.legend(prop={'size': 22}, ncol=2, loc='upper center')
-        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
+        plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
                     bbox_inches='tight')
         plt.close(fig)
         # print(mean_dsw.shape)
@@ -544,10 +544,10 @@ class Experiment():
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 22}, ncol=3, loc='upper center')
         if cluster:
-            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
+            plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
                         dpi=400, bbox_inches='tight')
         else:
-            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
+            plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
                         dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
@@ -760,7 +760,7 @@ class Experiment():
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
         plt.savefig(
-            f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
             dpi=400, bbox_inches='tight')
         plt.close(fig)
 
@@ -786,7 +786,7 @@ class Experiment():
             # plt.ylim(top=60)
             sns.barplot(x="Experiment", y="Relative Influence (%)", hue="Decision System", data=df)
             # plt.show()
-            plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
+            plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                         bbox_inches='tight')
             plt.close(fig)
         else:
@@ -817,7 +817,7 @@ class Experiment():
         plt.figure(figsize=(12, 9))
         sns.barplot(x='Experiment', y='Proportion (%)', hue='Strategy', data=df)
         # plt.show()
-        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png", bbox_inches='tight')
+        plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png", bbox_inches='tight')
 
     def plot_clusters_proportions_intotal(self):
         reward_structures_count = self.get_cluster_proportions()
@@ -836,7 +836,7 @@ class Experiment():
                     data=df)  # todo: add actual numbers to the plot
         plt.ylim(top=60)
         # plt.show()
-        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
+        plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png", bbox_inches='tight')
 
     def trial_decision_system_change_rate(self, decision_system_by_trial):
         difference = np.diff(decision_system_by_trial, axis=0)
@@ -855,7 +855,7 @@ class Experiment():
         plt.ylim(top=0.2)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
+        plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
                     dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)
@@ -879,7 +879,7 @@ class Experiment():
         plt.ylim(top=0.4)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
-        plt.savefig(f"../results/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
+        plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
                     dpi=400, bbox_inches='tight')
         # plt.show()
         plt.close(fig)

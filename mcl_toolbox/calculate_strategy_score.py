@@ -54,7 +54,7 @@ for strategy in range(0, 89):
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print(score_results)
-dir = "../results/strategy_scores"
+dir = "../results/cm/strategy_scores"
 learning_utils.create_dir(dir)
 learning_utils.pickle_save(score_results, f"{dir}/{exp_num}_strategy_scores.pkl")
 
