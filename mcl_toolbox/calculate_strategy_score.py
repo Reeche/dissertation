@@ -17,20 +17,22 @@ c1.1: constant_variance
 c2.1_dec: decreasing_variance
 
 How to run: python3 calculate_strategy_score.py <strategy> <exp_num> <num_simulation>
-Example: python3 calculate_strategy_score.py 1 c1.1 100000
+Example: python3 calculate_strategy_score.py c2.1_dec 100000
 """
 
-# strategy = int(sys.argv[1])
-# exp_num = sys.argv[2]
-# num_simulations = int(sys.argv[3])
-exp_num = "v1.0"
-num_simulations = 250000  # 200k seems to be stable, therefore 250k
+exp_num = sys.argv[1]
+num_simulations = int(sys.argv[2])
+
+# exp_num = "v1.0"
+# num_simulations = 200000  # 200k seems to be stable, therefore 250k
 exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
 score_list = {}
 
 # loops through all strategies and saves into a list
+print(exp_num, num_simulations)
 # todo: change this one to not hard coded
 for strategy in range(0, 89):
+    print("strategy", strategy)
     strategy_scores = defaultdict(lambda: defaultdict(int))
     scores = []
     gts = []
@@ -43,14 +45,17 @@ for strategy in range(0, 89):
         scores.append(score)
     # print(len(set(gts)))
     # print(np.mean(scores))
+    # This saves the scores individually for each strategy
     # d = "../results/strategy_scores"
     # learning_utils.create_dir(d)
     # learning_utils.pickle_save(scores, f"{d}/{exp_num}_{strategy}.pkl")
 
     score_list.update({strategy: np.mean(scores)})
-print(exp_num, num_simulations)
+
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print(score_results)
-d = "../results/strategy_scores"
-# learning_utils.create_dir(d)
-learning_utils.pickle_save(score_results, f"{d}/{exp_num}_strategy_scores.pkl")
+dir = "../results/strategy_scores"
+learning_utils.create_dir(dir)
+learning_utils.pickle_save(score_results, f"{dir}/{exp_num}_strategy_scores.pkl")
+
+# todo: add cluster scores

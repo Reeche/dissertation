@@ -78,7 +78,7 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         maladaptive_strategy_list = [39, 23, 53, 70, 28]
     elif exp_num == "c2.1_dec":
         manual_strategy_list = [70, 23, 69, 65, 33]
-        maladaptive_strategy_list = [39, 40, 50, 16, 76]
+        maladaptive_strategy_list = [39, 42, 43, 51, 40]
     elif exp_num == "c1.1":
         # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
         # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
@@ -98,12 +98,12 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
 
 if __name__ == "__main__":
     # random.seed(123)
-    # exp_name = sys.argv[1]  # e.g. c2.1_dec
-    # block = None
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
+    exp_name = sys.argv[1]  # e.g. c2.1_dec
+    block = None
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
 
-    exp_name = "c1.1"
-    block = "training"
+    # exp_name = "c2.1_dec"
+    # block = "training"
 
     analyse_sequences(exp_name, block=block)
