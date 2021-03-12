@@ -18,8 +18,8 @@ How To Use This
 To install as a package in python 3.8+:
 ```
 git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
-cd mcl_toolbox
 pip install -e .
+cd mcl_toolbox
 ```
 
 ### Import data

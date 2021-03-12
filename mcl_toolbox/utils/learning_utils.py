@@ -16,8 +16,8 @@ from scipy.stats import gamma
 from scipy.stats import norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.distributions import Categorical, Normal
+from utils.analysis_utils import get_data
+from utils.distributions import Categorical, Normal
 
 num_strategies = 89 #TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
@@ -113,6 +113,7 @@ def create_dir(file_path):
     """
         Create directory if it does not exist
     """
+    print("FILE PATH", file_path)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 
@@ -171,7 +172,8 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     data = get_data(exp_num)
     mdf = data['mouselab-mdp']
     participant_scores = {}
-    for participant_num in range(num_participants):
+    #for participant_num in range(num_participants):
+    for participant_num in num_participants: #changed this to output score for a set list of pid's
         score_list = list(mdf[mdf.pid == participant_num]['score'])
         participant_scores[participant_num] = score_list
     return participant_scores

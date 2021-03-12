@@ -146,7 +146,7 @@ python/__pycache__
 # the results folder
 results/*
 
-*/import_data/data/*
+mcl_toolbox/import_data/data/*
 
 # the data folder
 data/human/*
