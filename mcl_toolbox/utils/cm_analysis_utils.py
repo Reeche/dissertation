@@ -1,4 +1,3 @@
-import operator
 import sys
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,7 +6,6 @@ from collections import defaultdict
 import numpy as np
 
 from mcl_toolbox.utils import learning_utils, distributions, analysis_utils
-from statistical_tests import filter_used_strategies, adaptive_maladaptive_filtered_strategies
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
@@ -200,26 +198,3 @@ def plot_average_clicks(exp):
                 bbox_inches='tight')
     plt.close(fig)
     return None
-
-
-
-if __name__ == "__main__":
-    # exp_num = sys.argv[1] # e.g. c2.1
-    # block = None
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
-
-    exp_num = "c2.1"
-    block = "training"
-    analysis_change_percentage(exp_num, block)
-
-    data = analysis_utils.get_data(exp_num)
-    participant_data = data['participants']
-    average_score_development(exp_num, block, participant_data)
-    plot_average_clicks(exp_num)
-
-    reward_dict = {"increasing_variance": "v1.0",
-                   "decreasing_variance": "c2.1",
-                   "constant_variance": "c1.1"}
-    filtered_strategies = filter_used_strategies(reward_dict)
-    adaptive_maladaptive_filtered_strategies(reward_dict, filtered_strategies, 5)

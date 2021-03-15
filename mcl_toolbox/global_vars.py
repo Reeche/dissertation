@@ -82,6 +82,12 @@ class structure:
                              'decreasing_variance': 'high_decreasing',
                              'transfer_task': 'large_increasing'}
 
+    # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key
+    # todo: remove this
+    reward_dict = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1",
+                   "constant_variance": "c1.1"}
+
 
 class model:
     model_attributes = pd.read_csv(os.path.join(file_location, "models/rl_models.csv"), index_col=0)

@@ -27,11 +27,6 @@ A Mann Kendall test is used to test for trends
 
 """
 
-random.seed(123)
-reward_exps = {"increasing_variance": "v1.0",
-               "decreasing_variance": "c2.1",
-               "constant_variance": "c1.1"}
-
 
 def load_data_from_computational_microscope(exp, exp_num, reward_exps):
     block = "training"
@@ -64,9 +59,9 @@ def load_data_from_computational_microscope(exp, exp_num, reward_exps):
     exp = Experiment(exp_num=exp_num, cm=cm, pids=pids, block=block)
 
     if exp_num == "c2.1":
-        dir_path = f"../results/inferred_strategies/c2.1_dec"
+        dir_path = f"../results/cm/inferred_strategies/c2.1_dec"
     else:
-        dir_path = f"../results/inferred_strategies/{exp_num}"
+        dir_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
@@ -88,7 +83,53 @@ def load_data_from_computational_microscope(exp, exp_num, reward_exps):
         precomputed_strategies=strategies,
         precomputed_temperatures=temperatures,
         show_pids=False)
-    return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw
+
+    reward_dict = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1",
+                   "constant_variance": "c1.1"}
+
+    filtered_strategies = filter_used_strategies(reward_dict)
+    top_n, worst_n = adaptive_maladaptive_filtered_strategies(reward_dict, filtered_strategies, 5)
+
+    # when it comes to plotting, the strategy names need to equal the description
+    # todo: make this as a function
+    if exp_num == "v1.0":
+        top_n_increasing = top_n["increasing_variance"]
+        top_n_keys = list(top_n_increasing.keys())
+        #top_n_keys = [x+1 for x in top_n_keys] # the strategy names in the pkl start from 0 - 88, now it need to start from 1-89
+
+        worst_n_increasing = worst_n["increasing_variance"]
+        worst_n_keys = list(worst_n_increasing.keys())
+
+        adaptive_strategy_list = top_n_keys
+        maladaptive_strategy_list = worst_n_keys
+    elif exp_num == "c2.1_dec":
+        top_n_increasing = top_n["decreasing_variance"]
+        top_n_keys = list(top_n_increasing.keys())
+
+        worst_n_increasing = worst_n["decreasing_variance"]
+        worst_n_keys = list(worst_n_increasing.keys())
+
+        adaptive_strategy_list = top_n_keys
+        maladaptive_strategy_list = worst_n_keys
+    elif exp_num == "c1.1":
+        top_n_increasing = top_n["constant_variance"]
+        top_n_keys = list(top_n_increasing.keys())
+
+        worst_n_increasing = worst_n["constant_variance"]
+        worst_n_keys = list(worst_n_increasing.keys())
+
+        adaptive_strategy_list = top_n_keys
+        maladaptive_strategy_list = worst_n_keys
+    else:
+        adaptive_strategy_list = []
+        maladaptive_strategy_list = []
+
+    adaptive_strategy_sum, maladaptive_strategy_sum, rest_strategy_sum = exp.plot_adaptive_maladaptive_strategies_vs_rest(
+        adaptive_strategy_list, maladaptive_strategy_list)
+
+    return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, adaptive_strategy_sum, maladaptive_strategy_sum, rest_strategy_sum
+
 
 def test_for_equal_distribution(name_distribution_dict: dict, type: str):
     """
@@ -114,6 +155,7 @@ def test_for_equal_distribution(name_distribution_dict: dict, type: str):
             stat, p = mannwhitneyu(distribution_a, distribution_b)
             print(f"{variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
 
+
 def create_data_for_distribution_test(strategy_name_dict: dict):
     """
     Create data to check for equal distribution
@@ -123,7 +165,8 @@ def create_data_for_distribution_test(strategy_name_dict: dict):
                "decreasing_variance": "c2.1",
                "constant_variance": "c1.1"}
 
-    Returns:
+    Returns: dataframes containing all strategies and their count. Strategy number equal their corresponding description
+    E.g. Strategy 21 has the number 21 in the dataframe and do not need to be added +1 anymore
 
     """
     # name: increasing
@@ -133,7 +176,7 @@ def create_data_for_distribution_test(strategy_name_dict: dict):
     strategy_df = pd.DataFrame(columns=column_names)
     decision_system_df = pd.DataFrame(columns=column_names)
 
-    for name, experiment in strategy_name_dict.items(): #name: increasing/decreasing, experiment: v1.0
+    for name, experiment in strategy_name_dict.items():  # name: increasing/decreasing, experiment: v1.0
         strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _ = load_data_from_computational_microscope(
             name, experiment, strategy_name_dict)
         strategy_df[name] = list(create_comparable_data(strategy_proportions, len=89).values())
@@ -141,7 +184,8 @@ def create_data_for_distribution_test(strategy_name_dict: dict):
         decision_system_df[name] = decision_system_proportions["Relative Influence (%)"].tolist()
     return strategy_df, cluster_df, decision_system_df
 
-def create_data_for_trend_test(strategy_name_dict: dict, trend_test: True):
+
+def create_data_for_trend_test(reward_exps: dict, trend_test: True):
     """
     Create data for the trend tests
     Args:
@@ -158,9 +202,9 @@ def create_data_for_trend_test(strategy_name_dict: dict, trend_test: True):
     strategy_trend = pd.DataFrame(columns=column_names)
     # decision_trend = pd.DataFrame(columns=column_names)
 
-    for name, experiment in strategy_name_dict.items():
+    for name, experiment in reward_exps.items():
         _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, mean_dsw = load_data_from_computational_microscope(
-            name, experiment, strategy_name_dict)
+            name, experiment, reward_exps)
 
         strategy_temp = []
         cluster_temp = []
@@ -185,12 +229,14 @@ def create_data_for_trend_test(strategy_name_dict: dict, trend_test: True):
 
     return strategy_trend, cluster_trend  # , decision_trend
 
+
 def test_for_trend(trend, analysis_type: str):
     # analysis_type: strategy or cluster or ds
     for columns in trend:
         for strategy_number in range(0, len(trend["increasing_variance"])):
             test_results = mk.original_test(trend[columns][strategy_number])
             print(f"Mann Kendall Test: {columns} {analysis_type}: ", strategy_number, test_results)
+
 
 def test_first_trials_vs_last_trials(trend, n, analysis_type):
     """
@@ -212,45 +258,136 @@ def test_first_trials_vs_last_trials(trend, n, analysis_type):
         print(f'{analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
 
 
-print(" ----------------- Distribution Difference -----------------")
-strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
+def filter_used_strategies(reward_dict):
+    """
+    Creates a dictionary of the used strategies, i.e. removes strategies where proportion = 0
+    Returns: a dictionary of used strategies for all environments, i.e. proportion != 0, and their proportions
 
-strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
-                            "decreasing": strategy_df["decreasing_variance"],
-                            "constant": strategy_df["constant_variance"]}
-test_for_equal_distribution(strategy_difference_dict, "Strategies")
+    """
+    # in strategy_df the strategy already ranges from 1-89
+    strategy_df, _, _ = create_data_for_distribution_test(reward_dict)
 
-cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
-                           "decreasing": cluster_df["decreasing_variance"],
-                           "constant": cluster_df["constant_variance"]}
-test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
+    # drop last 10 rows so that we have 79 instead of 89 strategies
+    strategy_df.drop(strategy_df.tail(10).index, inplace=True)  # drop last n rows
 
-decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
-                                   "decreasing": decision_system_df["decreasing_variance"],
-                                   "constant": decision_system_df["constant_variance"]}
-test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
+    filtered_strategies = {key: None for key in reward_dict.keys()}
+    for keys, values in reward_dict.items():
+        # strategy_temp = strategy_df[strategy_df[keys] != 0]
+        strategy_temp = strategy_df[strategy_df[keys] > 0.05]
 
-print(" ----------------- Trends -----------------")
-strategy_trend, cluster_trend = create_data_for_trend_test(reward_exps, trend_test=True)
-test_for_trend(strategy_trend, "Strategy")
-test_for_trend(cluster_trend, "Strategy Cluster")
-# test_for_trend(decision_trend, "Decision System")
+        filtered_strategies[keys] = strategy_temp[keys]
+    return filtered_strategies
 
-# print(" ----------------- Decision System -----------------")
-# for i in range(0, 5):
-#     increasing_ds_trend = mk.original_test(list(mean_dsw_increasing[:, i]))
-#     print("Mann Kendall Test: Increasing Decision System: ", i, increasing_ds_trend)
-#
-# for i in range(0, 5):
-#     decreasing_ds_trend = mk.original_test(list(mean_dsw_decreasing[:, i]))
-#     print("Mann Kendall Test: Decreasing Decision System: ", i, decreasing_ds_trend)
-#
-# for i in range(0, 5):
-#     constant_ds_trend = mk.original_test(list(mean_dsw_constant[:, i]))
-#     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
 
-print(" ----------------- First vs Last trial -----------------")
-first_last_strategies, first_last_clusters = create_data_for_trend_test(reward_exps, trend_test=False)
-test_first_trials_vs_last_trials(first_last_strategies, 2, "Strategy")
-test_first_trials_vs_last_trials(first_last_clusters, 2, "Strategy Cluster")
-# get_first_n_trials(decision_trend, 2, "Decision System")
+def adaptive_maladaptive_filtered_strategies(reward_dict, filtered_strategies, n=5):
+    """
+
+    Args:
+        reward_dict:
+            reward_dict = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1",
+                   "constant_variance": "c1.1"}
+        filtered_strategies: a dictionary of used strategies for all environments, i.e. proportion != 0, and their proportions
+        n: number of adaptive and maladaptive strategies
+
+    Returns: two dictionaries each containing the best 5 adaptive/maldapative strategies for each environment with corresponding score
+    E.g. : {'increasing_variance': {39: 38.897875, 82: 38.045905, 79: 38.00524, 28: 37.97349, 66: 37.35872},...}
+
+    """
+    # match filtered strategies with scores for the strategies
+    top_n_adaptive_strategies = {key: None for key in reward_dict.keys()}
+    top_n_maladaptive_strategies = {key: None for key in reward_dict.keys()}
+    for exp_name, exp_num in reward_dict.items():
+        filtered_strategies_env = filtered_strategies[exp_name]
+
+        if exp_num == "c2.1":
+            exp_num = "c2.1_dec"
+        strategy_score_dict = pd.read_pickle(f"../results/cm/strategy_scores/{exp_num}_strategy_scores.pkl")
+
+        for strategy_number, score in filtered_strategies_env.items():
+            filtered_strategies_env[strategy_number] = strategy_score_dict[strategy_number]
+
+        # top 5 adaptive / maladaptive strategies
+        adaptive_strategies = filtered_strategies_env.sort_values(ascending=False)
+        top_n = adaptive_strategies.head(n)
+        top_n_adaptive_strategies[exp_name] = top_n.to_dict()
+
+        maladaptive_strategies = filtered_strategies_env.sort_values(ascending=True)
+        worst_n = maladaptive_strategies.head(n)
+        top_n_maladaptive_strategies[exp_name] = worst_n.to_dict()
+    # print(top_n_adaptive_strategies)
+    # print(top_n_maladaptive_strategies)
+    return top_n_adaptive_strategies, top_n_maladaptive_strategies
+
+
+if __name__ == "__main__":
+    random.seed(123)
+    reward_exps = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1",
+                   "constant_variance": "c1.1"}
+
+    print(" ----------------- Distribution Difference -----------------")
+    # strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
+    #
+    # strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
+    #                             "decreasing": strategy_df["decreasing_variance"],
+    #                             "constant": strategy_df["constant_variance"]}
+    # # test_for_equal_distribution(strategy_difference_dict, "Strategies")
+    #
+    # cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
+    #                            "decreasing": cluster_df["decreasing_variance"],
+    #                            "constant": cluster_df["constant_variance"]}
+    # # test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
+    #
+    # decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
+    #                                    "decreasing": decision_system_df["decreasing_variance"],
+    #                                    "constant": decision_system_df["constant_variance"]}
+    # test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
+
+    print(" ----------------- Trends -----------------")
+    #strategy_trend, cluster_trend = create_data_for_trend_test(reward_exps, trend_test=True)
+    # test_for_trend(strategy_trend, "Strategy")
+    # test_for_trend(cluster_trend, "Strategy Cluster")
+    # test_for_trend(decision_trend, "Decision System")
+
+    # print(" ----------------- Decision System -----------------")
+    # for i in range(0, 5):
+    #     increasing_ds_trend = mk.original_test(list(mean_dsw_increasing[:, i]))
+    #     print("Mann Kendall Test: Increasing Decision System: ", i, increasing_ds_trend)
+    #
+    # for i in range(0, 5):
+    #     decreasing_ds_trend = mk.original_test(list(mean_dsw_decreasing[:, i]))
+    #     print("Mann Kendall Test: Decreasing Decision System: ", i, decreasing_ds_trend)
+    #
+    # for i in range(0, 5):
+    #     constant_ds_trend = mk.original_test(list(mean_dsw_constant[:, i]))
+    #     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
+
+    print(" ----------------- First vs Last trial -----------------")
+    # first_last_strategies, first_last_clusters = create_data_for_trend_test(reward_exps, trend_test=False)
+    # test_first_trials_vs_last_trials(first_last_strategies, 2, "Strategy")
+    # test_first_trials_vs_last_trials(first_last_clusters, 2, "Strategy Cluster")
+    # get_first_n_trials(decision_trend, 2, "Decision System")
+
+    print(
+        " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
+    filtered_strategies = filter_used_strategies(reward_exps)
+    top_n, worst_n = adaptive_maladaptive_filtered_strategies(reward_exps, filtered_strategies, 5)
+
+    # when it comes to plotting, the strategy names need to equal the description
+    # todo: make this as a function
+    for strategy_name, exp_num in reward_exps.items():
+        top_n_increasing = top_n[strategy_name]
+        adaptive_strategy_list = list(top_n_increasing.keys())
+
+        worst_n_increasing = worst_n[strategy_name]
+        maladaptive_strategy_list = list(worst_n_increasing.keys())
+
+        # filter strategy_df so that it only contains the adaptive/maladaptive strategies and sum them up
+        #print(strategy_df[strategy_name].loc[adaptive_strategy_list])
+
+
+        _, _, _, _, _, _, adaptive_strategy_sum, maladaptive_strategy_sum, rest_strategy_sum = load_data_from_computational_microscope(strategy_name, exp_num, reward_exps)
+
+        strategy_difference_dict = {strategy_name: adaptive_strategy_sum}
+        test_for_equal_distribution(strategy_difference_dict, "Strategies")

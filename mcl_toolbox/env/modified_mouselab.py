@@ -19,7 +19,8 @@ decreasing_dist_by_level = {1: [-48, -24, 24, 48], 2: [-8, -4, 4, 8], 3: [-4, -2
 
 constant_list = [-10, -5, 5, 10]
 
-constant_dist_by_level = { k: constant_list for k in range(5)}
+constant_dist_by_level = {k: constant_list for k in range(5)}
+
 
 def key_with_max_val(best_map):
     v = list(best_map.values())
@@ -28,12 +29,13 @@ def key_with_max_val(best_map):
 
 
 def sigmoid(x):
-    return 1/(1+np.exp(-x))
+    return 1 / (1 + np.exp(-x))
 
 
 def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
+
 
 @lru_cache(maxsize=None)
 def reward_val(depth):
@@ -41,15 +43,18 @@ def reward_val(depth):
         return distributions.Categorical(distribution_by_level[depth])
     return 0.
 
+
 def constant_reward_val(depth):
     if depth > 0:
         return distributions.Categorical(constant_dist_by_level[depth])
     return 0.
 
+
 def decreasing_reward_val(depth):
     if depth > 0:
         return distributions.Categorical(decreasing_dist_by_level[depth])
     return 0.
+
 
 @lru_cache(maxsize=None)
 def normal_reward_val(depth):
@@ -58,12 +63,12 @@ def normal_reward_val(depth):
         probs = d.probs
         val_prob = defaultdict(int)
         for i, (v, p) in enumerate(zip(vals, probs)):
-            val_prob[v]+= p
+            val_prob[v] += p
         vals = sorted(list(set(vals)))
         new_dist = distributions.Categorical(vals=vals, probs=[val_prob[v] for v in vals])
         return new_dist
 
-    stds = [1,2,4,8,32]
+    stds = [1, 2, 4, 8, 32]
     if depth > 0:
         dist = distributions.Normal(0, stds[depth - 1]).to_discrete(n=257, max_sigma=4)
         dist.vals = tuple([int(round(val)) for val in dist.vals])
@@ -71,10 +76,11 @@ def normal_reward_val(depth):
         return dist
     return 0.
 
-def approx_max(dist, position = 0):
-    if hasattr(dist,'mu'):
+
+def approx_max(dist, position=0):
+    if hasattr(dist, 'mu'):
         if position == 0:
-            return dist.mu + 2*dist.sigma
+            return dist.mu + 2 * dist.sigma
         else:
             return dist.mu + dist.sigma
     else:
@@ -84,18 +90,19 @@ def approx_max(dist, position = 0):
             return sorted(dist.vals)[-(position + 1)]
 
 
-def approx_min(dist, position = 0):
-    if hasattr(dist,'mu'):
+def approx_min(dist, position=0):
+    if hasattr(dist, 'mu'):
         if position == 0:
-            return dist.mu - 2*dist.sigma
+            return dist.mu - 2 * dist.sigma
         else:
             return dist.mu - dist.sigma
     return sorted(dist.vals)[position]
 
+
 def get_termination_mers(envs, trial_actions, pipeline):
     mers = []
     for i, (env, actions) in enumerate(zip(envs, trial_actions)):
-        trial = TrialSequence(1, [pipeline[i]], ground_truth = [env]).trial_sequence[0]
+        trial = TrialSequence(1, [pipeline[i]], ground_truth=[env]).trial_sequence[0]
         for action in actions[:-1]:
             trial.node_map[action].observe()
         mers.append(trial.node_map[1].calculate_max_expected_return())
@@ -103,7 +110,7 @@ def get_termination_mers(envs, trial_actions, pipeline):
 
 
 class TrialSequence:
-    def __init__(self, num_trials: int, pipeline : dict,
+    def __init__(self, num_trials: int, pipeline: dict,
                  ground_truth: List[List[float]] = None) -> None:
         self.num_trials = num_trials
         self.pipeline = pipeline
@@ -134,6 +141,7 @@ class TrialSequence:
             init = []
             branching = self.pipeline[trial_num][0]
             reward_function = self.pipeline[trial_num][1]
+
             def expand(d):
                 nonlocal init, tree
                 my_idx = len(init)
@@ -141,12 +149,14 @@ class TrialSequence:
                 children = []
                 tree.append(children)
                 for _ in range(get(d, branching, 0)):
-                    child_idx = expand(d+1)
+                    child_idx = expand(d + 1)
                     children.append(child_idx)
                 return my_idx
+
             expand(0)
             dist = (0, *init[1:])
             return list(map(distributions.sample, dist))
+
         for trial_num in range(self.num_trials):
             gt = gen_trial_gt(trial_num)
             self.ground_truth.append(gt)
@@ -172,6 +182,7 @@ class TrialSequence:
                 structure_map[curr_index] = curr_parent
                 curr_index += 1
                 construct_map(present_node, branching_index + 1)
+
         construct_map(0, 0)
         return structure_map
 
@@ -198,12 +209,11 @@ class TrialSequence:
     def reset_count(self):
         for k in self.node_click_count.keys():
             self.node_click_count[k] = 0
-    
+
     def reset_sequence(self):
         self._construct_trials()
         self.reset_count()
         self.observed_node_values = defaultdict(list)
-
 
 
 class Trial:
@@ -217,7 +227,7 @@ class Trial:
         if reward_function:
             self.reward_function = reward_function
         self.node_level_map = {}
-        self.level_map = {d: [] for d in range(1, self.max_depth+1)}
+        self.level_map = {d: [] for d in range(1, self.max_depth + 1)}
         self.construct_node_maps(self.root, 0)
         self.init_expectations()
         self.path_map = {}
@@ -259,12 +269,12 @@ class Trial:
 
     def construct_node_maps(self, root, current_level):
         for child in root.children:
-            self.level_map[current_level+1].append(child)
-            self.node_level_map[child.label] = current_level+1
+            self.level_map[current_level + 1].append(child)
+            self.node_level_map[child.label] = current_level + 1
             child.depth = current_level + 1
         for child in root.children:
-            self.construct_node_maps(child, current_level+1)
-        
+            self.construct_node_maps(child, current_level + 1)
+
     def init_expectations(self):
         for node in self.node_map.values():
             if node.label != 0:
@@ -288,6 +298,7 @@ class Trial:
             else:
                 for child in root.children:
                     get_tree_path(child, present_path[:])
+
         get_tree_path(self.root, [])
 
     def reset_observations(self):
@@ -319,9 +330,9 @@ class Trial:
             feature_values[i] = node.compute_termination_feature_values(features)
             if normalized_features:
                 feature_values[i] = get_normalized_feature_values(
-                feature_values[i], features, normalized_features)
+                    feature_values[i], features, normalized_features)
         return feature_values
-    
+
     def get_leaf_nodes(self):
         leaf_nodes = []
         for node in self.node_map.values():
@@ -359,7 +370,7 @@ class Trial:
 
     def get_observed_node_count(self):
         return len(self.observed_nodes)
-    
+
     def get_unobserved_nodes(self):
         return self.unobserved_nodes
 
@@ -410,7 +421,7 @@ class Trial:
         leaf_nodes = self.level_map[self.max_depth]
         for node in leaf_nodes:
             present_node = node
-            while(present_node.parent.label != 0):
+            while (present_node.parent.label != 0):
                 present_node = present_node.parent
             if present_node in pos_node_list:
                 if not node.observed:
@@ -428,7 +439,7 @@ class Trial:
         for node in observed_leaf_nodes:
             present_node = node
             path_complete = True
-            while(present_node.parent.label != 0):
+            while (present_node.parent.label != 0):
                 if not present_node.parent.observed:
                     path_complete = False
                     break
@@ -457,7 +468,7 @@ class Trial:
     def largest_value_observed(self):
         num_branches = len(self.branch_map)
         max_path_values = {}
-        for i in range(1, num_branches+1):
+        for i in range(1, num_branches + 1):
             path = self.branch_map[i]
             max_value = -9999
             for node_num in path:
@@ -472,7 +483,7 @@ class Trial:
     def get_path_expected_values(self):
         num_branches = len(self.branch_map)
         expected_path_values = {}
-        for i in range(1, num_branches+1):
+        for i in range(1, num_branches + 1):
             path = self.branch_map[i]
             ev = 0
             for node_num in path:
@@ -489,7 +500,7 @@ class Trial:
     def get_path_expected_values_information(self, level_values):
         num_branches = len(self.branch_map)
         expected_path_values = {}
-        for i in range(1, num_branches+1):
+        for i in range(1, num_branches + 1):
             path = self.branch_map[i]
             ev = 0
             for node_num in path:
@@ -506,7 +517,7 @@ class Trial:
         num_branches = len(self.branch_map)
         best_paths = []
         other_paths = []
-        for i in range(1, num_branches+1):
+        for i in range(1, num_branches + 1):
             flag = 0
             path = self.branch_map[i]
             ev = 0
@@ -526,7 +537,7 @@ class Trial:
             else:
                 best_paths.append(ev)
         return other_paths, best_paths
-    
+
     def is_max_path_observed(self):
         observed_nodes = self.get_observed_nodes()
         max_value = self.get_max_dist_value()
@@ -535,7 +546,7 @@ class Trial:
                 if node.check_path_observed():
                     return -1
         return 0
-    
+
     def are_max_paths_observed(self):
         observed_nodes = self.get_observed_nodes()
         max_value = self.get_max_dist_value()
@@ -583,7 +594,7 @@ class Trial:
         leaf_nodes = self.level_map[self.max_depth]
         for node in leaf_nodes:
             present_node = node
-            while(present_node.parent.label != 0):
+            while (present_node.parent.label != 0):
                 present_node = present_node.parent
             if present_node in pos_node_list:
                 if not node.observed:
@@ -601,7 +612,7 @@ class Trial:
         for node in observed_leaf_nodes:
             present_node = node
             path_complete = True
-            while(present_node.parent.label != 0):
+            while (present_node.parent.label != 0):
                 if not present_node.parent.observed:
                     path_complete = False
                     break
@@ -615,7 +626,7 @@ class Trial:
         if self.previous_observed and self.previous_observed.value >= max_value:
             return 0
         return -1
-    
+
     def termination_max_observed(self):
         observed_nodes = self.get_observed_nodes()
         max_value = self.get_max_dist_value()
@@ -624,7 +635,7 @@ class Trial:
                 if node.check_path_observed():
                     return 0
         return -1
-    
+
     def termination_max_paths_observed(self):
         observed_nodes = self.get_observed_nodes()
         max_value = self.get_max_dist_value()
@@ -654,7 +665,7 @@ class Trial:
     def get_best_expected_path(self):
         self.calculate_expected_value_path(self.root, [], [])
         paths = {k: v for k, v in self.path_map.items() if len(k) ==
-                 self.max_depth+1}
+                 self.max_depth + 1}
         max_path_value = -999
         for k, v in paths.items():
             if v > max_path_value:
@@ -669,7 +680,7 @@ class Trial:
         self.calculate_expected_value_path(self.root, [], [])
         complete_paths = []
         for k, v in self.path_map.items():
-            if len(k) == self.max_depth+1:
+            if len(k) == self.max_depth + 1:
                 complete_paths.append([k, v])
         return random.choice(complete_paths[0])
 
@@ -694,35 +705,64 @@ class Node:
         self.depth = 0  # Will be initialized when a trial is created
         self.label = 0
         self.trial = trial
-        self.feature_function_map = {"siblings_count": self.get_observed_siblings_count, "depth_count": self.get_observed_same_depth_count,
-                                     "ancestor_count": self.get_observed_ancestor_count, "successor_count": self.get_observed_successor_count,
+        self.feature_function_map = {"siblings_count": self.get_observed_siblings_count,
+                                     "depth_count": self.get_observed_same_depth_count,
+                                     "ancestor_count": self.get_observed_ancestor_count,
+                                     "successor_count": self.get_observed_successor_count,
                                      "is_leaf": self.is_leaf, "depth": self.get_depth_node,
-                                     "max_successor": self.get_max_successor_value, "parent_value": self.get_parent_value, "max_immediate_successor": self.get_max_immediate_successor,
-                                     "immediate_successor_count": self.get_immediate_successor_count, "previous_observed_successor": self.is_previous_successor,
+                                     "max_successor": self.get_max_successor_value,
+                                     "parent_value": self.get_parent_value,
+                                     "max_immediate_successor": self.get_max_immediate_successor,
+                                     "immediate_successor_count": self.get_immediate_successor_count,
+                                     "previous_observed_successor": self.is_previous_successor,
                                      "is_successor_highest": self.is_successor_highest_leaf,
-                                     "parent_observed": self.is_parent_observed, "is_max_path_observed": self.trial.is_max_path_observed, "observed_height": self.get_observed_height,
-                                     "are_max_paths_observed": self.trial.are_max_paths_observed, "is_previous_max": self.trial.is_previous_max,
-                                     "is_positive_observed": self.trial.is_positive_observed, "all_roots_observed": self.trial.all_roots_observed,
+                                     "parent_observed": self.is_parent_observed,
+                                     "is_max_path_observed": self.trial.is_max_path_observed,
+                                     "observed_height": self.get_observed_height,
+                                     "are_max_paths_observed": self.trial.are_max_paths_observed,
+                                     "is_previous_max": self.trial.is_previous_max,
+                                     "is_positive_observed": self.trial.is_positive_observed,
+                                     "all_roots_observed": self.trial.all_roots_observed,
                                      "all_leaf_nodes_observed": self.trial.all_leaf_nodes_observed,
                                      "immediate_termination": self.trial.immediate_termination,
-                                     "is_pos_ancestor_leaf": self.is_leaf_and_positive_ancestor, "positive_root_leaves_termination": self.trial.positive_root_leaves_termination,
+                                     "is_pos_ancestor_leaf": self.is_leaf_and_positive_ancestor,
+                                     "positive_root_leaves_termination": self.trial.positive_root_leaves_termination,
                                      "single_path_completion": self.trial.single_path_completion_termination,
-                                     "is_root": self.is_root, "is_previous_successor_negative": self.is_previous_observed_successor_negative,
-                                     "sq_successor_count": self.sq_successor_count, "uncertainty": self.get_uncertainty, "best_expected": self.calculate_best_expected_value,
-                                     "best_largest": self.best_largest_value_observed, "max_uncertainty": self.max_path_uncertainty,
-                                     "most_promising": self.on_most_promising_path, "second_most_promising": self.on_second_promising_path,  "click_count": self.get_seq_click_count,
-                                     "level_count": self.get_level_count, "branch_count": self.get_branch_count, "soft_pruning": self.soft_pruning,
+                                     "is_root": self.is_root,
+                                     "is_previous_successor_negative": self.is_previous_observed_successor_negative,
+                                     "sq_successor_count": self.sq_successor_count, "uncertainty": self.get_uncertainty,
+                                     "best_expected": self.calculate_best_expected_value,
+                                     "best_largest": self.best_largest_value_observed,
+                                     "max_uncertainty": self.max_path_uncertainty,
+                                     "most_promising": self.on_most_promising_path,
+                                     "second_most_promising": self.on_second_promising_path,
+                                     "click_count": self.get_seq_click_count,
+                                     "level_count": self.get_level_count, "branch_count": self.get_branch_count,
+                                     "soft_pruning": self.soft_pruning,
                                      "first_observed": self.trial.first_node_observed,
                                      "count_observed_node_branch": self.count_observed_node_branch,
-                                     "get_level_observed_std": self.get_level_observed_std, "successor_uncertainty": self.total_successor_uncertainty, "num_clicks_adaptive": self.trial.get_num_clicks,
-                                     "max_expected_return": self.calculate_max_expected_return, "trial_level_std": self.get_trial_level_std, "soft_satisficing": self.soft_satisficing,
-                                     'constant': self.constant_feature, "planning": self.constant_feature, "termination_constant": self.term_feature,
+                                     "get_level_observed_std": self.get_level_observed_std,
+                                     "successor_uncertainty": self.total_successor_uncertainty,
+                                     "num_clicks_adaptive": self.trial.get_num_clicks,
+                                     "max_expected_return": self.calculate_max_expected_return,
+                                     "trial_level_std": self.get_trial_level_std,
+                                     "soft_satisficing": self.soft_satisficing,
+                                     'constant': self.constant_feature, "planning": self.constant_feature,
+                                     "termination_constant": self.term_feature,
                                      "value": self.get_value, "is_observed": self.is_observed}
 
-        self.termination_map = {"is_max_path_observed": self.trial.termination_max_observed, "are_max_paths_observed": self.trial.termination_max_paths_observed,
-                                "is_previous_max": self.trial.termination_previous_max, "is_positive_observed": self.trial.termination_positive, "all_roots_observed": self.trial.termination_roots_observed,
-                                "all_leaf_nodes_observed": self.trial.termination_leaves_observed, "immediate_termination": self.trial.immediate_termination, "positive_root_leaves_termination": self.trial.termination_postive_root_leaves,
-                                "single_path_completion": self.trial.termination_single_path, "first_observed": self.trial.termination_first_node, "max_expected_return": self.calculate_max_expected_return, "soft_satisficing": self.trial.soft_satisficing, "constant": self.constant_feature}
+        self.termination_map = {"is_max_path_observed": self.trial.termination_max_observed,
+                                "are_max_paths_observed": self.trial.termination_max_paths_observed,
+                                "is_previous_max": self.trial.termination_previous_max,
+                                "is_positive_observed": self.trial.termination_positive,
+                                "all_roots_observed": self.trial.termination_roots_observed,
+                                "all_leaf_nodes_observed": self.trial.termination_leaves_observed,
+                                "immediate_termination": self.trial.immediate_termination,
+                                "positive_root_leaves_termination": self.trial.termination_postive_root_leaves,
+                                "single_path_completion": self.trial.termination_single_path,
+                                "first_observed": self.trial.termination_first_node,
+                                "max_expected_return": self.calculate_max_expected_return,
+                                "soft_satisficing": self.trial.soft_satisficing, "constant": self.constant_feature}
 
     def observe(self):
         self.observed = True
@@ -750,7 +790,7 @@ class Node:
             return []
         ancestor_list = []
         node = self.parent
-        while(node.label != 0):
+        while (node.label != 0):
             ancestor_list.append(node)
             node = node.parent
         return ancestor_list
@@ -760,18 +800,18 @@ class Node:
             return 0
         else:
             return 1
-    
+
     def is_observed(self):
         if self.observed:
             return 1
         else:
             return 0
-    
+
     def get_value(self):
         if self.observed:
             return self.value
         else:
-            return 0 # Change this later to expected value
+            return 0  # Change this later to expected value
 
     def get_ancestor_node_values(self):
         ancestor_list = self.get_ancestor_nodes()
@@ -827,6 +867,7 @@ class Node:
                 successors = get_successors(child)
                 node_list += successors
             return node_list
+
         return get_successors(self)
 
     def get_successor_node_values(self):
@@ -856,7 +897,7 @@ class Node:
         return len(self.get_observed_successor_node_values())
 
     def sq_successor_count(self):
-        return self.get_observed_successor_count()**2
+        return self.get_observed_successor_count() ** 2
 
     def get_immediate_successors(self):
         children = self.children
@@ -1063,7 +1104,7 @@ class Node:
     def on_second_promising_path(self):
         expected_path_values = self.trial.get_path_expected_values()
         node_paths = self.trial.reverse_branch_map[self.label]
-        sorted_values = sorted(set(expected_path_values.values()), reverse = True)
+        sorted_values = sorted(set(expected_path_values.values()), reverse=True)
         for node_path in node_paths:
             if len(sorted_values) > 1:
                 if expected_path_values[node_path] == sorted_values[1]:
@@ -1112,7 +1153,7 @@ class Node:
         node_list = []
         for node in self.children:
             if node.observed:
-                node_list.append(1+node.get_observed_height())
+                node_list.append(1 + node.get_observed_height())
         if not node_list:
             return 0
         return max(node_list)
@@ -1159,14 +1200,14 @@ class Node:
         if not self.observed:
             return 0
         present_node = self
-        while(present_node.parent != None):
+        while (present_node.parent != None):
             if not present_node.parent.observed:
                 return 0
             present_node = present_node.parent
         if not self.is_path_to_leaf_observed():
             return 0
         return 1
-    
+
     def list_all_features(self):
         lis = list(self.feature_function_map.keys())
         lis.remove("first_observed")
@@ -1194,7 +1235,8 @@ class Node:
                 if (self == self.root):
                     if len(adaptive_satisficing) != 0:
                         aspiration_level = sigmoid(self.calculate_max_expected_return(
-                        ) - adaptive_satisficing['a'] + adaptive_satisficing['b']*self.feature_function_map[feature]())
+                        ) - adaptive_satisficing['a'] + adaptive_satisficing['b'] * self.feature_function_map[
+                                                       feature]())
                         evaluated_features.append(
                             self.hard_satisficing(aspiration_level))
                     else:
@@ -1242,8 +1284,8 @@ class Node:
                     if len(adaptive_satisficing) != 0:
                         as_value = sigmoid(self.calculate_max_expected_return(
                         ) - adaptive_satisficing['a'] + (
-                            adaptive_satisficing['b']*self.feature_function_map[feature]()))
-                        evaluated_features.append(-1*as_value)
+                                                   adaptive_satisficing['b'] * self.feature_function_map[feature]()))
+                        evaluated_features.append(-1 * as_value)
                     else:
                         evaluated_features.append(0)
                 else:

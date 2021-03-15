@@ -7,6 +7,7 @@ sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
 from mcl_toolbox.utils.experiment_utils import Experiment
+from statistical_tests import filter_used_strategies, adaptive_maladaptive_filtered_strategies
 
 """
 Run this file to analyse the inferred sequences of the participants. 
@@ -73,24 +74,36 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
     learning_utils.create_dir(save_path)
 
     # adaptive and maladaptive strategies
+    filtered_strategies = filter_used_strategies(structure.reward_dict)
+    top_n, worst_n = adaptive_maladaptive_filtered_strategies(structure.reward_dict, filtered_strategies, 5)
+
+    # when it comes to plotting, the strategy names need to equal the description
+    # todo: make this as a function
     if exp_num == "v1.0":
-        manual_strategy_list = [21, 63, 40, 50, 51]
-        maladaptive_strategy_list = [39, 23, 53, 70, 28]
+        top_n_increasing = top_n["increasing_variance"]
+        adaptive_strategy_list = list(top_n_increasing.keys())
+        worst_n_increasing = worst_n["increasing_variance"]
+        maladaptive_strategy_list = list(worst_n_increasing.keys())
+
     elif exp_num == "c2.1_dec":
-        manual_strategy_list = [70, 23, 69, 65, 33]
-        maladaptive_strategy_list = [39, 42, 43, 51, 40]
+        top_n_increasing = top_n["decreasing_variance"]
+        adaptive_strategy_list = list(top_n_increasing.keys())
+        worst_n_increasing = worst_n["decreasing_variance"]
+        maladaptive_strategy_list = list(worst_n_increasing.keys())
+
     elif exp_num == "c1.1":
-        # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
-        # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
-        manual_strategy_list = [65, 33, 34, 21, 69]
-        maladaptive_strategy_list = [39, 30, 27, 28, 66]
+        top_n_increasing = top_n["constant_variance"]
+        adaptive_strategy_list = list(top_n_increasing.keys())
+        worst_n_increasing = worst_n["constant_variance"]
+        maladaptive_strategy_list = list(worst_n_increasing.keys())
+
     else:
-        manual_strategy_list = []
+        adaptive_strategy_list = []
         maladaptive_strategy_list = []
 
     exp.summarize(features, normalized_features, strategy_weights,
                   decision_systems, W_DS, DS_proportions, strategy_scores,
-                  cluster_scores, cluster_map, manual_strategy_list, maladaptive_strategy_list,
+                  cluster_scores, cluster_map, adaptive_strategy_list, maladaptive_strategy_list,
                   precomputed_strategies=strategies_,
                   precomputed_temperatures=temperatures,
                   show_pids=False)
@@ -98,12 +111,13 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
 
 if __name__ == "__main__":
     # random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
 
-    # exp_name = "c2.1_dec"
-    # block = "training"
+    exp_name = "c2.1_dec"
+    block = "training"
 
+    # create the plots
     analyse_sequences(exp_name, block=block)
