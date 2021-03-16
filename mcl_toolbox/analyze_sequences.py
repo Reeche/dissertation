@@ -1,13 +1,14 @@
 import sys
 import random
-from mcl_toolbox.global_vars import structure, strategies, features
 from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
+
+from mcl_toolbox.utils.learning_utils import pickle_load, get_normalized_features, get_modified_weights, create_dir
+from mcl_toolbox.global_vars import structure, strategies, features
 from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
 from mcl_toolbox.utils.experiment_utils import Experiment
-from statistical_tests import filter_used_strategies, adaptive_maladaptive_filtered_strategies
 
 """
 Run this file to analyse the inferred sequences of the participants. 
@@ -16,14 +17,15 @@ Example: python3 analyze_sequences.py c2.1_dec training none
 """
 
 
-def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
+def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=False, **kwargs):
     # Initializations
-    decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
-    DS_proportions = learning_utils.pickle_load("data/strategy_decision_proportions.pkl")
-    W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
-    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
-    strategy_scores = learning_utils.pickle_load("data/strategy_scores.pkl")  # todo: update strategy scores to contain all environments, currently only increasing variance
-    cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
+    decision_systems = pickle_load("../data/decision_systems.pkl")
+    DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
+    W_DS = pickle_load("../data/strategy_decision_weights.pkl")
+    cluster_map = pickle_load("../data/kl_cluster_map.pkl")
+    strategy_scores = pickle_load(
+        "../data/strategy_scores.pkl")  # todo: update strategy scores to contain all environments, currently only increasing variance
+    cluster_scores = pickle_load("../data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
@@ -31,7 +33,6 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
 
     # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
     exp_pipelines = structure.exp_pipelines
-
     if exp_num not in structure.exp_reward_structures:
         raise (ValueError, "Reward structure not found.")
     reward_structure = structure.exp_reward_structures[exp_num]
@@ -42,23 +43,23 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = learning_utils.get_normalized_features(reward_structure)  # tuple of 2
-    W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
+    normalized_features = get_normalized_features(reward_structure)  # tuple of 2
+    W = get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features,
                                  normalized_features=normalized_features)
     pids = None
     if exp_num == "c2.1_dec":
-        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../results/cm/inferred_strategies/{exp_num}"
+    dir_path = f"../../results/cm/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
     try:
-        strategies_ = learning_utils.pickle_load(f"{dir_path}/strategies.pkl")
-        temperatures = learning_utils.pickle_load(f"{dir_path}/temperatures.pkl")
+        strategies_ = pickle_load(f"{dir_path}/strategies.pkl")
+        temperatures = pickle_load(f"{dir_path}/temperatures.pkl")
     except Exception as e:
         print("Exception", e)
         # exit()
@@ -71,53 +72,37 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         save_path = f"../results/cm/plots/{exp_num}"
         if block:
             save_path += f"_{block}"
-    learning_utils.create_dir(save_path)
+    create_dir(save_path)
 
-    # adaptive and maladaptive strategies
-    filtered_strategies = filter_used_strategies(structure.reward_dict)
-    top_n, worst_n = adaptive_maladaptive_filtered_strategies(structure.reward_dict, filtered_strategies, 5)
+    strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = exp.summarize(
+        features, normalized_features, strategy_weights,
+        decision_systems, W_DS, DS_proportions, strategy_scores,
+        cluster_scores, cluster_map,
+        create_plot=create_plot,
+        precomputed_strategies=strategies_,
+        precomputed_temperatures=temperatures,
+        show_pids=False)
 
-    # when it comes to plotting, the strategy names need to equal the description
-    # todo: make this as a function
-    if exp_num == "v1.0":
-        top_n_increasing = top_n["increasing_variance"]
-        adaptive_strategy_list = list(top_n_increasing.keys())
-        worst_n_increasing = worst_n["increasing_variance"]
-        maladaptive_strategy_list = list(worst_n_increasing.keys())
-
-    elif exp_num == "c2.1_dec":
-        top_n_increasing = top_n["decreasing_variance"]
-        adaptive_strategy_list = list(top_n_increasing.keys())
-        worst_n_increasing = worst_n["decreasing_variance"]
-        maladaptive_strategy_list = list(worst_n_increasing.keys())
-
-    elif exp_num == "c1.1":
-        top_n_increasing = top_n["constant_variance"]
-        adaptive_strategy_list = list(top_n_increasing.keys())
-        worst_n_increasing = worst_n["constant_variance"]
-        maladaptive_strategy_list = list(worst_n_increasing.keys())
-
+    if create_plot:
+        return None
     else:
-        adaptive_strategy_list = []
-        maladaptive_strategy_list = []
-
-    exp.summarize(features, normalized_features, strategy_weights,
-                  decision_systems, W_DS, DS_proportions, strategy_scores,
-                  cluster_scores, cluster_map, adaptive_strategy_list, maladaptive_strategy_list,
-                  precomputed_strategies=strategies_,
-                  precomputed_temperatures=temperatures,
-                  show_pids=False)
+        return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies
 
 
 if __name__ == "__main__":
-    # random.seed(123)
+    random.seed(123)
     # exp_name = sys.argv[1]  # e.g. c2.1_dec
     # block = None
     # if len(sys.argv) > 2:
     #     block = sys.argv[2]
+    # create_plot = sys.argv[3]
 
-    exp_name = "c2.1_dec"
+    exp_name = "v1.0"
     block = "training"
+    create_plot = False
 
     # create the plots
-    analyse_sequences(exp_name, block=block)
+    if create_plot:
+        analyse_sequences(exp_name, block=block, create_plot=create_plot)
+    else:
+        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = analyse_sequences(exp_name, block=block, create_plot=create_plot)

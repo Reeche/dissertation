@@ -267,3 +267,5 @@ class Figures(object):
             return wrapped
 
         return decorator
+
+
