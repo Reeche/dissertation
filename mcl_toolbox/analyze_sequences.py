@@ -12,8 +12,8 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 
-Format: python3 analyze_sequences.py <reward_structure> <block> <pid>
-Example: python3 analyze_sequences.py c2.1_dec training none
+Format: python3 analyze_sequences.py <reward_structure> <block> <create_plot>
+Example: python3 analyze_sequences.py c2.1_dec training True
 """
 
 
@@ -97,14 +97,16 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
 
 if __name__ == "__main__":
     random.seed(123)
-    # exp_name = sys.argv[1]  # e.g. c2.1_dec
-    # block = None
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
-    # create_plot = sys.argv[3]
+    exp_name = sys.argv[1]  # e.g. c2.1_dec
+    block = None
+    create_plot = True
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
+        create_plot = sys.argv[3]
 
-    exp_name = "c1.1"
-    block = "training"
+    # exp_name = "c2.1_dec"
+    # block = "training"
+    # create_plot=True
 
     # create the plots
     analyse_sequences(exp_name, block=block, create_plot=True)
