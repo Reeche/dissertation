@@ -74,18 +74,24 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
             save_path += f"_{block}"
     create_dir(save_path)
 
-    strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = exp.summarize(
-        features, normalized_features, strategy_weights,
-        decision_systems, W_DS, DS_proportions, strategy_scores,
-        cluster_scores, cluster_map,
-        create_plot=create_plot,
-        precomputed_strategies=strategies_,
-        precomputed_temperatures=temperatures,
-        show_pids=False)
-
     if create_plot:
-        return None
+        exp.summarize(
+            features, normalized_features, strategy_weights,
+            decision_systems, W_DS, DS_proportions, strategy_scores,
+            cluster_scores, cluster_map,
+            create_plot=create_plot,
+            precomputed_strategies=strategies_,
+            precomputed_temperatures=temperatures,
+            show_pids=False)
     else:
+        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = exp.summarize(
+            features, normalized_features, strategy_weights,
+            decision_systems, W_DS, DS_proportions, strategy_scores,
+            cluster_scores, cluster_map,
+            create_plot=create_plot,
+            precomputed_strategies=strategies_,
+            precomputed_temperatures=temperatures,
+            show_pids=False)
         return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies
 
 
@@ -97,12 +103,9 @@ if __name__ == "__main__":
     #     block = sys.argv[2]
     # create_plot = sys.argv[3]
 
-    exp_name = "v1.0"
+    exp_name = "c2.1_dec"
     block = "training"
-    create_plot = False
 
     # create the plots
-    if create_plot:
-        analyse_sequences(exp_name, block=block, create_plot=create_plot)
-    else:
-        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = analyse_sequences(exp_name, block=block, create_plot=create_plot)
+    analyse_sequences(exp_name, block=block, create_plot=True)
+
