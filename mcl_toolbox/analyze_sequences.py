@@ -103,7 +103,7 @@ if __name__ == "__main__":
     #     block = sys.argv[2]
     # create_plot = sys.argv[3]
 
-    exp_name = "c2.1_dec"
+    exp_name = "c1.1"
     block = "training"
 
     # create the plots

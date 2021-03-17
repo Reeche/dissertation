@@ -3,8 +3,7 @@ import pandas as pd
 import numpy as np
 import random
 import pymannkendall as mk
-from scipy.stats import friedmanchisquare
-from scipy.stats import mannwhitneyu
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp
 
 from mcl_toolbox.utils import learning_utils, distributions
 
@@ -20,7 +19,7 @@ This script runs statistical tests that tests whether:
 2. cluster development and overall cluster frequency is significantly different across conditions
 3. decision system development and overall decision system frequency is significantly different across conditions
 
-A mannwhitneyu test will be used to test whether the distributions of two independent samples are equal or not.
+A mannwhitneyu / Wilcoxon rank sum test as well as Kolmogorov Smirnoff 2-sample test will be used to test whether the distributions of two independent samples are equal or not.
 A friedmanchisquare test will be used to whether the distributions of two or more paired samples are equal or not.
 A Mann Kendall test is used to test for trends
 
@@ -122,7 +121,7 @@ def test_for_equal_distribution(name_distribution_dict: dict, type: str):
 
     """
     length_of_dict = len(name_distribution_dict)
-    print(f" === Test for Equal distributions between the {type} === ")
+    print(f" ----------- Test for Equal distributions between the {type} -----------")
 
     if length_of_dict >= 3:
         stat, p = friedmanchisquare(*[v for k, v in name_distribution_dict.items()])
@@ -131,7 +130,11 @@ def test_for_equal_distribution(name_distribution_dict: dict, type: str):
     for variance_type_a, distribution_a in name_distribution_dict.items():
         for variance_type_b, distribution_b in name_distribution_dict.items():
             stat, p = mannwhitneyu(distribution_a, distribution_b)
-            print(f"{variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
+            print(f"Mann Whitney U: {variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
+
+            stat, p = ks_2samp(distribution_a, distribution_b)
+            print(f"Kolmogorov 2 sample : {variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")
+
 
 
 def test_for_trend(trend, analysis_type: str):
@@ -159,11 +162,33 @@ def test_first_trials_vs_last_trials(trend, n, analysis_type):
 
     """
     # todo: add decision systems
+    print(f" ----------------- {analysis_type} -----------------")
     average_first_n_trials = trend.iloc[0:n].sum()  # add first n rows
     average_last_n_trials = trend.iloc[-(n + 1):-1, :].sum()  # add last n rows
     for columns in trend:
         stat, p = mannwhitneyu(average_first_n_trials[columns], average_last_n_trials[columns])
-        print(f'{analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
+        print(f'Mann Whitney U: {analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
+        stat, p = ks_2samp(average_first_n_trials[columns], average_last_n_trials[columns])
+        print(f"Kolmogorov 2 sample : {analysis_type} vs {columns}:  stat={stat:.3f}, p={p:.3f}")
+
+    print(f" ----------------- Distribution test of the last 10 {analysis_type} across environment -----------------")
+    average_last_10_trials = trend.iloc[-(10 + 1):-1, :].sum()  # add last n rows
+    stat, p = mannwhitneyu(average_last_10_trials["increasing_variance"], average_last_n_trials["decreasing_variance"])
+    print(f'Mann Whitney U: increasing_variance vs. decreasing_variance: stat=%.3f, p=%.3f' % (stat, p))
+    stat, p = ks_2samp(average_last_10_trials["increasing_variance"], average_last_10_trials["decreasing_variance"])
+    print(f"Kolmogorov 2 sample : increasing_variance vs. decreasing_variance: stat={stat:.3f}, p={p:.3f}")
+
+    stat, p = mannwhitneyu(average_last_10_trials["increasing_variance"], average_last_n_trials["constant_variance"])
+    print(f'Mann Whitney U: increasing_variance vs. constant_variance: stat=%.3f, p=%.3f' % (stat, p))
+    stat, p = ks_2samp(average_last_10_trials["increasing_variance"], average_last_10_trials["constant_variance"])
+    print(f"Kolmogorov 2 sample : increasing_variance vs. constant_variance: stat={stat:.3f}, p={p:.3f}")
+
+    stat, p = mannwhitneyu(average_last_10_trials["decreasing_variance"], average_last_n_trials["constant_variance"])
+    print(f'Mann Whitney U: decreasing_variance vs. constant_variance: stat=%.3f, p=%.3f' % (stat, p))
+    stat, p = ks_2samp(average_last_10_trials["decreasing_variance"], average_last_10_trials["constant_variance"])
+    print(f"Kolmogorov 2 sample : decreasing_variance vs. constant_variance: stat={stat:.3f}, p={p:.3f}")
+
+
 
 
 if __name__ == "__main__":
@@ -173,28 +198,28 @@ if __name__ == "__main__":
                    "constant_variance": "c1.1"}
 
     print(" ----------------- Distribution Difference -----------------")
-    # strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
-    #
-    # strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
-    #                             "decreasing": strategy_df["decreasing_variance"],
-    #                             "constant": strategy_df["constant_variance"]}
-    # test_for_equal_distribution(strategy_difference_dict, "Strategies")
-    #
-    # cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
-    #                            "decreasing": cluster_df["decreasing_variance"],
-    #                            "constant": cluster_df["constant_variance"]}
-    # test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
-    #
-    # decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
-    #                                    "decreasing": decision_system_df["decreasing_variance"],
-    #                                    "constant": decision_system_df["constant_variance"]}
-    # test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
+    strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
+
+    strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
+                                "decreasing": strategy_df["decreasing_variance"],
+                                "constant": strategy_df["constant_variance"]}
+    test_for_equal_distribution(strategy_difference_dict, "Strategies")
+
+    cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
+                               "decreasing": cluster_df["decreasing_variance"],
+                               "constant": cluster_df["constant_variance"]}
+    test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
+
+    decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
+                                       "decreasing": decision_system_df["decreasing_variance"],
+                                       "constant": decision_system_df["constant_variance"]}
+    test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
 
     print(" ----------------- Trends -----------------")
-    # strategy_trend, cluster_trend, _, _ = create_data_for_trend_test(reward_exps, trend_test=True)
-    # test_for_trend(strategy_trend, "Strategy")
-    # test_for_trend(cluster_trend, "Strategy Cluster")
-    # test_for_trend(decision_trend, "Decision System")
+    strategy_trend, cluster_trend, _, _ = create_data_for_trend_test(reward_exps, trend_test=True)
+    test_for_trend(strategy_trend, "Strategy")
+    test_for_trend(cluster_trend, "Strategy Cluster")
+    #test_for_trend(decision_trend, "Decision System")
 
     # print(" ----------------- Decision System -----------------")
     # for i in range(0, 5):
@@ -210,10 +235,10 @@ if __name__ == "__main__":
     #     print("Mann Kendall Test: Constant Decision System: ", i, constant_ds_trend)
 
     print(" ----------------- First vs Last trial -----------------")
-    # first_last_strategies, first_last_clusters, _, _ = create_data_for_trend_test(reward_exps, trend_test=False)
-    # test_first_trials_vs_last_trials(first_last_strategies, 2, "Strategy")
-    # test_first_trials_vs_last_trials(first_last_clusters, 2, "Strategy Cluster")
-    # get_first_n_trials(decision_trend, 2, "Decision System")
+    first_last_strategies, first_last_clusters, _, _ = create_data_for_trend_test(reward_exps, trend_test=False)
+    test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")
+    test_first_trials_vs_last_trials(first_last_clusters, 5, "Strategy Cluster")
+    #get_first_n_trials(decision_trend, 2, "Decision System")
 
     print(
         " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")

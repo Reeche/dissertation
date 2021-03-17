@@ -113,7 +113,6 @@ def create_dir(file_path):
     """
         Create directory if it does not exist
     """
-    print("FILE PATH", file_path)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 

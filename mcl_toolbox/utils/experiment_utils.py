@@ -1051,12 +1051,12 @@ class Experiment():
 
         # show how many trials until the final strategy was used
         print("Strategy usage:")
-        self.analyze_trajectory(strategy_trajectory, print_trajectories=False)
+        self.analyze_trajectory(strategy_trajectory, print_trajectories=True)
         print("\n")
 
         # show how many trials until the final strategy cluster was used
         print("Cluster usage:")
-        self.analyze_trajectory(cluster_trajectory, print_trajectories=False)
+        self.analyze_trajectory(cluster_trajectory, print_trajectories=True)
         print("\n")
 
     ### About score development
@@ -1123,9 +1123,9 @@ class Experiment():
         worst_n_strategies = list(strategies_with_scores)[:n]  # first n items
         top_n_strategies = list(strategies_with_scores)[-n:]  # last n items
 
-        print("Proportion of strategies used", self.strategy_proportions)
-        print("Scores of maladaptive strategies", list(strategies_with_scores.items())[:n])
-        print("Scores of adaptive strategies", list(strategies_with_scores.items())[-n:])
+        # print("Proportion of strategies used", self.strategy_proportions)
+        # print("Scores of maladaptive strategies", list(strategies_with_scores.items())[:n])
+        # print("Scores of adaptive strategies", list(strategies_with_scores.items())[-n:])
         return top_n_strategies, worst_n_strategies
 
     def summarize(self, features, normalized_features, strategy_weights,
