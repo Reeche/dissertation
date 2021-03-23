@@ -60,7 +60,7 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
     return strategy_df, cluster_df, decision_system_df
 
 
-def create_data_for_trend_test(reward_exps: dict, trend_test: True, block="training"):
+def create_data_for_trend_test(reward_exps: dict, trend_test: True, number_of_strategies: int, block="training"):
     """
     Create data for the trend tests
     Args:
@@ -83,7 +83,8 @@ def create_data_for_trend_test(reward_exps: dict, trend_test: True, block="train
         if exp_num == "c2.1":
             exp_num = "c2.1_dec"
         _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, _, top_n_strategies, worst_n_strategies = analyse_sequences(
-            exp_num, block=block, create_plot=False)
+            exp_num, block=block, create_plot=False, number_of_top_worst_strategies=number_of_strategies)
+
 
         strategy_temp = []
         cluster_temp = []
@@ -153,7 +154,7 @@ def test_for_trend(trend, analysis_type: str):
             print(f"Mann Kendall Test: {columns} {analysis_type}: ", test_results)
 
 
-def test_first_trials_vs_last_trials(trend, n, analysis_type):
+def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
     """
     This function tests whether the distributions between the first n trials and the last n trials are equal.
     Args:
@@ -166,29 +167,29 @@ def test_first_trials_vs_last_trials(trend, n, analysis_type):
     """
     # todo: add decision systems
     print(f" ----------------- Fisher Exact test: Do all {analysis_type} in the FIRST trials and all {analysis_type} "
-        f"in the LAST trials have the same proportions WITHIN the same environment? -----------------")
-    average_first_n_trials = trend.iloc[0:n].sum()  # add first n rows
-    average_last_n_trials = trend.iloc[-(n + 1):-1, :].sum()  # add last n rows
+          f"in the LAST trials have the same proportions WITHIN the same environment? -----------------")
+    average_first_n_trials = trend.iloc[0:number_of_trials].sum()  # add first n rows
+    average_last_n_trials = trend.iloc[-(number_of_trials + 1):-1, :].sum()  # add last n rows
     for columns in trend:
-    # stat, p = mannwhitneyu(average_first_n_trials[columns], average_last_n_trials[columns])
-    # print(f'Mann Whitney U: {analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
-    # stat, p = ks_2samp(average_first_n_trials[columns], average_last_n_trials[columns])
-    # print(f"Kolmogorov 2 sample : {analysis_type} vs {columns}:  stat={stat:.3f}, p={p:.3f}")
-        counts_first_n = np.array(average_first_n_trials[columns]) * 15 * 35
-    counts_last_n = np.array(average_last_n_trials[columns]) * 15 * 35
+        # stat, p = mannwhitneyu(average_first_n_trials[columns], average_last_n_trials[columns])
+        # print(f'Mann Whitney U: {analysis_type}, {columns}: First{n} trials vs Last {n} trials: stat=%.3f, p=%.3f' % (stat, p))
+        # stat, p = ks_2samp(average_first_n_trials[columns], average_last_n_trials[columns])
+        # print(f"Kolmogorov 2 sample : {analysis_type} vs {columns}:  stat={stat:.3f}, p={p:.3f}")
+        counts_first_n = np.array(average_first_n_trials[columns]) * 15 * 50
+    counts_last_n = np.array(average_last_n_trials[columns]) * 15 * 50
     res = stats.fisher_test(np.array([counts_first_n, counts_last_n]), simulate_p_value=True)
     print(f"{columns} : p={res[0][0]:.3f}")
 
 
-def test_last_n_across_environments(trend, n, analysis_type):
+def test_last_n_across_environments(trend, number_of_trials, analysis_type):
     print(
         f" ----------------- Fisher Exact test: Do all {analysis_type} in the LAST N trials have the same proportion ACROSS environments? -----------------")
 
-    average_last_10_trials = trend.iloc[-(n + 1):-1, :].sum()  # add last n rows
+    average_last_10_trials = trend.iloc[-(number_of_trials + 1):-1, :].sum()  # add last n rows
     for env_a in trend:
         for env_b in trend:
-            counts_env_a = np.array(average_last_10_trials[env_a]) * 15 * 35
-            counts_env_b = np.array(average_last_10_trials[env_b]) * 15 * 35
+            counts_env_a = np.array(average_last_10_trials[env_a]) * 15 * 50
+            counts_env_b = np.array(average_last_10_trials[env_b]) * 15 * 50
             res = stats.fisher_test(np.array([counts_env_a, counts_env_b]), simulate_p_value=True)
             print(f"{analysis_type} {env_a} vs {env_b}: p={res[0][0]:.3f}")
 
@@ -219,26 +220,28 @@ def test_of_proportions(env_distribution, analysis_type: str, individual_strateg
 
     """
     if individual_strategies is False:
-        print(f" ----------- Fisher exact test: Do {analysis_type} proportions of all {analysis_type} differ ACROSS environments?  ----------- ")
+        print(
+            f" ----------- Fisher exact test: Do {analysis_type} proportions of all {analysis_type} differ ACROSS environments?  ----------- ")
         for env_type_a, proportion_a in env_distribution.items():
             for env_type_b, proportion_b in env_distribution.items():
                 # turn proportions into actual counts (times number of participants and number of trials)
-                strategy_counts_a = np.array(proportion_a) * 15 * 35
-                strategy_counts_b = np.array(proportion_b) * 15 * 35
+                strategy_counts_a = np.array(proportion_a) * 15 * 50
+                strategy_counts_b = np.array(proportion_b) * 15 * 50
                 res = stats.fisher_test(np.array([strategy_counts_a, strategy_counts_b]), simulate_p_value=True)
-                # print('p-value: {}'.format(res[0][0]))
                 print(f"{analysis_type}: {env_type_a} vs {env_type_b}: p={res[0][0]:.3f}")
 
                 # stat, p = chisquare(distribution_a, distribution_b)
                 # print(f"One sample Chi-squared tests : {variance_type_a} vs {variance_type_b}:  stat={stat:.3f}, p={p:.3f}")'
 
     else:
-        print(f" ----------- Fisher exact test: Do {analysis_type} proportions of SINGLE {analysis_type} differ ACROSS environments?  ----------- ")
-        for index, strategies in env_distribution.iterrows(): #loop through rows, i.e. strategies
-            for env_type_a in env_distribution.columns: #loop through columns and get the column names
+        print(
+            f" ----------- Fisher exact test: Do {analysis_type} proportions of SINGLE {analysis_type} differ ACROSS environments?  ----------- ")
+        for index, strategies in env_distribution.iterrows():  # loop through rows, i.e. strategies
+            for env_type_a in env_distribution.columns:  # loop through columns and get the column names
                 for env_type_b in env_distribution.columns:
                     # skip if strategy vector is all 0
-                    if np.count_nonzero(strategies[env_type_a]) < 2 or np.count_nonzero(strategies[env_type_b]) < 2: # if 0 non-zero values are counted, i.e. all values are 0
+                    if np.count_nonzero(strategies[env_type_a]) < 2 or np.count_nonzero(
+                            strategies[env_type_b]) < 2:  # if 0 non-zero values are counted, i.e. all values are 0
                         print(f"Strategy {index} has been skipped because it has 0 frequency")
                         continue
                     else:
@@ -283,16 +286,19 @@ if __name__ == "__main__":
     print(" --------------------------------------------------------------------")
     print(" ---------------------------- Trends --------------------------------")
     print(" --------------------------------------------------------------------")
-    strategy_trend, cluster_trend, top_n_strategies, worst_n_strategies = create_data_for_trend_test(reward_exps, trend_test=True)
-    # test_for_trend(strategy_trend, "Strategy")
-    # test_for_trend(cluster_trend, "Strategy Cluster")
+    strategy_trend, cluster_trend, top_n_strategies, worst_n_strategies = create_data_for_trend_test(reward_exps,
+                                                                                                     number_of_strategies=3,
+                                                                                                     trend_test=True)  # n adaptive, mal adaptive stratiges
+    test_for_trend(strategy_trend, "Strategy")
+    test_for_trend(cluster_trend, "Strategy Cluster")
     # test_for_trend(decision_trend, "Decision System")
 
     print(" --------------------------------------------------------------------")
     print(" ---------------------- First vs Last trial -------------------------")
     print(" --------------------------------------------------------------------")
-    first_last_strategies, first_last_clusters, _, _ = create_data_for_trend_test(reward_exps, trend_test=False)
-    test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")
+    first_last_strategies, first_last_clusters, _, _ = create_data_for_trend_test(reward_exps, number_of_strategies=3,
+                                                                                  trend_test=False)
+    test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")  # last 5 trials
     test_first_trials_vs_last_trials(first_last_clusters, 5, "Strategy Cluster")
 
     test_last_n_across_environments(first_last_strategies, 5, "Strategy")

@@ -5,6 +5,9 @@ pd.set_option('display.width', 1000)
 import numpy as np
 import json
 
+### Remember to change the number of trials!!!
+#todo: extract number of trials from the data
+
 data = pd.read_csv("data/dataclips.csv", sep=',')
 
 # remove unfinished data entries
@@ -192,7 +195,7 @@ def copy_same_condition_for_all_trials():
 # load data
 data_mouselab = data[["datastring"]]
 
-# here you can set how the columns of the csv will be named. T
+# here you can set how the columns of the csv will be named.
 # here are some discrepancies between the csv output from postgres and what is required for the Computational Microscope
 # left is from raw csv; right is how you want it to be
 name_mapping = {"actionTimes": "action_time",
@@ -232,7 +235,7 @@ keyworddict = {"actionTimes": 3,
                "trial_type": 1}
 
 # don't forget to change trial index
-mouselab_dict = format_json(data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=35)
+mouselab_dict = format_json(data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=50)
 df = save_to_df(mouselab_dict, name_mapping)
 
 # create participants csv

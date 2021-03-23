@@ -17,7 +17,7 @@ Example: python3 analyze_sequences.py c2.1_dec training True
 """
 
 
-def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=False, **kwargs):
+def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=False, number_of_top_worst_strategies=3, **kwargs):
     # Initializations
     decision_systems = pickle_load("../data/decision_systems.pkl")
     DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
@@ -79,6 +79,7 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
             features, normalized_features, strategy_weights,
             decision_systems, W_DS, DS_proportions, strategy_scores,
             cluster_scores, cluster_map,
+            number_of_top_worst_strategies=number_of_top_worst_strategies,
             create_plot=create_plot,
             precomputed_strategies=strategies_,
             precomputed_temperatures=temperatures,
@@ -88,6 +89,7 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
             features, normalized_features, strategy_weights,
             decision_systems, W_DS, DS_proportions, strategy_scores,
             cluster_scores, cluster_map,
+            number_of_top_worst_strategies=number_of_top_worst_strategies,
             create_plot=create_plot,
             precomputed_strategies=strategies_,
             precomputed_temperatures=temperatures,
@@ -97,17 +99,16 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    create_plot = True
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
-        create_plot = sys.argv[3]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # create_plot = True
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+    #     create_plot = sys.argv[3]
 
-    # exp_name = "c2.1_dec"
-    # block = "training"
-    # create_plot=True
+    exp_name = "c1.1"
+    block = "training"
+    create_plot = True
 
     # create the plots
-    analyse_sequences(exp_name, block=block, create_plot=True)
-
+    analyse_sequences(exp_name, block=block, create_plot=True, number_of_top_worst_strategies=4)

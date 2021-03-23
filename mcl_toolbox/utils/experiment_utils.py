@@ -838,7 +838,7 @@ class Experiment():
         else:
             # averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
             aggregated_df = df.groupby('Decision System').sum()
-            averaged_df = (aggregated_df / 35) / 15  # divided by number of participants and trials
+            averaged_df = (aggregated_df / self.num_trials) / 15  # divided by number of participants and trials
             return averaged_df
 
     def plot_strategies_proportions_intotal(self):
@@ -1103,7 +1103,7 @@ class Experiment():
 
     ### Get only used strategies
     def filter_used_strategy_adaptive_maladaptive(self, n=5):
-
+        n=3
         strategy_dict = OrderedDict(self.strategy_proportions) #self.strategy_proportion starts from 1
 
         # optional filter
@@ -1132,6 +1132,7 @@ class Experiment():
                   decision_systems, W_DS,
                   DS_proportions, strategy_scores, cluster_scores, cluster_map,
                   max_evals=20,
+                  number_of_top_worst_strategies=5,
                   plot_strategies=[21, 30], plot_clusters=list(range(1, 14)),
                   n_clusters=None, max_clusters=10,
                   cluster_mode="participant",  # Can also take time,
@@ -1212,7 +1213,7 @@ class Experiment():
             self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
             # filter actually used strategies and select the top n adaptive and top n maladaptive strategies
-            top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=3)
+            top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=number_of_top_worst_strategies)
             self.plot_adaptive_maladaptive_strategies_vs_rest(top_n_strategies, worst_n_strategies, plot=True)
 
             # plot regarding the change between trials
@@ -1239,7 +1240,9 @@ class Experiment():
             decision_system_proportions = self.plot_decision_systems_proportions_intotal(DS_proportions, plot=False)
             mean_dsw = self.plot_average_ds()
 
-            top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=3)
+            top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=number_of_top_worst_strategies)
+            print("Best/adaptive strategies: ", top_n_strategies)
+            print("Worst/maladaptive strategies: ", worst_n_strategies)
             adaptive_strategies_proportion, maladaptive_strategies_proportion= self.plot_adaptive_maladaptive_strategies_vs_rest(top_n_strategies, worst_n_strategies, plot=False)
 
             return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion
