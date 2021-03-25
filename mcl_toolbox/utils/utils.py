@@ -3,6 +3,7 @@ import itertools as it
 import numpy as np
 # ---------- Functional utils ---------- #
 from toolz.curried import *
+from mcl_toolbox.utils.analysis_utils import get_data
 
 max = curry(max)
 min = curry(min)
@@ -72,3 +73,9 @@ class PriorityQueue(list):
         
     def push(self, item):
         heapq.heappush(self, (self.inv * self.key(item), item))
+
+
+# get all pid for a certain condition
+def get_all_pid_for_env(exp_num):
+    data = get_data(exp_num)
+    return list(data['participants']['pid'])

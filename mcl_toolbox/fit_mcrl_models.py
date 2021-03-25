@@ -6,6 +6,7 @@ from mcl_toolbox.global_vars import *
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.utils.learning_utils import pickle_save, \
     get_normalized_features, Participant, create_dir, get_number_of_actions_from_branching
+from mcl_toolbox.utils.utils import get_all_pid_for_env
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 
 """
@@ -40,6 +41,10 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     model_info_directory = os.path.join(parent_directory, f"results/mcrl/info_{exp_name}_data")
     create_dir(model_info_directory)
 
+    # create directory to save the reward/mers data of participant (mers) and algorithm (reward)
+    reward_info_directory = os.path.join(parent_directory, f"results/mcrl/reward_{exp_name}_data")
+    create_dir(reward_info_directory)
+
     # add directory for reward plots, if plotting
     if plotting:
         plot_directory = os.path.join(parent_directory, f"results/mcrl/plots/{exp_name}_plots")
@@ -48,6 +53,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     # load experiment specific info
     normalized_features = get_normalized_features(structure.exp_reward_structures[exp_name])
     pipeline = structure.exp_pipelines[exp_name]
+    pipeline = [pipeline[0] for _ in range(100)]  # extend to have up to 100 trials
     branching = structure.branchings[exp_name]
     excluded_trials = structure.excluded_trials[exp_name]
 
@@ -106,15 +112,21 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
     if plotting:
-        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory, f"{pid}.png"))
+        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"), plot=True)
+    # save the reward data
+    pickle_save(reward_data, os.path.join(reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
+
     # save priors
     pickle_save((res, prior), os.path.join(prior_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
     # TODO: document what is this? Is this running simulations given priors?
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
-    print(sim_data['info'], len(sim_data['info']))
+    # print(sim_data['info'], len(sim_data['info']))
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
+
+    # save the reward data
+    pickle_save(reward_data, os.path.join(reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 
 if __name__ == "__main__":
@@ -127,10 +139,11 @@ if __name__ == "__main__":
     # if len(sys.argv)>5:
     #     other_params = ast.literal_eval(sys.argv[5])
 
-    exp_name = "v1.0"
-    model_index = 1
+    exp_num = "v1.0"
+    pid_list = get_all_pid_for_env(exp_num)
+    model_index = 861
     optimization_criterion = "pseudo_likelihood"
-    pid = 1
     plotting = True
-    other_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 2}
-    prior_fit(exp_name, model_index, optimization_criterion, pid, plotting, **other_params)
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2}
+    for pid in pid_list:
+        prior_fit(exp_num, model_index, optimization_criterion, pid, plotting, optimization_params)
