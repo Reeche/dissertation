@@ -46,14 +46,16 @@ def pickle_load(file_path):
 class structure:
     excluded_trials = {"v1.0": None, "F1": None, "T1.1": list(range(11)), 'c1.1': list(range(30)), 'c2.1': None, "IRL1": list(range(30,66))}
 
-    branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2], "IRL1": [3,1,2]}
+    branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2], "IRL1": [3,1,2], 'PL1': [3,1,2]}
     level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     const_var_values = [[-10, -5, 5, 10]]
+    adjusted_constant_values = [[-5, -2, 2, 5]]
     reward_levels = {'high_increasing': level_values[1:], 'high_decreasing': level_values[1:][::-1],
-                     'low_constant': const_var_values * 3, 'large_increasing': list(zip(np.zeros(5), [1, 2, 4, 8, 32]))}
+                     'low_constant': const_var_values * 3, 'large_increasing': list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
+                     'adjusted_constant': adjusted_constant_values * 3}
 
     reward_exps = {'F1': 'categorical', 'c1.1': 'categorical', 'c2.1': 'categorical', 'T1.1': 'normal',
-                   'v1.0': 'categorical', "IRL1": 'categorical'}
+                   'v1.0': 'categorical', "IRL1": 'categorical', 'PL1': 'categorical'}
 
     small_level_map = {0: 0, 1: 1, 2: 2, 3: 3, 4: 3,
                        5: 1, 6: 2, 7: 3, 8: 3, 9: 1, 10: 2, 11: 3, 12: 3}
