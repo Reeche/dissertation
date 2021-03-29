@@ -18,8 +18,8 @@ How To Use This
 To install as a package in python 3.8+:
 ```
 git clone https://github.com/RationalityEnhancement/mcl_toolbox.git
-pip install -e .
 cd mcl_toolbox
+pip install -e .
 ```
 
 ### Import data
@@ -34,7 +34,8 @@ Note: you might have to use your own import code depending on your requirements.
 ### Analysis modules
 1. Navigate to `mcl_toolbox/`
 2. Run `python mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
-3. Run `python mcl_toolbox/infer_sequences.py` to analyse the click sequence average over conditions
+3. Run `python mcl_toolbox/infer_sequences.py` to infer the click sequence average over conditions. Then you can run 
+   `analyze_sequences.py` to create plots of the participant's learning behaviour. 
 4. Run `python mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
 
 Note: see each folder or each file for detailed instructions. 

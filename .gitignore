@@ -150,3 +150,6 @@ mcl_toolbox/import_data/data/*
 
 # the data folder
 data/human/*
+
+# remove all the readpickle files
+*/readpickle.py

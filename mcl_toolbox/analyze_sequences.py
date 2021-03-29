@@ -14,6 +14,8 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 Run this file to analyse the inferred sequences of the participants. 
 Format: python3 analyze_sequences.py <reward_structure> <block> <create_plot>
 Example: python3 analyze_sequences.py c2.1_dec training True
+
+Please remember to set a seed
 """
 
 
@@ -43,7 +45,7 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = get_normalized_features(reward_structure)  # tuple of 2
+    normalized_features = get_normalized_features(reward_structure)
     W = get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features,
                                  normalized_features=normalized_features)
@@ -99,16 +101,16 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
 
 if __name__ == "__main__":
     random.seed(123)
-    # exp_name = sys.argv[1]  # e.g. c2.1_dec
-    # block = None
-    # create_plot = True
-    # if len(sys.argv) > 2:
-    #     block = sys.argv[2]
-    #     create_plot = sys.argv[3]
-
-    exp_name = "c1.1"
-    block = "training"
+    exp_name = sys.argv[1]  # e.g. c2.1_dec
+    block = None
     create_plot = True
+    if len(sys.argv) > 2:
+        block = sys.argv[2]
+        create_plot = sys.argv[3]
+
+    # exp_name = "c1.1"
+    # block = "training"
+    # create_plot = True
 
     # create the plots
     analyse_sequences(exp_name, block=block, create_plot=True, number_of_top_worst_strategies=4)
