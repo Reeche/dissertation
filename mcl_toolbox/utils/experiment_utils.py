@@ -933,7 +933,7 @@ class Experiment():
         # plt.show()
         plt.close(fig)
 
-    def analyze_trajectory(self, trajectory, print_trajectories=False):
+    def analyze_trajectory(self, trajectory, print_trajectories=True):
         final_repetition_count = []
         for tr in trajectory:
             if len(tr[0]) > 1:
@@ -948,8 +948,8 @@ class Experiment():
                 final_repetition_count.append(number_of_trials_before_last_trial)
                 # print("The last item in Repetition Frequency", tr[0][1][-1])
 
-        average_trials_repetition = np.mean(final_repetition_count)
-        median_trials_repetition = np.median(final_repetition_count)
+        # average_trials_repetition = np.mean(final_repetition_count)
+        # median_trials_repetition = np.median(final_repetition_count)
         # print("Median final strategy usage: ", median_trials_repetition)
         # print("Mean final strategy usage:", average_trials_repetition)
 
