@@ -49,7 +49,7 @@ class structure:
     branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2], "IRL1": [3,1,2], 'PL1': [3,1,2]}
     level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     const_var_values = [[-10, -5, 5, 10]]
-    adjusted_constant_values = [[-5, -2, 2, 5]]
+    adjusted_constant_values = [[-50, -20, -10, 10, 20, 50]]
     reward_levels = {'high_increasing': level_values[1:], 'high_decreasing': level_values[1:][::-1],
                      'low_constant': const_var_values * 3, 'large_increasing': list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
                      'adjusted_constant': adjusted_constant_values * 3}

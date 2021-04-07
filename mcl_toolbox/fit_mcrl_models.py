@@ -62,7 +62,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     learner = learner_attributes['model']
 
     # load strategy space based on model parameters
-    strategy_space_type = learner_attributes['strategy_space_type']
+    strategy_space_type = learner_attributes['strategy_space_type'] #in the csv
     strategy_space_type = strategy_space_type if strategy_space_type else 'microscope'
     strategy_space = strategies.strategy_spaces[strategy_space_type]
 
@@ -105,9 +105,9 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     del learner_attributes['term']  # TODO why do we delete "term" and put in "no_term"
 
     # optimization
-    optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)
+    optimizer = ParameterOptimizer(learner, learner_attributes, participant, env) #learner is the model chosen
     res, prior, obj_fn = optimizer.optimize(optimization_criterion, **optimization_params)
-    print(res[0])
+    print(res[0]) #prior information
     losses = [trial['result']['loss'] for trial in res[1]]
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
@@ -125,8 +125,6 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     # print(sim_data['info'], len(sim_data['info']))
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
-    # save the reward data
-    pickle_save(reward_data, os.path.join(reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 
 if __name__ == "__main__":

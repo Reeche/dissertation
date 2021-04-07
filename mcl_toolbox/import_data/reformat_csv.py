@@ -235,7 +235,7 @@ keyworddict = {"actionTimes": 3,
                "trial_type": 1}
 
 # don't forget to change trial index
-mouselab_dict = format_json(data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=50)
+mouselab_dict = format_json(data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=30)
 df = save_to_df(mouselab_dict, name_mapping)
 
 # create participants csv

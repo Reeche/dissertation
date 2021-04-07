@@ -60,9 +60,9 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
     #create save path
-    parent_directory = Path(__file__).parents[1]
-    save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
-    # save_path = f"../results/cm/inferred_strategies/{exp_num}"
+    # parent_directory = Path(__file__).parents[1]
+    # save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
+    save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
@@ -76,12 +76,12 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
 
-    # exp_name = "c2.1_dec"
-    # block = "training"
+    exp_name = "v1.0"
+    block = "training"
 
     infer_experiment_sequences(exp_name, block=block, max_evals=50) #max_evals have to be at least 2 for testing
