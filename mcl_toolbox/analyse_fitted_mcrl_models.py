@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -52,11 +53,11 @@ def average_performance(exp_num, pid_list, optimization_criterion, model_index, 
     Calculates the averaged performance for a pid list, a given optimization criterion and a model index.
     The purpose is to see the fit of a certain model and optimization criterion to a list of pid (e.g all participants from v1.0)
     Args:
-        exp_num:
-        pid_list:
-        optimization_criterion:
-        model_index:
-        plotting:
+        exp_num: a string "v1.0"
+        pid_list: list of participant IDs
+        optimization_criterion: a string
+        model_index: an integer
+        plotting: if true, plots are created
 
     Returns: average performance of model and participant
 
@@ -86,8 +87,12 @@ def average_performance(exp_num, pid_list, optimization_criterion, model_index, 
 
 
 if __name__ == "__main__":
-    exp_num = "v1.0"
+    exp_num = sys.argv[1]  # e.g. c2.1_dec
+    optimization_criterion = sys.argv[2]
+
+    # exp_num = "v1.0"
+    # optimization_criterion = "pseudo_likelihood"
+
     pid_list = get_all_pid_for_env(exp_num)
-    optimization_criterion = "pseudo_likelihood"
-    #create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+    df, best_optimzation_criteria, best_model = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
     average_performance(exp_num, pid_list, optimization_criterion, 856)
