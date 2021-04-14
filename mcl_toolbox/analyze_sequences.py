@@ -12,14 +12,14 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 
-Format: python3 analyze_sequences.py <reward_structure> <reward_level> <num_trials> <block> <create_plot>
+Format: python3 analyze_sequences.py <reward_structure> <reward_structure> <num_trials> <block> <create_plot>
 Example: python3 analyze_sequences.py c2.1_dec high_increasing 35 training True
 
 Please remember to set a seed
 """
 
 
-def analyse_sequences(exp_num="v1.0", reward_level="high_increasing", num_trials=35, block="training", pids=None,
+def analyse_sequences(exp_num="v1.0", reward_structure="high_increasing", num_trials=35, block="training", pids=None,
                       create_plot=False, number_of_top_worst_strategies=3, **kwargs):
     """
     Creates plots. For details of the args, check out global_vars.py
@@ -50,16 +50,16 @@ def analyse_sequences(exp_num="v1.0", reward_level="high_increasing", num_trials
     strategy_weights = strategies.strategy_weights
 
     reward_dist = "categorical"
-    reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_level], reward_dist)
+    reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_structure], reward_dist)
     repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num], reward_distributions,
                                                                    num_trials)
     exp_pipelines = {exp_num: repeated_pipeline}
 
     # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
     # exp_pipelines = structure.exp_pipelines
-    if exp_num not in structure.exp_reward_structures:
-        raise (ValueError, "Reward structure not found.")
-    reward_structure = structure.exp_reward_structures[exp_num]
+    # if exp_num not in structure.exp_reward_structures:
+    #     raise (ValueError, "Reward structure not found.")
+    # reward_structure = structure.exp_reward_structures[exp_num]
 
     if exp_num not in exp_pipelines:
         raise (ValueError, "Experiment pipeline not found.")
@@ -123,18 +123,18 @@ def analyse_sequences(exp_num="v1.0", reward_level="high_increasing", num_trials
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    reward_level = sys.argv[2]
-    number_of_trials = int(sys.argv[3])
-    block = None
-    if len(sys.argv) > 4:
-        block = sys.argv[4]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # reward_level = sys.argv[2]
+    # number_of_trials = int(sys.argv[3])
+    # block = None
+    # if len(sys.argv) > 4:
+    #     block = sys.argv[4]
 
-    # exp_name = "v1.0"
-    # block = "training"
-    # reward_level = "Low_cost_values"
-    # number_of_trials = 35
-    # create_plot = True
+    exp_name = "low_cost"
+    block = "training"
+    reward_structure = "low_cost"
+    number_of_trials = 35
+    create_plot = True
 
     # create the plots
-    analyse_sequences(exp_name, reward_level, number_of_trials, block, create_plot=True, number_of_top_worst_strategies=4)
+    analyse_sequences(exp_name, reward_structure, number_of_trials, block, create_plot=True, number_of_top_worst_strategies=4)
