@@ -12,16 +12,18 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to infer the averaged sequences of the participants. 
-Format: python3 infer_sequences.py <exp name> <block>
-Example: python3 infer_sequences.py T1.1 training
+Format: python3 infer_sequences.py <exp name> <reward_level> <num_trials> <block>
+Example: python3 infer_sequences.py T1.1 high_increasing 35 training
 """
 
-def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, max_evals = 50, **kwargs):
+def infer_experiment_sequences(exp_num = "F1", reward_level = "high_increasing", num_trials = 35, block = "training", pids = None, max_evals = 50, **kwargs):
     '''
-    Infer the averaged sequences of the participants in an experiment.
+    Infer the averaged sequences of the participants in an experiment. Check out global_vars.py for details
     :param exp_num: experiment name, e.g. F1
+    :param reward_level: string e.g. "high_increasing"
+    :param num_trials: number of trials, integer e.g. 35
     :param block: block, e.g. "training" or "test"
-    :param pids: list of participants to use, otherwise None. could be useful to exclude paticipants in dataframe.
+    :param pids: list of participants to use, otherwise None. could be useful to exclude participants in dataframe.
     :param max_evals: max optimization evals for fmin
     :return: strategy and temperature dicts with a key for every pid in the experiment. The strategies are a list for each trial, the temperature is temperature over all trials.
     Saves data either to results/inferred_strategies/<exp_num> or results/inferred_strategies/<exp_num_block>
@@ -35,7 +37,12 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     strategy_weights = strategies.strategy_weights
 
     # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
-    exp_pipelines = structure.exp_pipelines
+    reward_dist = "categorical"
+    reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_level], reward_dist)
+    repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num], reward_distributions,
+                                                                   num_trials)
+    exp_pipelines = {exp_num: repeated_pipeline}
+    #exp_pipelines = structure.exp_pipelines
 
     if exp_num not in structure.exp_reward_structures:
         raise (ValueError, "Reward structure not found.")
@@ -60,9 +67,9 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
     #create save path
-    parent_directory = Path(__file__).parents[1]
-    save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
-    # save_path = f"../results/cm/inferred_strategies/{exp_num}"
+    # parent_directory = Path(__file__).parents[1]
+    # save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
+    save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
@@ -77,11 +84,15 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
 if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
+    reward_level = sys.argv[2]
+    number_of_trials = int(sys.argv[3])
     block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    if len(sys.argv) > 4:
+        block = sys.argv[4]
 
-    # exp_name = "c2.1_dec"
+    # exp_name = "v1.0"
     # block = "training"
+    # reward_level = "Low_cost_values"
+    # number_of_trials = 35
 
-    infer_experiment_sequences(exp_name, block=block, max_evals=50) #max_evals have to be at least 2 for testing
+    infer_experiment_sequences(exp_name, reward_level, number_of_trials, block, max_evals=2) #max_evals have to be at least 2 for testing

@@ -1202,8 +1202,8 @@ class Experiment():
             self.plot_clusters_proportions_intotal()
 
             # plot regarding decision systems
-            mean_dsw = self.plot_average_ds()
-            self.trial_decision_system_change_rate(mean_dsw)
+            #mean_dsw = self.plot_average_ds()
+            #self.trial_decision_system_change_rate(mean_dsw)
             self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
 
             # plot regarding the strategies
