@@ -24,10 +24,8 @@ Example: python3 calculate_strategy_score.py c2.1_dec 100000
 # exp_num = sys.argv[1]
 # num_simulations = int(sys.argv[2])
 
-exp_num = "v1.0"
-num_simulations = 100  # 200k seems to be stable, therefore 250k
-click_cost = 10
-# exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
+num_simulations = 200000  # 200k seems to be stable, therefore 250k
+click_cost = 1
 score_list = {}
 
 # Adjust the environment that you want to simulate in global_vars.py
@@ -38,7 +36,8 @@ num_trials = 35
 reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_level], reward_dist)
 repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num], reward_distributions,
                                                                num_trials)
-exp_pipelines = {"PL1": repeated_pipeline}
+exp_pipelines = {exp_num: repeated_pipeline}
+# exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
 
 # loops through all strategies and saves into a list
 print(exp_num, num_simulations)
@@ -53,7 +52,6 @@ for strategy in range(0, 89):
         env = GenericMouselabEnv(num_trials=1, pipeline=pipeline)
         gts.append(tuple(env.ground_truth[0]))
         clicks = strategy_dict[strategy + 1](env.present_trial)  # gets the click sequence
-        # clicks = strategy_dict[30](env.present_trial) # no clicks at all
         score = env.present_trial.node_map[0].calculate_max_expected_return() - (
                     len(clicks) - 1) * click_cost  # len(clicks) is always 13
         scores.append(score)
@@ -68,7 +66,7 @@ for strategy in range(0, 89):
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print(score_results)
-dir = "../results/cm/strategy_scores"
+dir = "../results/cm/strategy_scores/planningclicks/highdiscrepancy_cost1/"
 learning_utils.create_dir(dir)
 learning_utils.pickle_save(score_results, f"{dir}/{exp_num}_strategy_scores.pkl")
 
