@@ -145,3 +145,4 @@ The algorithms implemented are:
 | is_gaussian |   |   |   |
 | bandit_prior |   |   |   |
 | prior |   |   |   |
+| features |   |   |   |
