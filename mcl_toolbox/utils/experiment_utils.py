@@ -933,6 +933,23 @@ class Experiment():
         # plt.show()
         plt.close(fig)
 
+    def adaptive_maladaptive_participants(self, top_n_strategies, worst_n_strategies):
+        """
+        This function returns two lists containing participants who used adaptive, malapdative and other strategie.
+        strategy_trajectory has the format [[(strategy, strategy), (frequency, frequency), 1]]
+        """
+        adaptive_participants = []
+        maladaptive_participants = []
+        other_participants = []
+        for pid, strategy_list in self.participant_strategies.items():
+            if strategy_list[-1] in top_n_strategies:
+                adaptive_participants.append(pid)
+            elif strategy_list[-1] in worst_n_strategies:
+                maladaptive_participants.append(pid)
+            else:
+                other_participants.append(pid)
+        return adaptive_participants, maladaptive_participants, other_participants
+
     def analyze_trajectory(self, trajectory, print_trajectories=True):
         final_repetition_count = []
         for tr in trajectory:
@@ -948,10 +965,11 @@ class Experiment():
                 final_repetition_count.append(number_of_trials_before_last_trial)
                 # print("The last item in Repetition Frequency", tr[0][1][-1])
 
-        # average_trials_repetition = np.mean(final_repetition_count)
-        # median_trials_repetition = np.median(final_repetition_count)
-        # print("Median final strategy usage: ", median_trials_repetition)
-        # print("Mean final strategy usage:", average_trials_repetition)
+        if print_trajectories:
+            average_trials_repetition = np.mean(final_repetition_count)
+            median_trials_repetition = np.median(final_repetition_count)
+            print("Median final strategy usage: ", median_trials_repetition)
+            print("Mean final strategy usage:", average_trials_repetition)
 
     def remove_duplicates(self, cluster_list):  # this one should go into utils
         previous_cluster = cluster_list[0]
@@ -1099,11 +1117,10 @@ class Experiment():
         plt.savefig(f"../results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
                     bbox_inches='tight')
         plt.close(fig)
-        return None
+        return participant_click
 
     ### Get only used strategies
     def filter_used_strategy_adaptive_maladaptive(self, n=5):
-        n=3
         strategy_dict = OrderedDict(self.strategy_proportions) #self.strategy_proportion starts from 1
 
         # optional filter
@@ -1195,6 +1212,17 @@ class Experiment():
         self.performance_transitions_chi2(cluster_scores=cluster_scores)
         self.frequency_transitions_chi2(clusters=True)
 
+
+        # find list of adaptive and maladaptive strategies
+        self.get_strategy_proportions(trial_wise=False)
+        top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=number_of_top_worst_strategies) #requires self.strategy_proportions
+
+        # find out who used adaptive and who used maladaptive stratgies
+        adaptive_participants, maladaptive_participants, other_participants = self.adaptive_maladaptive_participants(top_n_strategies, worst_n_strategies)
+        print("These are the participants who used adaptive strategies: ", adaptive_participants)
+        print("These are the participants who used maladaptive strategies: ", maladaptive_participants)
+        print("These are the participants who used other strategies: ", other_participants)
+
         if create_plot:
             # plot regarding strategy clusters
             self.plot_cluster_proportions(C=plot_clusters)
@@ -1213,7 +1241,6 @@ class Experiment():
             self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
             # filter actually used strategies and select the top n adaptive and top n maladaptive strategies
-            top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=number_of_top_worst_strategies)
             self.plot_adaptive_maladaptive_strategies_vs_rest(top_n_strategies, worst_n_strategies, plot=True)
 
             # plot regarding the change between trials
@@ -1226,9 +1253,9 @@ class Experiment():
             data = get_data(self.exp_num)
             participant_data = data['participants']
             self.average_score_development(participant_data)
-
             # plot about click development
             self.plot_average_clicks()
+
 
         else:
             strategy_proportions = self.get_strategy_proportions()
@@ -1245,4 +1272,9 @@ class Experiment():
             print("Worst/maladaptive strategies: ", worst_n_strategies)
             adaptive_strategies_proportion, maladaptive_strategies_proportion= self.plot_adaptive_maladaptive_strategies_vs_rest(top_n_strategies, worst_n_strategies, plot=False)
 
-            return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion
+            # plot about click development
+            number_of_clicks = self.plot_average_clicks()
+
+            return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
+                   decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, \
+                   number_of_clicks, adaptive_participants, maladaptive_participants, other_participants

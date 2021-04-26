@@ -1,14 +1,12 @@
 import sys
 import numpy as np
 from collections import defaultdict
-from mcl_toolbox.utils.learning_utils import create_dir, pickle_load, pickle_save
+from mcl_toolbox.utils.learning_utils import create_dir, pickle_load, pickle_save, construct_repeated_pipeline
 from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val, normal_reward_val
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
-strategy_space = pickle_load("strategy_space.pkl")
+strategy_space = pickle_load("../data/strategy_space.pkl")
 
-def contruct_pipeline(branching, reward_function, num_trials):
-    return [(branching, reward_function)]*num_trials
 
 def generate_data(strategy_num,
                   pipeline,
@@ -76,16 +74,16 @@ def normalize(pipeline, features_list, num_simulations = 100):
     return max_feature_values, min_feature_values
 
 if __name__ == "__main__":
-    exp_num = "low_cost"
+    exp_num = "high_cost"
     num_simulations = 100
-    features_list = pickle_load("implemented_features.pkl")
-    branching = [3, 1, 1]
+    features_list = pickle_load("../data/implemented_features.pkl")
+    branching = [3, 1, 2]
     # for your case replace normal_reward_val with your own distribution or
     # just replace the pipeline variable with the pipeline you create for your
     # new experiment
-    pipeline = contruct_pipeline(branching, reward_val, num_simulations)
+    pipeline = construct_repeated_pipeline(branching, reward_val, num_simulations)
     max_fv, min_fv = normalize(pipeline, features_list, num_simulations)
-    exp_branching = "_".join([str(b) for b in branching])
+    #exp_branching = "_".join([str(b) for b in branching])
     dir_path = f"normalized_values/{exp_num}"
     create_dir(dir_path)
     pickle_save(max_fv, dir_path+"/max.pkl")

@@ -26,17 +26,25 @@ pip install -e .
 Assuming you are working with the Mouselab-MDP repository and with a postgres database: 
 1. Navigate to `src/import_data`
 2. Put your dataclip (csv file) in the folder `src/import_data/data`
-2. Run `src/import_data/reformat_csv.py` to create the required mouselab-mdp.csv and participants.csv
-for each condition as well as an overall file
+3. Run `src/import_data/reformat_csv.py` to create the required mouselab-mdp.csv and participants.csv
+for each condition as well as an overall file. Remember to change the number of trials. 
    
 Note: you might have to use your own import code depending on your requirements. 
 
-### Analysis modules
+
+### Analysis modules (Computational Microscope)
 1. Navigate to `mcl_toolbox/`
-2. Run `python mcl_toolbox/infer_participant_sequences.py` to analyse the click sequence of each participant
-3. Run `python mcl_toolbox/infer_sequences.py` to infer the click sequence average over conditions. Then you can run 
-   `analyze_sequences.py` to create plots of the participant's learning behaviour. 
-4. Run `python mcl_toolbox/fit_mcrl_models.py` to fit the MCRL models
+2. Adjust global_vars.py according to your experiment. See especially the class _structure_
+3. Run feature_normalization.py in order to create the normalized features that are needed by the Computational Microscope.
+4. Run `infer_participant_sequences.py` to analyse the click sequence of each participant.
+4. Alternatively, run `infer_sequences.py` to infer the click sequence average over conditions.
+5. Then you can run `analyze_sequences.py` to create plots of the participant's learning behaviour. 
+
+Note: see each folder or each file for detailed instructions.
+
+### Fit MCRL models 
+1. Run `fit_mcrl_models.py` to fit the MCRL models.
+2. Run `analyse_fitted_mcrl_models.py` to analyse the fitted MCRL models.
 
 Note: see each folder or each file for detailed instructions. 
 

@@ -1,5 +1,8 @@
 import json
 import os
+
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+
 from functools import partial
 
 import matplotlib.pyplot as plt
@@ -189,6 +192,7 @@ def construct_p_data(participant, pipeline):
 
 
 def construct_objective_fn(optimizer, objective, p_data, pipeline):
+    # construct objective function based on the selected optimizer and objective
     objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
         if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
@@ -236,7 +240,7 @@ class ParameterOptimizer:
         self.participant = participant
         self.env = env
         self.pipeline = self.env.pipeline
-        self.compute_likelihood = False
+        self.compute_likelihood = False #todo: what does this do?
         if self.learner in ['sdss']:
             self.model = models[self.learner_attributes['learner']]
         elif self.learner in ['hierarchical_learner']:
@@ -244,6 +248,17 @@ class ParameterOptimizer:
         self.reward_data = []
 
     def objective_fn(self, params, get_sim_data=False):
+        """
+        This function takes the selected parameters, created an agent with those parameters and run simulations
+
+        Args:
+            params: parameters #todo: check what are the parameters?
+            get_sim_data:
+
+        Returns: relevant data according to the learner
+
+        """
+        # returns relevant_data, which contains e.g. reward, loss
         features = self.learner_attributes['features']
         num_priors = self.learner_attributes['num_priors']
         priors = combine_priors(params, num_priors)
@@ -258,13 +273,16 @@ class ParameterOptimizer:
             self.learner_attributes['strategy_space'] = list(range(num_strategies))
         elif self.learner == "hierarchical_learner":
             self.learner_attributes['actor'] = self.model
+
+        # the agent is the selected model with corresponding priors to be fitted
         agent = models[self.learner](params, self.learner_attributes)
         del params['priors']
         if self.learner == "sdss":
             del params['bandit_params']
         simulations_data = agent.run_multiple_simulations(self.env, self.num_simulations,
-                                                          participant=self.participant,
+                                                          participant=self.participant, #here only the participant is only used when compute_likelihood is true?
                                                           compute_likelihood=self.compute_likelihood)
+        #filter data according to optimization_criterion
         relevant_data = get_relevant_data(simulations_data, self.objective)
         if self.objective in ["mer_performance_error", "pseudo_likelihood"]:
             self.reward_data.append(relevant_data["mer"])
@@ -296,7 +314,7 @@ class ParameterOptimizer:
         else:
             objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
             res = optimize_hyperopt_params(objective_fn, prior, max_evals=max_evals,
-                                           show_progressbar=True)  # returns best parameters and trials
+                                           show_progressbar=True)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
     def run_model(self, params, objective, num_simulations=1, optimizer="pyabc",
@@ -331,11 +349,11 @@ class ParameterOptimizer:
         p_mer = self.p_data["mer"]  # reward data of the participant
         for i, m in enumerate(p_mer):
             data.append([i + 1, m, "participant"])
-        reward_data = pd.DataFrame(data, columns=["Number of trials", "Reward", "algo"])
+        reward_data = pd.DataFrame(data, columns=["Number of trials", "Reward", "Type"])
         if plot:
-            ax = sns.lineplot(x="Number of trials", y="Reward", hue="algo", data=reward_data)
+            ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=reward_data)
             plt.savefig(path, bbox_inches='tight')
-            # plt.show()
+            #plt.show()
             plt.close()
         return reward_data
 

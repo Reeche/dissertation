@@ -3,8 +3,7 @@ import pandas as pd
 import numpy as np
 import random
 import pymannkendall as mk
-from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, chi2_contingency, chisquare, fisher_exact
-from statsmodels.stats import proportion
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, chi2_contingency, chisquare
 from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
@@ -52,9 +51,9 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
     decision_system_df = pd.DataFrame(columns=column_names)
 
     for strategy_name, exp_num in strategy_name_dict.items():  # strategy_name: increasing/decreasing, exp_num: v1.0
-        strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _, _, _ = analyse_sequences(
-            exp_num, block=block, create_plot=False)
-        strategy_df[strategy_name] = list(create_comparable_data(strategy_proportions, len=89).values())
+        strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _, _, _, _ = analyse_sequences(
+            exp_num, number_of_trials=35, block=block, create_plot=False)
+        strategy_df[strategy_name] = list(create_comparable_data(strategy_proportions, len=90).values())
         cluster_df[strategy_name] = list(create_comparable_data(cluster_proportions, len=14).values())
         decision_system_df[strategy_name] = decision_system_proportions["Relative Influence (%)"].tolist()
     return strategy_df, cluster_df, decision_system_df
@@ -73,7 +72,7 @@ def create_data_for_trend_test(reward_exps: dict, trend_test: True, number_of_st
     #todo: decision trend, not really used but might be useful for completeness
     """
     column_names = list(reward_exps.keys())
-    #column_names = ["increasing_variance", "decreasing_variance", "constant_variance"]
+    # column_names = ["increasing_variance", "decreasing_variance", "constant_variance"]
     cluster_trend = pd.DataFrame(columns=column_names)
     strategy_trend = pd.DataFrame(columns=column_names)
     # decision_trend = pd.DataFrame(columns=column_names)
@@ -83,15 +82,15 @@ def create_data_for_trend_test(reward_exps: dict, trend_test: True, number_of_st
     for strategy_name, exp_num in reward_exps.items():
         if exp_num == "c2.1":
             exp_num = "c2.1_dec"
-        _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, _, top_n_strategies, worst_n_strategies = analyse_sequences(
-            exp_num, block=block, create_plot=False, number_of_top_worst_strategies=number_of_strategies)
-
+        _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, _, top_n_strategies, worst_n_strategies, number_of_clicks = analyse_sequences(
+            exp_num, number_of_trials=35, block=block, create_plot=False,
+            number_of_top_worst_strategies=number_of_strategies)
 
         strategy_temp = []
         cluster_temp = []
         ds_temp = []
         for i in range(0, len(strategy_proportions_trialwise)):
-            strategy_temp.append(list(create_comparable_data(strategy_proportions_trialwise[i], len=89).values()))
+            strategy_temp.append(list(create_comparable_data(strategy_proportions_trialwise[i], len=90).values()))
         if trend_test:
             strategy_trend[strategy_name] = list(map(list, zip(*strategy_temp)))  # transpose
         else:
@@ -111,7 +110,7 @@ def create_data_for_trend_test(reward_exps: dict, trend_test: True, number_of_st
         adaptive_trend[strategy_name] = top_n_strategies
         maladaptive_trend[strategy_name] = worst_n_strategies
 
-    return strategy_trend, cluster_trend, adaptive_trend, maladaptive_trend
+    return strategy_trend, cluster_trend, adaptive_trend, maladaptive_trend, number_of_clicks
 
 
 def test_for_equal_distribution(name_distribution_dict: dict, type: str):
@@ -143,6 +142,7 @@ def test_for_equal_distribution(name_distribution_dict: dict, type: str):
 
 
 def test_for_trend(trend, analysis_type: str):
+    # trend is a df with different conditions in each column
     # analysis_type: strategy or cluster or ds
     if trend.dtypes[0] == object:
         for columns in trend:  # increasing, decreasing, constant
@@ -172,8 +172,8 @@ def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
     average_first_n_trials = trend.iloc[0:number_of_trials].sum()  # add first n rows
     average_last_n_trials = trend.iloc[-(number_of_trials + 1):-1, :].sum()  # add last n rows
     for columns in trend:
-        counts_first_n = np.array(average_first_n_trials[columns]) * 15 * 50
-    counts_last_n = np.array(average_last_n_trials[columns]) * 15 * 50
+        counts_first_n = np.array(average_first_n_trials[columns]) * number_of_participants * number_of_trials
+    counts_last_n = np.array(average_last_n_trials[columns]) * number_of_participants * number_of_trials
     res = stats.fisher_test(np.array([counts_first_n, counts_last_n]), simulate_p_value=True)
     print(f"{columns} : p={res[0][0]:.3f}")
 
@@ -185,8 +185,8 @@ def test_last_n_across_environments(trend, number_of_trials, analysis_type):
     average_last_10_trials = trend.iloc[-(number_of_trials + 1):-1, :].sum()  # add last n rows
     for env_a in trend:
         for env_b in trend:
-            counts_env_a = np.array(average_last_10_trials[env_a]) * 15 * 50
-            counts_env_b = np.array(average_last_10_trials[env_b]) * 15 * 50
+            counts_env_a = np.array(average_last_10_trials[env_a]) * number_of_participants * number_of_trials
+            counts_env_b = np.array(average_last_10_trials[env_b]) * number_of_participants * number_of_trials
             res = stats.fisher_test(np.array([counts_env_a, counts_env_b]), simulate_p_value=True)
             print(f"{analysis_type} {env_a} vs {env_b}: p={res[0][0]:.3f}")
 
@@ -207,8 +207,8 @@ def test_of_proportions(env_distribution, analysis_type: str, individual_strateg
         for env_type_a, proportion_a in env_distribution.items():
             for env_type_b, proportion_b in env_distribution.items():
                 # turn proportions into actual counts (times number of participants and number of trials)
-                strategy_counts_a = np.array(proportion_a) * 15 * 50
-                strategy_counts_b = np.array(proportion_b) * 15 * 50
+                strategy_counts_a = np.array(proportion_a) * number_of_participants * number_of_trials
+                strategy_counts_b = np.array(proportion_b) * number_of_participants * number_of_trials
                 res = stats.fisher_test(np.array([strategy_counts_a, strategy_counts_b]), simulate_p_value=True)
                 print(f"{analysis_type}: {env_type_a} vs {env_type_b}: p={res[0][0]:.3f}")
 
@@ -224,11 +224,12 @@ def test_of_proportions(env_distribution, analysis_type: str, individual_strateg
                     # skip if strategy vector is all 0
                     if np.count_nonzero(strategies[env_type_a]) < 2 or np.count_nonzero(
                             strategies[env_type_b]) < 2:  # if 0 non-zero values are counted, i.e. all values are 0
-                        print(f"Strategy {index} has been skipped because it has 0 frequency")
+                        print(f"Strategy {index} has been skipped because of low frequency")
                         continue
                     else:
-                        strategy_counts_a = np.array(strategies[env_type_a]) * 15 + 0.
-                        strategy_counts_b = np.array(strategies[env_type_b]) * 15 + 0.
+                        strategy_counts_a = np.array(strategies[env_type_a]) * number_of_participants + 0.
+                        strategy_counts_b = np.array(strategies[env_type_b]) * number_of_participants + 0.
+                        # print("COMBINED", np.array([strategy_counts_a, strategy_counts_b]))
                         res = stats.fisher_test(np.array([strategy_counts_a, strategy_counts_b]), simulate_p_value=True)
                         # print('p-value: {}'.format(res[0][0]))
                         print(f"Strategy {index}: {env_type_a} vs {env_type_b}: p={res[0][0]:.3f}")
@@ -236,16 +237,18 @@ def test_of_proportions(env_distribution, analysis_type: str, individual_strateg
 
 if __name__ == "__main__":
     random.seed(123)
-    # reward_exps = {"increasing_variance": "v1.0",
-    #                "decreasing_variance": "c2.1_dec",
-    #                "constant_variance": "c1.1"}
-    reward_exps = {"increasing_variance": "v1.0", #cond 0
-                   "constant_variance": "c1.1"} #cond 1
+    number_of_trials = 35
+    number_of_participants = 60
+    reward_exps = {"increasing_variance": "v1.0",
+                   "decreasing_variance": "c2.1_dec",
+                   "constant_variance": "c1.1"}
+    # reward_exps = {"low_cost": "low_cost",  # cond 0
+    #                "high_cost": "high_cost"}  # cond 1
     # print(" --------------------------------------------------------------------")
     # print(" -------------------- Proportion Difference -------------------------")
     # print(" --------------------------------------------------------------------")
     # strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
-
+    #
     # print(
     #     f" ----------- This tests whether the proportions of all 89 strategies across environments are equal  -----------")
     # strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
@@ -253,7 +256,7 @@ if __name__ == "__main__":
     #                             "constant": strategy_df["constant_variance"]}
     # test_for_equal_distribution(strategy_difference_dict, "Strategies")
     # test_of_proportions(strategy_difference_dict, "Strategies", individual_strategies=False)
-
+    #
     # print(
     #     f" ----------- This tests whether the proportions of all 13 strategy clusters across environments are equal  -----------")
     # cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
@@ -261,7 +264,7 @@ if __name__ == "__main__":
     #                            "constant": cluster_df["constant_variance"]}
     # test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
     # test_of_proportions(cluster_difference_dict, "Strategies", individual_strategies=False)
-
+    #
     # decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
     #                                    "decreasing": decision_system_df["decreasing_variance"],
     #                                    "constant": decision_system_df["constant_variance"]}
@@ -270,37 +273,39 @@ if __name__ == "__main__":
     print(" --------------------------------------------------------------------")
     print(" ---------------------------- Trends --------------------------------")
     print(" --------------------------------------------------------------------")
-    strategy_trend, cluster_trend, top_n_strategies, worst_n_strategies = create_data_for_trend_test(reward_exps,
-                                                                                                     number_of_strategies=3,
-                                                                                                     trend_test=True)  # n adaptive, mal adaptive stratiges
+    strategy_trend, cluster_trend, top_n_strategies, worst_n_strategies, number_of_clicks = create_data_for_trend_test(
+        reward_exps,
+        number_of_strategies=5,
+        trend_test=True)  # n adaptive, mal adaptive stratiges
     test_for_trend(strategy_trend, "Strategy")
     test_for_trend(cluster_trend, "Strategy Cluster")
     # test_for_trend(decision_trend, "Decision System")
 
-    print(" --------------------------------------------------------------------")
-    print(" ---------------------- First vs Last trial -------------------------")
-    print(" --------------------------------------------------------------------")
-    first_last_strategies, first_last_clusters, _, _ = create_data_for_trend_test(reward_exps, number_of_strategies=3,
-                                                                                  trend_test=False)
+    # print(" --------------------------------------------------------------------")
+    # print(" ---------------------- First vs Last trial -------------------------")
+    # print(" --------------------------------------------------------------------")
+    # first_last_strategies, first_last_clusters, _, _, _ = create_data_for_trend_test(reward_exps, number_of_strategies=5,
+    #                                                                               trend_test=False)
     # test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")  # last 5 trials
     # test_first_trials_vs_last_trials(first_last_clusters, 5, "Strategy Cluster")
     #
     # test_last_n_across_environments(first_last_strategies, 5, "Strategy")
     # test_last_n_across_environments(first_last_strategies, 5, "Strategy Cluster")
 
-    print(
-        " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
-    #test_for_trend(top_n_strategies, "Adaptive Strategies")
-    #test_for_trend(worst_n_strategies, "Maladaptive Strategies")
-
-    test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
-    test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
+    # print(
+    #     " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
+    test_for_trend(top_n_strategies, "Adaptive Strategies")
+    test_for_trend(worst_n_strategies, "Maladaptive Strategies")
+    #
+    # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
+    # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
 
     print(
         " ----------------- strategies proportions-----------------")
     # test of proportions for only selected adaptive, maladaptive strategies
     # Do the proportions of the strategies differ across environment?
-    # chi-squared test of strategy counts across trials
-    #test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
+    test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
 
-
+    # print(" -----------------Number of clicks-----------------")
+    # print(number_of_clicks)
+    # test_for_trend(number_of_clicks)

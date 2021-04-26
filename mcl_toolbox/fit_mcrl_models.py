@@ -35,25 +35,26 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
 
     # create directory to save priors in
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_name}_priors")
+    prior_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/{exp_name}_priors")
     create_dir(prior_directory)
     # and directory to save fit model info in
-    model_info_directory = os.path.join(parent_directory, f"results/mcrl/info_{exp_name}_data")
+    model_info_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/info_{exp_name}_data")
     create_dir(model_info_directory)
 
     # create directory to save the reward/mers data of participant (mers) and algorithm (reward)
-    reward_info_directory = os.path.join(parent_directory, f"results/mcrl/reward_{exp_name}_data")
+    reward_info_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/reward_{exp_name}_data")
     create_dir(reward_info_directory)
 
     # add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(parent_directory, f"results/mcrl/plots/{exp_name}_plots")
+        plot_directory = os.path.join(parent_directory, f"results3/mcrl/plots/{exp_name}_plots")
         create_dir(plot_directory)
 
     # load experiment specific info
     normalized_features = get_normalized_features(structure.exp_reward_structures[exp_name])
     pipeline = structure.exp_pipelines[exp_name]
     pipeline = [pipeline[0] for _ in range(100)]  # extend to have up to 100 trials
+
     branching = structure.branchings[exp_name]
     excluded_trials = structure.excluded_trials[exp_name]
 
@@ -62,7 +63,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     learner = learner_attributes['model']
 
     # load strategy space based on model parameters
-    strategy_space_type = learner_attributes['strategy_space_type'] #in the csv
+    strategy_space_type = learner_attributes['strategy_space_type']  # in the csv
     strategy_space_type = strategy_space_type if strategy_space_type else 'microscope'
     strategy_space = strategies.strategy_spaces[strategy_space_type]
 
@@ -105,14 +106,16 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     del learner_attributes['term']  # TODO why do we delete "term" and put in "no_term"
 
     # optimization
-    optimizer = ParameterOptimizer(learner, learner_attributes, participant, env) #learner is the model chosen
+    optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)  # learner is the model chosen
     res, prior, obj_fn = optimizer.optimize(optimization_criterion, **optimization_params)
-    print(res[0]) #prior information
+    #print(res[0])  # prior information
     losses = [trial['result']['loss'] for trial in res[1]]
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
     if plotting:
-        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"), plot=True)
+        reward_data = optimizer.plot_rewards(i=min_index, path=os.path.join(plot_directory,
+                                                                            f"{pid}_{optimization_criterion}_{model_index}.png"),
+                                             plot=True)
     # save the reward data
     pickle_save(reward_data, os.path.join(reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
@@ -122,26 +125,34 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     # TODO: document what is this? Is this running simulations given priors?
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
-    # print(sim_data['info'], len(sim_data['info']))
+    #print(sim_data['info'], len(sim_data['info']))
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 
-
 if __name__ == "__main__":
+    # python3 mcl_toolbox/fit_mcrl_models.py v1.0 861 pseudo_likelihood 1 hyperopt 2 2
     random.seed(123)
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # other_params = {}
-    # if len(sys.argv)>5:
-    #     other_params = ast.literal_eval(sys.argv[5])
+    exp_num = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    optimization_params = {
+        "optimizer": str(sys.argv[5]),
+        "num_simulations": int(sys.argv[6]),
+        "max_evals": int(sys.argv[7])
+    }
 
-    exp_num = "v1.0"
+
+    # if len(sys.argv) > 4:
+    #     optimization_params = ast.literal_eval(sys.argv[4])
+    #
+    # print(optimization_params)
+    # exp_num = "c1.1"
+
     pid_list = get_all_pid_for_env(exp_num)
-    model_index = 861
-    optimization_criterion = "pseudo_likelihood"
+    # model_index = 1919
+    # optimization_criterion = "pseudo_likelihood"
     plotting = True
-    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2}
-    for pid in pid_list:
-        prior_fit(exp_num, model_index, optimization_criterion, pid, plotting, optimization_params)
+    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 400}
+    #for pid in pid_list:
+    prior_fit(exp_num, model_index, optimization_criterion, pid, plotting, optimization_params)

@@ -12,20 +12,19 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
 Run this file to analyse the inferred sequences of the participants. 
-Format: python3 analyze_sequences.py <reward_structure> <reward_structure> <num_trials> <block> <create_plot>
-Example: python3 analyze_sequences.py c2.1_dec high_increasing 35 training True
+Format: python3 analyze_sequences.py <reward_structure> <num_trials> <block> <create_plot>
+Example: python3 analyze_sequences.py c2.1_dec 35 training True
 
 Please remember to set a seed
 """
 
 
-def analyse_sequences(exp_num="v1.0", reward_structure="high_increasing", num_trials=35, block="training", pids=None,
-                      create_plot=False, number_of_top_worst_strategies=3, **kwargs):
+def analyse_sequences(exp_num="v1.0", num_trials=35, block="training", pids=None,
+                      create_plot=False, number_of_top_worst_strategies=5, **kwargs):
     """
     Creates plots. For details of the args, check out global_vars.py
     Args:
         exp_num: experiment number, str e.g. "v1.0"
-        reward_level: str, e.g. "high_increasing"
         num_trials: int, e.g. 35
         block: training or test, str
         pids: participant id
@@ -49,17 +48,21 @@ def analyse_sequences(exp_num="v1.0", reward_structure="high_increasing", num_tr
     microscope_features = features.microscope
     strategy_weights = strategies.strategy_weights
 
-    reward_dist = "categorical"
-    reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_structure], reward_dist)
-    repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num], reward_distributions,
-                                                                   num_trials)
-    exp_pipelines = {exp_num: repeated_pipeline}
-
-    # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
-    # exp_pipelines = structure.exp_pipelines
-    # if exp_num not in structure.exp_reward_structures:
-    #     raise (ValueError, "Reward structure not found.")
-    # reward_structure = structure.exp_reward_structures[exp_num]
+    # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
+    if exp_num not in ["v1.0", "c1.1", "c2.1_dec"]:
+        reward_dist = "categorical"
+        reward_structure = exp_num
+        reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_structure],
+                                                                        reward_dist)
+        repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num],
+                                                                       reward_distributions,
+                                                                       num_trials)
+        exp_pipelines = {exp_num: repeated_pipeline}
+    else:
+        exp_pipelines = structure.exp_pipelines
+        if exp_num not in structure.exp_reward_structures:
+            raise (ValueError, "Reward structure not found.")
+        reward_structure = structure.exp_reward_structures[exp_num]
 
     if exp_num not in exp_pipelines:
         raise (ValueError, "Experiment pipeline not found.")
@@ -109,7 +112,9 @@ def analyse_sequences(exp_num="v1.0", reward_structure="high_increasing", num_tr
             precomputed_temperatures=temperatures,
             show_pids=False)
     else:
-        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = exp.summarize(
+        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
+        decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, number_of_clicks, adaptive_participants, \
+        maladaptive_participants, other_participants = exp.summarize(
             features, normalized_features, strategy_weights,
             decision_systems, W_DS, DS_proportions, strategy_scores,
             cluster_scores, cluster_map,
@@ -118,23 +123,23 @@ def analyse_sequences(exp_num="v1.0", reward_structure="high_increasing", num_tr
             precomputed_strategies=strategies_,
             precomputed_temperatures=temperatures,
             show_pids=False)
-        return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies
+        return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
+               decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, \
+               number_of_clicks, adaptive_participants, maladaptive_participants, other_participants
 
 
 if __name__ == "__main__":
-    random.seed(123)
+    # random.seed(123)
     # exp_name = sys.argv[1]  # e.g. c2.1_dec
-    # reward_level = sys.argv[2]
-    # number_of_trials = int(sys.argv[3])
     # block = None
-    # if len(sys.argv) > 4:
-    #     block = sys.argv[4]
+    # if len(sys.argv) > 2:
+    #     number_of_trials = int(sys.argv[2])
+    #     block = sys.argv[3]
 
-    exp_name = "low_cost"
+    exp_name = "v1.0"
     block = "training"
-    reward_structure = "low_cost"
     number_of_trials = 35
-    create_plot = True
+    create_plot = False
 
     # create the plots
-    analyse_sequences(exp_name, reward_structure, number_of_trials, block, create_plot=True, number_of_top_worst_strategies=4)
+    analyse_sequences(exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=5)

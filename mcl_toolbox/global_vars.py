@@ -46,11 +46,11 @@ def pickle_load(file_path):
 
 
 class structure:
-    excluded_trials = {"v1.0": None, "F1": None, "T1.1": list(range(11)), 'c1.1': list(range(30)), 'c2.1': None,
+    excluded_trials = {"v1.0": None, "F1": None, "T1.1": list(range(11)), 'c1.1': None, 'c2.1': None, 'c2.1_dec': None,
                        "IRL1": list(range(30, 66))}
 
     branchings = {"v1.0": [3, 1, 2], "F1": [3, 1, 2], "T1.1": [3, 1, 1, 2, 3], 'c1.1': [3, 1, 2], 'c2.1': [3, 1, 2],
-                  "IRL1": [3, 1, 2], 'high_cost': [3, 1, 2], 'low_cost': [3, 1, 2]}
+                  'c2.1_dec': [3, 1, 2], "IRL1": [3, 1, 2], 'high_cost': [3, 1, 2], 'low_cost': [3, 1, 2]}
     level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     const_var_values = [[-10, -5, 5, 10]]
     low_cost_values = [[-50, -20, -10, 10, 20, 50]]
@@ -71,17 +71,16 @@ class structure:
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     '''
-    # todo: check whether this will break the F1 experiment data
-    # exp_pipelines = pickle_load("data/exp_pipelines.pkl")
-    # for some reason F1 is missing one trial
-
-    # exp_pipelines["F1"].append(exp_pipelines["F1"][0])
+    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
+    #for some reason F1 is missing one trial
+    exp_pipelines["F1"].append(exp_pipelines["F1"][0])
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {'v1.0': 'high_increasing',
                              'F1': 'high_increasing',
                              'c1.1': 'low_constant',
                              "c2.1_dec": "high_decreasing",
+                             "c2.1": "high_decreasing",
                              'T1.1': 'large_increasing',
                              'IRL1': 'high_increasing'}
 
@@ -113,11 +112,15 @@ class strategies:
         'participant': [6, 11, 14, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 37, 39, 40, 42, 43, 44, 50, 56,
                         57, 58,
                         63, 64, 65, 67, 70, 76, 79, 87, 88],
-        'microscope': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29,
+        'microscope_filtered': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 26, 27, 28, 29,
                        30, 31, 32,
                        33, 34, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59,
                        60, 61, 62,
-                       63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89]}
+                       63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89],
+        'microscope': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+                       28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
+                       52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+                       76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89]}
 
     strategy_weights = pickle_load(os.path.join(file_location, "data/microscope_weights.pkl"))
     strategy_distances = pickle_load(os.path.join(file_location, "data/L2_distances.pkl"))
