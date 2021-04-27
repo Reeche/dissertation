@@ -1219,9 +1219,9 @@ class Experiment():
 
         # find out who used adaptive and who used maladaptive stratgies
         adaptive_participants, maladaptive_participants, other_participants = self.adaptive_maladaptive_participants(top_n_strategies, worst_n_strategies)
-        print("These are the participants who used adaptive strategies: ", adaptive_participants)
-        print("These are the participants who used maladaptive strategies: ", maladaptive_participants)
-        print("These are the participants who used other strategies: ", other_participants)
+        # print("These are the participants who used adaptive strategies: ", adaptive_participants)
+        # print("These are the participants who used maladaptive strategies: ", maladaptive_participants)
+        # print("These are the participants who used other strategies: ", other_participants)
 
         if create_plot:
             # plot regarding strategy clusters

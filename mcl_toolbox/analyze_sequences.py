@@ -1,5 +1,7 @@
 import sys
 import random
+import os
+from pathlib import Path
 from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
@@ -80,7 +82,11 @@ def analyse_sequences(exp_num="v1.0", num_trials=35, block="training", pids=None
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../../results/cm/inferred_strategies/{exp_num}"
+    parent_directory = Path(__file__).parents[1]
+    dir_path = os.path.join(parent_directory, f"results/cm/inferred_strategies/{exp_num}")
+
+    # dir_path = f"../results/cm/inferred_strategies/{exp_num}"
+
     if block:
         dir_path += f"_{block}"
 

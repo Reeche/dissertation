@@ -35,19 +35,19 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
 
     # create directory to save priors in
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/{exp_name}_priors")
+    prior_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/{exp_name}_priors")
     create_dir(prior_directory)
     # and directory to save fit model info in
-    model_info_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/info_{exp_name}_data")
+    model_info_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/info_{exp_name}_data")
     create_dir(model_info_directory)
 
     # create directory to save the reward/mers data of participant (mers) and algorithm (reward)
-    reward_info_directory = os.path.join(parent_directory, f"results3/mcrl/{exp_name}/reward_{exp_name}_data")
+    reward_info_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/reward_{exp_name}_data")
     create_dir(reward_info_directory)
 
     # add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(parent_directory, f"results3/mcrl/plots/{exp_name}_plots")
+        plot_directory = os.path.join(parent_directory, f"results5/mcrl/plots/{exp_name}_plots")
         create_dir(plot_directory)
 
     # load experiment specific info

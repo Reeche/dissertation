@@ -1,0 +1,9 @@
+executable = /usr/bin/python3
+arguments = mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood {'optimizer':'hyperopt', 'num_simulations': 2, 'max_evals': 2}
+log = logs/v1.0_1_pseudo_likelihood_{'optimizer':'hyperopt', 'num_simulations': 2, 'max_evals': 2}_$(Process).log
+error = errs/v1.0_1_pseudo_likelihood_{'optimizer':'hyperopt', 'num_simulations': 2, 'max_evals': 2}_$(Process).err
+output = outputs/v1.0_1_pseudo_likelihood_{'optimizer':'hyperopt', 'num_simulations': 2, 'max_evals': 2}_$(Process).out
+getenv = True
+request_memory = 3000
+request_cpus = 1
+queue 1
