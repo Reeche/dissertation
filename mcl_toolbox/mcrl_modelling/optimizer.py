@@ -240,7 +240,7 @@ class ParameterOptimizer:
         self.participant = participant
         self.env = env
         self.pipeline = self.env.pipeline
-        self.compute_likelihood = False #todo: what does this do?
+        self.compute_likelihood = True
         if self.learner in ['sdss']:
             self.model = models[self.learner_attributes['learner']]
         elif self.learner in ['hierarchical_learner']:
@@ -252,7 +252,7 @@ class ParameterOptimizer:
         This function takes the selected parameters, created an agent with those parameters and run simulations
 
         Args:
-            params: parameters #todo: check what are the parameters?
+            params: parameters
             get_sim_data:
 
         Returns: relevant data according to the learner
@@ -297,8 +297,31 @@ class ParameterOptimizer:
         return get_space(self.learner, self.learner_attributes, self.optimizer)
 
     def optimize(self, objective, num_simulations=1, optimizer="pyabc",
-                 db_path="sqlite:///test.db", compute_likelihood=False,
+                 db_path="sqlite:///test.db", compute_likelihood=True,
                  max_evals=100):
+        """
+        This function first gets the relevant participant data,
+        creates a lambda function as required by fmin function
+        Calling the lambda function creates simulated data depending on num_simulation
+        The lambda function is called max_evals times in optimize_hyperopt_params.
+
+        Example: num_simulation: 30, max_evals: 400, model: reinforce
+        The model is initated with a set of parameters and creates simulated data for 30 runs
+        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are optimised based on the 30 runs and participant data.
+        Then the updated parameters are passed to the model and another 30 runs are created with the new parameters
+        The loop continues 400 times.
+
+        Args:
+            objective:
+            num_simulations:
+            optimizer:
+            db_path:
+            compute_likelihood:
+            max_evals:
+
+        Returns: res: results
+
+        """
         self.objective = objective
         self.compute_likelihood = compute_likelihood
         self.num_simulations = num_simulations

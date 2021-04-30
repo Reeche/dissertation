@@ -35,19 +35,19 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
 
     # create directory to save priors in
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/{exp_name}_priors")
+    prior_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/{exp_name}_priors")
     create_dir(prior_directory)
     # and directory to save fit model info in
-    model_info_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/info_{exp_name}_data")
+    model_info_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/info_{exp_name}_data")
     create_dir(model_info_directory)
 
     # create directory to save the reward/mers data of participant (mers) and algorithm (reward)
-    reward_info_directory = os.path.join(parent_directory, f"results5/mcrl/{exp_name}/reward_{exp_name}_data")
+    reward_info_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/reward_{exp_name}_data")
     create_dir(reward_info_directory)
 
     # add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(parent_directory, f"results5/mcrl/plots/{exp_name}_plots")
+        plot_directory = os.path.join(parent_directory, f"results6/mcrl/plots/{exp_name}_plots")
         create_dir(plot_directory)
 
     # load experiment specific info
@@ -122,10 +122,11 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     # save priors
     pickle_save((res, prior), os.path.join(prior_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
-    # TODO: document what is this? Is this running simulations given priors?
+    # Run simulations given prior and other fitted parameters, num of simulations: how many runs
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
                                                         num_simulations=30)
     #print(sim_data['info'], len(sim_data['info']))
+    # info of simulated data
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 
@@ -143,16 +144,13 @@ if __name__ == "__main__":
     }
 
 
-    # if len(sys.argv) > 4:
-    #     optimization_params = ast.literal_eval(sys.argv[4])
-    #
-    # print(optimization_params)
-    # exp_num = "c1.1"
 
-    pid_list = get_all_pid_for_env(exp_num)
-    # model_index = 1919
+    # exp_num = "v1.0"
+    # pid_list = get_all_pid_for_env(exp_num)
+    # model_index = 1853
     # optimization_criterion = "pseudo_likelihood"
     plotting = True
-    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 400}
+    # pid = 17
+    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 10}
     #for pid in pid_list:
     prior_fit(exp_num, model_index, optimization_criterion, pid, plotting, optimization_params)

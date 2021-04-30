@@ -941,14 +941,24 @@ class Experiment():
         adaptive_participants = []
         maladaptive_participants = []
         other_participants = []
+
+        #participants who did not use adaptive in the beginning but learned to use adaptive strategies in the end
+        improved_participants = []
+        #participants who did not use maladaptive in the beginning but learned to use maladaptive strategies in the end
+        deteriorated_participants = []
+
         for pid, strategy_list in self.participant_strategies.items():
             if strategy_list[-1] in top_n_strategies:
                 adaptive_participants.append(pid)
+                if strategy_list[0] not in top_n_strategies:
+                    improved_participants.append(pid)
             elif strategy_list[-1] in worst_n_strategies:
                 maladaptive_participants.append(pid)
+                if strategy_list[0] not in worst_n_strategies:
+                    deteriorated_participants.append(pid)
             else:
                 other_participants.append(pid)
-        return adaptive_participants, maladaptive_participants, other_participants
+        return adaptive_participants, maladaptive_participants, other_participants, improved_participants, deteriorated_participants
 
     def analyze_trajectory(self, trajectory, print_trajectories=True):
         final_repetition_count = []
@@ -1218,10 +1228,15 @@ class Experiment():
         top_n_strategies, worst_n_strategies = self.filter_used_strategy_adaptive_maladaptive(n=number_of_top_worst_strategies) #requires self.strategy_proportions
 
         # find out who used adaptive and who used maladaptive stratgies
-        adaptive_participants, maladaptive_participants, other_participants = self.adaptive_maladaptive_participants(top_n_strategies, worst_n_strategies)
+        adaptive_participants, maladaptive_participants, other_participants, improved_participants, deteriorated_participants = self.adaptive_maladaptive_participants(top_n_strategies, worst_n_strategies)
         # print("These are the participants who used adaptive strategies: ", adaptive_participants)
         # print("These are the participants who used maladaptive strategies: ", maladaptive_participants)
         # print("These are the participants who used other strategies: ", other_participants)
+        #
+        # print("These are the participants who improved (not adaptive -> adaptive): ", improved_participants)
+        # print("These are the participants who deteriorated (not maladaptive -> maladaptive): ", deteriorated_participants)
+        # print("Difference between adaptive and improved participants: ", len(adaptive_participants), len(improved_participants))
+        # print("Difference between maladaptive and deteriorated participants: ", len(maladaptive_participants), len(deteriorated_participants))
 
         if create_plot:
             # plot regarding strategy clusters
