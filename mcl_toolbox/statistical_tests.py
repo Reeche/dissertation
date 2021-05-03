@@ -51,7 +51,7 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
     decision_system_df = pd.DataFrame(columns=column_names)
 
     for strategy_name, exp_num in strategy_name_dict.items():  # strategy_name: increasing/decreasing, exp_num: v1.0
-        strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _, _, _, _ = analyse_sequences(
+        strategy_proportions, _, cluster_proportions, _, decision_system_proportions, _, _, _, _, _, _, _ = analyse_sequences(
             exp_num, number_of_trials=35, block=block, create_plot=False)
         strategy_df[strategy_name] = list(create_comparable_data(strategy_proportions, len=90).values())
         cluster_df[strategy_name] = list(create_comparable_data(cluster_proportions, len=14).values())
@@ -82,7 +82,8 @@ def create_data_for_trend_test(reward_exps: dict, trend_test: True, number_of_st
     for strategy_name, exp_num in reward_exps.items():
         if exp_num == "c2.1":
             exp_num = "c2.1_dec"
-        _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, _, top_n_strategies, worst_n_strategies, number_of_clicks = analyse_sequences(
+
+        _, strategy_proportions_trialwise, _, cluster_proportions_trialwise, _, _, top_n_strategies, worst_n_strategies, number_of_clicks, _, _, _ = analyse_sequences(
             exp_num, number_of_trials=35, block=block, create_plot=False,
             number_of_top_worst_strategies=number_of_strategies)
 
@@ -238,7 +239,7 @@ def test_of_proportions(env_distribution, analysis_type: str, individual_strateg
 if __name__ == "__main__":
     random.seed(123)
     number_of_trials = 35
-    number_of_participants = 60
+    number_of_participants = 58
     reward_exps = {"increasing_variance": "v1.0",
                    "decreasing_variance": "c2.1_dec",
                    "constant_variance": "c1.1"}
@@ -277,8 +278,8 @@ if __name__ == "__main__":
         reward_exps,
         number_of_strategies=5,
         trend_test=True)  # n adaptive, mal adaptive stratiges
-    test_for_trend(strategy_trend, "Strategy")
-    test_for_trend(cluster_trend, "Strategy Cluster")
+    # test_for_trend(strategy_trend, "Strategy")
+    # test_for_trend(cluster_trend, "Strategy Cluster")
     # test_for_trend(decision_trend, "Decision System")
 
     # print(" --------------------------------------------------------------------")
@@ -300,11 +301,11 @@ if __name__ == "__main__":
     # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
     # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
 
-    print(
-        " ----------------- strategies proportions-----------------")
+    # print(
+    #     " ----------------- strategies proportions-----------------")
     # test of proportions for only selected adaptive, maladaptive strategies
     # Do the proportions of the strategies differ across environment?
-    test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
+    # test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
 
     # print(" -----------------Number of clicks-----------------")
     # print(number_of_clicks)

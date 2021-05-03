@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy import stats
 import numpy as np
+import itertools
+
 
 from mcl_toolbox.utils.utils import get_all_pid_for_env
 from mcl_toolbox.utils.learning_utils import pickle_load, create_dir
@@ -36,7 +38,6 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
     # df = pd.DataFrame(columns=["pid", "optimization_criterion", "model", "loss", "AIC"])
     results_dict = {"pid": [], "model": [], "optimization_criterion": [], "loss": [], "AIC": []}
 
-
     for root, dirs, files in os.walk(prior_directory, topdown=False):
         for name in files:
             for pid in pid_list:
@@ -60,12 +61,12 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
 
                     # Calculate the AIC
                     number_of_parameters = len(data[1])
-                    AIC = 2*min_loss + 2*number_of_parameters
+                    AIC = 2 * min_loss + 2 * number_of_parameters
                     # df.loc[pid]["AIC"] = AIC
                     results_dict["AIC"].append(AIC)
 
     # dict to pandas dataframe
-    df = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in results_dict.items() ]))
+    df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in results_dict.items()]))
     df = df.dropna(subset=['loss', 'AIC'])
 
     ## sort by loss
@@ -178,7 +179,7 @@ def group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion,
 
 
 # check whether the fitted parameters are significantly different across adaptive and maladaptive participants
-def statistical_tests(exp_num, optimization_criterion, model_index, summary=False):
+def statistical_tests_between_groups(exp_num, optimization_criterion, model_index, summary=False):
     pid_dict = get_adaptive_maladaptive_participant_list(exp_num)
 
     parent_directory = Path(__file__).parents[1]
@@ -186,7 +187,7 @@ def statistical_tests(exp_num, optimization_criterion, model_index, summary=Fals
 
     # create the df using the dictionary keys as column headers, for this, the first file in the directory is loaded
 
-    first_file = os.listdir(prior_directory)[1]
+    first_file = os.listdir(prior_directory)[10]
     first_file = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors/{first_file}")
     parameter_names = pickle_load(first_file)  # header are the parameters
 
@@ -225,15 +226,27 @@ def statistical_tests(exp_num, optimization_criterion, model_index, summary=Fals
             i = 0
             for columns in row:  # in each row, take out one column, i.e. adaptive/maladaptive/other
                 print(f"------------------Summary statitics of {row_names[i]}------------------")
-                parameter_mean = np.mean(columns)
+                parameter_mean = np.mean(np.exp(columns))
                 print(f"Mean of parameter {index} is: {parameter_mean}")
-                parameter_variance = np.var(columns)
-                print(f"Variance of parameter {index} is: {parameter_variance}")
+                parameter_sd = np.std(np.exp(columns))
+                print(f"Standard deviation of parameter {index} is: {parameter_sd}")
                 print("Q1 quantile of arr : ", np.quantile(np.exp(columns), .25))
                 print("Q3 quantile of arr : ", np.quantile(np.exp(columns), .75))
+
+                # test for normality
+                # try:
+                #     k2, p = stats.normaltest(np.exp(columns))  # first time without exp
+                #     if p < 0.05:  # null hypothesis: x comes from a normal distribution
+                #         print(f"{row_names[i]} is not normally distributed")
+                #         # print(f"The p-value for normality for {row.index} is {p}")
+                #     else:
+                #         print(f"{row_names[i]} is normally distributed")
+                # except:
+                #     continue
+
                 i += 1
 
-    # t-test of parameters of unequal variance
+    # t-test or Wilcoxon rank rum test of parameters of unequal variance
     for index, row in df.iterrows():
         row_names = row.index
         i = 0
@@ -241,14 +254,60 @@ def statistical_tests(exp_num, optimization_criterion, model_index, summary=Fals
             j = 0
             for column_b in row:
                 if column_a != column_b:
-                    test_statistic, p = stats.ttest_ind(np.exp(column_a), np.exp(column_b), equal_var=False)
-                    if p < 0.05: #print out only the significant ones
-                        print(
-                            f"---------------Testing parameter {index} between {row_names[i]} vs {row_names[j]}---------------")
-                        print(f"Test statistic: {test_statistic}")
-                        print(f"p-value: {p}")
+                    # test_statistic, p = stats.ttest_ind(np.exp(column_a), np.exp(column_b), equal_var=False)
+                    try:
+                        test_statistic, p = stats.ranksums(column_a, column_b)
+                        if p < 0.05:  # print out only the significant ones
+                            print(
+                                f"---------------Testing parameter {index} between {row_names[i]} vs {row_names[j]}---------------")
+                            print(f"Test statistic: {test_statistic}")
+                            print(f"p-value: {p}")
+                    except:
+                        print(f"Skipped {index} between {row_names[i]} vs {row_names[j]}")
+                        continue
                 j += 1
             i += 1
+
+
+def statistical_test_between_envs(exp_num_list, model_index):
+    parent_directory = Path(__file__).parents[1]
+    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors")
+
+    first_file = os.listdir(prior_directory)[10]
+    first_file = os.path.join(parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors/{first_file}")
+    parameter_names = pickle_load(first_file)  # header are the parameters
+
+    df = pd.DataFrame(index=list(parameter_names[0][0].keys()),
+                      columns=["v1.0", "c2.1_dec", "c1.1"])
+
+    for exp_num in exp_num_list:
+        prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors")
+        for root, dirs, files in os.walk(prior_directory, topdown=False):
+            for name in files:  # iterate through each file
+                if name.endswith(f"{model_index}.pkl"):
+                    data = pickle_load(os.path.join(prior_directory, name))
+                    for parameters, parameter_values in data[0][0].items():
+                        temp_value = df.loc[parameters, exp_num]
+                        if type(temp_value) == float or temp_value is None:
+                            df.at[parameters, exp_num] = [parameter_values]
+                        else:
+                            temp_value.append(parameter_values)
+                            df.at[parameters, exp_num] = temp_value
+    # t-test or Wilcoxon rank rum test of parameters of unequal variance
+    for index, row in df.iterrows():
+        column_names = row.index
+        for pair in itertools.combinations(column_names, 2): #todo: change this for test above
+            try:
+                test_statistic, p = stats.ranksums(row[pair[0]], row[pair[1]])
+                if p < 0.05:  # print out only the significant ones
+                    print(
+                        f"---------------Testing parameter {index} between {pair[0]} vs {pair[1]}---------------")
+                    print(f"Test statistic: {test_statistic}")
+                    print(f"p-value: {p}")
+            except:
+                print(f"Skipped {index} between {pair[0]} vs {pair[1]}")
+                continue
+
 
 
 if __name__ == "__main__":
@@ -259,25 +318,29 @@ if __name__ == "__main__":
     # exp_num_list = ["c2.1_dec"]
     optimization_criterion = "pseudo_likelihood"
 
-    model_list = ['861', '1983', '1853', '1757', '1852']#, '605', '797', '669', '733', '925']
+    model_list = ['1916', '1918']
+    # ['2018', '2022', '2034', '2038']
+    # ['1853', '1757', '1852']
+    # ['861', '1983', '1853', '1757', '1852','605', '797', '669', '733', '925']
+    # ['2018', '2022', '2034', '2038']
     # model_list = ['1853']
 
+    statistical_test_between_envs(exp_num_list, model_index=1853)
     # Run t-test and statistical summary
-    # statistical_tests(exp_num="v1.0", optimization_criterion="pseudo_likelihood", model_index=1853, summary=True)
+    # statistical_tests_between_groups(exp_num="c2.1_dec", optimization_criterion="pseudo_likelihood", model_index=1853, summary=True)
 
-
-    for exp_num in exp_num_list:
-        pid_list = get_all_pid_for_env(exp_num)
-
-        # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
-        df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
-
-        # group best model by performance of participants (adaptive, maladaptive)
-        group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=None, plotting=False)
-
-        # for model_index in model_list:
-        #     # calculate and plot the average performance given a model for all participants
-        #     average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
-        #
-        #     # calculate and plot the average performance given a model after grouping participants
-        #     group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index, plotting=True)
+    # for exp_num in exp_num_list:
+    #     pid_list = get_all_pid_for_env(exp_num)
+    #
+    #     # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
+    #     df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+    #
+    #     # group best model by performance of participants (adaptive, maladaptive)
+    #     group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=None, plotting=False)
+    #
+    # for model_index in model_list:
+    #     # calculate and plot the average performance given a model for all participants
+    #     average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
+    #
+    #     # calculate and plot the average performance given a model after grouping participants
+    #     group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index, plotting=True)
