@@ -1,8 +1,5 @@
 from setuptools import setup
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setup(
     name='mcl_toolbox',
     version='',
@@ -13,7 +10,26 @@ setup(
     author='Ruiqi He, Yash Raj Jain',
     author_email='',
     description='',
-    install_requires=requirements
+    install_requires=[
+        "graphviz",
+        "statsmodels",
+        "toolz",
+        "mpmath",
+        "pandas",
+        "hyperopt",
+        "torch",
+        "matplotlib",
+        "scipy",
+        "pyabc",
+        "seaborn",
+        "joblib",
+        "numpy",
+        "imageio",
+        "ipython",
+        "pymannkendall",
+        "rpy2",
+        "scikit-learn",
+    ]
 )
 
 
