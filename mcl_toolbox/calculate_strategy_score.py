@@ -41,7 +41,9 @@ for strategy in range(0, 89):
         env = GenericMouselabEnv(num_trials=1, pipeline=pipeline)
         gts.append(tuple(env.ground_truth[0]))
         clicks = strategy_dict[strategy + 1](env.present_trial)
-        score = env.present_trial.node_map[0].calculate_max_expected_return() - (len(clicks) - 1)
+        score = env.present_trial.node_map[0].calculate_max_expected_return() - (
+            len(clicks) - 1
+        )
         scores.append(score)
     # print(len(set(gts)))
     # print(np.mean(scores))

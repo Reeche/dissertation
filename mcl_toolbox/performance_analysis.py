@@ -1,10 +1,10 @@
 import operator
 import sys
-import matplotlib.pyplot as plt
-import pandas as pd
 from collections import defaultdict
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from mcl_toolbox.utils import learning_utils, distributions, analysis_utils
 
@@ -52,16 +52,29 @@ def get_sorted_trajectories(cluster_map, strategies):
     cluster_trajectory_frequency = defaultdict(int)
     strategy_trajectory_frequency = defaultdict(int)
     for pid, strategy_sequence in strategies.items():
-        cluster_strategy_sequence = [cluster_map[strategy] for strategy in strategy_sequence]
+        cluster_strategy_sequence = [
+            cluster_map[strategy] for strategy in strategy_sequence
+        ]
         cluster_trajectory = remove_duplicates(cluster_strategy_sequence)
         strategy_trajectory = remove_duplicates(strategy_sequence)
         cluster_trajectory_frequency[cluster_trajectory] += 1
         strategy_trajectory_frequency[strategy_trajectory] += 1
-    sorted_cluster_trajectory = [list(s) for s in
-                                 sorted(cluster_trajectory_frequency.items(), key=operator.itemgetter(1), reverse=True)]
-    sorted_strategy_trajectory = [list(s) for s in
-                                  sorted(strategy_trajectory_frequency.items(), key=operator.itemgetter(1),
-                                         reverse=True)]
+    sorted_cluster_trajectory = [
+        list(s)
+        for s in sorted(
+            cluster_trajectory_frequency.items(),
+            key=operator.itemgetter(1),
+            reverse=True,
+        )
+    ]
+    sorted_strategy_trajectory = [
+        list(s)
+        for s in sorted(
+            strategy_trajectory_frequency.items(),
+            key=operator.itemgetter(1),
+            reverse=True,
+        )
+    ]
     return sorted_cluster_trajectory, sorted_strategy_trajectory
 
 
@@ -86,7 +99,9 @@ def analyze_trajectory(trajectory, print_trajectories=False):
     print("Mean final strategy usage:", average_trials_repetition)
 
 
-def plot_difference_between_trials(cluster_map, strategies: defaultdict, number_participants, cluster=False):
+def plot_difference_between_trials(
+    cluster_map, strategies: defaultdict, number_participants, cluster=False
+):
     """
     It creates a plot which shows the percentage of participants who changed their strategy across trial
     Args:
@@ -104,8 +119,13 @@ def plot_difference_between_trials(cluster_map, strategies: defaultdict, number_
 
         changes_numeric = np.diff(value)
         # Convert result of numpy difference into dictionary that maps trial_index -> whether a change occurred (1 or 0)
-        change_count = {trial_idx: int(diff_val != 0) for trial_idx, diff_val in enumerate(list(changes_numeric))}
-        change_list_of_dicts.append(change_count)  # a dict of all changes for each participant, len: 15
+        change_count = {
+            trial_idx: int(diff_val != 0)
+            for trial_idx, diff_val in enumerate(list(changes_numeric))
+        }
+        change_list_of_dicts.append(
+            change_count
+        )  # a dict of all changes for each participant, len: 15
 
     df = pd.DataFrame(change_list_of_dicts)
     sum_values = df.sum(axis=0)
@@ -114,39 +134,53 @@ def plot_difference_between_trials(cluster_map, strategies: defaultdict, number_
     # create percentages by dividing each item in the list by number of participants (15)
     relative_sum_values = [x / number_participants for x in list(sum_values)]
     if cluster:
-        plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+        plt.bar(sum_values.keys(), relative_sum_values, 1, color="b")
         plt.ylim(top=1.0)
         plt.xlabel("Trial Number", size=24)
         plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
-        plt.savefig(f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_cluster.png",
-                    bbox_inches='tight')
+        plt.savefig(
+            f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_cluster.png",
+            bbox_inches="tight",
+        )
     else:
-        plt.bar(sum_values.keys(), relative_sum_values, 1, color='b')
+        plt.bar(sum_values.keys(), relative_sum_values, 1, color="b")
         plt.ylim(top=1.0)
         plt.xlabel("Trial Number", size=24)
         plt.ylabel("Percentage of people who changed strategy", fontsize=24)
-        plt.savefig(f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_strategy.png",
-                    bbox_inches='tight')
+        plt.savefig(
+            f"../results/cm/plots/{exp_num}_{block}/absolute_number_of_changes_strategy.png",
+            bbox_inches="tight",
+        )
     plt.close(fig)
     return None
 
 
 def analysis_change_percentage(exp_num, block):
     if exp_num == "c2.1":
-        strategies = learning_utils.pickle_load(f"../results/inferred_strategies/c2.1_dec_{block}/strategies.pkl")
+        strategies = learning_utils.pickle_load(
+            f"../results/inferred_strategies/c2.1_dec_{block}/strategies.pkl"
+        )
     else:
-        strategies = learning_utils.pickle_load(f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl")
+        strategies = learning_utils.pickle_load(
+            f"../results/inferred_strategies/{exp_num}_{block}/strategies.pkl"
+        )
 
     number_participants = 15  # todo: make this more dynamic
 
     # clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
     cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
 
-    plot_difference_between_trials(cluster_map, strategies, number_participants, cluster=False)
-    plot_difference_between_trials(cluster_map, strategies, number_participants, cluster=True)
+    plot_difference_between_trials(
+        cluster_map, strategies, number_participants, cluster=False
+    )
+    plot_difference_between_trials(
+        cluster_map, strategies, number_participants, cluster=True
+    )
 
     # Get sorted trajectories
-    cluster_trajectory, strategy_trajectory = get_sorted_trajectories(cluster_map, strategies)
+    cluster_trajectory, strategy_trajectory = get_sorted_trajectories(
+        cluster_map, strategies
+    )
 
     # show how many trials until the final strategy was used
     print("Strategy usage:")
@@ -161,8 +195,12 @@ def analysis_change_percentage(exp_num, block):
 
 def average_score_development(exp_num, block, participant_data):
     # plot the average score development
-    participant_score = learning_utils.get_participant_scores(exp_num, participant_data["pid"].tolist())
-    participant_score = pd.DataFrame.from_dict(participant_score)  # pid as column, trial as row
+    participant_score = learning_utils.get_participant_scores(
+        exp_num, participant_data["pid"].tolist()
+    )
+    participant_score = pd.DataFrame.from_dict(
+        participant_score
+    )  # pid as column, trial as row
 
     # get average score across trials
     participant_mean = participant_score.mean(axis=1)
@@ -172,8 +210,10 @@ def average_score_development(exp_num, block, participant_data):
     plt.ylim(top=50)
     plt.xlabel("Trial Number", size=24)
     plt.ylabel(f"Average score for {exp_num}", fontsize=24)
-    plt.savefig(f"../results/cm/plots/{exp_num}_{block}/score_development.png",
-                bbox_inches='tight')
+    plt.savefig(
+        f"../results/cm/plots/{exp_num}_{block}/score_development.png",
+        bbox_inches="tight",
+    )
     plt.close(fig)
     return None
 
@@ -195,8 +235,10 @@ def plot_average_clicks(exp):
     plt.xlabel("Trial Number", size=24)
     plt.ylabel(f"Average number of clicks for {exp_num}", fontsize=24)
     # plt.show()
-    plt.savefig(f"../results/cm/plots/{exp_num}_{block}/click_development.png",
-                bbox_inches='tight')
+    plt.savefig(
+        f"../results/cm/plots/{exp_num}_{block}/click_development.png",
+        bbox_inches="tight",
+    )
     plt.close(fig)
     return None
 
@@ -212,6 +254,6 @@ if __name__ == "__main__":
     analysis_change_percentage(exp_num, block)
 
     data = analysis_utils.get_data(exp_num)
-    participant_data = data['participants']
+    participant_data = data["participants"]
     average_score_development(exp_num, block, participant_data)
     plot_average_clicks(exp_num)

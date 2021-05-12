@@ -5,23 +5,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from mcl_toolbox.models.base_learner import Learner
 from torch.autograd import Variable
 from torch.distributions import Categorical
+
+from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 
 class Policy(nn.Module):
-    """ Softmax Policy of the REINFORCE model
+    """Softmax Policy of the REINFORCE model
 
-        Implemented in PyTorch so that automatic gradients can be computed.
+    Implemented in PyTorch so that automatic gradients can be computed.
     """
 
     def __init__(self, beta, num_features):
         super(Policy, self).__init__()
         self.num_features = num_features
         self.weighted_preference = nn.Conv1d(
-            in_channels=1, out_channels=1, kernel_size=num_features, bias=False)
+            in_channels=1, out_channels=1, kernel_size=num_features, bias=False
+        )
         self.beta = Variable(torch.tensor(beta), requires_grad=False)
         self.saved_log_probs = []
         self.term_log_probs = []
@@ -33,42 +35,43 @@ class Policy(nn.Module):
             x[0][0] = torch.Tensor([term_reward])
         if not termination:
             x[0][0] = torch.Tensor([-np.inf])
-        action_scores = self.beta*x
+        action_scores = self.beta * x
         softmax_vals = F.log_softmax(action_scores, dim=0)
         softmax_vals = torch.exp(softmax_vals)
-        return softmax_vals/softmax_vals.sum()
+        return softmax_vals / softmax_vals.sum()
 
 
 class REINFORCE(Learner):
     """Base class of the REINFORCE model"""
+
     # TODO:
     # 2-stage REINFORCE
     def __init__(self, params, attributes):
         super().__init__()
-        self.lr = np.exp(params['lr'])
-        self.gamma = np.exp(params['gamma'])
-        self.beta = np.exp(params['inverse_temperature'])
-        self.num_actions = attributes['num_actions']
-        self.init_weights = np.array(params['priors'])
-        self.features = attributes['features']
+        self.lr = np.exp(params["lr"])
+        self.gamma = np.exp(params["gamma"])
+        self.beta = np.exp(params["inverse_temperature"])
+        self.num_actions = attributes["num_actions"]
+        self.init_weights = np.array(params["priors"])
+        self.features = attributes["features"]
         self.num_features = len(self.features)
         self.policy = Policy(self.beta, self.num_features).double()
         self.optimizer = optim.Adam(self.policy.parameters(), lr=self.lr)
-        self.normalized_features = attributes['normalized_features']
-        self.use_pseudo_rewards = attributes['use_pseudo_rewards']
-        self.pr_weight = params['pr_weight']
-        self.no_term = attributes['no_term']
-        if 'delay_scale' in params:
-            self.delay_scale = np.exp(params['delay_scale'])
+        self.normalized_features = attributes["normalized_features"]
+        self.use_pseudo_rewards = attributes["use_pseudo_rewards"]
+        self.pr_weight = params["pr_weight"]
+        self.no_term = attributes["no_term"]
+        if "delay_scale" in params:
+            self.delay_scale = np.exp(params["delay_scale"])
         else:
             self.delay_scale = 0
-        if 'subjective_cost' in params:
-            self.subjective_cost = params['subjective_cost']
+        if "subjective_cost" in params:
+            self.subjective_cost = params["subjective_cost"]
         else:
             self.subjective_cost = 0
-        self.is_null = attributes['is_null']
-        self.vicarious_learning = attributes['vicarious_learning']
-        self.termination_value_known = attributes['termination_value_known']
+        self.is_null = attributes["is_null"]
+        self.vicarious_learning = attributes["vicarious_learning"]
+        self.termination_value_known = attributes["termination_value_known"]
         self.init_model_params()
         self.action_log_probs = []
         self.term_rewards = []
@@ -76,7 +79,8 @@ class REINFORCE(Learner):
     def init_model_params(self):
         # Initializing the parameters with people's priors.
         self.policy.weighted_preference.weight.data = torch.DoubleTensor(
-            [[self.init_weights*self.beta]])
+            [[self.init_weights * self.beta]]
+        )
 
     def get_action_probs(self, env):
         available_actions = env.get_available_actions()
@@ -84,7 +88,12 @@ class REINFORCE(Learner):
         X = np.zeros((self.num_actions, self.num_features))
         for action in available_actions:
             X[action] = get_normalized_feature_values(
-                present_node_map[action].compute_termination_feature_values(self.features), self.features, self.normalized_features)
+                present_node_map[action].compute_termination_feature_values(
+                    self.features
+                ),
+                self.features,
+                self.normalized_features,
+            )
         X = torch.DoubleTensor(X).view(self.num_actions, 1, self.policy.num_features)
         available_actions = torch.LongTensor(available_actions)
         X_new = X[available_actions]
@@ -102,7 +111,7 @@ class REINFORCE(Learner):
         """Generates action probabilities in the current state.
 
         Arguments:
-            env {Gym env} -- Representation of the environment. 
+            env {Gym env} -- Representation of the environment.
         """
         complete_probs, _ = self.get_action_probs(env)
         m = Categorical(complete_probs)
@@ -129,8 +138,8 @@ class REINFORCE(Learner):
         for i, r in enumerate(self.policy.rewards[::-1]):
             pr = 0
             if self.use_pseudo_rewards:
-                pr = self.pr_weight*(term_rewards[i] - term_rewards[i+1])
-            R = (r+pr) + self.gamma*R
+                pr = self.pr_weight * (term_rewards[i] - term_rewards[i + 1])
+            R = (r + pr) + self.gamma * R
             returns.insert(0, R)
         return returns
 
@@ -162,11 +171,12 @@ class REINFORCE(Learner):
         return policy_loss.item()
 
     def get_current_weights(self):
-        return torch.squeeze(self.policy.weighted_preference.weight.data).tolist() + \
-            [self.beta]
+        return torch.squeeze(self.policy.weighted_preference.weight.data).tolist() + [
+            self.beta
+        ]
 
-    def act_and_learn(self, env, end_episode=False):     
-        if not end_episode:  
+    def act_and_learn(self, env, end_episode=False):
+        if not end_episode:
             action = self.get_action(env)
             term_reward = self.get_term_reward(env)
             self.term_rewards.append(term_reward)
@@ -180,7 +190,6 @@ class REINFORCE(Learner):
         else:
             self.finish_episode()
             return None, None, None, None
-        
 
     def simulate(self, env, compute_likelihood=False, participant=None):
         self.init_model_params()
@@ -193,13 +202,13 @@ class REINFORCE(Learner):
         policy_loss = 0
         loss = []
         for trial_num in range(num_trials):
-            trials_data['w'].append(self.get_current_weights())
+            trials_data["w"].append(self.get_current_weights())
             self.term_rewards = []
             actions = []
             rewards = []
             if compute_likelihood:
-                actions = all_trials_data['actions'][trial_num]
-                rewards = all_trials_data['rewards'][trial_num]
+                actions = all_trials_data["actions"][trial_num]
+                rewards = all_trials_data["rewards"][trial_num]
                 for action, reward in zip(actions, rewards):
                     self.save_action_prob(env, action)
                     term_reward = self.get_term_reward(env)
@@ -207,10 +216,9 @@ class REINFORCE(Learner):
                     self.term_rewards.append(term_reward)
                     self.policy.rewards.append(reward - self.subjective_cost)
                     if done:
-                        taken_path = first_trial_data['taken_path']
-                        delay = env.present_trial.get_action_feedback(
-                            taken_path)
-                        self.policy.rewards[-1] = reward - self.delay_scale*delay
+                        taken_path = first_trial_data["taken_path"]
+                        delay = env.present_trial.get_action_feedback(taken_path)
+                        self.policy.rewards[-1] = reward - self.delay_scale * delay
                         loss.append(torch.sum(torch.stack(self.policy.saved_log_probs)))
                         break
             else:
@@ -225,54 +233,60 @@ class REINFORCE(Learner):
                     rewards.append(reward)
                     if done:
                         taken_path = info
-                        delay = env.present_trial.get_action_feedback(
-                            taken_path)
-                        self.policy.rewards[-1] = reward - \
-                            self.delay_scale*delay
+                        delay = env.present_trial.get_action_feedback(taken_path)
+                        self.policy.rewards[-1] = reward - self.delay_scale * delay
                         break
-            trials_data['r'].append(np.sum(rewards))
-            trials_data['rewards'].append(rewards)
-            trials_data['a'].append(actions)
+            trials_data["r"].append(np.sum(rewards))
+            trials_data["rewards"].append(rewards)
+            trials_data["a"].append(actions)
             env.get_next_trial()
             policy_loss += self.finish_episode()
         if loss:
-            trials_data['loss'] = -torch.sum(torch.stack(loss)).data.cpu().numpy()
+            trials_data["loss"] = -torch.sum(torch.stack(loss)).data.cpu().numpy()
         else:
-            trials_data['loss'] = None
+            trials_data["loss"] = None
         return dict(trials_data)
+
 
 class ValuePolicy(nn.Module):
     def __init__(self, num_features, num_actions):
         super(ValuePolicy, self).__init__()
         self.num_features = num_features
         self.num_actions = num_actions
-        self.weighted_preference = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=num_features)
+        self.weighted_preference = nn.Conv1d(
+            in_channels=1, out_channels=1, kernel_size=num_features
+        )
         self.linear = nn.Linear(num_actions, 1)
         self.baselines = []
 
     def init_weights(self):
         pass
-    
+
     def forward(self, x):
         w_pref = self.weighted_preference(x).reshape(1, 1, -1)
         res = self.linear(w_pref)
         return res
 
+
 class BaselineREINFORCE(REINFORCE):
     """Baseline version of the REINFORCE model"""
-    
+
     def __init__(self, params, attributes):
         super().__init__(params, attributes)
-        self.value_lr = np.exp(params['value_lr'])
+        self.value_lr = np.exp(params["value_lr"])
         self.value_policy = ValuePolicy(self.num_features, self.num_actions).double()
-        self.value_policy.weighted_preference.weight.data = torch.zeros_like(self.value_policy.weighted_preference.weight, requires_grad=True)
-        self.value_optimizer = optim.Adam(self.value_policy.parameters(), lr = self.value_lr)
+        self.value_policy.weighted_preference.weight.data = torch.zeros_like(
+            self.value_policy.weighted_preference.weight, requires_grad=True
+        )
+        self.value_optimizer = optim.Adam(
+            self.value_policy.parameters(), lr=self.value_lr
+        )
 
     def get_action_details(self, env):
         """Generates action probabilities in the current state.
 
         Arguments:
-            env {Gym env} -- Representation of the environment. 
+            env {Gym env} -- Representation of the environment.
         """
         complete_probs, X = self.get_action_probs(env)
         m = Categorical(complete_probs)
@@ -283,7 +297,7 @@ class BaselineREINFORCE(REINFORCE):
         m, baseline = self.get_action_details(env)
         action = m.sample()
         self.policy.saved_log_probs.append(m.log_prob(action))
-        #self.policy.term_log_probs.append(m.log_prob(0))
+        # self.policy.term_log_probs.append(m.log_prob(0))
         self.value_policy.baselines.append(baseline)
         return action.item()
 
@@ -291,12 +305,11 @@ class BaselineREINFORCE(REINFORCE):
         m, baseline = self.get_action_details(env)
         action = torch.tensor(action)
         self.policy.saved_log_probs.append(m.log_prob(action))
-        #self.policy.term_log_probs.append(m.log_prob(0))
+        # self.policy.term_log_probs.append(m.log_prob(0))
         self.value_policy.baselines.append(baseline)
 
     def finish_episode(self):
-        """Computing gradients and updating parameters.
-        """
+        """Computing gradients and updating parameters."""
         R = 0
         policy_loss = []
         value_loss = []
@@ -305,13 +318,15 @@ class BaselineREINFORCE(REINFORCE):
         returns = torch.tensor(returns).float()
 
         if self.value_policy.baselines:
-            baselines = torch.tensor(self.value_policy.baselines[::-1], requires_grad=True).float()
+            baselines = torch.tensor(
+                self.value_policy.baselines[::-1], requires_grad=True
+            ).float()
             value_loss = -(baselines.sum()).float()
             for log_prob, R, b in zip(self.policy.saved_log_probs, returns, baselines):
-                policy_loss.append(-log_prob.float() * (R-b))
+                policy_loss.append(-log_prob.float() * (R - b))
         else:
             value_loss = torch.tensor(0, dtype=torch.float, requires_grad=True)
-        
+
         if policy_loss:
             policy_loss = torch.stack(policy_loss)
             policy_loss = policy_loss.sum().float()
@@ -326,5 +341,5 @@ class BaselineREINFORCE(REINFORCE):
         self.value_policy.baselines = []
         del self.policy.rewards[:]
         del self.policy.saved_log_probs[:]
-        #del self.policy.term_log_probs[:]
+        # del self.policy.term_log_probs[:]
         return policy_loss.item()

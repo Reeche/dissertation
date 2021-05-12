@@ -1,7 +1,9 @@
 # Modeling MCRL
+
 This repository contains code for learning mechanisms implemented for modeling how people learn how to plan.
 
 The algorithms implemented are:
+
 1. LVOC and its variants
 2. Hierarchical LVOC and its variants
 3. REINFORCE and its variants
@@ -120,8 +122,6 @@ The algorithms implemented are:
 |  |  +--c1.1/									<--
 |  |  +--F1/									<-- data for the experiment with increasing variance and 3-1-2 branching
 ```
-
-
 
 # Considered Reinforcement Learning Models
 
