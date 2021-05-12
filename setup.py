@@ -27,7 +27,6 @@ setup(
         "imageio",
         "ipython",
         "pymannkendall",
-        "rpy2",
         "scikit-learn",
     ]
 )
