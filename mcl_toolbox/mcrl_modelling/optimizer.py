@@ -240,7 +240,7 @@ class ParameterOptimizer:
         self.participant = participant
         self.env = env
         self.pipeline = self.env.pipeline
-        self.compute_likelihood = True
+        self.compute_likelihood = False
         if self.learner in ['sdss']:
             self.model = models[self.learner_attributes['learner']]
         elif self.learner in ['hierarchical_learner']:
@@ -297,7 +297,7 @@ class ParameterOptimizer:
         return get_space(self.learner, self.learner_attributes, self.optimizer)
 
     def optimize(self, objective, num_simulations=1, optimizer="pyabc",
-                 db_path="sqlite:///test.db", compute_likelihood=True,
+                 db_path="sqlite:///test.db", compute_likelihood=False,
                  max_evals=100):
         """
         This function first gets the relevant participant data,

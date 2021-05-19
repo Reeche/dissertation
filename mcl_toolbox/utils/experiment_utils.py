@@ -760,7 +760,7 @@ class Experiment():
                 else:
                     df["rest"][trial_key] += strategy_value
         if plot:
-            fig = plt.figure(figsize=(15, 10))
+            fig = plt.figure(figsize=(15, 8))
 
             plt.plot(range(1, self.num_trials + 1), df["adaptive_strategy_sum"], label="Adaptive strategies",
                      linewidth=3.0)
@@ -771,7 +771,7 @@ class Experiment():
             plt.xlabel("Trial Number", fontsize=24)
             plt.ylabel("Proportion", fontsize=24)
             # plt.title(title, fontsize=24)
-            plt.ylim(top=1.0)
+            plt.ylim(top=1)
             plt.tick_params(labelsize=22)
             plt.legend(prop={'size': 23}, ncol=3, loc='upper center')
             plt.savefig(
@@ -792,20 +792,20 @@ class Experiment():
                 else:
                     continue
 
-        fig = plt.figure(figsize=(16, 10))
+        # for plotting 5 adaptive and 5 maladaptive
+        fig = plt.figure(figsize=(15, 8))
         for i in range(single_strategies_df.shape[0]): # the strategies
             label = f"Strategy {single_strategies_df.index[i]}"
             plt.plot(range(1, single_strategies_df.shape[1] + 1), single_strategies_df.iloc[i] * 100, label=label, linewidth=3.0)
         plt.xlabel("Trial Number", fontsize=28)
         plt.ylabel("Proportion (%)", fontsize=28)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=95)
+        plt.ylim(top=50)
         plt.tick_params(labelsize=22)
         plt.legend(prop={'size': 22}, ncol=3, loc='upper center')
         plt.savefig(
             f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
             dpi=400, bbox_inches='tight')
-        # plt.show()
         plt.close(fig)
 
         return df["adaptive_strategy_sum"], df["maladaptive_strategy_sum"]
@@ -960,7 +960,7 @@ class Experiment():
                 other_participants.append(pid)
         return adaptive_participants, maladaptive_participants, other_participants, improved_participants, deteriorated_participants
 
-    def analyze_trajectory(self, trajectory, print_trajectories=True):
+    def analyze_trajectory(self, trajectory, print_trajectories=False):
         final_repetition_count = []
         for tr in trajectory:
             if len(tr[0]) > 1:
@@ -1247,7 +1247,7 @@ class Experiment():
             # plot regarding decision systems
             #mean_dsw = self.plot_average_ds()
             #self.trial_decision_system_change_rate(mean_dsw)
-            self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
+            #self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
 
             # plot regarding the strategies
             S = self.get_top_k_strategies(k=70)
@@ -1269,7 +1269,7 @@ class Experiment():
             participant_data = data['participants']
             self.average_score_development(participant_data)
             # plot about click development
-            self.plot_average_clicks()
+            #self.plot_average_clicks()
 
 
         else:
@@ -1292,4 +1292,4 @@ class Experiment():
 
             return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
                    decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, \
-                   number_of_clicks, adaptive_participants, maladaptive_participants, other_participants
+                   number_of_clicks, adaptive_participants, maladaptive_participants, other_participants, improved_participants

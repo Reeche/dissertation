@@ -60,7 +60,6 @@ def parse_json(df):
             return True
         except:
             return False
-
     to_eval = df.columns[df.iloc[0].apply(can_eval)]
     for col in to_eval:
         try:

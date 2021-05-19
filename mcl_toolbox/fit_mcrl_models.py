@@ -35,19 +35,19 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
 
     # create directory to save priors in
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/{exp_name}_priors")
+    prior_directory = os.path.join(parent_directory, f"results10/mcrl/{exp_name}/{exp_name}_priors")
     create_dir(prior_directory)
     # and directory to save fit model info in
-    model_info_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/info_{exp_name}_data")
+    model_info_directory = os.path.join(parent_directory, f"results10/mcrl/{exp_name}/info_{exp_name}_data")
     create_dir(model_info_directory)
 
     # create directory to save the reward/mers data of participant (mers) and algorithm (reward)
-    reward_info_directory = os.path.join(parent_directory, f"results6/mcrl/{exp_name}/reward_{exp_name}_data")
+    reward_info_directory = os.path.join(parent_directory, f"results10/mcrl/{exp_name}/reward_{exp_name}_data")
     create_dir(reward_info_directory)
 
     # add directory for reward plots, if plotting
     if plotting:
-        plot_directory = os.path.join(parent_directory, f"results6/mcrl/plots/{exp_name}_plots")
+        plot_directory = os.path.join(parent_directory, f"results10/mcrl/plots/{exp_name}_plots")
         create_dir(plot_directory)
 
     # load experiment specific info
@@ -72,7 +72,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
                               get_strategies=False)
     participant.first_trial_data = participant.get_first_trial_data()
     participant.all_trials_data = participant.get_all_trials_data()
-    print(len(participant.all_trials_data["actions"]))
+    # print(len(participant.all_trials_data["actions"]))
     env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
                              ground_truth=participant.envs)
 
@@ -80,7 +80,10 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     if learner == "rssl":
         num_priors = 2 * len(strategy_space)
     else:
-        num_priors = len(features.implemented)
+        if learner_attributes["habitual_features"] == "habitual":
+            num_priors = len(features.implemented)
+        else:
+            num_priors = len(features.microscope)
 
     # TODO document why
     use_pseudo_rewards = learner_attributes['use_pseudo_rewards']
@@ -108,7 +111,7 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     # optimization
     optimizer = ParameterOptimizer(learner, learner_attributes, participant, env)  # learner is the model chosen
     res, prior, obj_fn = optimizer.optimize(optimization_criterion, **optimization_params)
-    #print(res[0])  # prior information
+    # print(res[0])  # prior information
     losses = [trial['result']['loss'] for trial in res[1]]
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
@@ -124,14 +127,14 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
 
     # Run simulations given prior and other fitted parameters, num of simulations: how many runs
     (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
-                                                        num_simulations=30)
-    #print(sim_data['info'], len(sim_data['info']))
+                                                        num_simulations=1)
+    # print(sim_data['info'], len(sim_data['info']))
     # info of simulated data
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
 
 if __name__ == "__main__":
-    # python3 mcl_toolbox/fit_mcrl_models.py v1.0 861 pseudo_likelihood 1 hyperopt 2 2
+    # python3 mcl_toolbox/fit_mcrl_models.py v1.0 5134 pseudo_likelihood 1 hyperopt 2 2
     random.seed(123)
     exp_num = sys.argv[1]
     model_index = int(sys.argv[2])
@@ -143,14 +146,12 @@ if __name__ == "__main__":
         "max_evals": int(sys.argv[7])
     }
 
-
-
-    # exp_num = "v1.0"
+    # exp_num = "c1.1"
     # pid_list = get_all_pid_for_env(exp_num)
-    # model_index = 1853
+    # model_index = 1918
     # optimization_criterion = "pseudo_likelihood"
     plotting = True
-    # pid = 17
-    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 10}
-    #for pid in pid_list:
+    # pid = 1
+    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 30, 'max_evals': 400}
+    # for pid in pid_list:
     prior_fit(exp_num, model_index, optimization_criterion, pid, plotting, optimization_params)

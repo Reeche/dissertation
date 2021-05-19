@@ -22,7 +22,7 @@ Please remember to set a seed
 
 
 def analyse_sequences(exp_num="v1.0", num_trials=35, block="training", pids=None,
-                      create_plot=False, number_of_top_worst_strategies=5, **kwargs):
+                      create_plot=True, number_of_top_worst_strategies=5, **kwargs):
     """
     Creates plots. For details of the args, check out global_vars.py
     Args:
@@ -120,7 +120,7 @@ def analyse_sequences(exp_num="v1.0", num_trials=35, block="training", pids=None
     else:
         strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
         decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, number_of_clicks, adaptive_participants, \
-        maladaptive_participants, other_participants = exp.summarize(
+        maladaptive_participants, other_participants, improved_participants = exp.summarize(
             features, normalized_features, strategy_weights,
             decision_systems, W_DS, DS_proportions, strategy_scores,
             cluster_scores, cluster_map,
@@ -131,7 +131,7 @@ def analyse_sequences(exp_num="v1.0", num_trials=35, block="training", pids=None
             show_pids=False)
         return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, \
                decision_system_proportions, mean_dsw, adaptive_strategies_proportion, maladaptive_strategies_proportion, \
-               number_of_clicks, adaptive_participants, maladaptive_participants, other_participants
+               number_of_clicks, adaptive_participants, maladaptive_participants, other_participants, improved_participants
 
 
 if __name__ == "__main__":
@@ -142,10 +142,10 @@ if __name__ == "__main__":
     #     number_of_trials = int(sys.argv[2])
     #     block = sys.argv[3]
 
-    exp_name = "v1.0"
+    exp_name = "c1.1"
     block = "training"
     number_of_trials = 35
-    create_plot = False
+    create_plot = True
 
     # create the plots
     analyse_sequences(exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=5)
