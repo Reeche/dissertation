@@ -530,7 +530,7 @@ class Experiment():
                     props.insert(index, trial_prop[t].get(13, 0))
             S_proportions.append(props)
         S_proportions = np.array(S_proportions)
-        fig = plt.figure(figsize=(16, 10))
+        fig = plt.figure(figsize=(15, 10))
         prefix = "Strategy"
         if cluster:
             prefix = "Cluster"
