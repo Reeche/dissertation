@@ -2,7 +2,9 @@ import sys
 import os
 from pathlib import Path
 import random
-from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.computational_microscope.computational_microscope import (
+    ComputationalMicroscope,
+)
 from mcl_toolbox.utils.experiment_utils import Experiment
 from mcl_toolbox.global_vars import structure, strategies, features
 from mcl_toolbox.utils import learning_utils, distributions
@@ -17,7 +19,9 @@ Example: python3 mcl_toolbox/infer_sequences.py T1.1 35 training
 """
 
 
-def infer_experiment_sequences(exp_num="F1", num_trials=35, block="training", pids=None, max_evals=50, **kwargs):
+def infer_experiment_sequences(
+    exp_num="F1", num_trials=35, block="training", pids=None, max_evals=50, **kwargs
+):
     """
     Infer the averaged sequences of the participants in an experiment. Check out global_vars.py for details
     :param exp_num: str experiment name, e.g. F1
@@ -40,11 +44,12 @@ def infer_experiment_sequences(exp_num="F1", num_trials=35, block="training", pi
     if exp_num not in ["v1.0", "c1.1", "c2.1_dec"]:
         reward_dist = "categorical"
         reward_structure = exp_num
-        reward_distributions = learning_utils.construct_reward_function(structure.reward_levels[reward_structure],
-                                                                        reward_dist)
-        repeated_pipeline = learning_utils.construct_repeated_pipeline(structure.branchings[exp_num],
-                                                                       reward_distributions,
-                                                                       num_trials)
+        reward_distributions = learning_utils.construct_reward_function(
+            structure.reward_levels[reward_structure], reward_dist
+        )
+        repeated_pipeline = learning_utils.construct_repeated_pipeline(
+            structure.branchings[exp_num], reward_distributions, num_trials
+        )
         exp_pipelines = {exp_num: repeated_pipeline}
     else:
         # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
@@ -59,10 +64,17 @@ def infer_experiment_sequences(exp_num="F1", num_trials=35, block="training", pi
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = learning_utils.get_normalized_features(reward_structure)  # tuple of 2
+    normalized_features = learning_utils.get_normalized_features(
+        reward_structure
+    )  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
-    cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features,
-                                 normalized_features=normalized_features)
+    cm = ComputationalMicroscope(
+        pipeline,
+        strategy_space,
+        W,
+        microscope_features,
+        normalized_features=normalized_features,
+    )
 
     # TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
@@ -74,7 +86,9 @@ def infer_experiment_sequences(exp_num="F1", num_trials=35, block="training", pi
 
     # create save path
     parent_directory = Path(__file__).parents[1]
-    save_path = os.path.join(parent_directory, f"results/cm/inferred_strategies/{exp_num}")
+    save_path = os.path.join(
+        parent_directory, f"results/cm/inferred_strategies/{exp_num}"
+    )
     # save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
@@ -91,15 +105,14 @@ def infer_experiment_sequences(exp_num="F1", num_trials=35, block="training", pi
 if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    if len(sys.argv) > 2:
-        number_of_trials = int(sys.argv[2])
-        block = sys.argv[3]
+    number_of_trials = int(sys.argv[2])
+    block = sys.argv[3]
 
     # exp_name = "c2.1_dec"
     # # exp_name = ["v1.0", "c1.1", "c2.1_dec"]
     # block = "training"
     # number_of_trials = 35
     # for exp_num in exp_name:
-    infer_experiment_sequences(exp_name, number_of_trials, block,
-                               max_evals=50)  # max_evals have to be at least 2 for testing
+    infer_experiment_sequences(
+        exp_name, number_of_trials, block, max_evals=50
+    )  # max_evals have to be at least 2 for testing

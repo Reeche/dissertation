@@ -1,8 +1,7 @@
 import os
-import sys
-import math
 import pandas as pd
-import seaborn as sns
+
+# import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy import stats
@@ -32,15 +31,25 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
 
     """
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors")
+    prior_directory = os.path.join(
+        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+    )
     # todo: need to find a better way to create this df
     # df = pd.DataFrame(columns=["pid", "optimization_criterion", "model", "loss", "AIC"])
-    results_dict = {"pid": [], "model": [], "optimization_criterion": [], "loss": [], "AIC": []}
+    results_dict = {
+        "pid": [],
+        "model": [],
+        "optimization_criterion": [],
+        "loss": [],
+        "AIC": [],
+    }
 
     for root, dirs, files in os.walk(prior_directory, topdown=False):
         for name in files:
             for pid in pid_list:
-                if name.startswith(f"{pid}_{optimization_criterion}") and name.endswith(".pkl"):
+                if name.startswith(f"{pid}_{optimization_criterion}") and name.endswith(
+                    ".pkl"
+                ):
                     results_dict["pid"].append(pid)
                     data = pickle_load(os.path.join(prior_directory, name))
                     if name[-8:-4].startswith("_"):
@@ -50,10 +59,12 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
                         results_dict["model"].append(name[-8:-4])
                         # df.loc[pid]["model"] = name[-8:-4]  # get the last 4 characters, which are the model name
 
-                    results_dict["optimization_criterion"].append(optimization_criterion)
+                    results_dict["optimization_criterion"].append(
+                        optimization_criterion
+                    )
                     # df.loc[pid]["optimization_criterion"] = optimization_criterion
 
-                    losses = [trial['result']['loss'] for trial in data[0][1]]
+                    losses = [trial["result"]["loss"] for trial in data[0][1]]
                     min_loss = min(np.absolute(losses))
                     results_dict["loss"].append(min_loss)
                     # df.loc[pid]["loss"] = min_loss
@@ -66,7 +77,7 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
 
     # dict to pandas dataframe
     df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in results_dict.items()]))
-    df = df.dropna(subset=['loss', 'AIC'])
+    df = df.dropna(subset=["loss", "AIC"])
 
     ## Get best model for each participant and count which one occured most often
     # df_best_model = df[df["model"].isin(["1853", "1757", "5134", "2022"])]
@@ -100,7 +111,9 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
     return df
 
 
-def average_performance(exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True):
+def average_performance(
+    exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True
+):
     """
     Calculates the averaged performance for a pid list, a given optimization criterion and a model index.
     The purpose is to see the fit of a certain model and optimization criterion to a list of pid (e.g all participants from v1.0)
@@ -115,19 +128,25 @@ def average_performance(exp_num, pid_list, optimization_criterion, model_index, 
 
     """
     parent_directory = Path(__file__).parents[1]
-    reward_info_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num}/reward_{exp_num}_data")
-    # create first set of data so the dataframe knows how the data is shaped
-
-    # data_df = pd.DataFrame(columns=["Number of trials", "Reward", "Type"])
-    # data_df.loc[0] = [0, 0, "algo"]
+    reward_info_directory = os.path.join(
+        parent_directory, f"results/mcrl/{exp_num}/reward_{exp_num}_data"
+    )
 
     data_temp = pickle_load(
-        os.path.join(reward_info_directory, f"{pid_list[0]}_{optimization_criterion}_{model_index}.pkl"))
+        os.path.join(
+            reward_info_directory,
+            f"{pid_list[0]}_{optimization_criterion}_{model_index}.pkl",
+        )
+    )
     number_of_participants = len(pid_list)
-    number_of_trials = 35
 
     for pid in pid_list:
-        data = pickle_load(os.path.join(reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
+        data = pickle_load(
+            os.path.join(
+                reward_info_directory,
+                f"{pid}_{optimization_criterion}_{model_index}.pkl",
+            )
+        )
         data_temp["Reward"] = data_temp["Reward"].add(data["Reward"])
 
     # create averaged values
@@ -140,9 +159,13 @@ def average_performance(exp_num, pid_list, optimization_criterion, model_index, 
         create_dir(plot_directory)
         plt.ylim(6, 12)
         plt.title(plot_title)
-        ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=data_average)
-        plt.savefig(f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
-                    bbox_inches='tight')
+        # ax = sns.lineplot(
+        #     x="Number of trials", y="Reward", hue="Type", data=data_average
+        # )
+        plt.savefig(
+            f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
+            bbox_inches="tight",
+        )
         plt.show()
         plt.close()
     return data_average
@@ -157,16 +180,39 @@ def get_adaptive_maladaptive_participant_list(exp_num):
     Returns: a dictionary {str: list}
 
     """
-    _, _, _, _, _, _, _, _, _, adaptive_participants, maladaptive_participants, other_participants, improved_participants = analyse_sequences(
-        exp_num, num_trials=35, block="training", pids=None,
-        create_plot=False, number_of_top_worst_strategies=5)
-    pid_dict = {"Adaptive strategies participants": improved_participants,
-                "Maladaptive strategies participants": maladaptive_participants,
-                "Other strategies participants": other_participants}
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        adaptive_participants,
+        maladaptive_participants,
+        other_participants,
+        improved_participants,
+    ) = analyse_sequences(
+        exp_num,
+        num_trials=35,
+        block="training",
+        pids=None,
+        create_plot=False,
+        number_of_top_worst_strategies=5,
+    )
+    pid_dict = {
+        "Adaptive strategies participants": improved_participants,
+        "Maladaptive strategies participants": maladaptive_participants,
+        "Other strategies participants": other_participants,
+    }
     return pid_dict
 
 
-def group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=None, plotting=True):
+def group_by_adaptive_malapdaptive_participants(
+    exp_num, optimization_criterion, model_index=None, plotting=True
+):
     """
     This function groups participants into adaptive/maladaptive/others (if they have used adaptive strategies in their last trial,
     they are adaptive) and creates plots based on the grouping
@@ -182,7 +228,14 @@ def group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion,
 
     for plot_title, pid_list in pid_dict.items():
         if plotting:
-            average_performance(exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True)
+            average_performance(
+                exp_num,
+                pid_list,
+                optimization_criterion,
+                model_index,
+                plot_title,
+                plotting=True,
+            )
         else:
             # get the best model for each participant group
             print(f"Grouped for {plot_title} participants")
@@ -193,21 +246,32 @@ def group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion,
 
 
 # check whether the fitted parameters are significantly different across adaptive and maladaptive participants
-def statistical_tests_between_groups(exp_num, optimization_criterion, model_index, summary=False):
+def statistical_tests_between_groups(
+    exp_num, optimization_criterion, model_index, summary=False
+):
     pid_dict = get_adaptive_maladaptive_participant_list(exp_num)
 
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors")
+    prior_directory = os.path.join(
+        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+    )
 
     # create the df using the dictionary keys as column headers, for this, the first file in the directory is loaded
 
     first_file = os.listdir(prior_directory)[10]
-    first_file = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors/{first_file}")
+    first_file = os.path.join(
+        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors/{first_file}"
+    )
     parameter_names = pickle_load(first_file)  # header are the parameters
 
-    df = pd.DataFrame(index=list(parameter_names[0][0].keys()),
-                      columns=["Adaptive strategies participants", "Maladaptive strategies participants",
-                               "Other strategies participants"])
+    df = pd.DataFrame(
+        index=list(parameter_names[0][0].keys()),
+        columns=[
+            "Adaptive strategies participants",
+            "Maladaptive strategies participants",
+            "Other strategies participants",
+        ],
+    )
     pid_dict_reversed = {}
     for k, v in pid_dict.items():
         for v_ in v:
@@ -224,7 +288,9 @@ def statistical_tests_between_groups(exp_num, optimization_criterion, model_inde
                     except:
                         pid_ = int(name[0])
                 plot_title = pid_dict_reversed.get(str(pid_))
-                if plot_title is not None: #if the participant is not in the pid_dict, i.e. a participant who used adaptive strategies in the beginning
+                if (
+                    plot_title is not None
+                ):  # if the participant is not in the pid_dict, i.e. a participant who used adaptive strategies in the beginning
                     data = pickle_load(os.path.join(prior_directory, name))
                     for parameters, parameter_values in data[0][0].items():
                         temp_value = df.loc[parameters, plot_title]
@@ -241,14 +307,20 @@ def statistical_tests_between_groups(exp_num, optimization_criterion, model_inde
         for index, row in df.iterrows():  # iterate through each row
             row_names = row.index
             i = 0
-            for columns in row:  # in each row, take out one column, i.e. adaptive/maladaptive/other
-                print(f"------------------Summary statitics of {row_names[i]}------------------")
+            for (
+                columns
+            ) in (
+                row
+            ):  # in each row, take out one column, i.e. adaptive/maladaptive/other
+                print(
+                    f"------------------Summary statitics of {row_names[i]}------------------"
+                )
                 parameter_mean = np.mean(np.exp(columns))
                 print(f"Mean of parameter {index} is: {parameter_mean}")
                 parameter_sd = np.std(np.exp(columns))
                 print(f"Standard deviation of parameter {index} is: {parameter_sd}")
-                print("Q1 quantile of arr : ", np.quantile(np.exp(columns), .25))
-                print("Q3 quantile of arr : ", np.quantile(np.exp(columns), .75))
+                print("Q1 quantile of arr : ", np.quantile(np.exp(columns), 0.25))
+                print("Q3 quantile of arr : ", np.quantile(np.exp(columns), 0.75))
 
                 # test for normality
                 # try:
@@ -273,14 +345,19 @@ def statistical_tests_between_groups(exp_num, optimization_criterion, model_inde
                 if column_a != column_b:
                     # test_statistic, p = stats.ttest_ind(np.exp(column_a), np.exp(column_b), equal_var=False)
                     try:
-                        test_statistic, p = stats.ranksums(np.exp(column_a), np.exp(column_b))
+                        test_statistic, p = stats.ranksums(
+                            np.exp(column_a), np.exp(column_b)
+                        )
                         if p < 0.05:  # print out only the significant ones
                             print(
-                                f"---------------Testing parameter {index} between {row_names[i]} vs {row_names[j]}---------------")
+                                f"---------------Testing parameter {index} between {row_names[i]} vs {row_names[j]}---------------"
+                            )
                             print(f"Test statistic: {test_statistic}")
                             print(f"p-value: {p}")
                     except:
-                        print(f"Skipped {index} between {row_names[i]} vs {row_names[j]}")
+                        print(
+                            f"Skipped {index} between {row_names[i]} vs {row_names[j]}"
+                        )
                         continue
                 j += 1
             i += 1
@@ -288,17 +365,25 @@ def statistical_tests_between_groups(exp_num, optimization_criterion, model_inde
 
 def statistical_test_between_envs(exp_num_list, model_index):
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors")
+    prior_directory = os.path.join(
+        parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors"
+    )
 
     first_file = os.listdir(prior_directory)[10]
-    first_file = os.path.join(parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors/{first_file}")
+    first_file = os.path.join(
+        parent_directory,
+        f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors/{first_file}",
+    )
     parameter_names = pickle_load(first_file)  # header are the parameters
 
-    df = pd.DataFrame(index=list(parameter_names[0][0].keys()),
-                      columns=["v1.0", "c2.1_dec", "c1.1"])
+    df = pd.DataFrame(
+        index=list(parameter_names[0][0].keys()), columns=["v1.0", "c2.1_dec", "c1.1"]
+    )
 
     for exp_num in exp_num_list:
-        prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors")
+        prior_directory = os.path.join(
+            parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+        )
         for root, dirs, files in os.walk(prior_directory, topdown=False):
             for name in files:  # iterate through each file
                 if name.endswith(f"{model_index}.pkl"):
@@ -313,12 +398,15 @@ def statistical_test_between_envs(exp_num_list, model_index):
     # t-test or Wilcoxon rank rum test of parameters of unequal variance
     for index, row in df.iterrows():
         column_names = row.index
-        for pair in itertools.combinations(column_names, 2):  # todo: change this for test above
+        for pair in itertools.combinations(column_names, 2):
             try:
-                test_statistic, p = stats.ranksums(np.exp(row[pair[0]]), np.exp(row[pair[1]]))
+                test_statistic, p = stats.ranksums(
+                    np.exp(row[pair[0]]), np.exp(row[pair[1]])
+                )
                 if p < 0.05:  # print out only the significant ones
                     print(
-                        f"---------------Testing parameter {index} between {pair[0]} vs {pair[1]}---------------")
+                        f"---------------Testing parameter {index} between {pair[0]} vs {pair[1]}---------------"
+                    )
                     print(f"Test statistic: {test_statistic}")
                     print(f"p-value: {p}")
             except:
@@ -334,16 +422,23 @@ if __name__ == "__main__":
     exp_num_list = ["c1.1"]
     optimization_criterion = "pseudo_likelihood"
 
-    model_list = ['5134']
+    model_list = ["5134"]
 
     # statistical_test_between_envs(exp_num_list, model_index=1918)
     # Run t-test and statistical summary
 
     for exp_num in exp_num_list:
         pid_list = get_all_pid_for_env(exp_num)
-        average_performance(exp_num, pid_list, optimization_criterion, model_index=1853, plot_title="", plotting=True)
+        average_performance(
+            exp_num,
+            pid_list,
+            optimization_criterion,
+            model_index=1853,
+            plot_title="",
+            plotting=True,
+        )
         # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
-        #df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+        # df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
 
         # # group best model by performance of participants (adaptive, maladaptive) and creates overall plot
         # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=1853, plotting=False) #if plotting, then it needs model_index

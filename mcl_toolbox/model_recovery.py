@@ -8,6 +8,17 @@ import shutil
 def create_click_sequence_csv(
     exp_num: str, optimization_criterion: str, model_index: str
 ):
+    """
+    This function goes through the created result files from the fitted mcrl models (info_{exp_num}_data)
+    and extracts the click sequence.
+    Args:
+        exp_num: str e.g. "v1.0"
+        optimization_criterion:
+        model_index: str, the model index number
+
+    Returns:
+
+    """
     parent_directory = Path(__file__).parents[1]
     if exp_num == "c2.1":
         prior_directory = os.path.join(
