@@ -29,7 +29,7 @@ class Learner(ABC):
             self.features, self.normalized_features)
         return term_features
 
-    def run_multiple_simulations(self, env, num_simulations, compute_likelihood=False, participant=None):
+    def run_multiple_simulations(self, env, num_simulations, compute_likelihood=True, participant=None):
         env.reset()
         if compute_likelihood and not participant:
             raise ValueError("Likelihood can only be computed for a participant's actions")
