@@ -17,21 +17,38 @@ v1.0: increasing_variance
 c1.1: constant_variance
 c2.1_dec: decreasing_variance
 
+Format: python3 calculate_strategy_score.py <exp_num> <num_runs> <cost> <reward_level>
+Example: python3 calculate_strategy_score.py c1.1 200000 1 low_constant
+
+// condition 0: training_trial_high_variance_low_click_cost --> click a lot
+python3 calculate_strategy_score.py high_variance 300000 1 high_variance
+
+// condition 1: training_trial_low_variance_high_click_cost -- click nothing
+python3 calculate_strategy_score.py low_variance 300000 5 low_variance
+
+// condition 2: training_trial_high_variance_high_click_cost --> unclear
+python3 calculate_strategy_score.py high_variance 300000 5 high_variance
+
+// condition 3: training_trial_low_variance_low_click_cost --> unclear
+python3 calculate_strategy_score.py low_variance 300000 1 low_variance
+
 """
 
-# exp_num = sys.argv[1]
-# num_simulations = int(sys.argv[2]) # at least 200k is recommended
-# click_cost = int(sys.argv[3])
+exp_num = sys.argv[1]
+num_simulations = int(sys.argv[2])  # at least 200k is recommended
+click_cost = int(sys.argv[3])
+reward_level = sys.argv[4]
 
 score_list = {}
 
+# if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
+# if exp_num is "v1.0" or "c1.1" or "c2.1_dec":
+#     exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
+# else:
+
 # Adjust the environment that you want to simulate in global_vars.py
-reward_level = "adjusted_constant"
-exp_num = "PL1"
 reward_dist = "categorical"
 num_trials = 35
-num_simulations = 200000
-click_cost = 1
 reward_distributions = learning_utils.construct_reward_function(
     structure.reward_levels[reward_level], reward_dist
 )
@@ -40,12 +57,7 @@ repeated_pipeline = learning_utils.construct_repeated_pipeline(
 )
 exp_pipelines = {exp_num: repeated_pipeline}
 
-# if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
-# exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
-
 # loops through all strategies and saves into a list
-print(exp_num, num_simulations)
-# todo: change this one to not hard coded
 for strategy in range(0, 89):
     print("strategy", strategy)
     strategy_scores = defaultdict(lambda: defaultdict(int))
@@ -64,7 +76,7 @@ for strategy in range(0, 89):
         )  # len(clicks) is always 13
         scores.append(score)
     # print(len(set(gts)))
-    # print(np.mean(scores))
+    print(np.mean(scores))
     # This saves the scores individually for each strategy
     # d = "../results/strategy_scores"
     # learning_utils.create_dir(d)
@@ -74,6 +86,8 @@ for strategy in range(0, 89):
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print(score_results)
-dir = "../results/cm/strategy_scores/planningclicks/highdiscrepancy_cost1/"
+dir = "../results/cm/strategy_scores/"
 learning_utils.create_dir(dir)
-learning_utils.pickle_save(score_results, f"{dir}/{exp_num}_strategy_scores.pkl")
+learning_utils.pickle_save(
+    score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores_800k.pkl"
+)

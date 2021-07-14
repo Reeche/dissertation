@@ -3,10 +3,9 @@ import pandas as pd
 import numpy as np
 import random
 import pymannkendall as mk
-from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, ttest_ind
 from mcl_toolbox.analyze_sequences import analyse_sequences
 from mcl_toolbox.utils.statistics_utils import create_comparable_data
-
 
 import rpy2.robjects.numpy2ri
 from rpy2.robjects.packages import importr
@@ -103,30 +102,32 @@ def create_data_for_trend_test(
     """
 
     column_names = list(reward_exps.keys())
-    # column_names = ["increasing_variance", "decreasing_variance", "constant_variance"]
     cluster_trend = pd.DataFrame(columns=column_names)
     strategy_trend = pd.DataFrame(columns=column_names)
     # decision_trend = pd.DataFrame(columns=column_names)
     adaptive_trend = pd.DataFrame(columns=column_names)
     maladaptive_trend = pd.DataFrame(columns=column_names)
 
+    average_clicks = pd.DataFrame(columns=column_names)
+
     for strategy_name, exp_num in reward_exps.items():
         if exp_num == "c2.1":
             exp_num = "c2.1_dec"
 
         (
-            _,
+            strategy_proportions,
             strategy_proportions_trialwise,
-            _,
+            cluster_proportions,
             cluster_proportions_trialwise,
-            _,
-            _,
+            decision_system_proportions,
+            mean_dsw,
             top_n_strategies,
             worst_n_strategies,
             number_of_clicks,
-            _,
-            _,
-            _,
+            adaptive_participants,
+            maladaptive_participants,
+            other_participants,
+            improved_participants,
         ) = analyse_sequences(
             exp_num,
             number_of_trials=35,
@@ -173,12 +174,15 @@ def create_data_for_trend_test(
         adaptive_trend[strategy_name] = top_n_strategies
         maladaptive_trend[strategy_name] = worst_n_strategies
 
+        # Clicks
+        average_clicks[exp_num] = number_of_clicks.mean(axis=1)
+
     return (
         strategy_trend,
         cluster_trend,
         adaptive_trend,
         maladaptive_trend,
-        number_of_clicks,
+        average_clicks,
     )
 
 
@@ -379,14 +383,13 @@ def test_of_proportions(
 if __name__ == "__main__":
     random.seed(123)
     number_of_trials = 35
-    number_of_participants = 58
-    reward_exps = {
-        "increasing_variance": "v1.0",
-        "decreasing_variance": "c2.1_dec",
-        "constant_variance": "c1.1",
-    }
-    # reward_exps = {"low_cost": "low_cost",  # cond 0
-    #                "high_cost": "high_cost"}  # cond 1
+    number_of_participants = 14
+    # reward_exps = {
+    #     "increasing_variance": "v1.0",
+    #     "decreasing_variance": "c2.1_dec",
+    #     "constant_variance": "c1.1",
+    # }
+    reward_exps = {"low_cost": "low_cost", "high_cost": "high_cost"}  # cond 0  # cond 1
     # print(" --------------------------------------------------------------------")
     # print(" -------------------- Proportion Difference -------------------------")
     # print(" --------------------------------------------------------------------")
@@ -413,9 +416,9 @@ if __name__ == "__main__":
     #                                    "constant": decision_system_df["constant_variance"]}
     # test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
 
-    print(" --------------------------------------------------------------------")
-    print(" ---------------------------- Trends --------------------------------")
-    print(" --------------------------------------------------------------------")
+    # print(" --------------------------------------------------------------------")
+    # print(" ---------------------------- Trends --------------------------------")
+    # print(" --------------------------------------------------------------------")
     (
         strategy_trend,
         cluster_trend,
@@ -442,8 +445,8 @@ if __name__ == "__main__":
 
     # print(
     #     " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
-    test_for_trend(top_n_strategies, "Adaptive Strategies")
-    test_for_trend(worst_n_strategies, "Maladaptive Strategies")
+    # test_for_trend(top_n_strategies, "Adaptive Strategies")
+    # test_for_trend(worst_n_strategies, "Maladaptive Strategies")
     #
     # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
     # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
@@ -454,6 +457,37 @@ if __name__ == "__main__":
     # Do the proportions of the strategies differ across environment?
     # test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
 
-    # print(" -----------------Number of clicks-----------------")
-    # print(number_of_clicks)
-    # test_for_trend(number_of_clicks)
+    print(" -----------------Number of clicks-----------------")
+    print(number_of_clicks)
+
+    test_for_trend(number_of_clicks, "Clicks")
+
+    # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
+    # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
+    print(
+        "Low cost condition - first 5 vs last 5",
+        ttest_ind(
+            number_of_clicks["low_cost"].head(5),
+            number_of_clicks["low_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "High cost condition - first 5 vs last 5",
+        ttest_ind(
+            number_of_clicks["high_cost"].head(5),
+            number_of_clicks["high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+
+    # print("# of clicks at the end of the trial in cond 0 vs cond 1")
+    # statistical tests: # of clicks at the end of the trial in cond 0 vs cond 1
+    print(
+        "High cost vs. low cost last 5 trials",
+        ttest_ind(
+            number_of_clicks["low_cost"].tail(5),
+            number_of_clicks["high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )

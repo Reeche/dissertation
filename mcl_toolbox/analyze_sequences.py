@@ -196,16 +196,16 @@ def analyse_sequences(
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    number_of_trials = int(sys.argv[2])
-    block = sys.argv[3]
-    create_plot = sys.argv[4]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # number_of_trials = int(sys.argv[2])
+    # block = sys.argv[3]
+    # create_plot = sys.argv[4]
 
-    # exp_name = "c1.1"
-    # block = "training"
-    # number_of_trials = 35
-    # create_plot = True
+    exp_name = "high_cost"
+    block = "training"
+    number_of_trials = 35
+    create_plot = True
 
     # create the plots
     analyse_sequences(

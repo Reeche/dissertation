@@ -23,15 +23,17 @@ def infer_experiment_sequences(
     exp_num="F1", num_trials=35, block="training", pids=None, max_evals=50, **kwargs
 ):
     """
-    Infer the averaged sequences of the participants in an experiment. Check out global_vars.py for details
-    :param exp_num: str experiment name, e.g. F1
-    :param num_trials: number of trials, integer e.g. 35
-    :param block: a string of the block, e.g. "training" or "test"
-    :param pids: list of participants to use, otherwise None. could be useful to exclude participants in dataframe.
-    :param max_evals: integer, max optimization evals for fmin
 
-    :return: strategy and temperature dicts with a key for every pid in the experiment. The strategies are a list for each trial, the temperature is temperature over all trials.
-    Saves data either to results/inferred_strategies/<exp_num> or results/inferred_strategies/<exp_num_block>
+    Args:
+        exp_num: this is bla
+        num_trials: this is a interger
+        block:
+        pids:
+        max_evals:
+        **kwargs:
+
+    Returns:
+
     """
     # Initializations
 
@@ -104,15 +106,13 @@ def infer_experiment_sequences(
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    number_of_trials = int(sys.argv[2])
-    block = sys.argv[3]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # number_of_trials = int(sys.argv[2])
+    # block = sys.argv[3]
 
-    # exp_name = "c2.1_dec"
-    # # exp_name = ["v1.0", "c1.1", "c2.1_dec"]
-    # block = "training"
-    # number_of_trials = 35
-    # for exp_num in exp_name:
+    exp_name = "high_cost"  # high_cost
+    block = "training"
+    number_of_trials = 35
     infer_experiment_sequences(
         exp_name, number_of_trials, block, max_evals=50
     )  # max_evals have to be at least 2 for testing
