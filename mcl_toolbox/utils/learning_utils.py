@@ -243,10 +243,7 @@ def construct_reward_function(params_list, dist_type = 'categorical'):
     return combine_level_dists(level_distributions)
     
 def get_participant_details(pid, exp_num, get_envs=True, get_scores=True, get_clicks=True, get_taken_paths=True):
-    if exp_num == "c2.1_dec":
-        data = get_data("c2.1")
-    else:
-        data = get_data(exp_num)
+    data = get_data(exp_num)
     mdf = data['mouselab-mdp']
     mdf = mdf[mdf.pid == pid]
     scores = []
@@ -256,7 +253,7 @@ def get_participant_details(pid, exp_num, get_envs=True, get_scores=True, get_cl
     if get_scores:
         scores = list(mdf['score'])
     for _, row in mdf.iterrows():
-        if get_envs: #get the environment that the participant was facing, e.g. ['', 10, 5, 5, -10, -10, 10, 5, 5, 10, -5, -10, -10]
+        if get_envs:
             values = row.state_rewards
             values[0] = 0
             envs.append(values)
