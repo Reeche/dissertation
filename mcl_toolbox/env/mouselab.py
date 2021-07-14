@@ -8,12 +8,6 @@ from gym import spaces
 from toolz import memoize, get
 from mcl_toolbox.utils.distributions import smax, cmax, sample, expectation, PointMass
 
-"""
-I think this file is not used at all? 
-todo: check this
-"""
-
-
 NO_CACHE = False
 if NO_CACHE:
     lru_cache = lambda _: (lambda f: f)
