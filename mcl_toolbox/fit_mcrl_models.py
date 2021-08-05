@@ -11,14 +11,17 @@ from mcl_toolbox.utils.learning_utils import (
     Participant,
     create_dir,
     get_number_of_actions_from_branching,
+    construct_repeated_pipeline,
+    construct_reward_function
 )
+from mcl_toolbox.utils.utils import get_all_pid_for_env
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 
 """
 Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
-
+python3 fit_mcrl_models.py high_variance_high_cost 1 pseudo_likelihood 1 True hyperopt 2 2
 Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 
@@ -74,12 +77,34 @@ def prior_fit(
         )
         create_dir(plot_directory)
 
+    num_trials = 35
     # load experiment specific info
+    # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
+    if exp_num not in ["v1.0", "c1.1", "c2.1_dec"]:
+        reward_dist = "categorical"
+        reward_structure = exp_num
+        reward_distributions = construct_reward_function(
+            structure.reward_levels[reward_structure], reward_dist
+        )
+        repeated_pipeline = construct_repeated_pipeline(
+            structure.branchings[exp_num], reward_distributions, num_trials
+        )
+        exp_pipelines = {exp_num: repeated_pipeline}
+    else:
+        # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
+        exp_pipelines = structure.exp_pipelines
+        if exp_num not in structure.exp_reward_structures:
+            raise (ValueError, "Reward structure not found.")
+        reward_structure = structure.exp_reward_structures[exp_num]
+
+    if exp_num not in exp_pipelines:
+        raise (ValueError, "Experiment pipeline not found.")
+    pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
+    # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
+    pipeline = [pipeline[0] for _ in range(100)]
+
     normalized_features = get_normalized_features(
-        structure.exp_reward_structures[exp_name]
-    )
-    pipeline = structure.exp_pipelines[exp_name]
-    pipeline = [pipeline[0] for _ in range(100)]  # extend to have up to 100 trials
+        reward_structure)  # tuple of 2
 
     branching = structure.branchings[exp_name]
     excluded_trials = structure.excluded_trials[exp_name]
@@ -192,24 +217,25 @@ def prior_fit(
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_num = sys.argv[1]
-    model_index = int(sys.argv[2])
-    optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
-    plotting = sys.argv[5]
-    optimization_params = {
-        "optimizer": str(sys.argv[6]),
-        "num_simulations": int(sys.argv[7]),
-        "max_evals": int(sys.argv[8]),
-    }
+    # exp_num = sys.argv[1]
+    # model_index = int(sys.argv[2])
+    # optimization_criterion = sys.argv[3]
+    # pid = int(sys.argv[4])
+    # plotting = sys.argv[5]
+    # optimization_params = {
+    #     "optimizer": str(sys.argv[6]),
+    #     "num_simulations": int(sys.argv[7]),
+    #     "max_evals": int(sys.argv[8]),
+    # }
 
-    # exp_num = "c1.1"
-    # pid_list = get_all_pid_for_env(exp_num)
-    # model_index = 1918
-    # optimization_criterion = "pseudo_likelihood"
-    # plotting = True
-    # pid = 1
-    # optimization_params = {'optimizer': "hyperopt", 'num_simulations': 30, 'max_evals': 400}
+    exp_num = "high_variance_high_cost"
+    pid_list = get_all_pid_for_env(exp_num)
+    print(pid_list)
+    model_index = 1918
+    optimization_criterion = "pseudo_likelihood"
+    plotting = True
+    pid = 1
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2} #30; 400
     # for pid in pid_list:
     prior_fit(
         exp_num, model_index, optimization_criterion, pid, plotting, optimization_params

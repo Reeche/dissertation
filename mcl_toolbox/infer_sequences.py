@@ -67,8 +67,7 @@ def infer_experiment_sequences(
     pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(
-        reward_structure
-    )  # tuple of 2
+        reward_structure)  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
         pipeline,
@@ -110,7 +109,12 @@ if __name__ == "__main__":
     # number_of_trials = int(sys.argv[2])
     # block = sys.argv[3]
 
-    exp_name = "high_cost"  # high_cost
+    # "high_variance_high_cost"
+    # "high_variance_low_cost"
+    # "low_variance_high_cost"
+    # "low_variance_low_cost"
+
+    exp_name = "c1.1"  # high_cost --> check reward_levels in global_vars.py
     block = "training"
     number_of_trials = 35
     infer_experiment_sequences(

@@ -33,7 +33,7 @@ def analyse_sequences(
     block="training",
     pids=None,
     create_plot=True,
-    number_of_top_worst_strategies=5,
+    number_of_top_worst_strategies=20,
     **kwargs,
 ):
     """
@@ -202,7 +202,13 @@ if __name__ == "__main__":
     # block = sys.argv[3]
     # create_plot = sys.argv[4]
 
-    exp_name = "high_cost"
+
+    # "high_variance_high_cost"
+    # "high_variance_low_cost"
+    # "low_variance_high_cost"
+    # "low_variance_low_cost"
+
+    exp_name = "c1.1" #check reward_level in global_vars.py
     block = "training"
     number_of_trials = 35
     create_plot = True
@@ -211,3 +217,6 @@ if __name__ == "__main__":
     analyse_sequences(
         exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=5
     )
+
+# for high reward ones, 20 top strategies
+# for low reward ones 8 top strategies

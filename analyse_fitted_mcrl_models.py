@@ -419,7 +419,7 @@ if __name__ == "__main__":
     # optimization_criterion = sys.argv[2]
 
     # exp_num_list = ["v1.0", "c2.1_dec", "c1.1"]
-    exp_num_list = ["c1.1"]
+    exp_num_list = ["high_variance_high_cost"]
     optimization_criterion = "pseudo_likelihood"
 
     model_list = ["5134"]

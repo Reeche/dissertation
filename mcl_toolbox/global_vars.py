@@ -48,24 +48,24 @@ def pickle_load(file_path):
 class structure:
     excluded_trials = {
         "v1.0": None,
-        "F1": None,
-        "T1.1": list(range(11)),
         "c1.1": None,
         "c2.1": None,
         "c2.1_dec": None,
-        "IRL1": list(range(30, 66)),
+        "low_variance_high_cost": None,
+        "low_variance_low_cost": None,
+        "high_variance_high_cost": None,
+        "high_variance_low_cost": None
     }
 
     branchings = {
         "v1.0": [3, 1, 2],
-        "F1": [3, 1, 2],
-        "T1.1": [3, 1, 1, 2, 3],
         "c1.1": [3, 1, 2],
         "c2.1": [3, 1, 2],
         "c2.1_dec": [3, 1, 2],
-        "IRL1": [3, 1, 2],
-        "low_variance": [3, 1, 2],
-        "high_variance": [3, 1, 2],
+        "low_variance_high_cost": [3, 1, 2],
+        "low_variance_low_cost": [3, 1, 2],
+        "high_variance_high_cost": [3, 1, 2],
+        "high_variance_low_cost": [3, 1, 2],
     }
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     level_values_decreasing = [
@@ -82,19 +82,20 @@ class structure:
         "high_decreasing": level_values_decreasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
-        "low_variance": low_variance_values * 3,
-        "high_variance": high_variance_values * 3,
+        "low_variance_high_cost": low_variance_values * 3,
+        "low_variance_low_cost": low_variance_values * 3,
+        "high_variance_high_cost": high_variance_values * 3,
+        "high_variance_low_cost": high_variance_values * 3,
     }
 
     reward_exps = {
-        "F1": "categorical",
         "c1.1": "categorical",
         "c2.1": "categorical",
-        "T1.1": "normal",
         "v1.0": "categorical",
-        "IRL1": "categorical",
-        "High_cost": "categorical",
-        "Low_cost": "categorical",
+        "high_variance_high_cost": "categorical",#running 3
+        "high_variance_low_cost": "categorical",#running 4
+        "low_variance_high_cost": "categorical",#running 1
+        "low_variance_low_cost": "categorical",#running 2
     }
 
     small_level_map = {
@@ -126,19 +127,15 @@ class structure:
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {
         "v1.0": "high_increasing",
-        "F1": "high_increasing",
         "c1.1": "low_constant",
         "c2.1_dec": "high_decreasing",
         "c2.1": "high_decreasing",
-        "T1.1": "large_increasing",
-        "IRL1": "high_increasing",
     }
 
     normalized_value_directories = {
         "increasing_variance": "high_increasing",
         "constant_variance": "low_constant",
         "decreasing_variance": "high_decreasing",
-        "transfer_task": "large_increasing",
     }
 
     # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key

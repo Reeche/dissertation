@@ -40,6 +40,7 @@ click_cost = int(sys.argv[3])
 reward_level = sys.argv[4]
 
 score_list = {}
+click_list = {}
 
 # if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
 # if exp_num is "v1.0" or "c1.1" or "c2.1_dec":
@@ -63,6 +64,7 @@ for strategy in range(0, 89):
     strategy_scores = defaultdict(lambda: defaultdict(int))
     scores = []
     gts = []
+    number_of_clicks = []
     for _ in range(num_simulations):
         pipeline = exp_pipelines[exp_num]
         env = GenericMouselabEnv(num_trials=1, pipeline=pipeline)
@@ -70,24 +72,31 @@ for strategy in range(0, 89):
         clicks = strategy_dict[strategy + 1](
             env.present_trial
         )  # gets the click sequence
+        number_of_clicks.append(len(clicks))
         score = (
             env.present_trial.node_map[0].calculate_max_expected_return()
             - (len(clicks) - 1) * click_cost
         )  # len(clicks) is always 13
         scores.append(score)
-    # print(len(set(gts)))
-    print(np.mean(scores))
-    # This saves the scores individually for each strategy
-    # d = "../results/strategy_scores"
-    # learning_utils.create_dir(d)
-    # learning_utils.pickle_save(scores, f"{d}/{exp_num}_{strategy}.pkl")
+
+    print("Score", np.mean(scores))
+    print("Clicks", np.mean(number_of_clicks))
+
 
     score_list.update({strategy: np.mean(scores)})
+    click_list.update({strategy: np.mean(number_of_clicks)})
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
-print(score_results)
+print("Score results", score_results)
 dir = "../results/cm/strategy_scores/"
 learning_utils.create_dir(dir)
+# learning_utils.pickle_save(
+#     score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores.pkl"
+# )
+print("Number of clicks", click_list)
 learning_utils.pickle_save(
-    score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores_800k.pkl"
+    click_list, f"{dir}/{exp_num}_numberclicks_{click_cost}_strategy_scores.pkl"
 )
+
+# only need for
+# python3 calculate_strategy_score.py low_variance 200000 1 low_variance

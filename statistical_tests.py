@@ -1,4 +1,6 @@
 import sys
+import os
+os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
 import pandas as pd
 import numpy as np
 import random
@@ -389,7 +391,10 @@ if __name__ == "__main__":
     #     "decreasing_variance": "c2.1_dec",
     #     "constant_variance": "c1.1",
     # }
-    reward_exps = {"low_cost": "low_cost", "high_cost": "high_cost"}  # cond 0  # cond 1
+    reward_exps = {"high_variance_low_cost": "high_variance_low_cost",
+                   "high_variance_high_cost": "high_variance_high_cost",
+                   "low_variance_low_cost": "low_variance_low_cost",
+                   "low_variance_high_cost": "low_variance_high_cost"}  # cond 0  # cond 1
     # print(" --------------------------------------------------------------------")
     # print(" -------------------- Proportion Difference -------------------------")
     # print(" --------------------------------------------------------------------")
@@ -465,18 +470,34 @@ if __name__ == "__main__":
     # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
     # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
     print(
-        "Low cost condition - first 5 vs last 5",
+        "High variance - Low cost condition - first 5 vs last 5",
         ttest_ind(
-            number_of_clicks["low_cost"].head(5),
-            number_of_clicks["low_cost"].tail(5),
+            number_of_clicks["high_variance_low_cost"].head(5),
+            number_of_clicks["high_variance_low_cost"].tail(5),
             equal_var=False,
         ),
     )
     print(
-        "High cost condition - first 5 vs last 5",
+        "High variance - High cost condition - first 5 vs last 5",
         ttest_ind(
-            number_of_clicks["high_cost"].head(5),
-            number_of_clicks["high_cost"].tail(5),
+            number_of_clicks["high_variance_high_cost"].head(5),
+            number_of_clicks["high_variance_high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "Low variance - High cost condition - first 5 vs last 5",
+        ttest_ind(
+            number_of_clicks["low_variance_high_cost"].head(5),
+            number_of_clicks["low_variance_high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "Low variance - Low cost condition - first 5 vs last 5",
+        ttest_ind(
+            number_of_clicks["low_variance_low_cost"].head(5),
+            number_of_clicks["low_variance_low_cost"].tail(5),
             equal_var=False,
         ),
     )
@@ -484,10 +505,34 @@ if __name__ == "__main__":
     # print("# of clicks at the end of the trial in cond 0 vs cond 1")
     # statistical tests: # of clicks at the end of the trial in cond 0 vs cond 1
     print(
-        "High cost vs. low cost last 5 trials",
+        "High variance - last 5 trials",
         ttest_ind(
-            number_of_clicks["low_cost"].tail(5),
-            number_of_clicks["high_cost"].tail(5),
+            number_of_clicks["high_variance_high_cost"].tail(5),
+            number_of_clicks["high_variance_low_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "Low variance - last 5 trials",
+        ttest_ind(
+            number_of_clicks["low_variance_low_cost"].tail(5),
+            number_of_clicks["low_variance_high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "High cost - last 5 trials",
+        ttest_ind(
+            number_of_clicks["high_variance_high_cost"].tail(5),
+            number_of_clicks["low_variance_high_cost"].tail(5),
+            equal_var=False,
+        ),
+    )
+    print(
+        "Low cost - last 5 trials",
+        ttest_ind(
+            number_of_clicks["high_variance_low_cost"].tail(5),
+            number_of_clicks["low_variance_low_cost"].tail(5),
             equal_var=False,
         ),
     )
