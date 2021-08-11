@@ -48,7 +48,7 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
         for name in files:
             for pid in pid_list:
                 if name.startswith(f"{pid}_{optimization_criterion}") and name.endswith(
-                    ".pkl"
+                        ".pkl"
                 ):
                     results_dict["pid"].append(pid)
                     data = pickle_load(os.path.join(prior_directory, name))
@@ -114,8 +114,8 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
     return df
 
 
-def average_performance(
-    exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True
+def average_performance_reward(
+        exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True
 ):
     """
     Calculates the averaged performance for a pid list, a given optimization criterion and a model index.
@@ -160,7 +160,7 @@ def average_performance(
     if plotting:
         plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
         create_dir(plot_directory)
-        #plt.ylim(-30, 30)
+        # plt.ylim(-30, 30)
         plt.title(plot_title)
         ax = sns.lineplot(
             x="Number of trials", y="Reward", hue="Type", data=data_average
@@ -172,6 +172,66 @@ def average_performance(
         plt.show()
         plt.close()
     return data_average
+
+
+def average_performance_clicks(
+        exp_num, pid_list, optimization_criterion, model_index, plot_title, plotting=True
+):
+    """
+    Calculates the averaged performance for a pid list, a given optimization criterion and a model index.
+    The purpose is to see the fit of a certain model and optimization criterion to a list of pid (e.g all participants from v1.0)
+    Args:
+        exp_num: a string "v1.0"
+        pid_list: list of participant IDs
+        optimization_criterion: a string
+        model_index: an integer
+        plotting: if true, plots are created
+
+    Returns: average performance of model and participant
+
+    """
+    parent_directory = Path(__file__).parents[1]
+    click_info_directory = os.path.join(
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/click_{exp_num}_data"
+    )
+
+    data_aggregated = pd.DataFrame(0, index=np.arange(35), columns=["algorithm", "participant"])
+    number_of_participants = len(pid_list)
+
+    for pid in pid_list:
+        data = pickle_load(
+            os.path.join(
+                click_info_directory,
+                f"{pid}_{optimization_criterion}_{model_index}.pkl",
+            )
+        )
+        # get number of clicks of algorithm
+        data_aggregated["algorithm"] = data_aggregated["algorithm"] + data[0]
+
+        # get number of clicks of participant
+        data_aggregated["participant"] = data_aggregated["participant"] + data[1]
+
+    # create averaged values
+    data_aggregated["algorithm"] = data_aggregated["algorithm"] / number_of_participants
+    data_aggregated["participant"] = data_aggregated["participant"] / number_of_participants
+
+    # plot the average performance of all participants and the algorithm
+    if plotting:
+        plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
+        create_dir(plot_directory)
+
+        plt.plot(data_aggregated["algorithm"], label="Algorithm")
+        plt.plot(data_aggregated["participant"], label="Participant")
+        plt.xlabel('Trials')
+        plt.ylabel('Averaged number of clicks')
+        plt.legend()
+        #plt.show()
+        plt.savefig(
+            f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
+            bbox_inches="tight",
+        )
+        plt.close()
+    return data_aggregated
 
 
 def get_adaptive_maladaptive_participant_list(exp_num):
@@ -214,7 +274,7 @@ def get_adaptive_maladaptive_participant_list(exp_num):
 
 
 def group_by_adaptive_malapdaptive_participants(
-    exp_num, optimization_criterion, model_index=None, plotting=True
+        exp_num, optimization_criterion, model_index=None, plotting=True
 ):
     """
     This function groups participants into adaptive/maladaptive/others (if they have used adaptive strategies in their last trial,
@@ -231,7 +291,7 @@ def group_by_adaptive_malapdaptive_participants(
 
     for plot_title, pid_list in pid_dict.items():
         if plotting:
-            average_performance(
+            average_performance_reward(
                 exp_num,
                 pid_list,
                 optimization_criterion,
@@ -250,7 +310,7 @@ def group_by_adaptive_malapdaptive_participants(
 
 # check whether the fitted parameters are significantly different across adaptive and maladaptive participants
 def statistical_tests_between_groups(
-    exp_num, optimization_criterion, model_index, summary=False
+        exp_num, optimization_criterion, model_index, summary=False
 ):
     pid_dict = get_adaptive_maladaptive_participant_list(exp_num)
 
@@ -292,7 +352,7 @@ def statistical_tests_between_groups(
                         pid_ = int(name[0])
                 plot_title = pid_dict_reversed.get(str(pid_))
                 if (
-                    plot_title is not None
+                        plot_title is not None
                 ):  # if the participant is not in the pid_dict, i.e. a participant who used adaptive strategies in the beginning
                     data = pickle_load(os.path.join(prior_directory, name))
                     for parameters, parameter_values in data[0][0].items():
@@ -311,9 +371,9 @@ def statistical_tests_between_groups(
             row_names = row.index
             i = 0
             for (
-                columns
+                    columns
             ) in (
-                row
+                    row
             ):  # in each row, take out one column, i.e. adaptive/maladaptive/other
                 print(
                     f"------------------Summary statitics of {row_names[i]}------------------"
@@ -422,40 +482,48 @@ if __name__ == "__main__":
     # optimization_criterion = sys.argv[2]
 
     # exp_num_list = ["v1.0", "c2.1_dec", "c1.1"]
-    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost']
+    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
+                    'low_variance_low_cost']
 
-    optimization_criterion = "pseudo_likelihood"
+    optimization_criterion = "clicks_overlap"
     # model_list = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',
     #           '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855']
     model_list = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
-
     # statistical_test_between_envs(exp_num_list, model_index=1918)
     # Run t-test and statistical summary
-    for exp_num in exp_num_list:
-        for model_index in model_list:
-            pid_list = get_all_pid_for_env(exp_num)
-            average_performance(
-                exp_num,
-                pid_list,
-                optimization_criterion,
-                model_index=model_index,
-                plot_title="",
-                plotting=True,
-            )
-        # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
-        df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+    # for exp_num in exp_num_list:
+    #     for model_index in model_list:
+    #         pid_list = get_all_pid_for_env(exp_num)
+    #         average_performance(
+    #             exp_num,
+    #             pid_list,
+    #             optimization_criterion,
+    #             model_index=model_index,
+    #             plot_title="",
+    #             plotting=True,
+    #         )
+    average_performance_clicks(
+        'low_variance_low_cost',
+        ['3', '5', '6'],
+        optimization_criterion,
+        model_index=159,
+        plot_title="",
+        plotting=True,
+    )
+    # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
+    df = create_dataframe_of_fitted_pid('low_variance_low_cost', '3', optimization_criterion)
 
-        # # group best model by performance of participants (adaptive, maladaptive) and creates overall plot
-        # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=1853, plotting=False) #if plotting, then it needs model_index
-        #
-        # statistical_tests_between_groups(exp_num=exp_num, optimization_criterion="pseudo_likelihood", model_index=1853,
-        #                                  summary=True)
-        #
-        #
-        # for model_index in model_list:
-        #     # calculate and plot the average performance given a model for all participants
-        #     average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
-        #
-        #     # calculate and plot the average performance given a model after grouping participants
-        #     group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index, plotting=True)
+    # # group best model by performance of participants (adaptive, maladaptive) and creates overall plot
+    # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=1853, plotting=False) #if plotting, then it needs model_index
+    #
+    # statistical_tests_between_groups(exp_num=exp_num, optimization_criterion="pseudo_likelihood", model_index=1853,
+    #                                  summary=True)
+    #
+    #
+    # for model_index in model_list:
+    #     # calculate and plot the average performance given a model for all participants
+    #     average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
+    #
+    #     # calculate and plot the average performance given a model after grouping participants
+    #     group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index, plotting=True)

@@ -178,7 +178,7 @@ def prior_fit(
     )  # learner is the model chosen
     res, prior, obj_fn = optimizer.optimize(
         optimization_criterion, **optimization_params
-    )
+    ) # prior are the list of priors chosen, res is the corresponding weights of the priors
 
     # save priors
     pickle_save(
@@ -200,30 +200,30 @@ def prior_fit(
             click_data = optimizer.plot_clicks(
                 i=min_index,
                 path=os.path.join(
-                    plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"
+                    plot_directory, f"{pid}_{optimization_criterion}_{model_index}_clicks.png"
                 ),plot=True,)
-            # save the reward data
+            # save the click data. First one is number of clicks of algo, second one is number of clicks of participant
             pickle_save(
                 click_data,
                 os.path.join(
                     click_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"),)
 
-        else:
-            reward_data = optimizer.plot_rewards(
-                i=min_index,
-                path=os.path.join(
-                    plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"
-                ),
-                plot=True,
-            )
 
-            # save the reward data
-            pickle_save(
-                reward_data,
-                os.path.join(
-                    reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"
-                ),
-            )
+        reward_data = optimizer.plot_rewards(
+            i=min_index,
+            path=os.path.join(
+                plot_directory, f"{pid}_{optimization_criterion}_{model_index}_mer.png"
+            ),
+            plot=True,
+        )
+
+        # save the reward data
+        pickle_save(
+            reward_data,
+            os.path.join(
+                reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"
+            ),
+        )
 
 
     # Run simulations given prior and other fitted parameters, num of simulations: how many runs
@@ -255,11 +255,11 @@ if __name__ == "__main__":
 
     exp_num = "low_variance_low_cost"
     pid_list = get_all_pid_for_env(exp_num)
-    model_index = 159
+    model_index = 95
     optimization_criterion = "clicks_overlap"
     plotting = True
-    pid = 3
-    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 50} #30; 400
+    pid = 6
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2} #30; 400
     # for pid in pid_list:
     prior_fit(
         exp_num, model_index, optimization_criterion, pid, plotting, optimization_params

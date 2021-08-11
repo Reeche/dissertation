@@ -291,6 +291,7 @@ class ParameterOptimizer:
             relevant_data['sigma'] = params['lik_sigma']
         if self.objective == "clicks_overlap":
             self.click_data.append(relevant_data["a"])
+            self.reward_data.append(relevant_data["mer"])
         if get_sim_data:
             return relevant_data, simulations_data
         else:
