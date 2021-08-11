@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-# import seaborn as sns
+import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy import stats
@@ -32,7 +32,7 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
     """
     parent_directory = Path(__file__).parents[1]
     prior_directory = os.path.join(
-        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/{exp_num}_priors"
     )
     # todo: need to find a better way to create this df
     # df = pd.DataFrame(columns=["pid", "optimization_criterion", "model", "loss", "AIC"])
@@ -55,9 +55,11 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
                     if name[-8:-4].startswith("_"):
                         results_dict["model"].append(name[-7:-4])
                         # df.loc[pid]["model"] = name[-7:-4]  # get the last 3 characters, which are the model name
-                    else:
+                    elif name[-9:-4].startswith("_"):
                         results_dict["model"].append(name[-8:-4])
                         # df.loc[pid]["model"] = name[-8:-4]  # get the last 4 characters, which are the model name
+                    else:
+                        results_dict["model"].append(name[-6:-4])  # get the last 2 characters, which are the model name
 
                     results_dict["optimization_criterion"].append(
                         optimization_criterion
@@ -106,7 +108,8 @@ def create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion):
     grouped_df = df.groupby(["model"]).mean()
     print(exp_num)
     print("Grouped model and AIC")
-    print(grouped_df)
+    sorted_df = grouped_df.sort_values(by=["AIC"])
+    print(sorted_df)
 
     return df
 
@@ -129,7 +132,7 @@ def average_performance(
     """
     parent_directory = Path(__file__).parents[1]
     reward_info_directory = os.path.join(
-        parent_directory, f"results/mcrl/{exp_num}/reward_{exp_num}_data"
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/reward_{exp_num}_data"
     )
 
     data_temp = pickle_load(
@@ -155,13 +158,13 @@ def average_performance(
 
     # plot the average performance of all participants and the algorithm
     if plotting:
-        plot_directory = os.path.join(parent_directory, f"results/mcrl/plots/average/")
+        plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
         create_dir(plot_directory)
-        plt.ylim(6, 12)
+        #plt.ylim(-30, 30)
         plt.title(plot_title)
-        # ax = sns.lineplot(
-        #     x="Number of trials", y="Reward", hue="Type", data=data_average
-        # )
+        ax = sns.lineplot(
+            x="Number of trials", y="Reward", hue="Type", data=data_average
+        )
         plt.savefig(
             f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
             bbox_inches="tight",
@@ -253,14 +256,14 @@ def statistical_tests_between_groups(
 
     parent_directory = Path(__file__).parents[1]
     prior_directory = os.path.join(
-        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/{exp_num}_priors"
     )
 
     # create the df using the dictionary keys as column headers, for this, the first file in the directory is loaded
 
     first_file = os.listdir(prior_directory)[10]
     first_file = os.path.join(
-        parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors/{first_file}"
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/{exp_num}_priors/{first_file}"
     )
     parameter_names = pickle_load(first_file)  # header are the parameters
 
@@ -366,13 +369,13 @@ def statistical_tests_between_groups(
 def statistical_test_between_envs(exp_num_list, model_index):
     parent_directory = Path(__file__).parents[1]
     prior_directory = os.path.join(
-        parent_directory, f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors"
+        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors"
     )
 
     first_file = os.listdir(prior_directory)[10]
     first_file = os.path.join(
         parent_directory,
-        f"results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors/{first_file}",
+        f"mcl_toolbox/results/mcrl/{exp_num_list[0]}/{exp_num_list[0]}_priors/{first_file}",
     )
     parameter_names = pickle_load(first_file)  # header are the parameters
 
@@ -382,7 +385,7 @@ def statistical_test_between_envs(exp_num_list, model_index):
 
     for exp_num in exp_num_list:
         prior_directory = os.path.join(
-            parent_directory, f"results/mcrl/{exp_num}/{exp_num}_priors"
+            parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/{exp_num}_priors"
         )
         for root, dirs, files in os.walk(prior_directory, topdown=False):
             for name in files:  # iterate through each file
@@ -419,26 +422,29 @@ if __name__ == "__main__":
     # optimization_criterion = sys.argv[2]
 
     # exp_num_list = ["v1.0", "c2.1_dec", "c1.1"]
-    exp_num_list = ["high_variance_high_cost"]
-    optimization_criterion = "pseudo_likelihood"
+    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost']
 
-    model_list = ["5134"]
+    optimization_criterion = "pseudo_likelihood"
+    # model_list = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',
+    #           '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855']
+    model_list = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
+
 
     # statistical_test_between_envs(exp_num_list, model_index=1918)
     # Run t-test and statistical summary
-
     for exp_num in exp_num_list:
-        pid_list = get_all_pid_for_env(exp_num)
-        average_performance(
-            exp_num,
-            pid_list,
-            optimization_criterion,
-            model_index=1853,
-            plot_title="",
-            plotting=True,
-        )
+        for model_index in model_list:
+            pid_list = get_all_pid_for_env(exp_num)
+            average_performance(
+                exp_num,
+                pid_list,
+                optimization_criterion,
+                model_index=model_index,
+                plot_title="",
+                plotting=True,
+            )
         # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
-        # df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+        df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
 
         # # group best model by performance of participants (adaptive, maladaptive) and creates overall plot
         # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=1853, plotting=False) #if plotting, then it needs model_index

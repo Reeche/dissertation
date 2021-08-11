@@ -70,6 +70,12 @@ def prior_fit(
     )
     create_dir(reward_info_directory)
 
+    # create directory to save the clicks data of participant (mers) and algorithm (clicks)
+    click_info_directory = os.path.join(
+        parent_directory, f"results/mcrl/{exp_name}/click_{exp_name}_data"
+    )
+    create_dir(click_info_directory)
+
     # add directory for reward plots, if plotting
     if plotting:
         plot_directory = os.path.join(
@@ -173,25 +179,6 @@ def prior_fit(
     res, prior, obj_fn = optimizer.optimize(
         optimization_criterion, **optimization_params
     )
-    # print(res[0])  # prior information
-    losses = [trial["result"]["loss"] for trial in res[1]]
-    print(f"Loss: {min(losses)}")
-    min_index = np.argmin(losses)
-    if plotting:
-        reward_data = optimizer.plot_rewards(
-            i=min_index,
-            path=os.path.join(
-                plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"
-            ),
-            plot=True,
-        )
-    # save the reward data
-    pickle_save(
-        reward_data,
-        os.path.join(
-            reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"
-        ),
-    )
 
     # save priors
     pickle_save(
@@ -200,6 +187,44 @@ def prior_fit(
             prior_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"
         ),
     )
+
+    # print(res[0])  # prior information
+    losses = [trial["result"]["loss"] for trial in res[1]]
+    print(f"Loss: {min(losses)}")
+    min_index = np.argmin(losses)
+
+
+    if plotting:
+        # if click_overlap is chosen, only clicks will be plotted and not the reward
+        if optimization_criterion == "clicks_overlap":
+            click_data = optimizer.plot_clicks(
+                i=min_index,
+                path=os.path.join(
+                    plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"
+                ),plot=True,)
+            # save the reward data
+            pickle_save(
+                click_data,
+                os.path.join(
+                    click_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"),)
+
+        else:
+            reward_data = optimizer.plot_rewards(
+                i=min_index,
+                path=os.path.join(
+                    plot_directory, f"{pid}_{optimization_criterion}_{model_index}.png"
+                ),
+                plot=True,
+            )
+
+            # save the reward data
+            pickle_save(
+                reward_data,
+                os.path.join(
+                    reward_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"
+                ),
+            )
+
 
     # Run simulations given prior and other fitted parameters, num of simulations: how many runs
     (r_data, sim_data), p_data = optimizer.run_hp_model(
@@ -228,14 +253,13 @@ if __name__ == "__main__":
     #     "max_evals": int(sys.argv[8]),
     # }
 
-    exp_num = "high_variance_high_cost"
+    exp_num = "low_variance_low_cost"
     pid_list = get_all_pid_for_env(exp_num)
-    print(pid_list)
-    model_index = 1918
-    optimization_criterion = "pseudo_likelihood"
+    model_index = 159
+    optimization_criterion = "clicks_overlap"
     plotting = True
-    pid = 1
-    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2} #30; 400
+    pid = 3
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 50} #30; 400
     # for pid in pid_list:
     prior_fit(
         exp_num, model_index, optimization_criterion, pid, plotting, optimization_params

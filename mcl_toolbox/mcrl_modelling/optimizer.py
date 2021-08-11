@@ -246,6 +246,7 @@ class ParameterOptimizer:
         elif self.learner in ['hierarchical_learner']:
             self.model = models[self.learner_attributes['actor']]
         self.reward_data = []
+        self.click_data = []
 
     def objective_fn(self, params, get_sim_data=False):
         """
@@ -288,6 +289,8 @@ class ParameterOptimizer:
             self.reward_data.append(relevant_data["mer"])
         if self.objective == "pseudo_likelihood":
             relevant_data['sigma'] = params['lik_sigma']
+        if self.objective == "clicks_overlap":
+            self.click_data.append(relevant_data["a"])
         if get_sim_data:
             return relevant_data, simulations_data
         else:
@@ -379,6 +382,38 @@ class ParameterOptimizer:
             #plt.show()
             plt.close()
         return reward_data
+
+    def plot_clicks(self, i=0, path="", plot=True):
+
+        # # number of clicks of the algorithm
+        # data = []
+        # for j in range(len(self.click_data[i])):
+        #     for k in range(len(self.click_data[i][j])):
+        #         data.append([k + 1, len(self.click_data[i][j][k]), "algo"])  # reward data of the algorithm
+
+        algo_num_actions = dict((k, []) for k in range(len(self.click_data[0])))
+        for j in range(len(self.click_data[i])):
+            for k in range(len(self.click_data[i][j])):
+                algo_num_actions[k] = len(self.click_data[i][j][k])
+
+        # number of clicks of the participants
+        p_actions = self.p_data["a"]  # reward data of the participant
+        p_num_actions = dict((k, []) for k in range(len(p_actions)))
+        for num_of_trial, clicks_of_trial in enumerate(p_actions):
+            p_num_actions[num_of_trial] = len(clicks_of_trial)
+
+        algo_num_actions = pd.DataFrame.from_dict(algo_num_actions, orient='index')
+        p_num_actions = pd.DataFrame.from_dict(p_num_actions, orient='index')
+        if plot:
+            plt.plot(algo_num_actions, label="Algorithm")
+            plt.plot(p_num_actions, label="Participant")
+            plt.xlabel('Trials')
+            plt.ylabel('Number of clicks')
+            plt.legend()
+            #plt.show()
+            plt.savefig(path, bbox_inches='tight')
+            plt.close()
+        return algo_num_actions, p_num_actions
 
     def plot_history(self, history, prior, obj_fn):
         # fig, ax = plt.subplots()

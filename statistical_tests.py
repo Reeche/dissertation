@@ -5,7 +5,11 @@ import pandas as pd
 import numpy as np
 import random
 import pymannkendall as mk
-from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, ttest_ind
+import statsmodels
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, ttest_ind, shapiro, bartlett
 from mcl_toolbox.analyze_sequences import analyse_sequences
 from mcl_toolbox.utils.statistics_utils import create_comparable_data
 
@@ -381,6 +385,55 @@ def test_of_proportions(
                             f"Strategy {index}: {env_type_a} vs {env_type_b}: p={res[0][0]:.3f}"
                         )
 
+def anova_test(name_distribution_dict):
+    # prepare the data
+    # keys = name_distribution_dict.keys()
+    df = pd.DataFrame.from_dict(name_distribution_dict)
+    df_melt = pd.melt(df.reset_index(), id_vars=['index'])
+    df_melt.columns = ['index', 'condition', 'clicks']
+    #df_melt['clicks'] = ""
+    #df_melt['reward_variance'] = ""
+
+
+    # create new dfs for each condition
+    for index, row in df_melt.iterrows():
+        if row['condition'] == 'high_variance_high_cost':
+            df_melt.at[index, 'click_cost'] = 'high'
+            df_melt.at[index, 'reward_variance'] = 'high'
+        if row['condition'] == 'high_variance_low_cost':
+            df_melt.at[index, 'click_cost'] = 'low'
+            df_melt.at[index, 'reward_variance'] = 'high'
+        if row['condition'] == 'low_variance_low_cost':
+            df_melt.at[index, 'click_cost'] = 'low'
+            df_melt.at[index, 'reward_variance'] = 'low'
+        if row['condition'] == 'low_variance_high_cost':
+            df_melt.at[index, 'click_cost'] = 'high'
+            df_melt.at[index, 'reward_variance'] = 'low'
+
+
+
+    model = ols('clicks ~ C(click_cost) + C(reward_variance) + C(click_cost)*C(reward_variance)', data=df_melt).fit()
+    anova_table = sm.stats.anova_lm(model, typ=2)
+    print(anova_table)
+
+    # shapiro test to test for normal distribution of residuals; nullhypothesis: data is drawn from normal distribution
+    w, pvalue = shapiro(model.resid)
+    print(f"Shapiro test for normal distirbution of residuals: test-statistic: {w}, p-value: {pvalue}")
+
+    # test for homogeneity of variances; nullhypothesis: samples from populations have equal variances
+    w, pvalue = bartlett(df['high_variance_high_cost'], df['high_variance_low_cost'], df['low_variance_high_cost'], df['low_variance_low_cost'])
+    print(f"Bartlett's test for normal distirbution of residuals: test-statistic: {w}, p-value: {pvalue}")
+
+    return None
+
+def equivalence_test(name_distribution_dict):
+    for variance_type_a, distribution_a in name_distribution_dict.items():
+        for variance_type_b, distribution_b in name_distribution_dict.items():
+            p, v1, v2 = statsmodels.stats.weightstats.ttost_ind(distribution_a, distribution_b, -0.3, 0.3)
+            print(f"Equivalence test : {variance_type_a} vs {variance_type_b}:  p={p:.3f}, lower test statistic={v1[0]:.3f}"
+                  f", lower p-value={v1[1]:.3f}, upper test statistic={v2[0]:.3f}, lower p-value={v1[1]:.3f}")
+    return None
+
 
 if __name__ == "__main__":
     random.seed(123)
@@ -463,10 +516,10 @@ if __name__ == "__main__":
     # test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
 
     print(" -----------------Number of clicks-----------------")
-    print(number_of_clicks)
 
-    test_for_trend(number_of_clicks, "Clicks")
+    #test_for_trend(number_of_clicks, "Clicks")
 
+    anova_test(number_of_clicks)
     # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
     # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
     print(
@@ -536,3 +589,6 @@ if __name__ == "__main__":
             equal_var=False,
         ),
     )
+
+    #### Equivalence test ####
+    equivalence_test(number_of_clicks)
