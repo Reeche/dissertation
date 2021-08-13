@@ -193,9 +193,12 @@ def construct_p_data(participant, pipeline):
 
 def construct_objective_fn(optimizer, objective, p_data, pipeline):
     # construct objective function based on the selected optimizer and objective
-    objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
+    if objective in ["number_of_clicks"]: #todo: added this as number of clicks seems to work better with negatives. Why?
+        objective_fn = lambda x, y: -compute_objective(objective, x, p_data, pipeline)
+    else:
+        objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
-        if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
+        if objective in ["reward", "strategy_accuracy", "clicks_overlap", "number_of_clicks"]: #todo: why negative?
             objective_fn = lambda x, y: -compute_objective(objective, x, y, pipeline)
         else:
             objective_fn = lambda x, y: compute_objective(objective, x, y, pipeline)
@@ -292,6 +295,13 @@ class ParameterOptimizer:
         if self.objective == "clicks_overlap":
             self.click_data.append(relevant_data["a"])
             self.reward_data.append(relevant_data["mer"])
+        if self.objective == "number_of_clicks":
+            self.click_data.append(relevant_data["a"])
+            self.reward_data.append(relevant_data["mer"])
+        if self.objective == "number_of_clicks_likelihood":
+            self.click_data.append(relevant_data["a"])
+            self.reward_data.append(relevant_data["mer"])
+            relevant_data['sigma'] = params['lik_sigma']
         if get_sim_data:
             return relevant_data, simulations_data
         else:
@@ -385,12 +395,6 @@ class ParameterOptimizer:
         return reward_data
 
     def plot_clicks(self, i=0, path="", plot=True):
-
-        # # number of clicks of the algorithm
-        # data = []
-        # for j in range(len(self.click_data[i])):
-        #     for k in range(len(self.click_data[i][j])):
-        #         data.append([k + 1, len(self.click_data[i][j][k]), "algo"])  # reward data of the algorithm
 
         algo_num_actions = dict((k, []) for k in range(len(self.click_data[0])))
         for j in range(len(self.click_data[i])):

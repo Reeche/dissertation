@@ -895,6 +895,38 @@ def clicks_overlap(participant_clicks, algorithm_clicks):
     return participant_clicks_overlap
 
 
+#todo:
+def number_of_clicks(participant_clicks, algorithm_clicks):
+    """
+        Get the average value of Ratio of A ^ B / A U B for the participant and algorithm clicks
+        Params:
+            Participant_clicks, algorithm_clicks : Dictionary of clicks made by participants, algorithm respectively.(Pids are keys)
+            Assumes that algorithm_clicks consist of multiple simulations.
+        Returns:
+            Absolute difference of clicks between participant and algorithm
+    """
+    def compute_average_trial_proportion(participant_click_sequence, algorithm_click_sequence):
+        difference = []
+        for p_clicks, a_clicks in zip(participant_click_sequence, algorithm_click_sequence):
+            p_clicks = [click for click in p_clicks if click not in [0, None]]
+            a_clicks = [click for click in a_clicks if click not in [0, None]]
+
+            difference.append(abs(len(p_clicks) - len(a_clicks)))
+        return np.mean(difference)
+
+    participant_clicks_overlap = {}
+    for pid in participant_clicks.keys():
+        participant_click_sequence = participant_clicks[pid]
+        algo_simulation_clicks = algorithm_clicks[pid]
+        mean_difference = []
+        # loop through the different runs of the algorithm
+        for algo_click_sequence in algo_simulation_clicks:
+            mean_difference.append(compute_average_trial_proportion(
+                participant_click_sequence, algo_click_sequence))
+        participant_clicks_overlap[pid] = np.mean(mean_difference)
+    return participant_clicks_overlap
+
+
 def absolute_chosen_path_agreement(participants_chosen_paths, algorithm_chosen_paths):
     """
         Returns the agreement between the paths taken without considering the other paths that were 
@@ -1306,9 +1338,13 @@ def get_relevant_data(simulations_data, criterion):
         return {'s': simulations_data['s']}
     elif criterion in ['clicks_overlap']:
         return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
+    elif criterion in ['number_of_clicks']:
+        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
+    elif criterion in ['number_of_clicks_likelihood']:
+        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
     elif criterion in ['likelihood']:
         return {'loss': simulations_data['loss']}
-    else:
+    else: #pseudo_likelihood
         return {'mer': simulations_data['mer']}
 
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
@@ -1324,7 +1360,6 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
             pipeline -- Defines the reward function for each trial
             sigma -- Used to compute the pseudo-likelihood
         """
-        #print(sim_data, p_data)
         if criterion == "reward":
             objective_value = -np.mean(sim_data['r'])
         elif criterion == "performance_error":
@@ -1346,15 +1381,37 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
             p_a = {0: p_data['a']}
             a_a = {0: sim_data['a']}
             objective_value = -clicks_overlap(p_a, a_a)[0]
+        elif criterion == "number_of_clicks":
+            p_a = {0: p_data['a']}
+            a_a = {0: sim_data['a']}
+            objective_value = -number_of_clicks(p_a, a_a)[0]
         elif criterion == "likelihood":
-            objective_value =  np.mean(sim_data['loss'])
+            objective_value = np.mean(sim_data['loss'])
         elif criterion == "mer_performance_error":
             objective_value = get_squared_performance_error(p_data['mer'], sim_data['mer'])
         elif criterion == "pseudo_likelihood":
             mean_mer = np.mean(sim_data['mer'], axis=0)
             objective_value = -np.sum([norm.logpdf(y, x, np.exp(sim_data['sigma'])) for x, y in zip(p_data['mer'], np.mean(sim_data['mer'], axis=0))])
-        print(objective_value)
+        elif criterion == "number_of_clicks_likelihood":
+            # get the number of clicks of the participant and of the algorithm
+            p_a = {0: p_data['a']}
+            a_a = {0: sim_data['a']}
+            objective_value = 0
+            # filter out the 0 and none
+            p_clicks = [click for click in p_a if click not in [0, None]]
+            a_clicks = [click for click in a_a if click not in [0, None]]
+
+            p_number_of_clicks = len(p_clicks)
+            a_number_of_clicks = len(a_clicks)
+
+            objective_value += -norm.logpdf(a_number_of_clicks, p_number_of_clicks, np.exp(sim_data['sigma']))
+        print("Criterion: ", criterion, objective_value)
         return objective_value
+
+
+
+
+
 
 class Participant():
     """ Creates a participant object which contains all details about the participant

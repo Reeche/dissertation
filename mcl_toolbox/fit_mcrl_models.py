@@ -196,7 +196,8 @@ def prior_fit(
 
     if plotting:
         # if click_overlap is chosen, only clicks will be plotted and not the reward
-        if optimization_criterion == "clicks_overlap":
+        #if optimization_criterion == "clicks_overlap" or optimization_criterion == "number_of_clicks":
+        if optimization_criterion in ['clicks_overlap', 'number_of_clicks', 'number_of_clicks_likelihood']:
             click_data = optimizer.plot_clicks(
                 i=min_index,
                 path=os.path.join(
@@ -252,15 +253,15 @@ if __name__ == "__main__":
     #     "num_simulations": int(sys.argv[7]),
     #     "max_evals": int(sys.argv[8]),
     # }
-
-    exp_num = "low_variance_low_cost"
-    pid_list = get_all_pid_for_env(exp_num)
-    model_index = 95
-    optimization_criterion = "clicks_overlap"
     plotting = True
-    pid = 6
-    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2} #30; 400
-    # for pid in pid_list:
+
+    exp_num = "high_variance_high_cost"
+    pid_list = get_all_pid_for_env(exp_num)
+    model_index = 1055
+    optimization_criterion = "number_of_clicks_likelihood"
+    pid = 204
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 50} #30; 400
+    #for pid in pid_list:
     prior_fit(
         exp_num, model_index, optimization_criterion, pid, plotting, optimization_params
     )
