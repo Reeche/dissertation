@@ -44,6 +44,7 @@ def prior_fit(
     :param model_index: model index, as displayed in rl_models.csv
     :param optimization_criterion: as string, choose one of ["pseudo_likelihood", "mer_performance_error", "performance_error"]
     :param pid: participant id, as int
+    :param plotting: whether to create plots
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
@@ -176,5 +177,5 @@ if __name__ == "__main__":
         other_params = ast.literal_eval(sys.argv[5])
 
     prior_fit(
-        exp_name, model_index, optimization_criterion, pid, plotting, **other_params
+        exp_name, model_index, optimization_criterion, pid, **other_params
     )
