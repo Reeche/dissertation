@@ -1,4 +1,6 @@
-import random
+import sys
+import ast
+import numpy as np
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import *
@@ -55,6 +57,11 @@ def prior_fit(
         parent_directory, f"results/mcrl/info_{exp_name}_data"
     )
     create_dir(model_info_directory)
+
+    # set random seed for optimization
+    if "seed" in optimization_params:
+        optimization_params["rstate"] = np.random.RandomState(optimization_params["seed"])
+        del optimization_params["seed"]
 
     # add directory for reward plots, if plotting
     if plotting:
@@ -160,21 +167,14 @@ def prior_fit(
 
 
 if __name__ == "__main__":
-    random.seed(123)
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # other_params = {}
-    # if len(sys.argv)>5:
-    #     other_params = ast.literal_eval(sys.argv[5])
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    other_params = {}
+    if len(sys.argv)>5:
+        other_params = ast.literal_eval(sys.argv[5])
 
-    exp_name = "v1.0"
-    model_index = 1
-    optimization_criterion = "pseudo_likelihood"
-    pid = 1
-    plotting = True
-    other_params = {"optimizer": "hyperopt", "num_simulations": 5, "max_evals": 2}
     prior_fit(
         exp_name, model_index, optimization_criterion, pid, plotting, **other_params
     )
