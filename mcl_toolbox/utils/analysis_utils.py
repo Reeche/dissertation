@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from toolz import curry
-
+from pathlib import Path
 
 # ---------- Data wrangling ---------- #
 
@@ -67,13 +67,10 @@ def parse_json(df):
             pass
 
 
-def get_data(version, data_path="data"):
-    head = Path(__file__).parents[2]
+def get_data(version, data_path=Path(Path(__file__).parents[2].joinpath("data"))):
     data = {}
-    for file in glob(
-        os.path.join(head, "{}/human/{}/*.csv".format(data_path, version))
-    ):
-        name = os.path.basename(file)[:-4]
+    for file in data_path.joinpath(f"human/{version}").glob('*'):
+        name = file.stem
         df = pd.read_csv(file)
         parse_json(df)
         data[name] = drop_nan_cols(df)

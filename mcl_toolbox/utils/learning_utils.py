@@ -292,9 +292,12 @@ def construct_reward_function(params_list, dist_type="categorical"):
 
 
 def get_participant_details(
-    pid, exp_num, get_envs=True, get_scores=True, get_clicks=True, get_taken_paths=True
+    pid, exp_num, get_envs=True, get_scores=True, get_clicks=True, get_taken_paths=True, data_path=None
 ):
-    data = get_data(exp_num)
+    if data_path:
+        data = get_data(exp_num, data_path)
+    else:
+        data = get_data(exp_num)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == pid]
     scores = []
@@ -1541,13 +1544,13 @@ class Participant:
                        strategies and weights at each trial.
     """
 
-    def __init__(self, exp_num, pid, excluded_trials=None, get_strategies=True):
+    def __init__(self, exp_num, pid, excluded_trials=None, get_strategies=True, data_path=None):
         self.exp_num = exp_num
         self.pid = pid
         self.get_weights = False
         self.excluded_trials = excluded_trials
         self.envs, self.scores, self.clicks, self.taken_paths = get_participant_details(
-            pid=self.pid, exp_num=self.exp_num
+            pid=self.pid, exp_num=self.exp_num, data_path=data_path
         )
         num_excluded = len(excluded_trials) if excluded_trials else 0
         self.num_trials = len(self.clicks) - num_excluded
