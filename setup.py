@@ -10,6 +10,7 @@ setup(
     author='Ruiqi He, Yash Raj Jain',
     author_email='',
     description='',
+    setup_requires=['wheel'],
     install_requires=[
         "graphviz",
         "statsmodels",
