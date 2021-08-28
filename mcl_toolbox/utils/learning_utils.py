@@ -852,7 +852,7 @@ def get_delay_penalty(q_data, env, action_sequence):
         else:
             delay = 2 + max_action_q - present_action_q
         delays.append(delay)
-        if action is not 13:
+        if action != 13:
             env_copy[action] = str(env[action])
     return delays
 
