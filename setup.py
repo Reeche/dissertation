@@ -11,6 +11,7 @@ setup(
     author_email='',
     description='',
     setup_requires=['wheel'],
+    include_package_data=True,
     install_requires=[
         "graphviz",
         "statsmodels",
