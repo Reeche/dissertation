@@ -255,21 +255,13 @@ class strategies:
         ],
     }
 
-    strategy_weights = pickle_load(
-        pickle_load(file_location.joinpath("data/microscope_weights.pkl"))
-    )
-    strategy_distances = pickle_load(
-        pickle_load(file_location.joinpath("data/L2_distances.pkl"))
-    )
+    strategy_weights = pickle_load(file_location.joinpath("data/microscope_weights.pkl"))
+    strategy_distances = pickle_load(file_location.joinpath("data/L2_distances.pkl"))
 
 
 class features:
-    microscope = pickle_load(
-        pickle_load(file_location.joinpath("data/microscope_features.pkl"))
-    )  # this is 51 features
-    implemented = pickle_load(
-        pickle_load(file_location.joinpath("data/implemented_features.pkl"))
-    )  # this is 56 features
+    microscope = pickle_load(file_location.joinpath("data/microscope_features.pkl")) # this is 51 features
+    implemented = pickle_load(file_location.joinpath("data/implemented_features.pkl")) # this is 56 features
 
 
 class hierarchical_params:
