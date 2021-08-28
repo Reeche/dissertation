@@ -31,7 +31,7 @@ def pickle_load(file_path):
         Returns:
             Unpickled object
     """
-    with open(file_path, "rb") as file_obj:
+    with open(str(file_path), "rb") as file_obj:
         unpickled_obj = RenameUnpickler(file_obj).load()
     return unpickled_obj
 
