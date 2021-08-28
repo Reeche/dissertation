@@ -133,7 +133,7 @@ class strategies:
     num_strategies = 89
     # strategy_space = list(range(1, num_strategies + 1))
     # problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83] #the microscope strategies are obtained from this
-    strategy_space = pickle_load(os.path.join(file_location, "data/strategy_space.pkl"))
+    strategy_space = pickle_load(file_location.joinpath("data/strategy_space.pkl"))
     strategy_spaces = {
         "participant": [
             6,
@@ -256,19 +256,19 @@ class strategies:
     }
 
     strategy_weights = pickle_load(
-        os.path.join(file_location, "data/microscope_weights.pkl")
+        pickle_load(file_location.joinpath("data/microscope_weights.pkl"))
     )
     strategy_distances = pickle_load(
-        os.path.join(file_location, "data/L2_distances.pkl")
+        pickle_load(file_location.joinpath("data/L2_distances.pkl"))
     )
 
 
 class features:
     microscope = pickle_load(
-        os.path.join(file_location, "data/microscope_features.pkl")
+        pickle_load(file_location.joinpath("data/microscope_features.pkl"))
     )  # this is 51 features
     implemented = pickle_load(
-        os.path.join(file_location, "data/implemented_features.pkl")
+        pickle_load(file_location.joinpath("data/implemented_features.pkl"))
     )  # this is 56 features
 
 
