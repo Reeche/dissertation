@@ -1,6 +1,6 @@
-include data/exp_pipelines.pkl
-include data/strategy_space.pkl
-include data/microscope_weights.pkl
-include data/L2_distances.pkl
-include data/microscope_features.pkl
-include data/implemented_features.pkl
+include mcl_toolbox/data/exp_pipelines.pkl
+include mcl_toolbox/data/strategy_space.pkl
+include mcl_toolbox/data/microscope_weights.pkl
+include mcl_toolbox/data/L2_distances.pkl
+include mcl_toolbox/data/microscope_features.pkl
+include mcl_toolbox/data/implemented_features.pkl
