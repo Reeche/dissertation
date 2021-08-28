@@ -30,8 +30,6 @@ models = {
 curr_dir = os.path.abspath(os.path.dirname(__file__))
 param_config = json.load(open(os.path.join(curr_dir, "param_search_space.json")))
 model_config = json.load(open(os.path.join(curr_dir, "model_params.json")))
-model_details = json.load(open(os.path.join(curr_dir, "../models/models.json")))
-
 
 def hyperopt_space(params_list):
     """Should return a dict of the form required by hyperopt
