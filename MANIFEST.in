@@ -9,3 +9,6 @@ include mcl_toolbox/models/rl_models.csv
 
 include mcl_toolbox/mcrl_modelling/param_search_space.json
 include mcl_toolbox/mcrl_modelling/model_params.json
+
+include mcl_toolbox/data/normalized_values/high_increasing/*.pkl
+

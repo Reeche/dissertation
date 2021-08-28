@@ -23,6 +23,8 @@ num_strategies = 89  # TODO move to global_vars after separating out analysis ut
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
 
+parent_folder = Path(__file__).parents[1]
+
 small_level_map = {
     0: 0,
     1: 1,
@@ -430,8 +432,8 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
 
 
 def get_normalized_features(exp_num):
-    max_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/max.pkl")
-    min_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/min.pkl")
+    max_feature_values = pickle_load(parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl"))
+    min_feature_values = pickle_load(parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl"))
     return max_feature_values, min_feature_values
 
 
