@@ -5,3 +5,4 @@ include mcl_toolbox/data/L2_distances.pkl
 include mcl_toolbox/data/microscope_features.pkl
 include mcl_toolbox/data/implemented_features.pkl
 include mcl_toolbox/models/rl_models.csv
+include mcl_toolbox/mcrl_modelling/param_search_space.json
