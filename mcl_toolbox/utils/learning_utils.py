@@ -1,15 +1,15 @@
-import os
-import pickle
-from collections import defaultdict, Counter
-from functools import partial, lru_cache
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import mpmath as mp
 import numpy as np
 import numpy.linalg as LA
+import os
+import pickle
 import scipy.linalg
 import seaborn as sns
+from collections import defaultdict, Counter
+from functools import partial, lru_cache
+from pathlib import Path
 from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma
@@ -294,7 +294,13 @@ def construct_reward_function(params_list, dist_type="categorical"):
 
 
 def get_participant_details(
-    pid, exp_num, get_envs=True, get_scores=True, get_clicks=True, get_taken_paths=True, data_path=None
+    pid,
+    exp_num,
+    get_envs=True,
+    get_scores=True,
+    get_clicks=True,
+    get_taken_paths=True,
+    data_path=None,
 ):
     if data_path:
         data = get_data(exp_num, data_path)
@@ -432,8 +438,12 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
 
 
 def get_normalized_features(exp_num):
-    max_feature_values = pickle_load(parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl"))
-    min_feature_values = pickle_load(parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl"))
+    max_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl")
+    )
+    min_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl")
+    )
     return max_feature_values, min_feature_values
 
 
@@ -1546,7 +1556,9 @@ class Participant:
                        strategies and weights at each trial.
     """
 
-    def __init__(self, exp_num, pid, excluded_trials=None, get_strategies=True, data_path=None):
+    def __init__(
+        self, exp_num, pid, excluded_trials=None, get_strategies=True, data_path=None
+    ):
         self.exp_num = exp_num
         self.pid = pid
         self.get_weights = False
