@@ -18,6 +18,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from mcl_toolbox.utils.analysis_utils import get_data
 from mcl_toolbox.utils.distributions import Categorical, Normal
+from mcl_toolbox.global_vars import pickle_load
 
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
@@ -123,28 +124,6 @@ def plot_norm_dists(self, means, sigmas, available_actions):
 def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
-
-
-def pickle_load(file_path):
-    """
-    Load the pickle file located at 'filepath'
-    Params:
-        file_path  -- Location of the file to be loaded.
-    Returns:
-        Unpickled object
-    """
-    if not os.path.exists(file_path):
-        head, tail = os.path.split(__file__)
-        if file_path[0] == "/":
-            new_path = os.path.join(head, file_path[1:])
-        else:
-            new_path = os.path.join(head, file_path)
-        if os.path.exists(new_path):
-            file_path = new_path
-        else:
-            raise FileNotFoundError(f"{file_path} not found.")
-    obj = pickle.load(open(file_path, "rb"))
-    return obj
 
 
 def create_dir(file_path):
