@@ -236,6 +236,7 @@ class REINFORCE(Learner):
                         delay = env.present_trial.get_action_feedback(taken_path)
                         self.policy.rewards[-1] = reward - self.delay_scale * delay
                         break
+                trials_data["taken_paths"].append(taken_path)
             trials_data["r"].append(np.sum(rewards))
             trials_data["rewards"].append(rewards)
             trials_data["a"].append(actions)
