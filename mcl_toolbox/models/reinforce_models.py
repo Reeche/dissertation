@@ -242,6 +242,8 @@ class REINFORCE(Learner):
             trials_data["a"].append(actions)
             env.get_next_trial()
             policy_loss += self.finish_episode()
+
+        trials_data["envs"] = env.ground_truth
         if loss:
             trials_data["loss"] = -torch.sum(torch.stack(loss)).data.cpu().numpy()
         else:
