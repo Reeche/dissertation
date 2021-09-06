@@ -117,7 +117,10 @@ def prior_fit(
     num_actions = get_number_of_actions_from_branching(
         branching
     )  # Find out number of actions
-    if learner_attributes["habitual_features"] == "habitual":
+
+    if "features" in kwargs:
+        curr_features = kwargs["features"]
+    elif learner_attributes["habitual_features"] == "habitual":
         curr_features = features.implemented
     else:
         curr_features = features.microscope
