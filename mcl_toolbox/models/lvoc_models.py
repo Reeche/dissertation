@@ -93,7 +93,6 @@ class LVOC(Learner):
         available_actions = env.get_available_actions()
         if self.no_term:
             available_actions.remove(0)
-        num_available_actions = len(available_actions)
         feature_vals = np.zeros((self.num_actions, self.num_features))
         for index, action in enumerate(available_actions):
             computed_features = current_trial.node_map[
