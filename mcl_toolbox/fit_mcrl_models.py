@@ -179,7 +179,7 @@ def prior_fit(
     res, prior, obj_fn = optimizer.optimize(
         optimization_criterion, **optimization_params
     ) # prior are the list of priors chosen, res is the corresponding weights of the priors
-
+    # the objective value, i.e. likelihood is stored as "loss" in the pickle files
     # save priors
     pickle_save(
         (res, prior),
@@ -257,10 +257,10 @@ if __name__ == "__main__":
 
     exp_num = "high_variance_high_cost"
     pid_list = get_all_pid_for_env(exp_num)
-    model_index = 1055
+    model_index = 1855
     optimization_criterion = "number_of_clicks_likelihood"
     pid = 204
-    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 50} #30; 400
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 2, 'max_evals': 2} #30; 400
     #for pid in pid_list:
     prior_fit(
         exp_num, model_index, optimization_criterion, pid, plotting, optimization_params

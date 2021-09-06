@@ -195,7 +195,7 @@ def construct_objective_fn(optimizer, objective, p_data, pipeline):
     # construct objective function based on the selected optimizer and objective
     if objective in ["number_of_clicks"]: #todo: added this as number of clicks seems to work better with negatives. Why?
         objective_fn = lambda x, y: -compute_objective(objective, x, p_data, pipeline)
-    else:
+    else: #but likelihood does not need negative though
         objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
         if objective in ["reward", "strategy_accuracy", "clicks_overlap", "number_of_clicks"]: #todo: why negative?
