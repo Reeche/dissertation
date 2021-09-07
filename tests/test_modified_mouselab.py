@@ -3,7 +3,7 @@ from parameterized import parameterized
 
 import yaml
 import numpy as np
-import pandas as pd
+
 from pathlib import Path
 from mcl_toolbox.global_vars import structure
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
