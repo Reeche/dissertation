@@ -1,40 +1,42 @@
 import numpy as np
-from mcl_toolbox.utils.learning_utils import create_dir, pickle_load, pickle_save
+from mcl_toolbox.utils.learning_utils import pickle_save
 from mcl_toolbox.env.modified_mouselab import (
     TrialSequence,
-    reward_val,
 )
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 from mcl_toolbox.utils.sequence_utils import compute_trial_features
+from mcl_toolbox.global_vars import strategies
 
-strategy_space = pickle_load("data/strategy_space.pkl")
+from mouselab.envs.registry import registry
+from costometer.utils import create_mcrl_reward_distribution
+from mcl_toolbox.utils.learning_utils import construct_repeated_pipeline
 
+from pathlib import Path
 
-def contruct_pipeline(branching, reward_function, num_trials):
+def contruct_pipeline(branching, reward_function, num_trials=30):
     return [(branching, reward_function)] * num_trials
 
-
-def generate_data(strategy_num, pipeline, num_simulations=1000):
-    env = TrialSequence(num_simulations, pipeline)
+def generate_data(strategy_num, pipeline, num_trials=30):
+    env = TrialSequence(len(pipeline), pipeline)
     ground_truth = env.ground_truth
     simulated_actions = []
-    for sim_num in range(num_simulations):
-        trial = env.trial_sequence[sim_num]
+    for trial_num in range(num_trials):
+        trial = env.trial_sequence[trial_num]
         actions = strategy_dict[strategy_num](trial)
         simulated_actions.append(actions)
     return ground_truth, simulated_actions
 
 
-def normalize(pipeline, features_list, num_simulations=100):
+def normalize(pipeline, features_list):
     simulated_features = []
-    for strategy_num in strategy_space:
+    for strategy_num in strategies.strategy_space:
         ground_truth, simulated_actions = generate_data(
-            strategy_num, pipeline, num_simulations
+            strategy_num, pipeline, len(pipeline)
         )
-        for sim_num in range(num_simulations):
-            trial_actions = simulated_actions[sim_num]
+        for trial_num, _ in enumerate(pipeline):
+            trial_actions = simulated_actions[trial_num]
             trial_features = compute_trial_features(
-                pipeline, ground_truth[sim_num], trial_actions, features_list
+                pipeline, ground_truth[trial_num], trial_actions, features_list, False
             )
             simulated_features += trial_features.tolist()
     simulated_features = np.array(simulated_features)
@@ -46,20 +48,28 @@ def normalize(pipeline, features_list, num_simulations=100):
     min_feature_values = {f: min_feature_values[i] for i, f in enumerate(features_list)}
     return max_feature_values, min_feature_values
 
+def get_new_feature_normalization(features_list, exp_setting = "high_increasing", num_trials = 30, num_simulations = 100):
+    branching = registry(exp_setting).branching
+    reward_distributions = create_mcrl_reward_distribution(exp_setting)
+    pipeline = construct_repeated_pipeline(
+        branching, reward_distributions, num_trials
+    )
+    max_fv, min_fv = normalize(pipeline, features_list)
+    return max_fv, min_fv
+
+def save_normalized_values(max_fv, min_fv, exp_name):
+    save_path = Path(__file__).parents[1].joinpath(f"data/normalized_values/{exp_name}")
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    pickle_save(max_fv, str(save_path.joinpath('max.pkl')))
+    pickle_save(min_fv, str(save_path.joinpath('min.pkl')))
+
+
 
 if __name__ == "__main__":
-    exp_num = "F1"
-    num_simulations = 100
-    features_list = pickle_load("data/implemented_features.pkl")
-    branching = [3, 1, 2]
-    # for your case replace normal_reward_val with your own distribution or
-    # just replace the pipeline variable with the pipeline you create for your
-    # new experiment
-    pipeline = contruct_pipeline(branching, reward_val, num_simulations)
-    max_fv, min_fv = normalize(pipeline, features_list, num_simulations)
-    exp_branching = "_".join([str(b) for b in branching])
-    dir_path = f"data/normalized_values/{exp_branching}"
-    create_dir(dir_path)
-    pickle_save(max_fv, dir_path + "/max.pkl")
-    pickle_save(min_fv, dir_path + "/min.pkl")
-    print(max_fv, min_fv)
+    features_list = ["depth", "num_clicks", "return_if_terminating", "constant"]
+    exp_name = "DepthSubset"
+
+    max_fv, min_fv = get_new_feature_normalization(features_list, exp_setting="high_increasing", num_trials=30, num_simulations=100)
+    save_normalized_values(max_fv, min_fv, exp_name)
+
