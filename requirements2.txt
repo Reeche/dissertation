@@ -1,0 +1,2 @@
+mouselab @ git+https://github.com/RationalityEnhancement/Rationality-Enhancement-Toolbox.git@master#egg=mouselab&subdirectory=MouseLab  # noqa
+costometer @ git+ssh://git@gitlab.tuebingen.mpg.de/vfelso/costometer.git#egg=costometer # noqa https://stackoverflow.com/a/26988592
