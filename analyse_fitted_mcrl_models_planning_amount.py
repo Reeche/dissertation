@@ -20,7 +20,7 @@ This file contains analysis based on fitted mcrl models.
 
 
 # create a dataframe of fitted models and pid
-def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimization_criterion: object) -> object:
+def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimization_criterion: object, model_list) -> object:
     """
     This function loops through all pickles and creates a dataframe with corresponding loss of each model.
 
@@ -43,7 +43,8 @@ def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimizati
         "model": [],
         "optimization_criterion": [],
         "loss": [],
-        "AIC": []
+        "AIC": [],
+        "BIC": []
     }
 
     for root, dirs, files in os.walk(prior_directory, topdown=False):
@@ -75,42 +76,76 @@ def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimizati
 
                     # Calculate the AIC
                     # todo: change this to map to the json file
-
-                    # if results_dict["model"] in ['1823', '1759', '1919', '1855']:
-                    #     number_of_parameters = 3
-                    # elif results_dict["model"] in ['415', '31', '479', '95']:
-                    #     number_of_parameters = 4
-                    # else:
-                    #     continue
-                    if len(data[1]) == 61:
+                    if len(data[1]) == 61: # LVOC and RF models
                         number_of_parameters = 3
-                    elif len(data[1]) == 64:
+                    elif len(data[1]) == 64: #hierarchical models
                         number_of_parameters = 4
-                    #number_of_parameters = len(data[1])
+                    else:
+                        number_of_parameters = 99999
                     # min_loss is log-likelihood
-                    print(min_loss)
-                    AIC = 2 * min_loss + 2 * number_of_parameters
-                    # df.loc[pid]["AIC"] = AIC
+                    # todo: check why is this plus and not 2k - 2ln(L)
+                    AIC = 2 * min_loss + number_of_parameters * 2
                     results_dict["AIC"].append(AIC)
+
+                    BIC = 2 * min_loss + number_of_parameters * np.log(35)
+                    results_dict["BIC"].append(BIC)
 
     # dict to pandas dataframe
     df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in results_dict.items()]))
-    df = df.dropna(subset=["loss", "AIC"])
 
-    ## Get best model for each participant and count which one occured most often
-    # df_best_model = df[df['model'].isin(['1823', '1759', '415', '31', '1919', '1855', '479', '95'])]
-    # best_model_count = {}
-    # for pid in pid_list:
-    #     data_for_pid = df_best_model[df_best_model["pid"] == pid]
-    #     # idx_lowest = data_for_pid['AIC'].idxmin().values
-    #     idx_lowest = data_for_pid['AIC'].idxmin()
-    #     best_model = data_for_pid[data_for_pid.index == idx_lowest]
-    #     best_model_name = best_model["model"].values[0]
-    #     if best_model_name in best_model_count:
-    #         best_model_count[best_model_name] += 1
-    #     else:
-    #         best_model_count[best_model_name] = 1
-    # print(best_model_count)
+    AIC = False
+    BIC = True
+
+    if AIC:
+        df = df.dropna(subset=["loss", "AIC"])
+        # Get best model for each participant and count which one occured most often based on AIC
+        df_best_model = df[df['model'].isin(model_list)]
+        best_model_count = {}
+        for pid in pid_list:
+            data_for_pid = df_best_model[df_best_model["pid"] == pid]
+            # idx_lowest = data_for_pid['AIC'].idxmin().values
+            idx_lowest = data_for_pid['AIC'].idxmin()
+            best_model = data_for_pid[data_for_pid.index == idx_lowest]
+            best_model_name = best_model["model"].values[0]
+            if best_model_name in best_model_count:
+                best_model_count[best_model_name] += 1
+            else:
+                best_model_count[best_model_name] = 1
+        print(best_model_count)
+
+        ## sort by AIC
+        df = df.sort_values(by=["AIC"])
+        df["AIC"] = df["AIC"].apply(pd.to_numeric)
+        grouped_df = df.groupby(["model"]).mean()
+        print(exp_num)
+        print("Grouped model and AIC")
+        sorted_df = grouped_df.sort_values(by=["AIC"])
+        print(sorted_df)
+
+    if BIC:
+        df = df.dropna(subset=["loss", "BIC"])
+        ## Get best model for each participant and count which one occured most often based on BIC
+        df_best_model = df[df['model'].isin(model_list)]
+        best_model_count = {}
+        for pid in pid_list:
+            data_for_pid = df_best_model[df_best_model["pid"] == pid]
+            idx_lowest = data_for_pid['BIC'].idxmin()
+            best_model = data_for_pid[data_for_pid.index == idx_lowest]
+            best_model_name = best_model["model"].values[0]
+            if best_model_name in best_model_count:
+                best_model_count[best_model_name] += 1
+            else:
+                best_model_count[best_model_name] = 1
+        print(best_model_count)
+
+        ## sort by BIC
+        df = df.sort_values(by=["BIC"])
+        df["BIC"] = df["BIC"].apply(pd.to_numeric)
+        grouped_df = df.groupby(["model"]).mean()
+        print(exp_num)
+        print("Grouped model and BIC")
+        sorted_df = grouped_df.sort_values(by=["BIC"])
+        print(sorted_df)
 
     ## sort by loss
     # df = df.sort_values(by=['loss'])
@@ -119,14 +154,6 @@ def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimizati
     # print(exp_num)
     # print("Grouped model and loss", grouped_df)
 
-    ## sort by AIC
-    df = df.sort_values(by=["AIC"])
-    df["AIC"] = df["AIC"].apply(pd.to_numeric)
-    grouped_df = df.groupby(["model"]).mean()
-    print(exp_num)
-    print("Grouped model and AIC")
-    sorted_df = grouped_df.sort_values(by=["AIC"])
-    print(sorted_df)
 
     return df
 
@@ -259,7 +286,7 @@ def average_performance_clicks(
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys())
-        #plt.show()
+        # plt.show()
         plt.savefig(
             f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
             bbox_inches="tight",
@@ -533,12 +560,23 @@ def statistical_test_between_envs(exp_num_list, model_index):
                 print(f"Skipped {index} between {pair[0]} vs {pair[1]}")
                 continue
 
+def create_bic_table(exp_num, pid_list, optimization_criterion, model_list):
+    df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion, model_list)
+    df = df.drop(columns=['optimization_criterion', 'loss', 'AIC'])
+
+    # drop not used models
+    df = df[df['model'].isin(model_list)]
+
+    df.to_csv(f"{exp_num}_bic.csv", index=False)
+
+    df = df.reset_index()
+    df = df.pivot_table(index=["pid"],columns=["model"], values=["BIC"], fill_value=0).reset_index()
+    df.to_csv(f"matlab_{exp_num}_bic.csv")
+    return None
+
 
 if __name__ == "__main__":
-    # exp_num = sys.argv[1]  # e.g. c2.1_dec
-    # optimization_criterion = sys.argv[2]
-
-    # exp_num_list = ["low_variance_high_cost"]
+    # exp_num_list = ["low_variance_low_cost"]
     exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
                     'low_variance_low_cost']
 
@@ -547,10 +585,11 @@ if __name__ == "__main__":
     #               '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855',
     #               '1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
-    model_list = ['1823', '1759', '415', '31', '1919', '1855', '479', '95'] #'5038', '5134'
-    # statistical_test_between_envs(exp_num_list, model_index=1918)
-    # Run t-test and statistical summary
-    # models_comparison = pd.DataFrame(0, index=model_list, columns=exp_num_list)
+    model_list = ['1823', '1759', '415', '31', '1919', '1855', '479', '95']  # '5038', '5134'
+
+
+
+    ## Create the plots
     # for exp_num in exp_num_list:
     #     models_temp = {}
     #     pid_list = get_all_pid_for_env(exp_num)
@@ -565,37 +604,37 @@ if __name__ == "__main__":
     #         )
     #
     #         models_temp.update(average_difference)
-    #
-    #     ##save multi-model plots with several models in one plot
-    #     plt.savefig(
-    #         f"results/mcrl/plots/multi_model/{exp_num}_{optimization_criterion}_multi_model.png",
-    #         bbox_inches="tight",
-    #     )
-    #     plt.close()
 
-        ## Compare between models
-        # compare_models_df = pd.DataFrame.from_dict(models_temp, orient='index', columns=[exp_num])
-        # compare_models_df = compare_models_df.sort_values()
-        # models_comparison[exp_num] = compare_models_df
+        ##save multi-model plots with several models in one plot
+        # plt.savefig(
+        #     f"results/mcrl/plots/multi_model/{exp_num}_{optimization_criterion}_multi_model.png",
+        #     bbox_inches="tight",
+        # )
+        # plt.close()
 
-        ## Get best model sorted by AIC and number of counts
-        # df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+
+    ## Compare between models
+    # compare_models_df = pd.DataFrame.from_dict(models_temp, orient='index', columns=[exp_num])
+    # compare_models_df = compare_models_df.sort_values()
+    # models_comparison[exp_num] = compare_models_df
 
     # models_mean = models_comparison.mean(axis=1)
     # print(models_mean)
 
+
     ## get AIC for each group of participants
     # for exp_num in exp_num_list:
     #     pid_list = get_all_pid_for_env(exp_num)
-    #     model_index = '1823' #any is fine as we only want the participants clicks and not the models
+    #     model_index = '1823'  # any is fine as we only want the participants clicks and not the models
     #     pid_dict = group_adaptive_maladaptive_participant_list(exp_num, model_index)
     #     for keys, values in pid_dict.items():
-    #         print("Condition", keys)
+    #         print("Condition", exp_num_list, keys)
     #         df = create_dataframe_of_fitted_pid(exp_num, values, optimization_criterion)
 
+
     ## Create averaged plots for each group of participants
-    for exp_num in exp_num_list:
-        create_averaged_plots_of_groups(exp_num, model_index='1855')
+    # for exp_num in exp_num_list:
+    #     create_averaged_plots_of_groups(exp_num, model_index='1855')
 
 
     ## create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
@@ -603,13 +642,21 @@ if __name__ == "__main__":
     #     pid_list = get_all_pid_for_env(exp_num)
     #     df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
 
+
     ##group best model by performance of participants (adaptive, maladaptive) and creates overall plot
     # statistical_tests_between_groups(exp_num="high_variance_high_cost", optimization_criterion="number_of_clicks_likelihood",
     #                                  model_index=1823, summary=True)
 
     # for model_index in model_list:
-        # calculate and plot the average performance given a model for all participants
-        #average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
+        ## calculate and plot the average performance given a model for all participants
+        # average_performance(exp_num, pid_list, optimization_criterion, model_index, "Averaged performance overall")
 
-        # calculate and plot the average performance given a model after grouping participants
-        # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index, plotting=True)
+        ##calculate and plot the average performance given a model after grouping participants
+        # group_adaptive_maladaptive_participant_list(exp_num_list, model_index)
+
+    ## Create and export BIC list to csv for Matlab code
+    for exp_num in exp_num_list:
+        # exp_num = 'high_variance_high_cost'
+        # pid_list = [0, 1, 10]'
+        pid_list = get_all_pid_for_env(exp_num)
+        create_bic_table(exp_num, pid_list, optimization_criterion, model_list)

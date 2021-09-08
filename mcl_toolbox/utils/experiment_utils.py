@@ -1435,7 +1435,7 @@ class Experiment:
             )
         else:
             strategy_score_dict = pd.read_pickle(
-                f"../results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+                f"results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
             )
 
         for strategy_number, _ in strategy_dict.items():
