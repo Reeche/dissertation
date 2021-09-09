@@ -21,13 +21,13 @@ Format: python3 calculate_strategy_score.py <exp_num> <num_runs> <cost> <reward_
 Example: python3 calculate_strategy_score.py c1.1 200000 1 low_constant
 
 // condition 0: training_trial_high_variance_low_click_cost --> click a lot
-python3 calculate_strategy_score.py high_variance 300000 1 high_variance
+python3 calculate_strategy_score.py high_variance_low_cost 300000 1 high_variance_low_cost
 
 // condition 1: training_trial_low_variance_high_click_cost -- click nothing
 python3 calculate_strategy_score.py low_variance 300000 5 low_variance
 
 // condition 2: training_trial_high_variance_high_click_cost --> unclear
-python3 calculate_strategy_score.py high_variance 300000 5 high_variance
+python3 calculate_strategy_score.py high_variance_high_cost 300000 5 high_variance_high_cost
 
 // condition 3: training_trial_low_variance_low_click_cost --> unclear
 python3 calculate_strategy_score.py low_variance 300000 1 low_variance
@@ -95,8 +95,8 @@ learning_utils.create_dir(dir)
 # )
 print("Number of clicks", click_list)
 learning_utils.pickle_save(
-    click_list, f"{dir}/{exp_num}_numberclicks_{click_cost}_strategy_scores.pkl"
+    click_list, f"{dir}/{exp_num}_numberclicks.pkl"
 )
 
 # only need for
-# python3 calculate_strategy_score.py low_variance 200000 1 low_variance
+# python3 calculate_strategy_score.py low_variance 300000 1 low_variance

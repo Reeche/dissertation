@@ -276,7 +276,8 @@ def average_performance_clicks(
         plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
         create_dir(plot_directory)
 
-        plt.plot(algo_mean, label=model_index)
+        #plt.plot(algo_mean, label=model_index)
+        plt.plot(algo_mean, label="Model")
         plt.plot(participant_mean, label="Participant", linewidth=3.0)
         plt.xlabel('Trials')
         plt.ylabel('Averaged number of clicks')
@@ -585,25 +586,26 @@ if __name__ == "__main__":
     #               '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855',
     #               '1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
-    model_list = ['1823', '1759', '415', '31', '1919', '1855', '479', '95']  # '5038', '5134'
+    #model_list = ['1823', '1759', '415', '31', '1919', '1855', '479', '95']  # '5038', '5134'
 
+    model_list = ['1855']
 
 
     ## Create the plots
-    # for exp_num in exp_num_list:
-    #     models_temp = {}
-    #     pid_list = get_all_pid_for_env(exp_num)
-    #     for model_index in model_list:
-    #         average_difference = average_performance_clicks(
-    #             exp_num,
-    #             pid_list,
-    #             optimization_criterion,
-    #             model_index=model_index,
-    #             plot_title="",
-    #             plotting=True,
-    #         )
-    #
-    #         models_temp.update(average_difference)
+    for exp_num in exp_num_list:
+        models_temp = {}
+        pid_list = get_all_pid_for_env(exp_num)
+        for model_index in model_list:
+            average_difference = average_performance_clicks(
+                exp_num,
+                pid_list,
+                optimization_criterion,
+                model_index=model_index,
+                plot_title="",
+                plotting=True,
+            )
+
+            models_temp.update(average_difference)
 
         ##save multi-model plots with several models in one plot
         # plt.savefig(
@@ -655,8 +657,8 @@ if __name__ == "__main__":
         # group_adaptive_maladaptive_participant_list(exp_num_list, model_index)
 
     ## Create and export BIC list to csv for Matlab code
-    for exp_num in exp_num_list:
-        # exp_num = 'high_variance_high_cost'
-        # pid_list = [0, 1, 10]'
-        pid_list = get_all_pid_for_env(exp_num)
-        create_bic_table(exp_num, pid_list, optimization_criterion, model_list)
+    # for exp_num in exp_num_list:
+    #     # exp_num = 'high_variance_high_cost'
+    #     # pid_list = [0, 1, 10]'
+    #     pid_list = get_all_pid_for_env(exp_num)
+    #     create_bic_table(exp_num, pid_list, optimization_criterion, model_list)
