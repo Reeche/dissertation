@@ -29,9 +29,6 @@ sns.set_style('whitegrid')
 
 NS = 79
 
-#TODO:
-# Implement Gaussian DS - Requires knowledge of how to remove the influence of past observations
-
 @lru_cache(maxsize=None)
 def get_log_pdf(y, m, v):
     return mp.log(mp.npdf(y, m, v))

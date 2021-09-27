@@ -21,8 +21,7 @@ np.seterr(all='ignore')
 
 
 class Participant():
-    # TODO:
-    # Add proper way of managing temperature pararmeters
+
     def __init__(self, pid, condition=None):
         self.pid = pid
         self.condition = condition
@@ -38,7 +37,9 @@ class Participant():
     def attach_trial_data(self, data):
         self.clicks = [q['click']['state']['target'] for q in data.queries]
         self.modify_clicks()
+        self.paths = [[int(p) for p in path] for path in data.path]
         self.envs = [[0] + sr[1:] for sr in data.state_rewards]
+        self.scores = data.score
         columns = list(data.columns).copy()
         columns_to_remove = ['pid', 'queries', 'state_rewards']
         # make it list of rewards

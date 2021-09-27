@@ -5,8 +5,9 @@ import random
 from mcl_toolbox.global_vars import *
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.utils.learning_utils import pickle_save, \
-    get_normalized_features, Participant, create_dir, get_number_of_actions_from_branching
+    get_normalized_features, create_dir, get_number_of_actions_from_branching
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
+from mcl_toolbox.utils.fitting_utils import get_participant_context, construct_model
 
 """
 Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
@@ -16,8 +17,9 @@ Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":Tr
 Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 
-
-# todo: not all optimization methods with all models. Need to add this somewhere in the code
+# todo: not all optimization methods work with all models. Need to add this somewhere in the code
+# Likelihood computation is currently available for all reinforce and lvoc models
+#
 
 
 def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False,
@@ -61,13 +63,15 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     strategy_space = strategies.strategy_spaces[strategy_space_type]
 
     # prepare participant and env for the optimization
-    participant = Participant(exp_name, pid, excluded_trials=excluded_trials,
-                              get_strategies=False)
-    participant.first_trial_data = participant.get_first_trial_data()
-    participant.all_trials_data = participant.get_all_trials_data()
-    print(len(participant.all_trials_data["actions"]))
-    env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
-                             ground_truth=participant.envs)
+    # participant = Participant(exp_name, pid, excluded_trials=excluded_trials,
+    #                           get_strategies=False, get_weights=False)
+    # participant.first_trial_data = participant.get_first_trial_data()
+    # participant.all_trials_data = participant.get_all_trials_data()
+    # print(len(participant.all_trials_data["actions"]))
+    # env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
+    #                          ground_truth=participant.envs)
+    exp_attributes = {}
+    participant, env = get_participant_context(exp_name, pid, pipeline, exp_attributes=exp_attributes)
 
     # TODO document why
     if learner == "rssl":
@@ -111,8 +115,17 @@ def prior_fit(exp_name, model_index, optimization_criterion, pid, plotting=False
     pickle_save((res, prior), os.path.join(prior_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
     # TODO: document what is this? Is this running simulations given priors?
-    (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion,
-                                                        num_simulations=30)
+    if optimization_criterion != "likelihood":
+        reward_data = optimizer.plot_rewards(i=min_index)
+        (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], optimization_criterion, num_simulations=4)
+        #TODO: Add simulation code here
+    else:
+        learner, attributes = construct_model(model_index, num_actions, normalized_features)
+        optimizer = ParameterOptimizer(learner, attributes, participant, env)
+        (r_data, sim_data), p_data = optimizer.run_hp_model(res[0], "reward", num_simulations=4)
+        optimizer.reward_data = [r_data["mer"]]
+        optimizer.p_data = p_data
+        optimizer.plot_rewards(i=0)
     print(sim_data['info'], len(sim_data['info']))
     pickle_save(sim_data, os.path.join(model_info_directory, f"{pid}_{optimization_criterion}_{model_index}.pkl"))
 
@@ -128,9 +141,9 @@ if __name__ == "__main__":
     #     other_params = ast.literal_eval(sys.argv[5])
 
     exp_name = "v1.0"
-    model_index = 1
-    optimization_criterion = "pseudo_likelihood"
+    model_index = 1825
+    optimization_criterion = "likelihood"
     pid = 1
-    plotting = True
-    other_params = {'optimizer': "hyperopt", 'num_simulations': 5, 'max_evals': 2}
-    prior_fit(exp_name, model_index, optimization_criterion, pid, plotting, **other_params)
+    plotting = False
+    optimization_params = {'optimizer': "hyperopt", 'num_simulations': 1, 'max_evals': 2000}
+    prior_fit(exp_name, model_index, optimization_criterion, pid, plotting, optimization_params=optimization_params)

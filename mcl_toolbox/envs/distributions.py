@@ -6,9 +6,10 @@ import numpy as np
 import scipy.stats
 from toolz import reduce
 
-LARGE_CACHE_SIZE = int(2**20)
-CACHE_SIZE = int(2**14)
-SMALL_CACHE_SIZE = int(2**16)
+LARGE_CACHE_SIZE = int(2 ** 20)
+CACHE_SIZE = int(2 ** 14)
+SMALL_CACHE_SIZE = int(2 ** 16)
+
 
 class Distribution(object):
     """Represents a probability distribution."""

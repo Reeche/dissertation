@@ -21,6 +21,7 @@ class HierarchicalAgent():
         self.avg_payoff = 0
         self.history = []
         self.action_log_probs = []
+        self.compute_likelihood = False
 
     def update_payoffs(self, total_reward):
         self.payoffs.append(total_reward)
@@ -121,13 +122,24 @@ class HierarchicalAgent():
                 threshold_mean, decision_params['threshold_var']/np.sqrt(trial_num + 1)), tau)
         return p_stop
 
-    def get_action(self, env):
-        max_expected_return = env.present_trial.node_map[0].calculate_max_expected_return(
-        )
+    def get_action(self, env, trial_info):
+        max_expected_return = env.get_term_reward()
         self.update_history(max_expected_return)
         p_stop = self.compute_stop_prob(
             env, max_expected_return=max_expected_return, path_history=self.history)
-        termination_choice = np.random.choice([0, 1], p=[p_stop, 1-p_stop])
+        probs = [p_stop, 1-p_stop]
+        if self.compute_likelihood:
+            pi = trial_info['participant']
+            click = pi.get_click()
+            termination_choice = 0
+            if click != 0:
+                termination_choice = 1
+            prob = probs[termination_choice]
+            if prob == 0:
+                prob = precision_epsilon
+            self.action_log_probs.append(np.log(prob))
+        else:
+            termination_choice = np.random.choice([0, 1], p=[p_stop, 1-p_stop])
         return termination_choice, p_stop
 
 
@@ -147,67 +159,52 @@ class HierarchicalLearner(Learner):
         self.actor_agent = self.actor(params, attributes)
 
     def simulate(self, env, compute_likelihood=False, participant=None):
-        all_trials_data = participant.all_trials_data
+        if compute_likelihood:
+            get_log_norm_pdf.cache_clear()
+            get_log_norm_cdf.cache_clear()
+            self.actor_agent.compute_likelihood = True
+            self.decision_agent.compute_likelihood = True
+        self.compute_likelihood = compute_likelihood
         trials_data = defaultdict(list)
         num_trials = env.num_trials
         self.actor_agent.init_model_params()
         self.decision_agent.init_model_params()
         env.reset()
-        get_log_norm_pdf.cache_clear()
-        get_log_norm_cdf.cache_clear()
         self.actor_agent.num_actions = len(env.get_available_actions())
         for trial_num in range(num_trials):
             self.actor_agent.update_rewards = []
             self.actor_agent.update_features = []
             self.actor_agent.term_rewards = []
+            self.actor_agent.previous_best_paths = []
             self.actor_agent.num_actions = len(env.get_available_actions())
             actions = []
             rewards = []
             trials_data['w'].append(self.actor_agent.get_current_weights())
-            if compute_likelihood:
-                trial_actions = all_trials_data['actions'][trial_num]
-                trial_rewards = all_trials_data['rewards'][trial_num]
-                trial_path = all_trials_data['taken_paths'][trial_num]
-                for i in range(len(trial_actions)):
-                    action = trial_actions[i]
-                    reward = trial_rewards[i]
-                    # Maybe this is the reason of hierarchical learner not winning AIC
-                    _, p_stop = self.decision_agent.get_action(env)
-                    if action != 0:
-                        action_prob = 1 - p_stop
-                        if 1 - p_stop == 0:
-                            action_prob = hierarchical_params.precision_epsilon
-                    else:
-                        action_prob = p_stop
-                        if p_stop == 0:
-                            action_prob = hierarchical_params.precision_epsilon
-                    self.decision_agent.action_log_probs.append(np.log(action_prob))
+            while True:
+                continue_planning, _ = self.decision_agent.get_action(env, trial_info={'participant':
+                                                                        participant})
+                if continue_planning == 0:
+                    previous_path = participant.get_trial_path()
+                    _, reward, done, taken_path = env.step(0)
+                    if compute_likelihood:
+                        taken_path = previous_path
+                    # What to do when episode is finished by upper level
+                    _, act_reward, _, _ = self.actor_agent.act_and_learn(env, trial_info={'end_episode': True, 
+                                                            'participant': participant,
+                                                            'taken_path': taken_path})
+                    actions.append(0)
+                    if self.compute_likelihood:
+                        reward = act_reward
+                    rewards.append(reward)
+                    actions.append(continue_planning)
+                    break
+                else:
+                    action, reward, done, taken_path = self.actor_agent.act_and_learn(env, 
+                                                                        trial_info={'participant': participant})
                     rewards.append(reward)
                     actions.append(action)
-                    if not self.no_term or action != 0:
-                        self.actor_agent.store_action_likelihood(env, action)
-                        if i != (len(trial_actions)-1):
-                            next_action = trial_actions[i+1]
-                        else:
-                            next_action = None
-                        self.actor_agent.take_action_and_learn(env, action, reward, next_action, trial_path)
-            else:
-                while True:
-                    continue_planning, _ = self.decision_agent.get_action(env)
-                    if continue_planning == 0:
-                        _, reward, done, taken_path = env.step(0)
-                        # What to do when episode is finished by upper level
-                        self.actor_agent.act_and_learn(env, end_episode=True)
-                        actions.append(0)
-                        rewards.append(reward)
-                        actions.append(continue_planning)
+                    if done:
                         break
-                    else:
-                        action, reward, done, taken_path = self.actor_agent.act_and_learn(env)
-                        rewards.append(reward)
-                        actions.append(action)
-                        if done:
-                            break
             env.get_next_trial()
             trials_data['a'].append(actions)
             trials_data['r'].append(np.sum(rewards))
