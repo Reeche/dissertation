@@ -19,10 +19,15 @@ class GenericMouselabEnv(gym.Env):
         super(GenericMouselabEnv, self).__init__()
         self.pipeline = pipeline
         self.ground_truth = ground_truth
-        self.cost = cost
         self.num_trials = num_trials
         self.render_path = render_path
-        self.repeat_cost = -self.cost*10
+        if isinstance(cost, list):
+            cost_weight, depth_weight = cost
+            self.cost = lambda depth: - (1 * cost_weight + (depth - 1) * depth_weight)
+            self.repeat_cost = - float("inf")
+        else:  # should be a scalar
+            self.cost = lambda depth: - (1 * cost)
+            self.repeat_cost = -cost * 10
         self.feedback = feedback
         self.q_fn = q_fn
         self.features = None
@@ -99,7 +104,7 @@ class GenericMouselabEnv(gym.Env):
 
     def step(self, action):
         info = {}
-        reward = -self.cost
+        reward = self.cost(self.present_trial.node_map[action].depth)
         done = False
         if action in self.observed_action_list:
             return self._state, self.repeat_cost, False, {}
