@@ -1,12 +1,17 @@
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import mpmath as mp
 import numpy as np
+
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.models.rl_models import integrate
-from mcl_toolbox.utils.learning_utils import sample_coeffs, rows_mean, estimate_bayes_glm, \
-    break_ties_random, get_log_norm_pdf, get_log_norm_cdf, norm_integrate, get_gaussian_max_probs, \
-    mvprpb, get_mu_v
+from mcl_toolbox.utils.learning_utils import (break_ties_random,
+                                              estimate_bayes_glm,
+                                              get_gaussian_max_probs,
+                                              get_log_norm_cdf,
+                                              get_log_norm_pdf, get_mu_v,
+                                              mvprpb, norm_integrate,
+                                              rows_mean, sample_coeffs)
 
 
 class LVOC(Learner):
@@ -14,14 +19,14 @@ class LVOC(Learner):
 
     def __init__(self, params, attributes):
         super().__init__(params, attributes)
-        self.standard_dev = np.exp(params['standard_dev'])
-        self.num_samples = int(params['num_samples'])
-        self.init_weights = params['priors']
-        self.eps = max(0, min(params['eps'], 1))
-        self.no_term = attributes['no_term']
-        self.vicarious_learning = attributes['vicarious_learning']
-        self.termination_value_known = attributes['termination_value_known']
-        self.monte_carlo_updates = attributes['montecarlo_updates']
+        self.standard_dev = np.exp(params["standard_dev"])
+        self.num_samples = int(params["num_samples"])
+        self.init_weights = params["priors"]
+        self.eps = max(0, min(params["eps"], 1))
+        self.no_term = attributes["no_term"]
+        self.vicarious_learning = attributes["vicarious_learning"]
+        self.termination_value_known = attributes["termination_value_known"]
+        self.monte_carlo_updates = attributes["montecarlo_updates"]
         self.init_model_params()
         self.term_rewards = []
 
@@ -39,7 +44,8 @@ class LVOC(Learner):
     def sample_weights(self):
         """Sample weights from the posterior distribution"""
         sampled_weights = sample_coeffs(
-            self.mean, self.precision, self.gamma_a, self.gamma_b, self.num_samples)
+            self.mean, self.precision, self.gamma_a, self.gamma_b, self.num_samples
+        )
         return rows_mean(sampled_weights)
 
     def update_params(self, f, r):
@@ -52,7 +58,8 @@ class LVOC(Learner):
         if self.is_null:
             return
         self.mean, self.precision, self.gamma_a, self.gamma_b = estimate_bayes_glm(
-            f, r, self.mean, self.precision, self.gamma_a, self.gamma_b)
+            f, r, self.mean, self.precision, self.gamma_a, self.gamma_b
+        )
 
     def get_action_features(self, env):
         action_features = env.get_feature_state()
@@ -64,7 +71,7 @@ class LVOC(Learner):
         """Get the best action and its features in the given state"""
         feature_vals = self.get_action_features(env)
         if self.compute_likelihood:
-            pi = trial_info['participant']
+            pi = trial_info["participant"]
             action = pi.get_click()
         else:
             available_actions = env.get_available_actions()
@@ -97,12 +104,14 @@ class LVOC(Learner):
         features = feature_vals[action]
         return action, features
 
-    def perform_action_updates(self, env, next_features, reward, term_features, term_reward, features):
+    def perform_action_updates(
+        self, env, next_features, reward, term_features, term_reward, features
+    ):
         q = np.dot(self.mean, next_features)
         pr = self.get_pseudo_reward(env)
         self.update_rewards.append(reward + pr - self.subjective_cost)
         self.pseudo_reward = pr
-        value_estimate = (q + (reward - self.subjective_cost) + pr)
+        value_estimate = q + (reward - self.subjective_cost) + pr
         self.update_params(features, value_estimate)
         if self.vicarious_learning:
             self.update_params(term_features, term_reward)
@@ -111,15 +120,18 @@ class LVOC(Learner):
         if self.monte_carlo_updates:
             for i in range(len(self.update_features) - 1):
                 self.update_params(
-                    self.update_features[i], np.sum(self.update_rewards[i:]))
+                    self.update_features[i], np.sum(self.update_rewards[i:])
+                )
 
     def perform_end_episode_updates(self, env, features, reward, taken_path):
         selected_action = 0
-        delay = env.get_feedback({'taken_path': taken_path, 'action': selected_action})
+        delay = env.get_feedback({"taken_path": taken_path, "action": selected_action})
         pr = self.get_pseudo_reward(env)
         value_estimate = reward + pr - self.delay_scale * delay
         self.update_params(features, value_estimate)
-        self.update_rewards.append(value_estimate)  # This line has been changed. This only affects montecarlo models
+        self.update_rewards.append(
+            value_estimate
+        )  # This line has been changed. This only affects montecarlo models
         self.perform_montecarlo_updates()
 
     def learn_from_path(self, env, path):
@@ -141,7 +153,9 @@ class LVOC(Learner):
         for index, action in enumerate(available_actions):
             computed_features = feature_vals[action]
             dists[index][0] = np.dot(computed_features, self.mean)
-            dists[index][1] = np.dot(np.dot(computed_features, cov), computed_features.T)
+            dists[index][1] = np.dot(
+                np.dot(computed_features, cov), computed_features.T
+            )
 
         means = dists[:, 0]
         sigmas = np.sqrt(dists[:, 1])
@@ -156,23 +170,32 @@ class LVOC(Learner):
             # samples = np.random.multivariate_normal(means, np.diag(variances), size=n_samples)
             # argmaxes = np.argmax(samples, axis=1)
             # counts = Counter(argmaxes)
-            selected_action_prob = mp.quad(lambda x: norm_integrate(x, action_index, means, sigmas), 
-                                            [lb, ub], maxdegree=10)
+            selected_action_prob = mp.quad(
+                lambda x: norm_integrate(x, action_index, means, sigmas),
+                [lb, ub],
+                maxdegree=10,
+            )
         eps = self.eps
-        log_prob = float(str(mp.log((1 - eps) * selected_action_prob + eps * (1 / num_available_actions))))
+        log_prob = float(
+            str(
+                mp.log(
+                    (1 - eps) * selected_action_prob + eps * (1 / num_available_actions)
+                )
+            )
+        )
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
 
     def take_action(self, env, trial_info):
         taken_path = None
         action, features = self.get_action_details(env, trial_info)
-        delay = env.get_feedback({'action': action})
+        delay = env.get_feedback({"action": action})
         if self.compute_likelihood:
-            pi = trial_info['participant']
+            pi = trial_info["participant"]
             self.store_action_likelihood(env, action)
             s_next, r, done, _ = env.step(action)
             reward, taken_path, done = pi.make_click()
-            #assert r == reward #doesn't make sense because the path is not the same
+            # assert r == reward #doesn't make sense because the path is not the same
         else:
             s_next, reward, done, taken_path = env.step(action)
         return s_next, action, reward, done, taken_path, delay, features
@@ -181,19 +204,33 @@ class LVOC(Learner):
         if trial_info is None:
             trial_info = {}
         end_episode = False
-        if 'end_episode' in trial_info:
-            end_episode = trial_info['end_episode']
+        if "end_episode" in trial_info:
+            end_episode = trial_info["end_episode"]
         if not end_episode:
             term_reward = self.get_term_reward(env)
             term_features = self.get_term_features(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
-            s_next, action, reward, done, taken_path, delay, features = self.take_action(env, trial_info)
+            (
+                s_next,
+                action,
+                reward,
+                done,
+                taken_path,
+                delay,
+                features,
+            ) = self.take_action(env, trial_info)
             if not done:
                 a_next, next_features = self.get_action_details(env, trial_info)
                 self.update_features.append(features)
                 self.perform_action_updates(
-                    env, next_features, reward - self.delay_scale * delay, term_features, term_reward, features)
+                    env,
+                    next_features,
+                    reward - self.delay_scale * delay,
+                    term_features,
+                    term_reward,
+                    features,
+                )
             else:
                 self.update_features.append(features)
                 self.learn_from_path(env, taken_path)
@@ -203,8 +240,8 @@ class LVOC(Learner):
             reward = 0
             taken_path = None
             if self.compute_likelihood:
-                reward, taken_path, done = trial_info['participant'].make_click()
-            self.learn_from_path(env, trial_info['taken_path'])
+                reward, taken_path, done = trial_info["participant"].make_click()
+            self.learn_from_path(env, trial_info["taken_path"])
             return 0, reward, True, taken_path
 
     def simulate(self, env, compute_likelihood=False, participant=None):
@@ -219,23 +256,22 @@ class LVOC(Learner):
         for trial_num in range(num_trials):
             self.previous_best_paths = []
             self.num_actions = len(env.get_available_actions())
-            trials_data['w'].append(self.get_current_weights())
+            trials_data["w"].append(self.get_current_weights())
             self.update_rewards, self.update_features = [], []
             actions, rewards, self.term_rewards = [], [], []
             done = False
             while not done:
-                action, reward, done, _ = self.act_and_learn(env, 
-                                            trial_info={'participant': 
-                                                        participant})
+                action, reward, done, _ = self.act_and_learn(
+                    env, trial_info={"participant": participant}
+                )
                 rewards.append(reward)
                 actions.append(action)
-            trials_data['r'].append(np.sum(rewards))
-            trials_data['a'].append(actions)
+            trials_data["r"].append(np.sum(rewards))
+            trials_data["a"].append(actions)
             env.get_next_trial()
         # Likelihoods are stored in action_log_probs
         if self.action_log_probs:
-            trials_data['loss'] = -np.sum(self.action_log_probs)
+            trials_data["loss"] = -np.sum(self.action_log_probs)
         else:
-            trials_data['loss'] = None
+            trials_data["loss"] = None
         return dict(trials_data)
-

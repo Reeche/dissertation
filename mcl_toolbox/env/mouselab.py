@@ -1,14 +1,16 @@
-import numpy as np
 import random
 
 import gym
 import numpy as np
 from contracts import contract
 from gym import spaces
-from toolz import memoize, get
-from mcl_toolbox.utils.distributions import smax, cmax, sample, expectation, PointMass
+from toolz import get, memoize
+
 from mcl_toolbox.envs.registry import registry
-from mcl_toolbox.utils.graph_utils import graph_from_adjacency_list, annotate_mdp_graph
+from mcl_toolbox.utils.distributions import (PointMass, cmax, expectation,
+                                             sample, smax)
+from mcl_toolbox.utils.graph_utils import (annotate_mdp_graph,
+                                           graph_from_adjacency_list)
 
 NO_CACHE = False
 if NO_CACHE:

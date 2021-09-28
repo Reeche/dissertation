@@ -1,13 +1,18 @@
 import operator
 
 import numpy as np
-from mcl_toolbox.env.modified_mouselab import TrialSequence, get_termination_mers
-from scipy.special import softmax, logsumexp
-from mcl_toolbox.utils.learning_utils import get_normalized_feature_values, get_counts
+from scipy.special import logsumexp, softmax
+
+from mcl_toolbox.env.modified_mouselab import (TrialSequence,
+                                               get_termination_mers)
+from mcl_toolbox.utils.learning_utils import (get_counts,
+                                              get_normalized_feature_values)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 
-def get_accuracy_position(position, ground_truth, clicks, pipeline, features, normalized_features, W):
+def get_accuracy_position(
+    position, ground_truth, clicks, pipeline, features, normalized_features, W
+):
     num_features = len(features)
     env = TrialSequence(1, pipeline, ground_truth=[ground_truth])
     trial = env.trial_sequence[0]
@@ -23,14 +28,18 @@ def get_accuracy_position(position, ground_truth, clicks, pipeline, features, no
             feature_values[i] = node.compute_termination_feature_values(features)
             if normalized_features:
                 feature_values[i] = get_normalized_feature_values(
-                    feature_values[i], features, normalized_features)
+                    feature_values[i], features, normalized_features
+                )
         dot_product = beta * np.dot(W, feature_values.T)
         softmax_dot = softmax(dot_product)
         neg_log_likelihood = -np.log(softmax_dot[click_index])
         total_neg_click_likelihood += neg_log_likelihood
         sorted_indices = np.argsort(dot_product)[::-1]
         sorted_list_indices = get_sorted_list_indices(sorted_indices, dot_product)
-        sorted_list_clicks = [[unobserved_node_labels[index] for index in indices] for indices in sorted_list_indices]
+        sorted_list_clicks = [
+            [unobserved_node_labels[index] for index in indices]
+            for indices in sorted_list_indices
+        ]
         click_present = False
         for clicks_list in sorted_list_clicks[:position]:
             if click in clicks_list:
@@ -45,7 +54,16 @@ def get_accuracy_position(position, ground_truth, clicks, pipeline, features, no
     return acc, average_click_likelihood
 
 
-def get_acls(strategies, pids, p_envs, p_clicks, pipeline, features, normalized_features, strategy_weights):
+def get_acls(
+    strategies,
+    pids,
+    p_envs,
+    p_clicks,
+    pipeline,
+    features,
+    normalized_features,
+    strategy_weights,
+):
     acls = []
     random_acls = []
     total_acc = []
@@ -57,10 +75,24 @@ def get_acls(strategies, pids, p_envs, p_clicks, pipeline, features, normalized_
             pid_acc = []
             for i in range(len(envs)):
                 strategy_num = strategies[pid][i]
-                pid_acc, acl = get_accuracy_position(1, envs[i], clicks[i], pipeline, features, normalized_features,
-                                                     strategy_weights[strategy_num - 1])
-                _, random_acl = get_accuracy_position(1, envs[i], clicks[i], pipeline, features, normalized_features,
-                                                      strategy_weights[38])
+                pid_acc, acl = get_accuracy_position(
+                    1,
+                    envs[i],
+                    clicks[i],
+                    pipeline,
+                    features,
+                    normalized_features,
+                    strategy_weights[strategy_num - 1],
+                )
+                _, random_acl = get_accuracy_position(
+                    1,
+                    envs[i],
+                    clicks[i],
+                    pipeline,
+                    features,
+                    normalized_features,
+                    strategy_weights[38],
+                )
                 acls.append(acl)
                 random_acls.append(random_acl)
             total_acc += pid_acc
@@ -68,8 +100,16 @@ def get_acls(strategies, pids, p_envs, p_clicks, pipeline, features, normalized_
     return acls, random_acls
 
 
-def compute_average_click_likelihoods(strategies, pids, p_envs, p_clicks, pipeline, features, normalized_features,
-                                      strategy_weights):
+def compute_average_click_likelihoods(
+    strategies,
+    pids,
+    p_envs,
+    p_clicks,
+    pipeline,
+    features,
+    normalized_features,
+    strategy_weights,
+):
     acls = []
     random_acls = []
     for pid in pids:
@@ -80,13 +120,28 @@ def compute_average_click_likelihoods(strategies, pids, p_envs, p_clicks, pipeli
             for i in range(len(envs)):
                 try:
                     strategy_num = strategies[pid][i]
-                    trial = TrialSequence(1, pipeline, ground_truth=[envs[i]]).trial_sequence[0]
+                    trial = TrialSequence(
+                        1, pipeline, ground_truth=[envs[i]]
+                    ).trial_sequence[0]
                     num_clicks = len(clicks[i])
                     acl = (1 / num_clicks) * np.exp(
-                        compute_log_likelihood(trial, clicks[i], features, strategy_weights[strategy_num - 1],
-                                               normalized_features))
+                        compute_log_likelihood(
+                            trial,
+                            clicks[i],
+                            features,
+                            strategy_weights[strategy_num - 1],
+                            normalized_features,
+                        )
+                    )
                     random_acl = (1 / num_clicks) * np.exp(
-                        compute_log_likelihood(trial, clicks[i], features, strategy_weights[38], normalized_features))
+                        compute_log_likelihood(
+                            trial,
+                            clicks[i],
+                            features,
+                            strategy_weights[38],
+                            normalized_features,
+                        )
+                    )
                     acls.append(acl)
                     random_acls.append(random_acl)
                 except Exception as e:
@@ -118,7 +173,9 @@ def get_sorted_list_indices(sorted_indices, dot_product):
     return total_list
 
 
-def compute_log_likelihood(trial, click_sequence, features, weights, inv_t=False, normalized_features=False):
+def compute_log_likelihood(
+    trial, click_sequence, features, weights, inv_t=False, normalized_features=False
+):
     trial.reset_observations()
     log_likelihoods = []
     feature_len = weights.shape[0]
@@ -137,7 +194,9 @@ def compute_log_likelihood(trial, click_sequence, features, weights, inv_t=False
     for click in click_sequence:
         unobserved_nodes = trial.get_unobserved_nodes()
         unobserved_node_labels = [node.label for node in unobserved_nodes]
-        feature_values = trial.get_node_feature_values(unobserved_nodes, fs, normalized_features)
+        feature_values = trial.get_node_feature_values(
+            unobserved_nodes, fs, normalized_features
+        )
         dot_product = beta * np.dot(ws, feature_values.T)
         click_index = unobserved_node_labels.index(click)
         trial.node_map[click].observe()
@@ -146,7 +205,9 @@ def compute_log_likelihood(trial, click_sequence, features, weights, inv_t=False
     return np.sum(log_likelihoods)
 
 
-def compute_trial_feature_log_likelihood(trial, trial_features, click_sequence, weights, inv_t=False):
+def compute_trial_feature_log_likelihood(
+    trial, trial_features, click_sequence, weights, inv_t=False
+):
     trial.reset_observations()
     log_likelihoods = []
     feature_len = weights.shape[0]
@@ -183,7 +244,9 @@ def get_clicks(trial, features, weights, normalized_features, inv_t=False):
     click = -1
     while click != 0:
         unobserved_node_labels = [node.label for node in unobserved_nodes]
-        feature_values = trial.get_node_feature_values(unobserved_nodes, features, normalized_features)
+        feature_values = trial.get_node_feature_values(
+            unobserved_nodes, features, normalized_features
+        )
         dot_product = beta * np.dot(W, feature_values.T)
         softmax_dot = softmax(dot_product)
         click = np.random.choice(unobserved_node_labels, p=softmax_dot)
@@ -193,7 +256,9 @@ def get_clicks(trial, features, weights, normalized_features, inv_t=False):
     return actions
 
 
-def generate_clicks(pipeline, num_trials, weights, features, normalized_features, envs=None):
+def generate_clicks(
+    pipeline, num_trials, weights, features, normalized_features, envs=None
+):
     trials = TrialSequence(num_trials, pipeline, ground_truth=envs)
     clicks = []
     for trial in trials.trial_sequence:
@@ -201,9 +266,7 @@ def generate_clicks(pipeline, num_trials, weights, features, normalized_features
     return trials.ground_truth, clicks
 
 
-def generate_algorithm_data(env,
-                            strategy_num,
-                            num_simulations=1000):
+def generate_algorithm_data(env, strategy_num, num_simulations=1000):
     simulated_actions = []
     for sim_num in range(num_simulations):
         trial = env.present_trial
@@ -213,12 +276,14 @@ def generate_algorithm_data(env,
         env.get_next_trial()
     return env.ground_truth, simulated_actions
 
+
 def compute_action_features(trial, action, features, normalized_features):
     node = trial.node_map[action]
     action_feature_values = node.compute_termination_feature_values(features)
     if normalized_features:
         action_feature_values = get_normalized_feature_values(
-            action_feature_values, features, normalized_features)
+            action_feature_values, features, normalized_features
+        )
     return action_feature_values
 
 
@@ -229,47 +294,52 @@ def compute_current_features(trial, features, normalized_features):
     for node_num in range(num_nodes):
         node = trial.node_map[node_num]
         action_feature_values[node_num] = node.compute_termination_feature_values(
-            features)
+            features
+        )
         if normalized_features:
             action_feature_values[node_num] = get_normalized_feature_values(
-                action_feature_values[node_num], features, normalized_features)
+                action_feature_values[node_num], features, normalized_features
+            )
     return action_feature_values
 
 
 def compute_trial_features(
-        pipeline,
-        ground_truth,
-        trial_actions,
-        features_list,
-        normalized_features):
+    pipeline, ground_truth, trial_actions, features_list, normalized_features
+):
     num_features = len(features_list)
-    env = TrialSequence(
-        num_trials=1,
-        pipeline=pipeline,
-        ground_truth=[ground_truth]
-    )
+    env = TrialSequence(num_trials=1, pipeline=pipeline, ground_truth=[ground_truth])
     trial = env.trial_sequence[0]
     num_actions = len(trial_actions)
     num_nodes = trial.num_nodes
     action_feature_values = np.zeros((num_actions, num_nodes, num_features))
     for i, action in enumerate(trial_actions):
         node_map = trial.node_map
-        trial_feature_values = compute_current_features(trial, features_list, normalized_features)
+        trial_feature_values = compute_current_features(
+            trial, features_list, normalized_features
+        )
         for node_num in range(num_nodes):
             action_feature_values[i][node_num] = trial_feature_values[node_num]
         node_map[action].observe()
     return action_feature_values
 
 
-def compute_error_gradient(w, trial_features, feature_indices, trial_actions, fit_inverse_temperature=False,
-                           compute_grad=False):
+def compute_error_gradient(
+    w,
+    trial_features,
+    feature_indices,
+    trial_actions,
+    fit_inverse_temperature=False,
+    compute_grad=False,
+):
     grad = np.zeros_like(w)
     error = 0
     W = w
     beta = 1
     for i, action in enumerate(trial_actions):
         num_actions = trial_features[i].shape[0]
-        available_actions = [a for a in range(num_actions) if a not in trial_actions[:i]]
+        available_actions = [
+            a for a in range(num_actions) if a not in trial_actions[:i]
+        ]
         action_index = available_actions.index(action)
         required_features = trial_features[i][available_actions][:, feature_indices]
         dot_product = beta * np.dot(W, required_features.T)
@@ -280,23 +350,43 @@ def compute_error_gradient(w, trial_features, feature_indices, trial_actions, fi
     return error, grad
 
 
-def compute_total_error_gradient(w, simulated_features, feature_indices, simulated_actions,
-                                 fit_inverse_temperature=False, compute_grad=False):
+def compute_total_error_gradient(
+    w,
+    simulated_features,
+    feature_indices,
+    simulated_actions,
+    fit_inverse_temperature=False,
+    compute_grad=False,
+):
     total_grad = np.zeros_like(w)
     total_error = 0
     num_simulations = len(simulated_actions)
     for sim_num in range(num_simulations):
         trial_actions = simulated_actions[sim_num]
         trial_features = simulated_features[sim_num]
-        error, grad = compute_error_gradient(w, trial_features, feature_indices, trial_actions, fit_inverse_temperature,
-                                             compute_grad)
+        error, grad = compute_error_gradient(
+            w,
+            trial_features,
+            feature_indices,
+            trial_actions,
+            fit_inverse_temperature,
+            compute_grad,
+        )
         total_grad += grad
         total_error += error
     return total_error, total_grad
 
 
-class ClickSequence():
-    def __init__(self, click_sequence, env, pipeline, features, normalized_features, feature_indices=None):
+class ClickSequence:
+    def __init__(
+        self,
+        click_sequence,
+        env,
+        pipeline,
+        features,
+        normalized_features,
+        feature_indices=None,
+    ):
         self._click_sequence = click_sequence
         self._env = env
         self._pipeline = pipeline
@@ -307,17 +397,39 @@ class ClickSequence():
             self._feature_indices = list(range(self._num_features))
         else:
             self._feature_indices = feature_indices
-        self._feature_space = compute_trial_features(self._pipeline, self._env, self._click_sequence,
-                                                     self._features, self._normalized_features)
+        self._feature_space = compute_trial_features(
+            self._pipeline,
+            self._env,
+            self._click_sequence,
+            self._features,
+            self._normalized_features,
+        )
 
     def compute_log_likelihoods(self, weights, fit_temperatures=False):
         num_trials = 1
-        trial = TrialSequence(1, pipeline=self._pipeline, ground_truth=[self._env]).trial_sequence[0]
-        log_likelihoods = [compute_log_likelihood(trial, self._click_sequence, self._features,
-                                                  w, fit_temperatures, self._normalized_features) for w in weights]
+        trial = TrialSequence(
+            1, pipeline=self._pipeline, ground_truth=[self._env]
+        ).trial_sequence[0]
+        log_likelihoods = [
+            compute_log_likelihood(
+                trial,
+                self._click_sequence,
+                self._features,
+                w,
+                fit_temperatures,
+                self._normalized_features,
+            )
+            for w in weights
+        ]
         return log_likelihoods
 
     def compute_error_grad(self, w, compute_grad=True, fit_temperatures=False):
-        res = compute_error_gradient(w, self._feature_space, self._feature_indices,
-                                     self._click_sequence, fit_temperatures, compute_grad)
+        res = compute_error_gradient(
+            w,
+            self._feature_space,
+            self._feature_indices,
+            self._click_sequence,
+            fit_temperatures,
+            compute_grad,
+        )
         return res

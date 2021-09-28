@@ -1,19 +1,21 @@
 from collections import defaultdict
 
 import numpy as np
+
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.models.rssl_models import RSSL
 from mcl_toolbox.utils.sequence_utils import get_clicks
 
+
 class SDSS(Learner):
     def __init__(self, params, attributes):
 
-        self._bandit_params = np.array(params['bandit_params'])
+        self._bandit_params = np.array(params["bandit_params"])
         self._num_strategies = int(self._bandit_params.shape[0] / 2)
-        self._threshold = params['bernoulli_threshold']
-        self._features = attributes['features']
+        self._threshold = params["bernoulli_threshold"]
+        self._features = attributes["features"]
         self._num_features = len(self._features)
-        self._learner = attributes['learner']
+        self._learner = attributes["learner"]
 
         self.learners = []
         for i in range(self._num_strategies):
@@ -21,13 +23,15 @@ class SDSS(Learner):
 
         strategy_space = range(1, self._num_strategies + 1)
         # In SDSS, by design RSSL doesn't learn using PRs or feedback
-        self.rssl = RSSL({'priors': self._bandit_params, 'pr_weight': 1}, attributes)
+        self.rssl = RSSL({"priors": self._bandit_params, "pr_weight": 1}, attributes)
 
-        if 'strategy_weights' in attributes:
-            self._strategy_weights = np.array(attributes['strategy_weights'])
+        if "strategy_weights" in attributes:
+            self._strategy_weights = np.array(attributes["strategy_weights"])
         else:
             # Assuming blank slate
-            self._strategy_weights = np.zeros((self._num_strategies, self._num_features))
+            self._strategy_weights = np.zeros(
+                (self._num_strategies, self._num_features)
+            )
 
         self.action_log_probs = []
 
@@ -40,24 +44,25 @@ class SDSS(Learner):
 
     def update_bernoulli_params(self, reward, strategy_index):
         num_strategies = self._num_strategies
-        normalized_reward = (reward - self.rssl.lower_limit) / \
-                            (self.rssl.upper_limit - self.rssl.lower_limit)
+        normalized_reward = (reward - self.rssl.lower_limit) / (
+            self.rssl.upper_limit - self.rssl.lower_limit
+        )
         params = self.rssl.priors
         alpha = params[strategy_index]
         beta = params[strategy_index + num_strategies]
         if not self.rssl.stochastic_updating:
             self.rssl.priors[strategy_index] += normalized_reward
-            self.rssl.priors[strategy_index + num_strategies] += (1 - normalized_reward)
+            self.rssl.priors[strategy_index + num_strategies] += 1 - normalized_reward
         else:
-            choice = (np.random.binomial(n=1, p=normalized_reward) == 1)
+            choice = np.random.binomial(n=1, p=normalized_reward) == 1
             if choice:
                 self.rssl.priors[strategy_index] += 1
             else:
                 self.rssl.priors[strategy_index + num_strategies] += 1
         C = self._threshold
         if alpha + beta >= C:
-            self.rssl.priors[strategy_index] *= (C / (C + 1))
-            self.rssl.priors[strategy_index + num_strategies] *= (C / (C + 1))
+            self.rssl.priors[strategy_index] *= C / (C + 1)
+            self.rssl.priors[strategy_index + num_strategies] *= C / (C + 1)
 
     def get_learner_details(self, env, strategy_num):
         """Select the best action and store the action features"""
@@ -82,7 +87,9 @@ class SDSS(Learner):
         env.reset_trial()
         trial = env.present_trial
         env.reset_trial()
-        actions = get_clicks(trial, self._features, strategy_weights, self.normalized_features)
+        actions = get_clicks(
+            trial, self._features, strategy_weights, self.normalized_features
+        )
         f_list = []
         r_list = []
         env.reset_trial()
@@ -104,13 +111,13 @@ class SDSS(Learner):
             actions, r_list = self.get_learner_details(env, chosen_strategy)
             reward = np.sum(r_list)
             self.update_bernoulli_params(reward, chosen_strategy)
-            trials_data['r'].append(reward)
-            trials_data['w'].append(self._strategy_weights[chosen_strategy])
-            trials_data['a'].append(actions)
-            trials_data['s'].append(chosen_strategy)
+            trials_data["r"].append(reward)
+            trials_data["w"].append(self._strategy_weights[chosen_strategy])
+            trials_data["a"].append(actions)
+            trials_data["s"].append(chosen_strategy)
             env.get_next_trial()
         if self.action_log_probs:
-            trials_data['loss'] = -np.sum(self.action_log_probs)
+            trials_data["loss"] = -np.sum(self.action_log_probs)
         else:
-            trials_data['loss'] = None
+            trials_data["loss"] = None
         return dict(trials_data)

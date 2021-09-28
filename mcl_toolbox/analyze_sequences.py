@@ -1,14 +1,18 @@
-import sys
 import random
-from mcl_toolbox.utils import learning_utils, distributions
+import sys
+
+from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 
-from mcl_toolbox.utils.learning_utils import pickle_load, get_normalized_features, get_modified_weights, create_dir
-from mcl_toolbox.global_vars import structure, strategies, features
-from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.computational_microscope.computational_microscope import \
+    ComputationalMicroscope
+from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils.experiment_utils import Experiment
+from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
+                                              get_normalized_features,
+                                              pickle_load)
 
 """
 Run this file to analyse the inferred sequences of the participants. 
@@ -17,14 +21,22 @@ Example: python3 analyze_sequences.py c2.1_dec training True
 """
 
 
-def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=False, number_of_top_worst_strategies=3, **kwargs):
+def analyse_sequences(
+    exp_num="v1.0",
+    block="training",
+    pids=None,
+    create_plot=False,
+    number_of_top_worst_strategies=3,
+    **kwargs,
+):
     # Initializations
     decision_systems = pickle_load("../data/decision_systems.pkl")
     DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
     W_DS = pickle_load("../data/strategy_decision_weights.pkl")
     cluster_map = pickle_load("../data/kl_cluster_map.pkl")
     strategy_scores = pickle_load(
-        "../data/strategy_scores.pkl")  # todo: update strategy scores to contain all environments, currently only increasing variance
+        "../data/strategy_scores.pkl"
+    )  # todo: update strategy scores to contain all environments, currently only increasing variance
     cluster_scores = pickle_load("../data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
@@ -45,8 +57,13 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
 
     normalized_features = get_normalized_features(reward_structure)  # tuple of 2
     W = get_modified_weights(strategy_space, strategy_weights)
-    cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features,
-                                 normalized_features=normalized_features)
+    cm = ComputationalMicroscope(
+        pipeline,
+        strategy_space,
+        W,
+        microscope_features,
+        normalized_features=normalized_features,
+    )
     pids = None
     if exp_num == "c2.1_dec":
         # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
@@ -76,25 +93,57 @@ def analyse_sequences(exp_num="v1.0", block="training", pids=None, create_plot=F
 
     if create_plot:
         exp.summarize(
-            features, normalized_features, strategy_weights,
-            decision_systems, W_DS, DS_proportions, strategy_scores,
-            cluster_scores, cluster_map,
+            features,
+            normalized_features,
+            strategy_weights,
+            decision_systems,
+            W_DS,
+            DS_proportions,
+            strategy_scores,
+            cluster_scores,
+            cluster_map,
             number_of_top_worst_strategies=number_of_top_worst_strategies,
             create_plot=create_plot,
             precomputed_strategies=strategies_,
             precomputed_temperatures=temperatures,
-            show_pids=False)
+            show_pids=False,
+        )
     else:
-        strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies = exp.summarize(
-            features, normalized_features, strategy_weights,
-            decision_systems, W_DS, DS_proportions, strategy_scores,
-            cluster_scores, cluster_map,
+        (
+            strategy_proportions,
+            strategy_proportions_trialwise,
+            cluster_proportions,
+            cluster_proportions_trialwise,
+            decision_system_proportions,
+            mean_dsw,
+            top_n_strategies,
+            worst_n_strategies,
+        ) = exp.summarize(
+            features,
+            normalized_features,
+            strategy_weights,
+            decision_systems,
+            W_DS,
+            DS_proportions,
+            strategy_scores,
+            cluster_scores,
+            cluster_map,
             number_of_top_worst_strategies=number_of_top_worst_strategies,
             create_plot=create_plot,
             precomputed_strategies=strategies_,
             precomputed_temperatures=temperatures,
-            show_pids=False)
-        return strategy_proportions, strategy_proportions_trialwise, cluster_proportions, cluster_proportions_trialwise, decision_system_proportions, mean_dsw, top_n_strategies, worst_n_strategies
+            show_pids=False,
+        )
+        return (
+            strategy_proportions,
+            strategy_proportions_trialwise,
+            cluster_proportions,
+            cluster_proportions_trialwise,
+            decision_system_proportions,
+            mean_dsw,
+            top_n_strategies,
+            worst_n_strategies,
+        )
 
 
 if __name__ == "__main__":
@@ -111,4 +160,6 @@ if __name__ == "__main__":
     create_plot = True
 
     # create the plots
-    analyse_sequences(exp_name, block=block, create_plot=True, number_of_top_worst_strategies=4)
+    analyse_sequences(
+        exp_name, block=block, create_plot=True, number_of_top_worst_strategies=4
+    )

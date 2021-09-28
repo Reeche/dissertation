@@ -1,15 +1,15 @@
 import os
 import re
-
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from toolz import curry
 
 from mcl_toolbox.utils import *
 
-
 # ---------- Data wrangling ---------- #
+
 
 def mostly_nan(col):
     try:
@@ -19,8 +19,7 @@ def mostly_nan(col):
 
 
 def drop_nan_cols(df):
-    return df[[name for name, col in df.iteritems()
-               if not mostly_nan(col)]]
+    return df[[name for name, col in df.iteritems() if not mostly_nan(col)]]
 
 
 def query_subset(df, col, subset):
@@ -33,24 +32,24 @@ def rowapply(df, f):
 
 
 def to_snake_case(name):
-    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    name = re.sub(r'[.:\/]', '_', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
+    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    name = re.sub(r"[.:\/]", "_", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 def to_camel_case(snake_str):
-    return ''.join(x.title() for x in snake_str.split('_'))
+    return "".join(x.title() for x in snake_str.split("_"))
 
 
 def reformat_name(name):
-    return re.sub('\W', '', to_snake_case(name))
+    return re.sub("\W", "", to_snake_case(name))
 
 
 # ---------- Loading data ---------- #
 
-from glob import glob
-import json
 import ast
+import json
+from glob import glob
 
 
 def parse_json(df):
@@ -69,10 +68,12 @@ def parse_json(df):
             pass
 
 
-def get_data(version, data_path='data'):
+def get_data(version, data_path="data"):
     head = Path(__file__).parents[2]
     data = {}
-    for file in glob(os.path.join(head, '{}/human/{}/*.csv'.format(data_path, version))):
+    for file in glob(
+        os.path.join(head, "{}/human/{}/*.csv".format(data_path, version))
+    ):
         name = os.path.basename(file)[:-4]
         df = pd.read_csv(file)
         parse_json(df)
@@ -91,8 +92,8 @@ def load(file, version=None, func=lambda x: x):
     if not file or type(file) == float:
         return None
     else:
-        base = '.archive/{}/'.format(version) if version else ''
-        with open('{}experiment/{}'.format(base, file)) as f:
+        base = ".archive/{}/".format(version) if version else ""
+        with open("{}experiment/{}".format(base, file)) as f:
             return func(json.load(f))
 
 
@@ -107,11 +108,12 @@ try:
 except:
     pass
 else:
+
     def r2py(results, p_col=None):
         tbl = ri2py(results)
         tbl = tbl.rename(columns=reformat_name)
         if p_col:
-            tbl['signif'] = tbl[reformat_name(p_col)].apply(pval)
+            tbl["signif"] = tbl[reformat_name(p_col)].apply(pval)
         return tbl
 
 
@@ -135,7 +137,7 @@ def pval(x):
     elif x >= 0.05:
         return "p = {:.2f}".format(x)
     else:
-        return float('nan')
+        return float("nan")
 
 
 # ---------- Saving results ---------- #
@@ -145,15 +147,15 @@ class Tex:
     chi2 = r"$\chi^2({df:.0f})={chisq:.2f},\ {signif}$"
 
 
-class Variables():
+class Variables:
     """Saves variables for use in external documents."""
 
-    def __init__(self, path='.'):
+    def __init__(self, path="."):
         # os.makedirs(path, exist_ok=True)
         self.path = path
-        self.csv_file = os.path.join(path, 'variables.csv')
-        self.sed_file = os.path.join(path, 'variables.sed')
-        self.tex_file = os.path.join(path, 'variables.tex')
+        self.csv_file = os.path.join(path, "variables.csv")
+        self.sed_file = os.path.join(path, "variables.sed")
+        self.tex_file = os.path.join(path, "variables.tex")
         self.read()
 
     def read(self):
@@ -170,29 +172,29 @@ class Variables():
         self.read()
         self.series[key] = val
         self.series.to_csv(self.csv_file)
-        print('{} = {}'.format(key, val))
+        print("{} = {}".format(key, val))
 
     def save(self):
         self.series.to_csv(self.csv_file)
-        with open(self.sed_file, 'w+') as f:
+        with open(self.sed_file, "w+") as f:
             for key, val in self.series.items():
-                val = str(val).replace('\\', '\\\\').replace('&', '\&')
-                f.write('s/`{}`/{}/g'.format(key, val) + '\n')
+                val = str(val).replace("\\", "\\\\").replace("&", "\&")
+                f.write("s/`{}`/{}/g".format(key, val) + "\n")
 
-        with open(self.tex_file, 'w+') as f:
+        with open(self.tex_file, "w+") as f:
             for key, val in self.series.items():
                 key = to_camel_case(key)
-                f.write(r'\newcommand{\%s}{%s}' % (key, val) + '\n')
+                f.write(r"\newcommand{\%s}{%s}" % (key, val) + "\n")
 
-    def save_analysis(self, table, tex, name='', idx='{index}', display_tex=True):
+    def save_analysis(self, table, tex, name="", idx="{index}", display_tex=True):
         if display_tex:
             from IPython.display import Latex, display
 
         for i, row in table.iterrows():
-            row['index'] = i
+            row["index"] = i
             n = name
             if idx is not None:
-                n += '_' + (idx(row) if callable(idx) else idx)
+                n += "_" + (idx(row) if callable(idx) else idx)
             n = reformat_name(n.format_map(row)).upper()
 
             t = tex(row) if callable(tex) else tex
@@ -211,8 +213,8 @@ class Variables():
         p_desc = pval(p)
 
         self.write_var(
-            '{}_RESULT'.format(name),
-            r'$\\beta = %s,\\ \\text{SE} = %s,\\ %s$' % (beta, se, p_desc)
+            "{}_RESULT".format(name),
+            r"$\\beta = %s,\\ \\text{SE} = %s,\\ %s$" % (beta, se, p_desc),
         )
 
 
@@ -220,7 +222,7 @@ def get_rtable(results, p_col=None):
     tbl = ri2py(results)
     tbl = tbl.rename(columns=reformat_name)
     if p_col:
-        tbl['signif'] = tbl[reformat_name(p_col)].apply(pval)
+        tbl["signif"] = tbl[reformat_name(p_col)].apply(pval)
     return tbl
 
 
@@ -229,15 +231,15 @@ def get_rtable(results, p_col=None):
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-sns.set_style('white')
-sns.set_context('notebook', font_scale=1.4)
-sns.set_palette('deep', color_codes=True)
+sns.set_style("white")
+sns.set_context("notebook", font_scale=1.4)
+sns.set_palette("deep", color_codes=True)
 
 
 class Figures(object):
     """Plots and saves figures."""
 
-    def __init__(self, path='figs/', formats=['eps']):
+    def __init__(self, path="figs/", formats=["eps"]):
         self.path = path
         self.formats = formats
         os.makedirs(path, exist_ok=True)
@@ -245,9 +247,9 @@ class Figures(object):
     def savefig(self, name):
         name = name.lower()
         for fmt in self.formats:
-            path = os.path.join(self.path, name + '.' + fmt)
+            path = os.path.join(self.path, name + "." + fmt)
             print(path)
-            plt.savefig(path, bbox_inches='tight')
+            plt.savefig(path, bbox_inches="tight")
 
     def plot(self, **kwargs1):
         """Decorator that calls a plotting function and saves the result."""
@@ -256,10 +258,10 @@ class Figures(object):
             def wrapped(*args, **kwargs):
                 kwargs.update(kwargs1)
                 params = [v for v in kwargs1.values() if v is not None]
-                param_str = '_' + str_join(params).rstrip('_') if params else ''
+                param_str = "_" + str_join(params).rstrip("_") if params else ""
                 name = func.__name__ + param_str
-                if name.startswith('plot_'):
-                    name = name[len('plot_'):]
+                if name.startswith("plot_"):
+                    name = name[len("plot_") :]
                 func(*args, **kwargs)
                 self.savefig(name)
 
@@ -267,5 +269,3 @@ class Figures(object):
             return wrapped
 
         return decorator
-
-

@@ -1,21 +1,30 @@
 import gym
 import numpy as np
-from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
-from mcl_toolbox.utils.sequence_utils import compute_current_features
-from mcl_toolbox.utils.env_utils import get_num_actions
-from mcl_toolbox.utils.distributions import Categorical
 from gym import spaces
+
+from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
+from mcl_toolbox.utils.distributions import Categorical
+from mcl_toolbox.utils.env_utils import get_num_actions
+from mcl_toolbox.utils.sequence_utils import compute_current_features
 
 
 class GenericMouselabEnv(gym.Env):
     """
-        This class is the gym environment for the feature based version
-        of the Mouselab-MDP. The environment structure is assumed to be a
-        symmetric tree
+    This class is the gym environment for the feature based version
+    of the Mouselab-MDP. The environment structure is assumed to be a
+    symmetric tree
     """
-    def __init__(self, num_trials=1, pipeline = {'0': ([3,1,2], reward_val)},
-				ground_truth=None, cost=1, render_path="mouselab_renders",
-                feedback="none", q_fn=None):
+
+    def __init__(
+        self,
+        num_trials=1,
+        pipeline={"0": ([3, 1, 2], reward_val)},
+        ground_truth=None,
+        cost=1,
+        render_path="mouselab_renders",
+        feedback="none",
+        q_fn=None,
+    ):
         super(GenericMouselabEnv, self).__init__()
         self.pipeline = pipeline
         self.ground_truth = ground_truth
@@ -23,10 +32,10 @@ class GenericMouselabEnv(gym.Env):
         self.render_path = render_path
         if isinstance(cost, list):
             cost_weight, depth_weight = cost
-            self.cost = lambda depth: - (1 * cost_weight + (depth - 1) * depth_weight)
-            self.repeat_cost = - float("inf")
+            self.cost = lambda depth: -(1 * cost_weight + (depth - 1) * depth_weight)
+            self.repeat_cost = -float("inf")
         else:  # should be a scalar
-            self.cost = lambda depth: - (1 * cost)
+            self.cost = lambda depth: -(1 * cost)
             self.repeat_cost = -cost * 10
         self.feedback = feedback
         self.q_fn = q_fn
@@ -38,7 +47,7 @@ class GenericMouselabEnv(gym.Env):
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials
-        ground_truths = [env]*self.num_trials
+        ground_truths = [env] * self.num_trials
         self.ground_truth = ground_truths
         self.construct_env()
 
@@ -48,35 +57,44 @@ class GenericMouselabEnv(gym.Env):
         self.construct_env()
 
     def construct_env(self):
-        self.trial_sequence = TrialSequence(self.num_trials, self.pipeline,
-                                            self.ground_truth)
+        self.trial_sequence = TrialSequence(
+            self.num_trials, self.pipeline, self.ground_truth
+        )
         self.present_trial_num = 0
         self.trial_init()
         if not self.ground_truth:
             self.ground_truth = self.trial_sequence.ground_truth
-    
+
     def trial_init(self):
         trial_num = self.present_trial_num
         self.num_nodes = len(self.trial_sequence.trial_sequence[trial_num].node_map)
         self.action_space = spaces.Discrete(self.num_nodes)
         self.observation_space = spaces.Box(
-            low=-50.0, high=50.0, shape=(self.num_nodes,), dtype=np.float64)
+            low=-50.0, high=50.0, shape=(self.num_nodes,), dtype=np.float64
+        )
         self.present_trial = self.trial_sequence.trial_sequence[trial_num]
         reward_function = self.pipeline[self.present_trial_num][1]
-        self.node_distribution = [
-            [0]] + [reward_function(d) for d in range(1, self.present_trial.max_depth + 1)]
+        self.node_distribution = [[0]] + [
+            reward_function(d) for d in range(1, self.present_trial.max_depth + 1)
+        ]
         self._compute_expected_values()
         self._construct_state()
         self.observed_action_list = []
         self.num_actions = len(self.get_available_actions())
 
     def _construct_state(self):
-        self._state = [0] + [self.node_distribution[self.present_trial.node_map[node_num].depth]
-                             for node_num in range(1, self.num_nodes)]
+        self._state = [0] + [
+            self.node_distribution[self.present_trial.node_map[node_num].depth]
+            for node_num in range(1, self.num_nodes)
+        ]
 
     def _compute_expected_values(self):
-        self.expected_values = [0] + [self.node_distribution[self.present_trial.node_map[node_num].depth].expectation()
-                                      for node_num in range(1, self.num_nodes)]
+        self.expected_values = [0] + [
+            self.node_distribution[
+                self.present_trial.node_map[node_num].depth
+            ].expectation()
+            for node_num in range(1, self.num_nodes)
+        ]
 
     def get_next_trial(self):
         if self.present_trial_num == self.num_trials - 1:
@@ -129,7 +147,7 @@ class GenericMouselabEnv(gym.Env):
         pass
 
     def get_random_env(self):
-        trial_sequence = TrialSequence(num_trials=1, pipeline = self.pipeline)
+        trial_sequence = TrialSequence(num_trials=1, pipeline=self.pipeline)
         return trial_sequence.ground_truth[0]
 
     def get_ground_truth(self):
@@ -143,8 +161,11 @@ class GenericMouselabEnv(gym.Env):
         trial = self.present_trial
         expected_path_values = trial.get_path_expected_values()
         node_paths = trial.reverse_branch_map[0]
-        best_paths = [k for k, v in expected_path_values.items(
-        ) if v == max(expected_path_values.values())]
+        best_paths = [
+            k
+            for k, v in expected_path_values.items()
+            if v == max(expected_path_values.values())
+        ]
         return set(best_paths)
 
     def get_action_feedback(self, taken_path):
@@ -165,10 +186,10 @@ class GenericMouselabEnv(gym.Env):
 
     def get_feedback(self, info):
         if self.feedback == "action":
-            if 'taken_path' in info:
-                return self.get_action_feedback(info['taken_path'])
+            if "taken_path" in info:
+                return self.get_action_feedback(info["taken_path"])
         elif self.feedback == "meta":
-            return self.get_metacognitive_feedback(info['action'])
+            return self.get_metacognitive_feedback(info["action"])
         return 0
 
     def get_state(self):
@@ -188,8 +209,9 @@ class GenericMouselabEnv(gym.Env):
         return tuple(state)
 
     def construct_feature_state(self):
-        self.feature_state = compute_current_features(self.present_trial, self.features,
-                                                  self.normalized_features)
+        self.feature_state = compute_current_features(
+            self.present_trial, self.features, self.normalized_features
+        )
         return self.feature_state
 
     def get_feature_state(self):
@@ -219,8 +241,14 @@ class GenericMouselabEnv(gym.Env):
 
 
 class ModStateGenericMouselabEnv(GenericMouselabEnv):
-    def __init__(self, num_trials=1, pipeline={'0': ([3, 1, 2], reward_val)},
-                 ground_truth=None, cost=1, render_path="mouselab_renders"):
+    def __init__(
+        self,
+        num_trials=1,
+        pipeline={"0": ([3, 1, 2], reward_val)},
+        ground_truth=None,
+        cost=1,
+        render_path="mouselab_renders",
+    ):
         super().__init__(num_trials, pipeline, ground_truth, cost, render_path)
 
     def _construct_state(self):
@@ -235,8 +263,8 @@ class ModStateGenericMouselabEnv(GenericMouselabEnv):
         return S, reward, done, info
 
 
-class DummyParticipant():
-    """ Creates a participant object which contains all details about the participant
+class DummyParticipant:
+    """Creates a participant object which contains all details about the participant
 
     Returns:
         Participant -- Contains details such as envs, scores, clicks, taken paths,
@@ -258,14 +286,18 @@ class DummyParticipant():
         return self.trial_envs
 
     def get_all_trials_data(self):
-        total_data = {'actions': {}, 'rewards': {},
-                      'taken_paths': {}, 'strategies': {},
-                      'temperature': {}}
+        total_data = {
+            "actions": {},
+            "rewards": {},
+            "taken_paths": {},
+            "strategies": {},
+            "temperature": {},
+        }
         return total_data
 
 
-class DummyParticipantNew():
-    """ Creates a participant object which contains all details about the participant
+class DummyParticipantNew:
+    """Creates a participant object which contains all details about the participant
 
     Returns:
         Participant -- Contains details such as envs, scores, clicks, taken paths,
@@ -285,7 +317,11 @@ class DummyParticipantNew():
     def get_all_trials_data(self):
         actions = {} if not self.clicks else self.clicks
         rewards = {} if not self.scores else self.scores
-        total_data = {'actions': {}, 'rewards': {},
-                      'taken_paths': {}, 'strategies': {},
-                      'temperature': {}}
+        total_data = {
+            "actions": {},
+            "rewards": {},
+            "taken_paths": {},
+            "strategies": {},
+            "temperature": {},
+        }
         return total_data

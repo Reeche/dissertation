@@ -1,18 +1,25 @@
-from collections import namedtuple, defaultdict, Counter, deque
 import itertools as it
-import numpy as np
-from abc import ABC, abstractmethod
-from mcl_toolbox.utils.utils import PriorityQueue, softmax
 import time
+from abc import ABC, abstractmethod
+from collections import Counter, defaultdict, deque, namedtuple
+
+import numpy as np
+
+from mcl_toolbox.utils.utils import PriorityQueue, softmax
+
 np.set_printoptions(precision=3, linewidth=200)
-from scipy import stats
-from tqdm import tqdm, trange, tnrange
-from copy import deepcopy
 import random
+from copy import deepcopy
+
+from scipy import stats
+from tqdm import tnrange, tqdm, trange
+
 from mcl_toolbox.utils.agents import Component, Model
+
 
 class Policy(Component):
     """Chooses actions."""
+
     def __init__(self):
         super().__init__()
 
@@ -22,8 +29,8 @@ class Policy(Component):
         pass
 
     def attach(self, agent):
-        if not hasattr(agent, 'env'):
-            raise ValueError('Must attach env before attaching policy.')
+        if not hasattr(agent, "env"):
+            raise ValueError("Must attach env before attaching policy.")
         super().attach(agent)
 
 
@@ -35,11 +42,13 @@ class FunctionPolicy(Policy):
     def act(self, state):
         return self.policy(state)
 
+
 class RandomPolicy(Policy):
     """Chooses actions randomly."""
+
     def __init__(self):
         super().__init__()
-    
+
     def act(self, state):
         try:
             return random.choice(list(self.env.actions(state)))
@@ -49,15 +58,16 @@ class RandomPolicy(Policy):
 
 class SoftmaxPolicy(Policy):
     """Samples actions from a softmax over preferences."""
+
     def __init__(self, preference=None, temp=1e-9, noise=1e-9):
         super().__init__()
         if preference is None:
-            assert hasattr(self, 'preference')
+            assert hasattr(self, "preference")
         else:
             self.preference = preference
         self.temp = temp
         self.noise = noise
-    
+
     def act(self, state):
         probs = self.action_distribution(state)
         probs += np.random.rand(len(probs)) * self.noise
@@ -79,16 +89,19 @@ class SoftmaxPolicy(Policy):
 
 class RandomTreePolicy(Policy):
     """Chooses actions randomly."""
+
     def __init__(self):
         super().__init__()
-    
+
     def act(self, state):
         actions = list(self.env.actions(self.env._state))
         return random.choice(actions)
 
+
 class MaxQPolicy(Policy):
     """Chooses the action with highest Q value."""
-    def __init__(self, Q, epsilon=0.5, anneal=.95, **kwargs):
+
+    def __init__(self, Q, epsilon=0.5, anneal=0.95, **kwargs):
         super().__init__(**kwargs)
         self.Q = Q
         self.epsilon = epsilon
@@ -100,21 +113,23 @@ class MaxQPolicy(Policy):
         if np.random.rand() < epsilon:
             noise = np.random.random(q.shape) * 1000
         else:
-            noise = np.random.random(q.shape) * .001
+            noise = np.random.random(q.shape) * 0.001
         return np.argmax(q + noise)
 
 
 class LiederPolicy(Policy):
     """The meta-policy of Lieder et al. (2017) AAAI."""
+
     def __init__(self, theta, bad_max=False):
         self.theta = np.array(theta)
-    
+
     def act(self, state):
         def Q(a):
             if a == self.env.term_action:
                 return self.env.expected_term_reward(self.env._state)
             else:
                 return np.dot(self.theta, self.env.action_features(a))
+
         action = max(self.env.actions(state), key=Q)
         return action
 
@@ -122,6 +137,7 @@ class LiederPolicy(Policy):
 class MaxQSamplePolicy(Policy):
     """Chooses the action with highest sampled Q value.
     `Q.predict` must have the kwarg `return_var`."""
+
     def __init__(self, Q, **kwargs):
         super().__init__(**kwargs)
         self.Q = Q
@@ -135,23 +151,24 @@ class MaxQSamplePolicy(Policy):
         if self.save_regret:
             q = q.flat
             a1 = np.argmax(q)
-            self.save('max', a == a1)
-            self.save('regret', q[a1] - q[a])
+            self.save("max", a == a1)
+            self.save("regret", q[a1] - q[a])
         return a
 
 
 class ActorCritic(Policy):
     """docstring for ActorCritic"""
-    def __init__(self, critic, actor_lr=0.001, discount=.99, actor_lambda=1, **kwargs):
+
+    def __init__(self, critic, actor_lr=0.001, discount=0.99, actor_lambda=1, **kwargs):
         super().__init__()
         self.critic = critic
         self.discount = discount
         self.actor_lambda = actor_lambda
         self.actor_lr = actor_lr
 
-        self._actor_discount = np.array([(self.discount * self.actor_lambda) ** i 
-                                         for i in range(5000)])
-    
+        self._actor_discount = np.array(
+            [(self.discount * self.actor_lambda) ** i for i in range(5000)]
+        )
 
         self.memory = deque(maxlen=100)
         self.batch_size = 20
@@ -164,17 +181,24 @@ class ActorCritic(Policy):
         from keras.layers import Dense
         from keras.models import Sequential
         from keras.optimizers import Adam, Nadam
-        actor = Sequential([
-            Dense(24, input_dim=self.state_size, activation='relu',
-                  kernel_initializer='he_uniform'),
-            # Dense(24, activation='relu',
-            #       kernel_initializer='he_uniform'),
-            Dense(self.n_action, activation='softmax',
-                  kernel_initializer='he_uniform')
-        ])
+
+        actor = Sequential(
+            [
+                Dense(
+                    24,
+                    input_dim=self.state_size,
+                    activation="relu",
+                    kernel_initializer="he_uniform",
+                ),
+                # Dense(24, activation='relu',
+                #       kernel_initializer='he_uniform'),
+                Dense(
+                    self.n_action, activation="softmax", kernel_initializer="he_uniform"
+                ),
+            ]
+        )
         # actor.summary()
-        actor.compile(loss='categorical_crossentropy',
-                      optimizer=Nadam(self.actor_lr))
+        actor.compile(loss="categorical_crossentropy", optimizer=Nadam(self.actor_lr))
         return actor
 
     def act(self, state):
@@ -191,7 +215,7 @@ class ActorCritic(Policy):
     def train_batch(self, traces):
         def data():
             for trace in traces:
-                yield trace['states'][:-1], trace['actions'], trace['rewards']
+                yield trace["states"][:-1], trace["actions"], trace["rewards"]
 
         state, action, reward = map(np.concatenate, zip(*data()))
         n_step = len(state)
@@ -202,9 +226,9 @@ class ActorCritic(Policy):
         value_target = np.zeros((n_step, 1))
 
         for i in range(n_step):
-            adv = np.sum(delta[i:] * self._actor_discount[:n_step-i])
+            adv = np.sum(delta[i:] * self._actor_discount[: n_step - i])
             advantage[i, action[i]] = adv
-            val_error = np.sum(delta[i:] * self._critic_discount[:n_step-i])
+            val_error = np.sum(delta[i:] * self._critic_discount[: n_step - i])
             value_target[i, 0] = value[i] + val_error
             # value_target[i, 0] = reward[i] + self.discount * value[i+1]
 
@@ -212,9 +236,9 @@ class ActorCritic(Policy):
         self.critic.fit(state, value_target, epochs=1, verbose=0)
 
     def train(self, trace):
-        state = np.stack(trace['states'][:-1])  # ignore final state
-        action = trace['actions']
-        reward = trace['rewards']
+        state = np.stack(trace["states"][:-1])  # ignore final state
+        action = trace["actions"]
+        reward = trace["rewards"]
         n_step = len(state)
 
         # See Schulman et al. 2016 ICLR paper
@@ -224,9 +248,9 @@ class ActorCritic(Policy):
         value_target = np.zeros((n_step, 1))
 
         for i in range(n_step):
-            adv = np.sum(delta[i:] * self._actor_discount[:n_step-i])
+            adv = np.sum(delta[i:] * self._actor_discount[: n_step - i])
             advantage[i, action[i]] = adv
-            val_error = np.sum(delta[i:] * self._critic_discount[:n_step-i])
+            val_error = np.sum(delta[i:] * self._critic_discount[: n_step - i])
             value_target[i, 0] = value[i] + val_error
             # value_target[i, 0] = reward[i] + self.discount * value[i+1]
 
@@ -238,7 +262,16 @@ class GeneralizedAdvantageEstimation(Policy):
     """A variance-reducing extension of Advantage Actor Critic.
     https://arxiv.org/abs/1506.02438
     """
-    def __init__(self, actor_lr=0.001, critic_lr= 0.005, discount=.99, actor_lambda=1, critic_lambda=1, **kwargs):
+
+    def __init__(
+        self,
+        actor_lr=0.001,
+        critic_lr=0.005,
+        discount=0.99,
+        actor_lambda=1,
+        critic_lambda=1,
+        **kwargs
+    ):
         super().__init__()
         self.discount = discount
         self.actor_lambda = actor_lambda
@@ -246,10 +279,12 @@ class GeneralizedAdvantageEstimation(Policy):
         self.actor_lr = actor_lr
         self.critic_lr = critic_lr
 
-        self._actor_discount = np.array([(self.discount * self.actor_lambda) ** i 
-                                         for i in range(5000)])
-        self._critic_discount = np.array([(self.discount * self.critic_lambda) ** i 
-                                          for i in range(5000)])
+        self._actor_discount = np.array(
+            [(self.discount * self.actor_lambda) ** i for i in range(5000)]
+        )
+        self._critic_discount = np.array(
+            [(self.discount * self.critic_lambda) ** i for i in range(5000)]
+        )
 
         self._memory = deque(maxlen=100)
         self.batch_size = 20
@@ -263,17 +298,23 @@ class GeneralizedAdvantageEstimation(Policy):
         from keras.layers import Dense
         from keras.models import Sequential
         from keras.optimizers import Nadam
-        actor = Sequential([
-            # Dense(24, input_dim=self.state_size, activation='relu',
-            #       kernel_initializer='he_uniform'),
-            # Dense(24, activation='relu',
-            #       kernel_initializer='he_uniform'),
-            Dense(self.n_action, input_dim=self.state_size, activation='softmax',
-                  kernel_initializer='he_uniform')
-        ])
+
+        actor = Sequential(
+            [
+                # Dense(24, input_dim=self.state_size, activation='relu',
+                #       kernel_initializer='he_uniform'),
+                # Dense(24, activation='relu',
+                #       kernel_initializer='he_uniform'),
+                Dense(
+                    self.n_action,
+                    input_dim=self.state_size,
+                    activation="softmax",
+                    kernel_initializer="he_uniform",
+                )
+            ]
+        )
         # actor.summary()
-        actor.compile(loss='categorical_crossentropy',
-                      optimizer=Nadam(self.actor_lr))
+        actor.compile(loss="categorical_crossentropy", optimizer=Nadam(self.actor_lr))
         return actor
 
     # critic: state is input and value of state is output of model
@@ -281,14 +322,21 @@ class GeneralizedAdvantageEstimation(Policy):
         from keras.layers import Dense
         from keras.models import Sequential
         from keras.optimizers import Nadam
-        critic = Sequential([
-            # Dense(24, input_dim=self.state_size, activation='relu',
-            #       kernel_initializer='he_uniform'),
-            # Dense(24, activation='relu',
-            #       kernel_initializer='he_uniform'),
-            Dense(1, input_dim=self.state_size, activation='linear',
-                  kernel_initializer='he_uniform')
-        ])
+
+        critic = Sequential(
+            [
+                # Dense(24, input_dim=self.state_size, activation='relu',
+                #       kernel_initializer='he_uniform'),
+                # Dense(24, activation='relu',
+                #       kernel_initializer='he_uniform'),
+                Dense(
+                    1,
+                    input_dim=self.state_size,
+                    activation="linear",
+                    kernel_initializer="he_uniform",
+                )
+            ]
+        )
         # critic.summary()
         critic.compile(loss="mse", optimizer=Nadam(self.critic_lr))
         return critic
@@ -309,7 +357,7 @@ class GeneralizedAdvantageEstimation(Policy):
     def train_batch(self, traces):
         def data():
             for trace in traces:
-                yield trace['states'][:-1], trace['actions'], trace['rewards']
+                yield trace["states"][:-1], trace["actions"], trace["rewards"]
 
         state, action, reward = map(np.concatenate, zip(*data()))
         n_step = len(state)
@@ -321,9 +369,9 @@ class GeneralizedAdvantageEstimation(Policy):
         value_target = np.zeros((n_step, 1))
 
         for i in range(n_step):
-            adv = np.sum(delta[i:] * self._actor_discount[:n_step-i])
+            adv = np.sum(delta[i:] * self._actor_discount[: n_step - i])
             advantage[i, action[i]] = adv
-            val_error = np.sum(delta[i:] * self._critic_discount[:n_step-i])
+            val_error = np.sum(delta[i:] * self._critic_discount[: n_step - i])
             value_target[i, 0] = value[i] + val_error
             # value_target[i, 0] = reward[i] + self.discount * value[i+1]
 
@@ -331,9 +379,9 @@ class GeneralizedAdvantageEstimation(Policy):
         self.critic.fit(state, value_target, epochs=1, verbose=0)
 
     def train(self, trace):
-        state = np.stack(trace['states'][:-1])  # ignore final state
-        action = trace['actions']
-        reward = trace['rewards']
+        state = np.stack(trace["states"][:-1])  # ignore final state
+        action = trace["actions"]
+        reward = trace["rewards"]
         n_step = len(state)
 
         # See Schulman et al. 2016 ICLR paper
@@ -343,9 +391,9 @@ class GeneralizedAdvantageEstimation(Policy):
         value_target = np.zeros((n_step, 1))
 
         for i in range(n_step):
-            adv = np.sum(delta[i:] * self._actor_discount[:n_step-i])
+            adv = np.sum(delta[i:] * self._actor_discount[: n_step - i])
             advantage[i, action[i]] = adv
-            val_error = np.sum(delta[i:] * self._critic_discount[:n_step-i])
+            val_error = np.sum(delta[i:] * self._critic_discount[: n_step - i])
             value_target[i, 0] = value[i] + val_error
             # value_target[i, 0] = reward[i] + self.discount * value[i+1]
 
@@ -355,7 +403,9 @@ class GeneralizedAdvantageEstimation(Policy):
 
 class FixedPlanPolicy(Policy):
     """A policy that blindly executes a fixed sequence of actions."""
-    Node = namedtuple('Node', ('state', 'path', 'reward', 'done'))
+
+    Node = namedtuple("Node", ("state", "path", "reward", "done"))
+
     def __init__(self, plan, **kwargs):
         super().__init__(**kwargs)
         self._plan = plan
@@ -371,6 +421,7 @@ class FixedPlanPolicy(Policy):
 
 class ValSearchPolicy(Policy):
     """Searches for the maximum reward path using a model."""
+
     def __init__(self, V, replan=False, epsilon=0, noise=1, anneal=1, **kwargs):
         super().__init__(**kwargs)
         self.V = V
@@ -388,7 +439,7 @@ class ValSearchPolicy(Policy):
         self.plan = iter(())  # start with no plan
 
     def finish_episode(self, trace):
-        self.ep_trace['berries'] = self.env._observe()[-1]
+        self.ep_trace["berries"] = self.env._observe()[-1]
 
     def act(self, state):
         # return self.env.action_space.sample()
@@ -404,7 +455,7 @@ class ValSearchPolicy(Policy):
 
     def make_plan(self, state, expansions=2000):
 
-        Node = namedtuple('Node', ('state', 'path', 'reward', 'done'))
+        Node = namedtuple("Node", ("state", "path", "reward", "done"))
         env = self.env
         V = memoize(self.V.predict)
         self.node_history = []
@@ -413,11 +464,15 @@ class ValSearchPolicy(Policy):
             if not node.path:
                 return np.inf  # the empty plan has infinite cost
             obs = env._observe(node.state)
-            noise = np.random.rand() * (self.noise * self.anneal ** self.i_episode) if noisy else 0
+            noise = (
+                np.random.rand() * (self.noise * self.anneal ** self.i_episode)
+                if noisy
+                else 0
+            )
             value = 0 if node.done else V(obs)[0]
-            boredom = - 0.1 * self.history[obs]
+            boredom = -0.1 * self.history[obs]
             score = node.reward + value + noise + boredom
-            return - score
+            return -score
 
         start = Node(env._state, [], 0, False)
         frontier = PriorityQueue(key=eval_node)
@@ -435,23 +490,24 @@ class ValSearchPolicy(Policy):
                 if node1.reward <= reward_to_state[s1]:
                     continue  # cannot be better than an existing node
                 self.node_history.append(
-                    {'path': node1.path,
-                     'r': node1.reward,
-                     'b': self.env._observe(node1.state)[-1],
-                     'v': -eval_node(node1)})
+                    {
+                        "path": node1.path,
+                        "r": node1.reward,
+                        "b": self.env._observe(node1.state)[-1],
+                        "v": -eval_node(node1),
+                    }
+                )
                 reward_to_state[s1] = node1.reward
                 if done:
                     best_finished = min((best_finished, node1), key=eval_node)
                 else:
                     frontier.push(node1)
-                    
+
         for i in range(expansions):
             if frontier:
                 expand(frontier.pop())
             else:
                 break
-
-
 
         if frontier:
             plan = min(best_finished, frontier.pop(), key=eval_node)
@@ -461,7 +517,7 @@ class ValSearchPolicy(Policy):
         # plan = min(choices, key=eval_node(noisy=True))
         self.log(
             i,
-            len(plan.path), 
+            len(plan.path),
             -round(eval_node(plan, noisy=False), 2),
             plan.done,
         )
@@ -471,6 +527,7 @@ class ValSearchPolicy(Policy):
 
 class Astar(Policy):
     """A* search finds the shortest path to a goal."""
+
     def __init__(self, heuristic):
         assert 0  # this implementation is incorrect
         super().__init__()
@@ -495,13 +552,13 @@ class Astar(Policy):
             return np.inf  # the empty plan has infinite cost
         obs = self.env._observe(node.state)
         value = 0 if node.done else self.heuristic(self.env, obs)
-        boredom = - 0.1 * self.history[obs]
+        boredom = -0.1 * self.history[obs]
         score = node.reward + value + boredom
-        return - score
-    
+        return -score
+
     def make_plan(self, state, expansions=5000):
-        
-        Node = namedtuple('Node', ('state', 'path', 'reward', 'done'))
+
+        Node = namedtuple("Node", ("state", "path", "reward", "done"))
         eval_node = self.eval_node
         start = Node(self.env._state, [], 0, False)
         frontier = PriorityQueue(key=eval_node)
@@ -528,9 +585,9 @@ class Astar(Policy):
                     best_finished = min((best_finished, node1), key=eval_node)
                 else:
                     frontier.push(node1)
-                    
+
         for i in range(expansions):
-            self.save('frontier', [n[1].state for n in frontier])
+            self.save("frontier", [n[1].state for n in frontier])
             if frontier:
                 expand(frontier.pop())
             else:
@@ -539,17 +596,17 @@ class Astar(Policy):
         if frontier:
             # plan = min(best_finished, frontier.pop(), key=eval_node)
             plan = frontier.pop()
-            raise RuntimeError('No plan found.')
+            raise RuntimeError("No plan found.")
         else:
             plan = best_finished
         # choices = concat([completed, map(get(1), take(100, frontier))])
         # plan = min(choices, key=eval_node(noisy=True))
         # self.log(
         #     i,
-        #     len(plan.path), 
+        #     len(plan.path),
         #     -round(eval_node(plan, noisy=False), 2),
         #     plan.done,
         # )
         # self._trace['paths'].append(plan.path)
-        self.save('plan', plan)
+        self.save("plan", plan)
         return plan.path

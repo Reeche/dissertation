@@ -1,10 +1,12 @@
 import numpy as np
+
 from mcl_toolbox.models.lvoc_models import LVOC
 from mcl_toolbox.models.rssl_models import RSSL
 
+
 # Might not work as expected
-class ibsLVOC(LVOC): 
-    def __init__(self, params, attributes, max_k_iters = int(5e4)):
+class ibsLVOC(LVOC):
+    def __init__(self, params, attributes, max_k_iters=int(5e4)):
         super().__init__(params, attributes)
         self.max_k_iters = max_k_iters
 
@@ -22,24 +24,27 @@ class ibsLVOC(LVOC):
         for _ in range(num_repeats):
             # IBS sampling
             k = 0
-            while(1):
+            while 1:
                 k += 1
                 s = self.get_action(env)
                 if s == given_action or k == max_k_iters:
                     break
-            #print(f"-----k is {k}------")
-            if k!=1:
+            # print(f"-----k is {k}------")
+            if k != 1:
                 L = np.array(list(range(1, k)))
-                L = 1/L
+                L = 1 / L
                 ll += np.sum(L)
-        selected_action_prob = np.exp(-ll/num_repeats)
+        selected_action_prob = np.exp(-ll / num_repeats)
         eps = self.eps
-        log_prob = np.log((1-eps)*selected_action_prob + eps*(1/num_available_actions))
+        log_prob = np.log(
+            (1 - eps) * selected_action_prob + eps * (1 / num_available_actions)
+        )
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
 
+
 class simLVOC(LVOC):
-    def __init__(self, params, attributes, max_iters = int(5e2)):
+    def __init__(self, params, attributes, max_iters=int(5e2)):
         super().__init__(params, attributes)
         self.max_iters = max_iters
 
@@ -58,12 +63,14 @@ class simLVOC(LVOC):
                 count += 1
         selected_action_prob = (count + 1) / (max_iters + num_available_actions)
         eps = self.eps
-        log_prob = np.log((1-eps)*selected_action_prob + eps*(1/num_available_actions))
+        log_prob = np.log(
+            (1 - eps) * selected_action_prob + eps * (1 / num_available_actions)
+        )
         self.action_log_probs.append(log_prob)
         return given_action, feature_vals[action_index]
 
-class IBSRSSL(RSSL):
 
+class IBSRSSL(RSSL):
     def __init__(self, params, attributes, max_k_iter=5e4):
         super().__init__(params, attributes)
         self.max_k_iter = max_k_iter
@@ -74,28 +81,32 @@ class IBSRSSL(RSSL):
         ll = 0
         for _ in range(num_repeats):
             k = 0
-            while(1):
+            while 1:
                 k += 1
                 s = self.select_strategy()
                 if s == strategy_index or k == self.max_k_iter:
                     break
             print(f"-----k is {k}------")
-            if k!=1:
+            if k != 1:
                 L = np.array(list(range(1, k)))
-                L = 1/L
+                L = 1 / L
                 ll += np.sum(L)
-        return -ll/num_repeats #LL
+        return -ll / num_repeats  # LL
 
     def compute_log_likelihood(self, clicks, chosen_strategy):
         strategy_index = self.strategy_space.index(chosen_strategy)
         log_likelihood = self.get_strategy_log_likelihood(strategy_index)
-        actions_strategy_log_likelihood = self.get_action_strategy_likelihood(trial, clicks, chosen_strategy, self.temperature)
+        actions_strategy_log_likelihood = self.get_action_strategy_likelihood(
+            trial, clicks, chosen_strategy, self.temperature
+        )
         log_prob = log_likelihood + actions_strategy_log_likelihood
         return log_prob
 
-class SimRSSL(RSSL):
 
-    def __init__(self, priors, strategy_space, stochastic_updating=True, maxiter=int(1e3)):
+class SimRSSL(RSSL):
+    def __init__(
+        self, priors, strategy_space, stochastic_updating=True, maxiter=int(1e3)
+    ):
         super().__init__(priors, strategy_space, stochastic_updating)
         self.maxiter = maxiter
 
@@ -114,6 +125,8 @@ class SimRSSL(RSSL):
     def compute_log_likelihood(self, clicks, chosen_strategy):
         strategy_index = self.strategy_space.index(chosen_strategy)
         log_likelihood = self.get_strategy_log_likelihood(strategy_index)
-        actions_strategy_log_likelihood = self.get_action_strategy_likelihood(trial, clicks, chosen_strategy, self.temperature)
+        actions_strategy_log_likelihood = self.get_action_strategy_likelihood(
+            trial, clicks, chosen_strategy, self.temperature
+        )
         log_prob = log_likelihood + actions_strategy_log_likelihood
         return log_prob

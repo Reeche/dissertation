@@ -1,7 +1,7 @@
 from mcl_toolbox.utils.experiment_utils import Experiment
 
 
-class ParticipantIterator():
+class ParticipantIterator:
     def __init__(self, participant, click_cost=1):
         self.participant = participant
         self.click_cost = click_cost

@@ -1,16 +1,19 @@
 """Agents that operate in discrete fully observable environments."""
 
-from collections import namedtuple, defaultdict, Counter, deque
 import itertools as it
-import numpy as np
-from abc import ABC, abstractmethod
 # from utils import clear_screen, PriorityQueue
 import time
+from abc import ABC, abstractmethod
+from collections import Counter, defaultdict, deque, namedtuple
+
+import numpy as np
+
 np.set_printoptions(precision=3, linewidth=200)
 
-from tqdm import tqdm, trange, tnrange
 from copy import deepcopy
+
 from toolz.curried import *
+from tqdm import tnrange, tqdm, trange
 
 # from policies import *
 # from value_functions import *
@@ -18,10 +21,14 @@ from toolz.curried import *
 # ========= Agents ========= #
 # ========================== #
 
-class RegistrationError(Exception): pass
+
+class RegistrationError(Exception):
+    pass
+
 
 class Agent(ABC):
     """An agent that can run openai gym environments."""
+
     def __init__(self):
         self.env = None
         self.policy = None
@@ -32,38 +39,41 @@ class Agent(ABC):
 
     def register(self, obj):
         """Attaches a component or env to this agent."""
-        if hasattr(obj, 'step'):  # gym Env
+        if hasattr(obj, "step"):  # gym Env
             self.env = obj
-        elif hasattr(obj, 'act'):
+        elif hasattr(obj, "act"):
             self.policy = obj
             obj.attach(self)
-        elif hasattr(obj, 'predict'):
+        elif hasattr(obj, "predict"):
             self.value_functions.append(obj)
             obj.attach(self)
-        elif hasattr(obj, 'batch'):
+        elif hasattr(obj, "batch"):
             self.memory = obj
         else:
-            raise ValueError('Cannot register {}'.format(obj))
+            raise ValueError("Cannot register {}".format(obj))
 
-    def run_episode(self, render=False, max_steps=1000, interact=False,
-                    verbose=False, reset=True):
+    def run_episode(
+        self, render=False, max_steps=1000, interact=False, verbose=False, reset=True
+    ):
         """Runs a single episode, returns a complete trace of the episode."""
         if not self.env:
-            raise RegistrationError('No environment registered.')
+            raise RegistrationError("No environment registered.")
         if not self.policy:
-            raise RegistrationError('No policy registered.')
+            raise RegistrationError("No policy registered.")
 
         self.log = print if verbose else (lambda *args: None)
 
         trace = self.ep_trace = defaultdict(list)
-        trace.update({
-                    'i_episode': self.i_episode,
-                    'states': [],
-                    'actions': [],
-                    'rewards': [],
-                    'finished': False,
-                    'return': None
-                })
+        trace.update(
+            {
+                "i_episode": self.i_episode,
+                "states": [],
+                "actions": [],
+                "rewards": [],
+                "finished": False,
+                "return": None,
+            }
+        )
         if reset:
             new_state = self.env.reset()
         else:
@@ -78,19 +88,18 @@ class Agent(ABC):
             action = self.policy.act(state)
             new_state, reward, done, info = self.env.step(action)
             self._experience(state, action, new_state, reward, done)
-            
-            trace['states'].append(state)
-            trace['actions'].append(action)
-            trace['rewards'].append(reward)
+
+            trace["states"].append(state)
+            trace["actions"].append(action)
+            trace["rewards"].append(reward)
 
             if done:
-                trace['finished'] = True
+                trace["finished"] = True
                 self._render(render)
                 break
 
-
-        trace['states'].append(new_state)  # final state
-        trace['return'] = sum(trace['rewards'])
+        trace["states"].append(new_state)  # final state
+        trace["return"] = sum(trace["rewards"])
         if self.memory is not None:
             self.memory.add(trace)
         self._finish_episode(trace)
@@ -103,12 +112,12 @@ class Agent(ABC):
         range_ = tnrange if pbar else range
         for _ in range_(n_episodes):
             trace = self.run_episode(**kwargs)
-            data['n_steps'].append(len(trace.pop('states')))
+            data["n_steps"].append(len(trace.pop("states")))
             # data['i_episode'].append(trace.pop('i_episode'))
             # data['return'].append(trace.pop('return'))
             # data['finished'].append(trace.pop('finished'))
-            trace.pop('actions')
-            trace.pop('rewards')
+            trace.pop("actions")
+            trace.pop("rewards")
             for k, v in trace.items():
                 data[k].append(v)
 
@@ -120,10 +129,9 @@ class Agent(ABC):
             vf.start_episode(state)
 
     def _finish_episode(self, trace):
-        #self.policy.finish_episode(trace)
+        # self.policy.finish_episode(trace)
         for vf in self.value_functions:
             vf.finish_episode(trace)
-        
 
     def _experience(self, s0, a, s1, r, done):
         self.policy.experience(s0, a, s1, r, done)
@@ -131,18 +139,18 @@ class Agent(ABC):
             vf.experience(s0, a, s1, r, done)
 
     def _render(self, mode):
-        if mode == 'step':
-            x = input('> ')
+        if mode == "step":
+            x = input("> ")
             while x:
                 print(eval(x))
-                x = input('> ')
+                x = input("> ")
             # clear_screen()
             self.env.render()
-        elif mode == 'clear':
+        elif mode == "clear":
             # clear_screen()
             self.env.render()
-        elif mode == 'auto':
-            time.sleep(.4)      
+        elif mode == "auto":
+            time.sleep(0.4)
             # clear_screen()
             self.env.render()
         elif mode:
@@ -151,6 +159,7 @@ class Agent(ABC):
 
 class Component(ABC):
     """A very abstract base class."""
+
     def __init__(self):
         super().__init__()
         self.agent = None
@@ -199,7 +208,7 @@ class Component(ABC):
     @property
     def n_action(self):
         return self.env.action_space.n
-    
+
     @property
     def memory(self):
         return self.agent.memory
@@ -217,6 +226,7 @@ class Component(ABC):
 
 class Memory(object):
     """Remembers past experiences."""
+
     def __init__(self, size=100000):
         self.states = deque(maxlen=size)
         self.actions = deque(maxlen=size)
@@ -224,15 +234,13 @@ class Memory(object):
         self.returns = deque(maxlen=size)
 
     def add(self, trace):
-        self.states.extend(trace['states'])
-        self.actions.extend(trace['actions'])
+        self.states.extend(trace["states"])
+        self.actions.extend(trace["actions"])
         self.actions.append(None)
-        self.rewards.extend(trace['rewards'])
+        self.rewards.extend(trace["rewards"])
         self.rewards.append(0)
-        self.returns.extend(np.flip(np.cumsum(np.flip(trace['rewards'], 0)), 0))
+        self.returns.extend(np.flip(np.cumsum(np.flip(trace["rewards"], 0)), 0))
         self.returns.append(0)
-
-
 
         # self.experiences.extend(zip(trace['states'][:-1],
         #                             trace['actions'],
@@ -284,22 +292,19 @@ def run_episode(policy, env):
     agent.register(policy)
     return agent.run_episode()
 
+
 def interactions(x):
     return [a * b for a, b in it.combinations(x, 2)]
 
 
-
 class Model(object):
     """Simulated environment"""
+
     def __init__(self, env):
         self.env = deepcopy(env)
-      
+
     def options(self, state):
         for a in range(self.env.action_space.n):
             self.env._state = state
             obs, r, done, info = self.env.step(a)
             yield a, self.env._state, r, done
-
-
-
-

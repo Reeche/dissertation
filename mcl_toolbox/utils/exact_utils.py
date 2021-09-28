@@ -1,11 +1,9 @@
 from contexttimer import Timer
 
-from mcl_toolbox.utils.exact import solve
 from mcl_toolbox.utils.env_utils import (
     get_all_possible_sa_pairs_for_env,
-    get_sa_pairs_from_states,
-    get_all_possible_states_for_ground_truths,
-)
+    get_all_possible_states_for_ground_truths, get_sa_pairs_from_states)
+from mcl_toolbox.utils.exact import solve
 
 
 def timed_solve_env(env, verbose=True, save_q=False, ground_truths=None):

@@ -1,13 +1,15 @@
-import sys, os
-from pathlib import Path
+import os
 import random
+import sys
+from pathlib import Path
 
-from mcl_toolbox.global_vars import structure, strategies, features
-from mcl_toolbox.utils import learning_utils, distributions
+from mcl_toolbox.global_vars import features, strategies, structure
+from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
+from mcl_toolbox.computational_microscope.computational_microscope import \
+    ComputationalMicroscope
 from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
@@ -16,8 +18,11 @@ Format: python3 infer_sequences.py <exp name> <block>
 Example: python3 infer_sequences.py T1.1 training
 """
 
-def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, max_evals = 50, **kwargs):
-    '''
+
+def infer_experiment_sequences(
+    exp_num="F1", block="training", pids=None, max_evals=50, **kwargs
+):
+    """
     Infer the averaged sequences of the participants in an experiment.
     :param exp_num: experiment name, e.g. F1
     :param block: block, e.g. "training" or "test"
@@ -25,7 +30,7 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     :param max_evals: max optimization evals for fmin
     :return: strategy and temperature dicts with a key for every pid in the experiment. The strategies are a list for each trial, the temperature is temperature over all trials.
     Saves data either to results/inferred_strategies/<exp_num> or results/inferred_strategies/<exp_num_block>
-    '''
+    """
     # Initializations
 
     # 79 strategies out of 89
@@ -47,32 +52,43 @@ def infer_experiment_sequences(exp_num = "F1", block = "training", pids = None, 
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = learning_utils.get_normalized_features(reward_structure)  # tuple of 2
+    normalized_features = learning_utils.get_normalized_features(
+        reward_structure
+    )  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
-    cm = ComputationalMicroscope(pipeline, strategy_space, W, microscope_features, normalized_features=normalized_features)
+    cm = ComputationalMicroscope(
+        pipeline,
+        strategy_space,
+        W,
+        microscope_features,
+        normalized_features=normalized_features,
+    )
 
-    #TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
+    # TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
-        #exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
-    #create save path
+    # create save path
     parent_directory = Path(__file__).parents[1]
-    save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
+    save_path = os.path.join(
+        parent_directory, f"results/inferred_strategies/{reward_structure}"
+    )
     # save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
-    #save strategies, and temperatures
+    # save strategies, and temperatures
     inferred_strategies = exp.participant_strategies
     inferred_temperatures = exp.participant_temperatures
     learning_utils.pickle_save(inferred_strategies, f"{save_path}/strategies.pkl")
     learning_utils.pickle_save(inferred_temperatures, f"{save_path}/temperatures.pkl")
 
     return inferred_strategies, inferred_temperatures
+
 
 if __name__ == "__main__":
     random.seed(123)
@@ -84,4 +100,6 @@ if __name__ == "__main__":
     # exp_name = "c2.1_dec"
     # block = "training"
 
-    infer_experiment_sequences(exp_name, block=block, max_evals=50) #max_evals have to be at least 2 for testing
+    infer_experiment_sequences(
+        exp_name, block=block, max_evals=50
+    )  # max_evals have to be at least 2 for testing

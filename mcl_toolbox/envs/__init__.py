@@ -1,12 +1,7 @@
 from .registry import register
-
-from .reward_settings import (
-    high_increasing_reward,
-    high_decreasing_reward,
-    low_constant_reward,
-    large_increasing_reward,
-    normal_env_reward_dict,
-)
+from .reward_settings import (high_decreasing_reward, high_increasing_reward,
+                              large_increasing_reward, low_constant_reward,
+                              normal_env_reward_dict)
 
 # Standard environments found in the MCRL / Computational Microscope code
 
