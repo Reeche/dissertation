@@ -8,7 +8,6 @@ from toolz import curry
 
 from mcl_toolbox.utils import *
 
-
 # ---------- Data wrangling ---------- #
 
 
@@ -71,7 +70,7 @@ def parse_json(df):
 
 def get_data(version, data_path=Path(Path(__file__).parents[2].joinpath("data"))):
     data = {}
-    for file in data_path.joinpath(f"human/{version}").glob('*'):
+    for file in data_path.joinpath(f"human/{version}").glob("*"):
         name = file.stem
         df = pd.read_csv(file)
         parse_json(df)

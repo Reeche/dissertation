@@ -1336,8 +1336,7 @@ class Node:
                 else:
                     # evaluate from termination map
                     if feature in self.termination_map.keys():
-                        evaluated_features.append(
-                            self.termination_map[feature]())
+                        evaluated_features.append(self.termination_map[feature]())
                     else:
                         evaluated_features.append(0)
             # if hard pruned, pass through that function (same terminal logic)

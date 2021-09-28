@@ -270,7 +270,6 @@ class REINFORCE(Learner):
         return dict(trials_data)
 
 
-
 class BaselineREINFORCE(REINFORCE):
     """Baseline version of the REINFORCE model"""
 

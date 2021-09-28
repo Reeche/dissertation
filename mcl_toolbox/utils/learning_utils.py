@@ -28,7 +28,7 @@ eps = np.finfo(float).eps
 try:
     mvprpb = importr("mvprpb")
 except:
-    utils = importr('utils')
+    utils = importr("utils")
     utils.install_packages("mvprpb")
     mvprpb = importr("mvprpb")
 

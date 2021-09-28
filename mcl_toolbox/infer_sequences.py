@@ -74,7 +74,9 @@ def infer_experiment_sequences(
 
     # create save path
     parent_directory = Path(__file__).parents[1]
-    save_path = os.path.join(parent_directory, f"results/inferred_strategies/{reward_structure}")
+    save_path = os.path.join(
+        parent_directory, f"results/inferred_strategies/{reward_structure}"
+    )
     # save_path = f"../results/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"

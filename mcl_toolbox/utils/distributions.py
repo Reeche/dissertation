@@ -75,10 +75,10 @@ class Normal(Distribution):
 
     def sample_nocache(self):
         return self.mu + self.sigma * np.random.randn()
-    
+
     def var(self):
-        return self.sigma**2
-    
+        return self.sigma ** 2
+
     def std(self):
         return self.sigma
 

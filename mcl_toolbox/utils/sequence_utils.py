@@ -1,9 +1,11 @@
 import operator
 
 import numpy as np
+from scipy.special import logsumexp, softmax
+
 from mcl_toolbox.env.modified_mouselab import TrialSequence
-from scipy.special import softmax, logsumexp
-from mcl_toolbox.utils.learning_utils import get_normalized_feature_values, get_counts
+from mcl_toolbox.utils.learning_utils import (get_counts,
+                                              get_normalized_feature_values)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 
