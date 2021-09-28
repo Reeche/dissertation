@@ -8,6 +8,7 @@ import seaborn as sns
 
 file_location = Path(__file__).parents[0]
 
+
 # RenameUnpickler from https://stackoverflow.com/a/53327348
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -24,11 +25,11 @@ class RenameUnpickler(pickle.Unpickler):
 
 def pickle_load(file_path):
     """
-    Load the pickle file located at 'filepath'
-    Params:
-        file_path  -- Location of the file to be loaded.
-    Returns:
-        Unpickled object
+        Load the pickle file located at 'filepath'
+        Params:
+            file_path  -- Location of the file to be loaded, as pathlib object.
+        Returns:
+            Unpickled object
     """
     with open(str(file_path), "rb") as file_obj:
         unpickled_obj = RenameUnpickler(file_obj).load()
@@ -113,14 +114,6 @@ class structure:
         "constant_variance": "low_constant",
         "decreasing_variance": "high_decreasing",
         "transfer_task": "large_increasing",
-    }
-
-    # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key
-    # todo: remove this
-    reward_dict = {
-        "increasing_variance": "v1.0",
-        "decreasing_variance": "c2.1",
-        "constant_variance": "c1.1",
     }
 
 
@@ -262,19 +255,13 @@ class strategies:
         ],
     }
 
-    strategy_weights = pickle_load(
-        file_location.joinpath("data/microscope_weights.pkl")
-    )
+    strategy_weights = pickle_load(file_location.joinpath("data/microscope_weights.pkl"))
     strategy_distances = pickle_load(file_location.joinpath("data/L2_distances.pkl"))
 
 
 class features:
-    microscope = pickle_load(
-        file_location.joinpath("data/microscope_features.pkl")
-    )  # this is 51 features
-    implemented = pickle_load(
-        file_location.joinpath("data/implemented_features.pkl")
-    )  # this is 56 features
+    microscope = pickle_load(file_location.joinpath("data/microscope_features.pkl")) # this is 51 features
+    implemented = pickle_load(file_location.joinpath("data/implemented_features.pkl")) # this is 56 features
 
 
 class hierarchical_params:
