@@ -1,6 +1,6 @@
 import itertools
 import operator
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np

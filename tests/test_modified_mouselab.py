@@ -1,12 +1,12 @@
 import unittest
+from pathlib import Path
+
+import numpy as np
+import yaml
 from parameterized import parameterized
 
-import yaml
-import numpy as np
-
-from pathlib import Path
-from mcl_toolbox.global_vars import structure
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.global_vars import structure
 from mcl_toolbox.utils.learning_utils import Participant
 
 """

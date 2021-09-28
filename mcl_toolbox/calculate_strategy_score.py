@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from mcl_toolbox.utils import learning_utils, distributions
+from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions

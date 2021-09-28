@@ -5,15 +5,12 @@ import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.models.rl_models import integrate
-from mcl_toolbox.utils.learning_utils import (
-    sample_coeffs,
-    rows_mean,
-    estimate_bayes_glm,
-    get_normalized_feature_values,
-    break_ties_random,
-    get_log_norm_pdf,
-    get_log_norm_cdf,
-)
+from mcl_toolbox.utils.learning_utils import (break_ties_random,
+                                              estimate_bayes_glm,
+                                              get_log_norm_cdf,
+                                              get_log_norm_pdf,
+                                              get_normalized_feature_values,
+                                              rows_mean, sample_coeffs)
 
 
 class LVOC(Learner):

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pyabc
 import seaborn as sns
-from hyperopt import hp, fmin, tpe, Trials
+from hyperopt import Trials, fmin, hp, tpe
 from pyabc.transition import MultivariateNormalTransition
 
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
@@ -16,7 +16,8 @@ from mcl_toolbox.models.lvoc_models import LVOC
 from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE
 from mcl_toolbox.models.rssl_models import RSSL
 from mcl_toolbox.models.sdss_models import SDSS
-from mcl_toolbox.utils.learning_utils import compute_objective, get_relevant_data
+from mcl_toolbox.utils.learning_utils import (compute_objective,
+                                              get_relevant_data)
 
 models = {
     "lvoc": LVOC,
@@ -30,6 +31,7 @@ models = {
 curr_dir = os.path.abspath(os.path.dirname(__file__))
 param_config = json.load(open(os.path.join(curr_dir, "param_search_space.json")))
 model_config = json.load(open(os.path.join(curr_dir, "model_params.json")))
+
 
 def hyperopt_space(params_list):
     """Should return a dict of the form required by hyperopt

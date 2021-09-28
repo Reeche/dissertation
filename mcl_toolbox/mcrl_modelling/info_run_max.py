@@ -3,16 +3,12 @@ import sys
 
 import numpy as np
 import pandas as pd
+from optimizer import ParameterOptimizer
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import (
-    pickle_load,
-    pickle_save,
-    get_normalized_features,
-    Participant,
-    create_dir,
-)
-from optimizer import ParameterOptimizer
+from mcl_toolbox.utils.learning_utils import (Participant, create_dir,
+                                              get_normalized_features,
+                                              pickle_load, pickle_save)
 
 logger = logging.getLogger()
 # logger.setLevel(logging.CRITICAL)

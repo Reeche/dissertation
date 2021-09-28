@@ -1,7 +1,6 @@
 import itertools as it
 
 import numpy as np
-
 # ---------- Functional utils ---------- #
 from toolz.curried import *
 

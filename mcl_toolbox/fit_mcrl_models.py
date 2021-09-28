@@ -1,17 +1,14 @@
-import sys
 import ast
+import sys
+
 import numpy as np
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import *
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 from mcl_toolbox.utils.learning_utils import (
-    pickle_save,
-    get_normalized_features,
-    Participant,
-    create_dir,
-    get_number_of_actions_from_branching,
-)
+    Participant, create_dir, get_normalized_features,
+    get_number_of_actions_from_branching, pickle_save)
 
 """
 Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
@@ -61,7 +58,9 @@ def prior_fit(
 
     # set random seed for optimization
     if "seed" in optimization_params:
-        optimization_params["rstate"] = np.random.RandomState(optimization_params["seed"])
+        optimization_params["rstate"] = np.random.RandomState(
+            optimization_params["seed"]
+        )
         del optimization_params["seed"]
 
     # add directory for reward plots, if plotting
@@ -176,9 +175,7 @@ if __name__ == "__main__":
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
     other_params = {}
-    if len(sys.argv)>5:
+    if len(sys.argv) > 5:
         other_params = ast.literal_eval(sys.argv[5])
 
-    prior_fit(
-        exp_name, model_index, optimization_criterion, pid, **other_params
-    )
+    prior_fit(exp_name, model_index, optimization_criterion, pid, **other_params)

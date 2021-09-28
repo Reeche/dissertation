@@ -3,18 +3,16 @@ import sys
 
 import pandas as pd
 import pymannkendall as mk
-from scipy.stats import friedmanchisquare
-from scipy.stats import mannwhitneyu
+from scipy.stats import friedmanchisquare, mannwhitneyu
 
-from mcl_toolbox.utils import learning_utils, distributions
+from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 
+from mcl_toolbox.computational_microscope.computational_microscope import \
+    ComputationalMicroscope
 from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.computational_microscope.computational_microscope import (
-    ComputationalMicroscope,
-)
 from mcl_toolbox.utils.statistics_utils import create_comparable_data
 
 """

@@ -1,19 +1,19 @@
+import os
+import pickle
+from collections import Counter, defaultdict
+from functools import lru_cache, partial
+from pathlib import Path
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import mpmath as mp
 import numpy as np
 import numpy.linalg as LA
-import os
-import pickle
 import scipy.linalg
 import seaborn as sns
-from collections import defaultdict, Counter
-from functools import partial, lru_cache
-from pathlib import Path
-from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
+from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
-from scipy.stats import gamma
-from scipy.stats import norm
+from scipy.stats import gamma, norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from mcl_toolbox.utils.analysis_utils import get_data
@@ -127,15 +127,16 @@ def softmax(x):
 
 def pickle_load(file_path):
     """
-        Load the pickle file located at 'filepath'
-        Params:
-            file_path  -- Location of the file to be loaded, as pathlib object.
-        Returns:
-            Unpickled object
+    Load the pickle file located at 'filepath'
+    Params:
+        file_path  -- Location of the file to be loaded, as pathlib object.
+    Returns:
+        Unpickled object
     """
     with open(str(file_path), "rb") as file_obj:
         unpickled_obj = pickle.load(file_obj)
     return unpickled_obj
+
 
 def create_dir(file_path):
     """

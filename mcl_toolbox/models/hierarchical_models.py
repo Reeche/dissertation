@@ -5,12 +5,9 @@ import scipy as sp
 
 from mcl_toolbox.global_vars import hierarchical_params
 from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (
-    temp_sigmoid,
-    rows_mean,
-    get_log_norm_pdf,
-    get_log_norm_cdf,
-)
+from mcl_toolbox.utils.learning_utils import (get_log_norm_cdf,
+                                              get_log_norm_pdf, rows_mean,
+                                              temp_sigmoid)
 
 
 class HierarchicalAgent:

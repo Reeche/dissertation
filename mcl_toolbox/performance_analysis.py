@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from mcl_toolbox.utils import learning_utils, distributions, analysis_utils
+from mcl_toolbox.utils import analysis_utils, distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions

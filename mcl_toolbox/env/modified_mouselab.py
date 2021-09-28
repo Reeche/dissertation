@@ -1295,7 +1295,7 @@ class Node:
         return evaluated_features
 
     def compute_termination_feature_values(self, features, adaptive_satisficing={}):
-        '''
+        """
         Prefixes:
             - 'hp' = hard pruning
             - 'hs' = hard satisficing
@@ -1306,9 +1306,14 @@ class Node:
 
         Returns: feature values
 
-        '''
+        """
         evaluated_features = []
-        features_regardless_terminal = ["max_expected_return", "constant", "return_if_terminating", "num_clicks"]
+        features_regardless_terminal = [
+            "max_expected_return",
+            "constant",
+            "return_if_terminating",
+            "num_clicks",
+        ]
         for feature in features:
             # if feature is neither hard-pruned or satisficed and not one of these "special ones"
             if (

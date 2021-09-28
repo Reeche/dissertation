@@ -25,11 +25,11 @@ class RenameUnpickler(pickle.Unpickler):
 
 def pickle_load(file_path):
     """
-        Load the pickle file located at 'filepath'
-        Params:
-            file_path  -- Location of the file to be loaded, as pathlib object.
-        Returns:
-            Unpickled object
+    Load the pickle file located at 'filepath'
+    Params:
+        file_path  -- Location of the file to be loaded, as pathlib object.
+    Returns:
+        Unpickled object
     """
     with open(str(file_path), "rb") as file_obj:
         unpickled_obj = RenameUnpickler(file_obj).load()
@@ -255,13 +255,19 @@ class strategies:
         ],
     }
 
-    strategy_weights = pickle_load(file_location.joinpath("data/microscope_weights.pkl"))
+    strategy_weights = pickle_load(
+        file_location.joinpath("data/microscope_weights.pkl")
+    )
     strategy_distances = pickle_load(file_location.joinpath("data/L2_distances.pkl"))
 
 
 class features:
-    microscope = pickle_load(file_location.joinpath("data/microscope_features.pkl")) # this is 51 features
-    implemented = pickle_load(file_location.joinpath("data/implemented_features.pkl")) # this is 56 features
+    microscope = pickle_load(
+        file_location.joinpath("data/microscope_features.pkl")
+    )  # this is 51 features
+    implemented = pickle_load(
+        file_location.joinpath("data/implemented_features.pkl")
+    )  # this is 56 features
 
 
 class hierarchical_params:

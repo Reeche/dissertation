@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from toolz import curry
-from pathlib import Path
 
 # ---------- Data wrangling ---------- #
 
@@ -46,9 +45,9 @@ def reformat_name(name):
 
 # ---------- Loading data ---------- #
 
-from glob import glob
-import json
 import ast
+import json
+from glob import glob
 
 
 def parse_json(df):
@@ -69,7 +68,7 @@ def parse_json(df):
 
 def get_data(version, data_path=Path(Path(__file__).parents[2].joinpath("data"))):
     data = {}
-    for file in data_path.joinpath(f"human/{version}").glob('*'):
+    for file in data_path.joinpath(f"human/{version}").glob("*"):
         name = file.stem
         df = pd.read_csv(file)
         parse_json(df)

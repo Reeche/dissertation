@@ -1,6 +1,6 @@
 import itertools as it
 from collections import Counter
-from functools import total_ordering, lru_cache
+from functools import lru_cache, total_ordering
 
 import numpy as np
 import scipy.stats

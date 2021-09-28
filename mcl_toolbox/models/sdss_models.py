@@ -4,13 +4,10 @@ import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.models.rssl_models import RSSL
-from mcl_toolbox.utils.learning_utils import (
-    get_normalized_feature_values,
-    get_log_beta_pdf,
-    get_log_beta_cdf,
-)
+from mcl_toolbox.utils.learning_utils import (get_log_beta_cdf,
+                                              get_log_beta_pdf,
+                                              get_normalized_feature_values)
 from mcl_toolbox.utils.sequence_utils import get_clicks
-
 
 # TODO:
 # Implement Gaussian DS - Requires knowledge of how to remove the influence of past observations

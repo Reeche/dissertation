@@ -1,10 +1,10 @@
 import unittest
+
+from costometer.utils import create_mcrl_reward_distribution
+from mouselab.envs.registry import registry
 from parameterized import parameterized
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-
-from mouselab.envs.registry import registry
-from costometer.utils import create_mcrl_reward_distribution
 from mcl_toolbox.utils.learning_utils import construct_repeated_pipeline
 
 """
@@ -29,7 +29,9 @@ click_cost_tests_parameters = [
 
 class TestGenericMouselab(unittest.TestCase):
     @parameterized.expand(click_cost_tests_parameters)
-    def test_click_costs(self, exp_setting, num_trials, static_cost, depth, resulting_costs):
+    def test_click_costs(
+        self, exp_setting, num_trials, static_cost, depth, resulting_costs
+    ):
         branching = registry(exp_setting).branching
         reward_distributions = create_mcrl_reward_distribution(exp_setting)
         pipeline = construct_repeated_pipeline(

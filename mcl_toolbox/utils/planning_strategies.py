@@ -1,5 +1,5 @@
 from queue import PriorityQueue
-from random import shuffle, choice
+from random import choice, shuffle
 
 from numpy import argsort
 

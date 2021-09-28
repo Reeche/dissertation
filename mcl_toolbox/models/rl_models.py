@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from hyperopt import hp, fmin, tpe, Trials
+from hyperopt import Trials, fmin, hp, tpe
 from scipy.special import logsumexp
 from scipy.stats import norm
 from torch import autograd
