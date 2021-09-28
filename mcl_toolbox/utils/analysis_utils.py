@@ -69,10 +69,9 @@ def parse_json(df):
             pass
 
 
-def get_data(version, data_path='data'):
-    head = Path(__file__).parents[2]
+def get_data(version, data_path=Path(Path(__file__).parents[2].joinpath("data"))):
     data = {}
-    for file in data_path.joinpath(f"human/{version}").glob("*"):
+    for file in data_path.joinpath(f"human/{version}").glob('*'):
         name = file.stem
         df = pd.read_csv(file)
         parse_json(df)
