@@ -23,7 +23,14 @@ from mcl_toolbox.utils.distributions import Categorical, Normal
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
-mvprpb = importr("mvprpb")
+
+# import r package by first installing if not on user's machine
+try:
+    mvprpb = importr("mvprpb")
+except:
+    utils = importr('utils')
+    utils.install_packages("mvprpb")
+    mvprpb = importr("mvprpb")
 
 parent_folder = Path(__file__).parents[1]
 
