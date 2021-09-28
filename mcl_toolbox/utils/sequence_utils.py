@@ -1,12 +1,10 @@
 import operator
 
 import numpy as np
-from scipy.special import logsumexp, softmax
-
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.env.modified_mouselab import TrialSequence
-from mcl_toolbox.utils.learning_utils import (get_counts,
-                                              get_normalized_feature_values)
+from scipy.special import softmax, logsumexp
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values, get_counts
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 
@@ -14,7 +12,6 @@ def get_accuracy_position(
     position, ground_truth, clicks, pipeline, features, normalized_features, W
 ):
     num_features = len(features)
-    num_trials = len(ground_truth)
     env = TrialSequence(1, pipeline, ground_truth=[ground_truth])
     trial = env.trial_sequence[0]
     beta = 1
@@ -75,7 +72,6 @@ def get_acls(
             clicks = p_clicks[pid]
             pid_acc = []
             for i in range(len(envs)):
-                strategy_accs = []
                 strategy_num = strategies[pid][i]
                 pid_acc, acl = get_accuracy_position(
                     1,
@@ -120,7 +116,6 @@ def compute_average_click_likelihoods(
             envs = p_envs[pid]
             clicks = p_clicks[pid]
             for i in range(len(envs)):
-                strategy_accs = []
                 try:
                     strategy_num = strategies[pid][i]
                     trial = TrialSequence(
@@ -269,8 +264,7 @@ def generate_clicks(
     return trials.ground_truth, clicks
 
 
-def generate_algorithm_data(strategy_num, pipeline, num_simulations=1000, envs=None):
-    env = GenericMouselabEnv(num_simulations, pipeline, ground_truth=envs)
+def generate_algorithm_data(env, strategy_num, num_simulations=1000):
     simulated_actions = []
     for sim_num in range(num_simulations):
         trial = env.present_trial
@@ -279,6 +273,32 @@ def generate_algorithm_data(strategy_num, pipeline, num_simulations=1000, envs=N
         env.reset_trial()
         env.get_next_trial()
     return env.ground_truth, simulated_actions
+
+
+def compute_action_features(trial, action, features, normalized_features):
+    node = trial.node_map[action]
+    action_feature_values = node.compute_termination_feature_values(features)
+    if normalized_features:
+        action_feature_values = get_normalized_feature_values(
+            action_feature_values, features, normalized_features
+        )
+    return action_feature_values
+
+
+def compute_current_features(trial, features, normalized_features):
+    num_nodes = trial.num_nodes
+    num_features = len(features)
+    action_feature_values = np.zeros((num_nodes, num_features))
+    for node_num in range(num_nodes):
+        node = trial.node_map[node_num]
+        action_feature_values[node_num] = node.compute_termination_feature_values(
+            features
+        )
+        if normalized_features:
+            action_feature_values[node_num] = get_normalized_feature_values(
+                action_feature_values[node_num], features, normalized_features
+            )
+    return action_feature_values
 
 
 def compute_trial_features(
@@ -292,17 +312,11 @@ def compute_trial_features(
     action_feature_values = np.zeros((num_actions, num_nodes, num_features))
     for i, action in enumerate(trial_actions):
         node_map = trial.node_map
+        trial_feature_values = compute_current_features(
+            trial, features_list, normalized_features
+        )
         for node_num in range(num_nodes):
-            node = trial.node_map[node_num]
-            action_feature_values[i][
-                node_num
-            ] = node.compute_termination_feature_values(features_list)
-            if normalized_features:
-                action_feature_values[i][node_num] = get_normalized_feature_values(
-                    action_feature_values[i][node_num],
-                    features_list,
-                    normalized_features,
-                )
+            action_feature_values[i][node_num] = trial_feature_values[node_num]
         node_map[action].observe()
     return action_feature_values
 
@@ -389,7 +403,7 @@ class ClickSequence:
             self._normalized_features,
         )
 
-    def compute_log_likelihoods(self, W, fit_temperatures=False):
+    def compute_log_likelihoods(self, weights, fit_temperatures=False):
         num_trials = 1
         trial = TrialSequence(
             1, pipeline=self._pipeline, ground_truth=[self._env]
@@ -403,7 +417,7 @@ class ClickSequence:
                 fit_temperatures,
                 self._normalized_features,
             )
-            for w in W
+            for w in weights
         ]
         return log_likelihoods
 

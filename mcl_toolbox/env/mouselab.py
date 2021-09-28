@@ -6,8 +6,11 @@ from contracts import contract
 from gym import spaces
 from toolz import get, memoize
 
+from mcl_toolbox.envs.registry import registry
 from mcl_toolbox.utils.distributions import (PointMass, cmax, expectation,
                                              sample, smax)
+from mcl_toolbox.utils.graph_utils import (annotate_mdp_graph,
+                                           graph_from_adjacency_list)
 
 NO_CACHE = False
 if NO_CACHE:
@@ -15,7 +18,7 @@ if NO_CACHE:
 else:
     from functools import lru_cache
 
-CACHE_SIZE = int(2 ** 16)
+CACHE_SIZE = int(2 ** 20)
 SMALL_CACHE_SIZE = int(2 ** 14)
 ZERO = PointMass(0)
 
@@ -32,110 +35,124 @@ class MouselabEnv(gym.Env):
         init,
         ground_truth=None,
         cost=0,
-        sample_term_reward=False,
         term_belief=True,
-        env_type="same",
-        repeat_cost=1,
+        sample_term_reward=False,
+        last_action=0,
+        mdp_graph_properties={},
     ):
+        """
+        :param tree: adjacency list
+        :param init: list of distribution behind each node
+        :param ground_truth: if known, a list of values behind the nodes
+        :param cost: cost for clicking on a node, either a scalar
+                    or function implemented similar to those in mouselab.cost_functions
+        :param term_belief: TODO
+        :param sample_term_belief: TODO
+        :param last_action: some cost functions depend on the last action,
+                    this should generally be initialized as the starting node
+        :param mdp_graph_properties: properties to add to mdp graph,
+                    as dictionary of {attribute : dictionary of {node : value}}
+        """
         self.tree = tree
+        mdp_graph = graph_from_adjacency_list(self.tree)
+        # add properties to mdp_graph for cost function and possible calculating returns
+        self.mdp_graph = annotate_mdp_graph(mdp_graph, mdp_graph_properties)
+
         self.init = (0, *init[1:])
+
         if ground_truth is not None:
             if len(ground_truth) != len(init):
                 raise ValueError("len(ground_truth) != len(init)")
             self.ground_truth = np.array(ground_truth)
+            self.ground_truth[0] = 0.0
         else:
             self.ground_truth = np.array(list(map(sample, init)))
-        self.ground_truth[0] = 0.0
-        self.cost = -abs(cost)
+            self.ground_truth[0] = 0.0
+
+        if hasattr(cost, "__call__"):
+            # reads in all graph attributes and last action
+            self.cost = lambda node: cost(
+                node, last_action=self.last_action, graph=self.mdp_graph
+            )
+        else:
+            # make the cost function return scalar cost for all inputs if not callable
+            self.cost = lambda node: -abs(cost)
+        # in Val's experiments participants must click on node 0 to begin
+        self.last_action = last_action
+
         self.term_belief = term_belief
         self.sample_term_reward = sample_term_reward
-        if env_type == "same":
-            self.term_action = len(self.init)
-        else:
-            self.term_action = 0
+        self.term_action = len(self.init)
 
         # Required for gym.Env API.
         self.action_space = spaces.Discrete(len(self.init) + 1)
         # self.observation_space = spaces.Box(-np.inf, np.inf, shape=len(self.init))
-        if env_type != "same":
-            self.n_actions = self.action_space.n - 1
-            self.n_obs = len(self.init) - 1
 
-        self.initial_states = None  # TODO
+        self.initial_states = [self.init]
         self.exact = True  # TODO
 
         self.subtree = self._get_subtree()
         self.subtree_slices = self._get_subtree_slices()
         self.paths = self.get_paths(0)
-        self.env_type = env_type
-        self.repeat_cost = -abs(repeat_cost)
         self.reset()
 
+        self._hash = hash((str(self.tree), self.init, str(list(self.ground_truth))))
+
+    def __hash__(self):
+        return self._hash
+
     def reset(self):
-        if self.initial_states:
+        return self._reset()
+
+    def _reset(self):
+        if len(self.initial_states) > 1:
             self.init = random.choice(self.initial_states)
         self._state = self.init
         return self._state
 
     def step(self, action):
+        return self._step(action)
 
-        if self.env_type == "same":
-            if self._state is self.term_state:
-                assert 0, "state is terminal"
-            if action == self.term_action:
-                reward = self._term_reward()
-                self._state = self.term_state
-                done = True
-            elif not hasattr(self._state[action], "sample"):  # already observed
-                assert 0, self._state[action]
-                reward = 0
-                done = False
-            else:  # observe a new node
-                self._state = self._observe(action)
-                reward = self.cost
-                done = False
-            return self._state, reward, done, {}
-
-        else:
-            if self._state is self.term_state:
-                assert 0, "state is terminal"
-            if action == self.term_action:
-                reward = self._term_reward()
-                done = True
-                obs = False
-            elif not hasattr(self._state[action], "sample"):  # already observed
-                reward = self.repeat_cost
-                done = False
-                obs = True
-            else:  # observe a new node
-                self._state = self._observe(action)
-                reward = self.cost
-                done = False
-                obs = False
-            return self._state, reward, done, obs
+    def _step(self, action):
+        if self._state is self.term_state:
+            assert 0, "state is terminal"
+        if action == self.term_action:
+            reward = self._term_reward()
+            self._state = self.term_state
+            done = True
+        elif not hasattr(self._state[action], "sample"):  # already observed
+            assert 0, self._state[action]
+            reward = 0
+            done = False
+        else:  # observe a new node
+            self._state = self._observe(action)
+            reward = self.cost(action)
+            done = False
+        # update last action
+        self.last_action = action
+        return self._state, reward, done, {}
 
     def _term_reward(self):
         if self.term_belief:
             return self.expected_term_reward(self._state)
 
-        returns = [self.ground_truth[list(path)].sum() for path in self.ex_paths()]
+        returns = [self.ground_truth[list(path)].sum() for path in self.optimal_paths()]
         if self.sample_term_reward:
             return np.random.sample(returns)
         else:
             return np.mean(returns)
 
     def _observe(self, action):
-        if self.ground_truth is not None:
-            result = self.ground_truth[action]
-        else:
+        if self.ground_truth is None:
             result = self._state[action].sample()
+        else:
+            result = self.ground_truth[action]
         s = list(self._state)
         s[action] = result
         return tuple(s)
 
     def actions(self, state):
         """Yields actions that can be taken in the given state.
-
         Actions include observing the value of each unobserved node and terminating.
         """
         if state is self.term_state:
@@ -147,7 +164,6 @@ class MouselabEnv(gym.Env):
 
     def results(self, state, action):
         """Returns a list of possible results of taking action in state.
-
         Each outcome is (probability, next_state, reward).
         """
         if action == self.term_action:
@@ -156,7 +172,7 @@ class MouselabEnv(gym.Env):
             for r, p in state[action]:
                 s1 = list(state)
                 s1[action] = r
-                yield (p, tuple(s1), self.cost)
+                yield (p, tuple(s1), self.cost(action))
 
     def action_features(self, action, state=None):
         state = state if state is not None else self._state
@@ -167,7 +183,7 @@ class MouselabEnv(gym.Env):
 
         return np.array(
             [
-                self.cost,
+                self.cost(action),
                 self.myopic_voc(action, state),
                 self.vpi_action(action, state),
                 self.vpi(state),
@@ -242,7 +258,6 @@ class MouselabEnv(gym.Env):
             obs, 0, state
         ).expectation() - self.expected_term_reward(state)
 
-    @lru_cache(CACHE_SIZE)
     @contract
     def vpi(self, state) -> "float, >= -0.001":
         obs = self.subtree[0]
@@ -298,16 +313,14 @@ class MouselabEnv(gym.Env):
         assert False
 
     @lru_cache(None)
-    def leaves(self, node):
-        trees = [self.subtree[n1] for n1 in self.tree[0]]
-        for t in trees:
-            if node in t:
-                return tuple(t)
-        assert False
+    def leaves(self):
+        return [path[-1] for path in self.all_paths()]
+
+    def path_values(self, state):
+        return [self.node_quality(node, state) for node in self.leaves()]
 
     def node_value_after_observe(self, obs, node, state):
         """A distribution over the expected value of node, after making an observation.
-
         obs can be a single node, a list of nodes, or 'all'
         """
         obs_tree = self.to_obs_tree(state, node, obs)
@@ -334,6 +347,7 @@ class MouselabEnv(gym.Env):
                 path.append(child)
         assert False
 
+    @memoize
     def all_paths(self, start=0):
         def rec(path):
             children = self.tree[path[-1]]
@@ -343,7 +357,7 @@ class MouselabEnv(gym.Env):
             else:
                 yield path
 
-        return rec([start])
+        return list(rec([start]))
 
     def _get_subtree_slices(self):
         slices = [0] * len(self.tree)
@@ -365,12 +379,8 @@ class MouselabEnv(gym.Env):
         return [tuple(gen(n)) for n in range(len(self.tree))]
 
     @classmethod
-    def new_symmetric(cls, branching, reward, repl_init=None, seed=None, **kwargs):
-        """Returns a MouselabEnv with a symmetric structure.
-
-        Arguments:
-            branching: a list that specifies the branching factor at each depth.
-            reward: a function that returns the reward distribution at a given depth."""
+    def new_symmetric(cls, branching, reward, seed=None, **kwargs):
+        """Returns a MouselabEnv with a symmetric structure."""
         if seed is not None:
             np.random.seed(seed)
         if not callable(reward):
@@ -391,9 +401,14 @@ class MouselabEnv(gym.Env):
             return my_idx
 
         expand(0)
-        if repl_init is not None:
-            init = repl_init
         return cls(tree, init, **kwargs)
+
+    @classmethod
+    def new_symmetric_registered(cls, experiment_setting, seed=None, **kwargs):
+        branching = registry(experiment_setting).branching
+        reward = registry(experiment_setting).reward_function
+
+        return MouselabEnv.new_symmetric(branching, reward, seed=seed, **kwargs)
 
     def _render(self, mode="notebook", close=False):
         if close:
@@ -411,8 +426,8 @@ class MouselabEnv(gym.Env):
             r = self._state[x]
             observed = not hasattr(self._state[x], "sample")
             c = color(r) if observed else "grey"
-            l = str(round(r, 2)) if observed else str(x)
-            dot.node(str(x), label=l, style="filled", color=c)
+            label = str(round(r, 2)) if observed else str(x)
+            dot.node(str(x), label=label, style="filled", color=c)
             for y in ys:
                 dot.edge(str(x), str(y))
         return dot
@@ -431,17 +446,15 @@ class MouselabEnv(gym.Env):
 @lru_cache(SMALL_CACHE_SIZE)
 def node_value_after_observe(obs_tree):
     """A distribution over the expected value of node, after making an observation.
-
     `obs` can be a single node, a list of nodes, or 'all'
     """
     children = tuple(node_value_after_observe(c) + c[0] for c in obs_tree[1])
     return smax(children, default=ZERO)
 
 
-@lru_cache(None)
+@lru_cache(CACHE_SIZE)
 def exact_node_value_after_observe(obs_tree):
     """A distribution over the expected value of node, after making an observation.
-
     `obs` can be a single node, a list of nodes, or 'all'
     """
     children = tuple(exact_node_value_after_observe(c) + c[0] for c in obs_tree[1])

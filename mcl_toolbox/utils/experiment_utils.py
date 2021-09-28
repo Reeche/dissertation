@@ -1,6 +1,8 @@
 import itertools
 import operator
-from collections import Counter, defaultdict
+import os
+import sys
+from collections import Counter, OrderedDict, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +12,9 @@ from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
 from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.learning_utils import sidak_value
+from mcl_toolbox.utils.learning_utils import (get_clicks,
+                                              get_participant_scores,
+                                              sidak_value)
 from mcl_toolbox.utils.sequence_utils import get_acls
 
 # Matplotlib no grid
@@ -21,8 +25,6 @@ np.seterr(all="ignore")
 
 
 class Participant:
-    # TODO:
-    # Add proper way of managing temperature pararmeters
     def __init__(self, pid, condition=None):
         self.pid = pid
         self.condition = condition
@@ -38,7 +40,9 @@ class Participant:
     def attach_trial_data(self, data):
         self.clicks = [q["click"]["state"]["target"] for q in data.queries]
         self.modify_clicks()
+        self.paths = [[int(p) for p in path] for path in data.path]
         self.envs = [[0] + sr[1:] for sr in data.state_rewards]
+        self.scores = data.score
         columns = list(data.columns).copy()
         columns_to_remove = ["pid", "queries", "state_rewards"]
         # make it list of rewards
@@ -78,6 +82,10 @@ class Participant:
 
 
 class Experiment:
+    """
+    This class contains all plots and analysis with regards to the Computational Micropscope
+    """
+
     def __init__(self, exp_num, cm=None, pids=None, block=None, **kwargs):
         self.exp_num = exp_num
         self.data = get_data(exp_num)
@@ -538,6 +546,7 @@ class Experiment:
         if not trial_wise:
             num_strategies = len(total_S)
             strategy_counts = Counter(total_S)
+            # averages strategy proportion divided by total number of strategies
             strategy_proportions = {
                 k: v / num_strategies for k, v in strategy_counts.items()
             }
@@ -645,8 +654,6 @@ class Experiment:
                     props.insert(index, trial_prop[t].get(13, 0))
             S_proportions.append(props)
         S_proportions = np.array(S_proportions)
-        # labels = ["Myopic Forward Planning", "Goal setting with additional immediate exploration", "Postive satisificing with two additional nodes", "Exploring parent of best leaf", "No planning", "Optimal Planning"]
-
         fig = plt.figure(figsize=(16, 10))
         prefix = "Strategy"
         if cluster:
@@ -864,7 +871,7 @@ class Experiment:
             cluster_dict = dict(cluster_dict)
             return cluster_dict
 
-    def get_top_k_strategies(self, k=3):
+    def get_top_k_strategies(self, k=70):
         """
         Get the top k strategies from each trial.
         Example: 35 trials, look at each trial and get the top k strategies in each trial and put them together in a set
@@ -881,23 +888,26 @@ class Experiment:
                 trial_wise_strategy_proportions[t].items(),
                 key=operator.itemgetter(1),
                 reverse=True,
-            )[:k]
+            )[:70]
             for s, v in sorted_indices:
+                # if proportion is not 0
                 if v > 0:
                     total_set.add(s)
         S = list(total_set)
+        print("Number of strategies used", len(S))
         return S
 
+    ### About the top n adaptive strategies and maladaptive strategies
     def plot_adaptive_maladaptive_strategies_vs_rest(
-        self, adaptive_strategy_list, maladaptive_strategy_list
+        self, adaptive_strategy_list, maladaptive_strategy_list, plot=True
     ):
         """
         This function sums up the proportion of the top 3 adaptive strategies and worst 3 maladaptive strategies and
         plots them against the summed proportions of the rest
 
         Args:
-            adaptive_strategy_list: Manually defined list of adaptive (good) strategies
-            maladaptive_strategy_list: Manually defined list of maladaptive (bad) strategies
+            adaptive_strategy_list: list of adaptive (good) strategies
+            maladaptive_strategy_list: list of maladaptive (bad) strategies
 
         Returns: None
 
@@ -916,40 +926,79 @@ class Experiment:
                     df["maladaptive_strategy_sum"][trial_key] += strategy_value
                 else:
                     df["rest"][trial_key] += strategy_value
+        if plot:
+            fig = plt.figure(figsize=(15, 10))
 
-        fig = plt.figure(figsize=(15, 10))
+            plt.plot(
+                range(1, self.num_trials + 1),
+                df["adaptive_strategy_sum"],
+                label="Adaptive strategies",
+                linewidth=3.0,
+            )
+            plt.plot(
+                range(1, self.num_trials + 1),
+                df["maladaptive_strategy_sum"],
+                label="Maladaptive strategies",
+                linewidth=3.0,
+            )
+            plt.plot(
+                range(1, self.num_trials + 1),
+                df["rest"],
+                label="Other strategies",
+                linewidth=3.0,
+            )
 
-        plt.plot(
-            range(1, self.num_trials + 1),
-            df["adaptive_strategy_sum"],
-            label="Adaptive strategies",
-            linewidth=3.0,
-        )
-        plt.plot(
-            range(1, self.num_trials + 1),
-            df["maladaptive_strategy_sum"],
-            label="Maladaptive strategies",
-            linewidth=3.0,
-        )
-        plt.plot(
-            range(1, self.num_trials + 1),
-            df["rest"],
-            label="Other strategies",
-            linewidth=3.0,
-        )
+            plt.xlabel("Trial Number", fontsize=24)
+            plt.ylabel("Proportion", fontsize=24)
+            # plt.title(title, fontsize=24)
+            plt.ylim(top=1.0)
+            plt.tick_params(labelsize=22)
+            plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
+            plt.savefig(
+                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+                dpi=400,
+                bbox_inches="tight",
+            )
+            plt.close(fig)
 
-        plt.xlabel("Trial Number", fontsize=24)
-        plt.ylabel("Proportion", fontsize=24)
+        # plot single adaptive, maladaptive strategies
+        adaptive_maladaptive_list = adaptive_strategy_list + maladaptive_strategy_list
+        single_strategies_df = pd.DataFrame(
+            float(0), index=adaptive_maladaptive_list, columns=number_of_trials
+        )
+        for trial_key, strategy_dict in self.trial_strategy_proportions.items():
+            for strategy_number, strategy_value in strategy_dict.items():
+                if strategy_number in adaptive_strategy_list:
+                    single_strategies_df[trial_key][strategy_number] = strategy_value
+                elif strategy_number in maladaptive_strategy_list:
+                    single_strategies_df[trial_key][strategy_number] = strategy_value
+                else:
+                    continue
+
+        fig = plt.figure(figsize=(16, 10))
+        for i in range(single_strategies_df.shape[0]):  # the strategies
+            label = f"Strategy {single_strategies_df.index[i]}"
+            plt.plot(
+                range(1, single_strategies_df.shape[1] + 1),
+                single_strategies_df.iloc[i] * 100,
+                label=label,
+                linewidth=3.0,
+            )
+        plt.xlabel("Trial Number", fontsize=28)
+        plt.ylabel("Proportion (%)", fontsize=28)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=1.0)
+        plt.ylim(top=95)
         plt.tick_params(labelsize=22)
-        plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
+        plt.legend(prop={"size": 22}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
             dpi=400,
             bbox_inches="tight",
         )
+        # plt.show()
         plt.close(fig)
+
+        return df["adaptive_strategy_sum"], df["maladaptive_strategy_sum"]
 
     def plot_decision_systems_proportions_intotal(self, DS_proportions, plot=True):
         decision_system_labels = [
@@ -1002,7 +1051,7 @@ class Experiment:
             # averaged_df = df.groupby('Decision System').mean() # this does not work because number of participants need to be set manually
             aggregated_df = df.groupby("Decision System").sum()
             averaged_df = (
-                aggregated_df / 35
+                aggregated_df / self.num_trials
             ) / 15  # divided by number of participants and trials
             return averaged_df
 
@@ -1011,7 +1060,7 @@ class Experiment:
             self.get_strategy_proportions()
         )  # porportion of strategies
 
-        strategies_set = self.get_top_k_strategies(k=3)
+        strategies_set = self.get_top_k_strategies(k=70)
         strategies_list = sorted(list(strategies_set))  # get top k strategies
 
         data = []
@@ -1065,6 +1114,7 @@ class Experiment:
             bbox_inches="tight",
         )
 
+    ### All about changes ###
     def trial_decision_system_change_rate(self, decision_system_by_trial):
         difference = np.diff(decision_system_by_trial, axis=0)
         # difference_sum = np.sum(difference, axis=1)
@@ -1130,6 +1180,246 @@ class Experiment:
         # plt.show()
         plt.close(fig)
 
+    def analyze_trajectory(self, trajectory, print_trajectories=False):
+        final_repetition_count = []
+        for tr in trajectory:
+            if len(tr[0]) > 1:
+                if print_trajectories:
+                    print("Trajectory:", tr[0][0])
+                    print("Repetition Frequency:", tr[0][1])
+                    # print("Freq:", tr[1], "\n")
+                temp = list(tr[0][1])
+                temp.pop()
+                number_of_trials_before_last_trial = np.sum(temp)
+                # final_repetition_count.append(tr[0][1][-1])
+                final_repetition_count.append(number_of_trials_before_last_trial)
+                # print("The last item in Repetition Frequency", tr[0][1][-1])
+
+        average_trials_repetition = np.mean(final_repetition_count)
+        median_trials_repetition = np.median(final_repetition_count)
+        # print("Median final strategy usage: ", median_trials_repetition)
+        # print("Mean final strategy usage:", average_trials_repetition)
+
+    def remove_duplicates(self, cluster_list):  # this one should go into utils
+        previous_cluster = cluster_list[0]
+        non_duplicate_list = [previous_cluster]
+        duplicate_freqs = [1]
+        for i in range(1, len(cluster_list)):
+            if cluster_list[i] != previous_cluster:
+                non_duplicate_list.append(cluster_list[i])
+                previous_cluster = cluster_list[i]
+                duplicate_freqs.append(1)
+            else:
+                duplicate_freqs[-1] += 1
+        res = (tuple(non_duplicate_list), tuple(duplicate_freqs))
+        return res
+
+    def get_sorted_trajectories(self, cluster_map, strategies):
+        """
+        Assign frequency to cluster and strategies
+        Args:
+            strategies: load from strategies.pkl
+
+        Returns: cluster and strategy list in list, where first list describes the cluster/strategy and second list describes
+        the frequency. Example: [((39, 37, 61, 39, 37, 39, 37, 39, 33, 49, 39), (1, 2, 1, 3, 4, 1, 4, 5, 1, 1, 12)), 1]
+        Reads: strategy 39 was used for 1 trials, then strategy 37 was used for 2 trials
+
+        """
+        cluster_trajectory_frequency = defaultdict(int)
+        strategy_trajectory_frequency = defaultdict(int)
+        for pid, strategy_sequence in strategies.items():
+            cluster_strategy_sequence = [
+                cluster_map[strategy] for strategy in strategy_sequence
+            ]
+            cluster_trajectory = self.remove_duplicates(cluster_strategy_sequence)
+            strategy_trajectory = self.remove_duplicates(strategy_sequence)
+            cluster_trajectory_frequency[cluster_trajectory] += 1
+            strategy_trajectory_frequency[strategy_trajectory] += 1
+        sorted_cluster_trajectory = [
+            list(s)
+            for s in sorted(
+                cluster_trajectory_frequency.items(),
+                key=operator.itemgetter(1),
+                reverse=True,
+            )
+        ]
+        sorted_strategy_trajectory = [
+            list(s)
+            for s in sorted(
+                strategy_trajectory_frequency.items(),
+                key=operator.itemgetter(1),
+                reverse=True,
+            )
+        ]
+        return sorted_cluster_trajectory, sorted_strategy_trajectory
+
+    def plot_difference_between_trials(
+        self, cluster_map, strategies: defaultdict, number_participants, cluster=False
+    ):
+        """
+        It creates a plot which shows the percentage of participants who changed their strategy across trial
+        Args:
+            strategies: A list of strategies for all participants (index is pid) across trials.
+            number_participants: fixed number of participants
+
+        Returns: two plots, one that plots percentage of participants that changed their strategy and strategy cluster
+
+        """
+        change_list_of_dicts = []
+        for key, value in strategies.items():
+            if cluster:
+                # mapping strategy to cluster
+                value = [cluster_map[strategy] for strategy in value]
+
+            changes_numeric = np.diff(value)
+            # Convert result of numpy difference into dictionary that maps trial_index -> whether a change occurred (1 or 0)
+            change_count = {
+                trial_idx: int(diff_val != 0)
+                for trial_idx, diff_val in enumerate(list(changes_numeric))
+            }
+            change_list_of_dicts.append(
+                change_count
+            )  # a dict of all changes for each participant, len: 15
+
+        df = pd.DataFrame(change_list_of_dicts)
+        sum_values = df.sum(axis=0)
+
+        fig = plt.figure(figsize=(15, 10))
+        # create percentages by dividing each item in the list by number of participants (15)
+        relative_sum_values = [x / number_participants for x in list(sum_values)]
+        if cluster:
+            plt.bar(sum_values.keys(), relative_sum_values, 1, color="b")
+            plt.ylim(top=1.0)
+            plt.xlabel("Trial Number", size=24)
+            plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
+            plt.savefig(
+                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_cluster.png",
+                bbox_inches="tight",
+            )
+        else:
+            plt.bar(sum_values.keys(), relative_sum_values, 1, color="b")
+            plt.ylim(top=1.0)
+            plt.xlabel("Trial Number", size=24)
+            plt.ylabel("Percentage of people who changed strategy", fontsize=24)
+            plt.savefig(
+                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_strategy.png",
+                bbox_inches="tight",
+            )
+        plt.close(fig)
+        return None
+
+    def analysis_change_percentage(self, precomputed_strategies, cluster_map):
+
+        number_participants = len(self.participants)
+
+        # clusters = learning_utils.pickle_load("data/kl_clusters.pkl")
+        self.plot_difference_between_trials(
+            cluster_map, precomputed_strategies, number_participants, cluster=False
+        )
+        self.plot_difference_between_trials(
+            cluster_map, precomputed_strategies, number_participants, cluster=True
+        )
+
+        # Get sorted trajectories
+        cluster_trajectory, strategy_trajectory = self.get_sorted_trajectories(
+            cluster_map, precomputed_strategies
+        )
+
+        # show how many trials until the final strategy was used
+        print("Strategy usage:")
+        self.analyze_trajectory(strategy_trajectory, print_trajectories=True)
+        print("\n")
+
+        # show how many trials until the final strategy cluster was used
+        print("Cluster usage:")
+        self.analyze_trajectory(cluster_trajectory, print_trajectories=True)
+        print("\n")
+
+    ### About score development
+    def average_score_development(self, participant_data):
+        # plot the average score development
+        participant_score = get_participant_scores(
+            self.exp_num, participant_data["pid"].tolist()
+        )
+        participant_score = pd.DataFrame.from_dict(
+            participant_score
+        )  # pid as column, trial as row
+
+        # get average score across trials
+        participant_mean = participant_score.mean(axis=1)
+
+        fig = plt.figure(figsize=(15, 10))
+        plt.plot(range(participant_score.shape[0]), participant_mean)
+        plt.ylim(top=50)
+        plt.xlabel("Trial Number", size=24)
+        plt.ylabel(f"Average score for {self.exp_num}", fontsize=24)
+        plt.savefig(
+            f"../results/cm/plots/{self.exp_num}_{self.block}/score_development.png",
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+        return None
+
+    ### About clicks
+    def plot_average_clicks(self):
+        clicks = get_clicks(self.exp_num)
+        participant_click_dict = {key: None for key in clicks}
+        for pid, click_sequence in clicks.items():
+            temp = []
+            for click in click_sequence:  # index = trial
+                temp.append(len(click))
+            participant_click_dict[pid] = temp
+        participant_click = pd.DataFrame(participant_click_dict)
+        participant_mean = participant_click.mean(axis=1)
+
+        fig = plt.figure(figsize=(15, 10))
+        plt.plot(range(participant_click.shape[0]), participant_mean)
+        plt.ylim(top=15)
+        plt.xlabel("Trial Number", size=24)
+        plt.ylabel(f"Average number of clicks for {self.exp_num}", fontsize=24)
+        # plt.show()
+        plt.savefig(
+            f"../results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+        return None
+
+    ### Get only used strategies
+    def filter_used_strategy_adaptive_maladaptive(self, n=5):
+        n = 3
+        strategy_dict = OrderedDict(
+            self.strategy_proportions
+        )  # self.strategy_proportion starts from 1
+
+        # optional filter
+        # strategy_dict = {key: val for key, val in strategy_dict.items() if val > 0.005}
+
+        # pickles strategy range from 0 - 88
+        if self.exp_num == "c2.1":
+            strategy_score_dict = pd.read_pickle(
+                f"../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+            )
+        else:
+            strategy_score_dict = pd.read_pickle(
+                f"../results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+            )
+
+        for strategy_number, _ in strategy_dict.items():
+            strategy_dict[strategy_number] = strategy_score_dict[(strategy_number - 1)]
+
+        # top 5 adaptive / maladaptive strategies
+        strategies_with_scores = {
+            k: v for k, v in sorted(strategy_dict.items(), key=lambda item: item[1])
+        }
+        worst_n_strategies = list(strategies_with_scores)[:n]  # first n items
+        top_n_strategies = list(strategies_with_scores)[-n:]  # last n items
+
+        # print("Proportion of strategies used", self.strategy_proportions)
+        # print("Scores of maladaptive strategies", list(strategies_with_scores.items())[:n])
+        # print("Scores of adaptive strategies", list(strategies_with_scores.items())[-n:])
+        return top_n_strategies, worst_n_strategies
+
     def summarize(
         self,
         features,
@@ -1141,14 +1431,14 @@ class Experiment:
         strategy_scores,
         cluster_scores,
         cluster_map,
-        manual_strategy_list=[],
-        maladaptive_strategy_list=[],
         max_evals=20,
+        number_of_top_worst_strategies=5,
         plot_strategies=[21, 30],
         plot_clusters=list(range(1, 14)),
         n_clusters=None,
         max_clusters=10,
         cluster_mode="participant",  # Can also take time,
+        create_plot=True,
         show_pids=True,
         show_strategies=False,
         precomputed_strategies=None,
@@ -1211,90 +1501,90 @@ class Experiment:
         self.performance_transitions_chi2(cluster_scores=cluster_scores)
         self.frequency_transitions_chi2(clusters=True)
 
-        # plot regarding strategy clusters
-        cluster_proportions = self.plot_cluster_proportions(C=plot_clusters)
-        self.trial_cluster_change_rate(self.trial_cluster_proportions, C=plot_clusters)
-        self.plot_clusters_proportions_intotal()
+        if create_plot:
+            # plot regarding strategy clusters
+            self.plot_cluster_proportions(C=plot_clusters)
+            self.trial_cluster_change_rate(
+                self.trial_cluster_proportions, C=plot_clusters
+            )
+            self.plot_clusters_proportions_intotal()
 
-        # plot regarding decision systems
-        mean_dsw = self.plot_average_ds()
-        self.trial_decision_system_change_rate(mean_dsw)
-        self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
+            # plot regarding decision systems
+            mean_dsw = self.plot_average_ds()
+            self.trial_decision_system_change_rate(mean_dsw)
+            self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
 
-        # plot regarding the strategies
-        S = self.get_top_k_strategies(k=3)
-        self.plot_strategy_proportions_pertrial(S)
-        self.plot_strategies_proportions_intotal()
-        self.plot_strategy_scores(strategy_scores)  # not saved as plot
-        if manual_strategy_list:
+            # plot regarding the strategies
+            S = self.get_top_k_strategies(k=70)
+            self.plot_strategy_proportions_pertrial(S)
+            self.plot_strategies_proportions_intotal()
+            self.plot_strategy_scores(strategy_scores)  # not saved as plot
+
+            # filter actually used strategies and select the top n adaptive and top n maladaptive strategies
+            (
+                top_n_strategies,
+                worst_n_strategies,
+            ) = self.filter_used_strategy_adaptive_maladaptive(
+                n=number_of_top_worst_strategies
+            )
             self.plot_adaptive_maladaptive_strategies_vs_rest(
-                manual_strategy_list, maladaptive_strategy_list
+                top_n_strategies, worst_n_strategies, plot=True
             )
 
-        # self.plot_parallel_coordinates(mode=cluster_mode)
+            # plot regarding the change between trials
+            self.analysis_change_percentage(precomputed_strategies, cluster_map)
+            # self.plot_parallel_coordinates(mode=cluster_mode)
 
-    def statistical_kpis(
-        self,
-        features,
-        normalized_features,
-        strategy_weights,
-        decision_systems,
-        W_DS,
-        DS_proportions,
-        strategy_scores,
-        cluster_scores,
-        cluster_map,
-        max_evals=20,
-        show_pids=True,
-        show_strategies=False,
-        precomputed_strategies=None,
-        precomputed_temperatures=None,
-    ):
+            # plots regarding the score development
+            if self.exp_num == "c2.1_dec":
+                self.exp_num = "c2.1"
+            data = get_data(self.exp_num)
+            participant_data = data["participants"]
+            self.average_score_development(participant_data)
 
-        self.infer_strategies(
-            precomputed_strategies=precomputed_strategies,
-            precomputed_temperatures=precomputed_temperatures,
-            max_evals=max_evals,
-            show_pids=show_pids,
-        )
-        if show_strategies:
-            print("\n", dict(self.participant_strategies), "\n")
-        self.init_feature_properties(features, normalized_features, strategy_weights)
-        self.init_decision_system_properties(decision_systems, W_DS, DS_proportions)
+            # plot about click development
+            self.plot_average_clicks()
 
-        self.pipeline = self.cm.pipeline
+        else:
+            strategy_proportions = self.get_strategy_proportions()
+            strategy_proportions_trialwise = self.get_strategy_proportions(
+                trial_wise=True
+            )
+            cluster_proportions = self.get_cluster_proportions()
+            cluster_proportions_trialwise = self.get_cluster_proportions(
+                trial_wise=True
+            )
 
-        # self.strategy_transitions_chi2()
-        # self.performance_transitions_chi2(strategy_scores=strategy_scores)
-        # self.frequency_transitions_chi2()'
+            # decision systems
+            decision_system_proportions = (
+                self.plot_decision_systems_proportions_intotal(
+                    DS_proportions, plot=False
+                )
+            )
+            mean_dsw = self.plot_average_ds()
 
-        self.init_strategy_clusters(cluster_map)
-        # self.strategy_transitions_chi2(clusters=True)
-        # self.performance_transitions_chi2(cluster_scores=cluster_scores)
-        # self.frequency_transitions_chi2(clusters=True)
+            (
+                top_n_strategies,
+                worst_n_strategies,
+            ) = self.filter_used_strategy_adaptive_maladaptive(
+                n=number_of_top_worst_strategies
+            )
+            print("Best/adaptive strategies: ", top_n_strategies)
+            print("Worst/maladaptive strategies: ", worst_n_strategies)
+            (
+                adaptive_strategies_proportion,
+                maladaptive_strategies_proportion,
+            ) = self.plot_adaptive_maladaptive_strategies_vs_rest(
+                top_n_strategies, worst_n_strategies, plot=False
+            )
 
-        # strategies
-        # S = self.get_top_k_strategies(k=3)
-        strategy_proportions = self.get_strategy_proportions()
-        strategy_proportions_trialwise = self.get_strategy_proportions(trial_wise=True)
-
-        # clusters
-        cluster_proportions = self.get_cluster_proportions()
-        cluster_proportions_trialwise = self.get_cluster_proportions(trial_wise=True)
-
-        # decision systems
-        decision_system_proportions = self.plot_decision_systems_proportions_intotal(
-            DS_proportions, plot=False
-        )
-        mean_dsw = self.plot_average_ds()
-
-        return (
-            strategy_proportions,
-            strategy_proportions_trialwise,
-            cluster_proportions,
-            cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
-        )
-
-    # todo: Clean repetitive code
+            return (
+                strategy_proportions,
+                strategy_proportions_trialwise,
+                cluster_proportions,
+                cluster_proportions_trialwise,
+                decision_system_proportions,
+                mean_dsw,
+                adaptive_strategies_proportion,
+                maladaptive_strategies_proportion,
+            )

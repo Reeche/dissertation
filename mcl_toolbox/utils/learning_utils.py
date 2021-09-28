@@ -11,6 +11,7 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
+from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma, norm
@@ -22,6 +23,7 @@ from mcl_toolbox.utils.distributions import Categorical, Normal
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
+mvprpb = importr("mvprpb")
 
 parent_folder = Path(__file__).parents[1]
 
@@ -91,21 +93,19 @@ def get_log_beta_cdf(x, a, b):
 
 def norm_integrate(y, index, ms, sigmas):
     log_pdf = get_log_norm_pdf(y, ms[index], sigmas[index])
-    log_cdf = 0
     shape = ms.shape[0]
-    for i in range(shape):
-        if i != index:
-            log_cdf += get_log_norm_cdf(y, ms[i], sigmas[i])
+    log_cdf = sum(
+        [get_log_norm_cdf(y, ms[i], sigmas[i]) for i in range(shape) if i != index]
+    )
     return mp.exp(log_pdf + log_cdf)
 
 
 def beta_integrate(x, index, alphas, betas):
     log_pdf = get_log_beta_pdf(x, alphas[index], betas[index])
-    log_cdf = 0
     shape = alphas.shape[0]
-    for i in range(shape):
-        if i != index:
-            log_cdf += get_log_beta_cdf(x, alphas[i], betas[i])
+    log_cdf = sum(
+        [get_log_beta_cdf(x, alphas[i], betas[i]) for i in range(shape) if i != index]
+    )
     return mp.exp(log_pdf + log_cdf)
 
 
@@ -125,6 +125,24 @@ def softmax(x):
     return e_x / e_x.sum(axis=0)
 
 
+def get_mu_v(mu, variances, index):
+    m = mu[index] - np.concatenate((mu[:index], mu[index + 1 :]))
+    v = np.concatenate((variances[:index], variances[index + 1 :]))
+    cv = np.diag(v) + variances[index]
+    return m, cv
+
+
+# Alternate way to verify that log likelihoods are right for LVOC
+def get_gaussian_max_probs(mu, variances):
+    probs = []
+    n_actions = len(mu)
+    for index in range(n_actions):
+        m, cv = get_mu_v(mu, variances, index)
+        p = mvprpb.mvorpb(n_actions - 1, m, cv, 800, 100)
+        probs.append(p[0])
+    return probs
+
+
 def pickle_load(file_path):
     """
     Load the pickle file located at 'filepath'
@@ -142,7 +160,6 @@ def create_dir(file_path):
     """
     Create directory if it does not exist
     """
-    print("FILE PATH", file_path)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 
@@ -314,7 +331,6 @@ def get_participant_details(
             path = row.path
             taken_paths.append([int(p) for p in path])
         if get_clicks:
-            pid = row.pid
             queries = row.queries["click"]["state"]["target"]
             queries = [int(query) for query in queries]
             queries.append(0)
@@ -377,7 +393,7 @@ def convert_none_to_zeros(total_trial_actions):
     modified_actions = []
     for trial_actions in total_trial_actions:
         modified_actions.append(
-            [action if action != None else 0 for action in trial_actions]
+            [action if action is not None else 0 for action in trial_actions]
         )
     return modified_actions
 
@@ -668,7 +684,6 @@ def get_weight_distance(participant_weights, algorithm_weights):
     a_w = np.mean(np.multiply(algorithm_weights[:, :, :-3], a_beta), axis=0)
     p_beta = np.expand_dims(participant_weights[:, -3], axis=1)
     p_w = np.multiply(participant_weights[:, :-3], p_beta)
-    num_runs = a_w.shape[0]
     num_trials = a_w.shape[1]
     average_euclidean_distance = (
         np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
@@ -710,7 +725,7 @@ def get_normalized_weight_distance(participant_weights, algorithm_weights):
         )
     elif participant_dims != 2:
         raise ValueError(
-            f"The number of dimensions in participant_weights should be 2. Input dimensions are {algorithm_dims}"
+            f"The number of dimensions in participant_weights should be 2. Input dimensions are {participant_dims}"
         )
     participant_weight_shape = participant_weights.shape
     algorithm_weights_shape = algorithm_weights.shape
@@ -718,11 +733,8 @@ def get_normalized_weight_distance(participant_weights, algorithm_weights):
         raise ValueError(
             f"The second and third dimensions of the input weights do not match. {algorithm_weights_shape[1:]} and {participant_weight_shape}"
         )
-    a_beta = np.expand_dims(algorithm_weights[:, :, -3], axis=2)
-    a_w = np.mean(np.multiply(algorithm_weights[:, :, :-3], a_beta), axis=0)
-    p_beta = np.expand_dims(participant_weights[:, -3], axis=1)
-    p_w = np.multiply(participant_weights[:, :-3], p_beta)
-    num_runs = a_w.shape[0]
+    a_w = np.mean(algorithm_weights, axis=0)
+    p_w = participant_weights
     num_trials = a_w.shape[1]
     a_w = normalize_weights(a_w)
     p_w = normalize_weights(p_w)
@@ -840,7 +852,6 @@ def get_delay_penalty(q_data, env, action_sequence):
     """
     env_q = q_data[tuple(env)]
     delays = []
-    env_copy = env.copy()
     env_copy = ["_"] * 13
     env_copy[0] = "0"
     for action in action_sequence:
@@ -1035,7 +1046,6 @@ def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequen
     def compute_participant_strategy_accuracy(
         participant_strategy_sequence, algorithm_strategy_sequence
     ):
-        num_trials = len(participant_strategy_sequence)
         participant_strategy_sequence = np.array(participant_strategy_sequence)
         algorithm_strategy_sequence = np.array(algorithm_strategy_sequence)
         match = np.count_nonzero(
@@ -1275,7 +1285,7 @@ def plot_performance(
         algorithm_performance = np.mean(algorithm_performance, axis=0)
     if participant_dims == 2:
         participant_performance = np.mean(participant_performance, axis=0)
-    elif participant_num == None:
+    elif participant_num is None:
         raise ValueError("Missing participant number")
     num_participant_trials = participant_performance.shape[0]
     num_algorithm_trials = algorithm_performance.shape[0]
@@ -1400,30 +1410,6 @@ def remove_elements_at_indices(lis, exclude_indices):
     return lis
 
 
-def get_strategy_sequences(env, trials_data):
-    """Get the strategy sequences of clicks made by an algorithm.
-
-    Arguments:
-        env {Gym env} -- Mouselab Gym Environment
-        trials_data {dict} -- Contains details about simulated trials of
-                              an algorithm (e.g actions)
-
-    Returns:
-        dict -- trials_data dict with the inferred strategy sequences added.
-    """
-    modified_actions = convert_zeros_to_none(trials_data["a"])
-    cm = ComputationalMicroscope(
-        38,
-        weight_MAP,
-        "small",
-        distances_path=None,
-        prior_path="../data/gradual_transitions.pkl",
-    )  # TODO what is weight_MAP?
-    strategy_info = cm.infer_sequences(modified_actions, env.get_ground_truth())
-    trials_data["s"] = strategy_info[0]
-    return trials_data
-
-
 def get_normalized_strategy_weights():
     num_strategies = 38
     s_weights = np.zeros((38, 59))
@@ -1478,7 +1464,7 @@ def get_cluster_dict(clusters, strategy_space):
 
 def get_relevant_data(simulations_data, criterion):
     if criterion in ["reward", "performance_error"]:
-        return {"r": simulations_data["r"]}
+        return {"r": simulations_data["r"], "mer": simulations_data["mer"]}
     elif criterion in ["distance"]:
         return {"w": simulations_data["w"]}
     elif criterion in ["strategy_accuracy", "strategy_transition"]:
@@ -1486,7 +1472,9 @@ def get_relevant_data(simulations_data, criterion):
     elif criterion in ["clicks_overlap"]:
         return {"a": simulations_data["a"]}
     elif criterion in ["likelihood"]:
-        return {"loss": simulations_data["loss"]}
+        if "loss" in simulations_data:
+            return {"loss": simulations_data["loss"], "mer": simulations_data["mer"]}
+        return {"mer": simulations_data["mer"]}
     else:
         return {"mer": simulations_data["mer"]}
 
@@ -1529,14 +1517,21 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         objective_value = get_squared_performance_error(p_data["mer"], sim_data["mer"])
     elif criterion == "pseudo_likelihood":
         mean_mer = np.mean(sim_data["mer"], axis=0)
-        objective_value = -np.sum(
+        sigma = np.exp(sim_data["sigma"])
+        normal_objective = -np.sum(
             [
-                norm.logpdf(y, x, np.exp(sim_data["sigma"]))
-                for x, y in zip(p_data["mer"], np.mean(sim_data["mer"], axis=0))
+                norm.logpdf(x, loc=y, scale=sigma)
+                for x, y in zip(mean_mer, p_data["mer"])
             ]
         )
-    print(objective_value)
+        # multivariate_normal_objective = -mn.logpdf(mean_mer, mean=p_data['mer'], cov=sigma ** 2)
+        objective_value = normal_objective
+    # print(objective_value)
     return objective_value
+
+
+def convert_strategy_weights(strategies, strategy_weights):
+    return np.array([strategy_weights[s - 1] for s in strategies])
 
 
 class Participant:
@@ -1548,14 +1543,20 @@ class Participant:
     """
 
     def __init__(
-        self, exp_num, pid, excluded_trials=None, get_strategies=True, data_path=None
+        self,
+        exp_num,
+        pid,
+        strategy_weights=None,
+        excluded_trials=None,
+        get_strategies=True,
+        get_weights=True,
     ):
         self.exp_num = exp_num
         self.pid = pid
-        self.get_weights = False
+        self.get_weights = get_weights
         self.excluded_trials = excluded_trials
         self.envs, self.scores, self.clicks, self.taken_paths = get_participant_details(
-            pid=self.pid, exp_num=self.exp_num, data_path=data_path
+            pid=self.pid, exp_num=self.exp_num
         )
         num_excluded = len(excluded_trials) if excluded_trials else 0
         self.num_trials = len(self.clicks) - num_excluded
@@ -1576,7 +1577,10 @@ class Participant:
         else:
             self.strategies = [None] * len(self.envs)
             self.temperature = 1
-        self.weights = []
+        if self.get_weights:
+            self.weights = convert_strategy_weights(
+                self.strategies, (1 / self.temperature) * strategy_weights
+            )
         self.modify_included_data()
         self.first_trial_data = self.get_first_trial_data()
         self.all_trials_data = self.get_all_trials_data()

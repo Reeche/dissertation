@@ -8,7 +8,6 @@ import seaborn as sns
 
 file_location = Path(__file__).parents[0]
 
-
 # RenameUnpickler from https://stackoverflow.com/a/53327348
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -27,7 +26,7 @@ def pickle_load(file_path):
     """
     Load the pickle file located at 'filepath'
     Params:
-        file_path  -- Location of the file to be loaded, as pathlib object.
+        file_path  -- Location of the file to be loaded.
     Returns:
         Unpickled object
     """
@@ -114,6 +113,14 @@ class structure:
         "constant_variance": "low_constant",
         "decreasing_variance": "high_decreasing",
         "transfer_task": "large_increasing",
+    }
+
+    # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key
+    # todo: remove this
+    reward_dict = {
+        "increasing_variance": "v1.0",
+        "decreasing_variance": "c2.1",
+        "constant_variance": "c1.1",
     }
 
 

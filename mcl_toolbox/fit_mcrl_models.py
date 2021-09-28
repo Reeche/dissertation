@@ -1,14 +1,17 @@
 import ast
+import os
+import random
 import sys
-
-import numpy as np
+from pathlib import Path
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import *
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
+from mcl_toolbox.utils.fitting_utils import (construct_model,
+                                             get_participant_context)
 from mcl_toolbox.utils.learning_utils import (
-    Participant, create_dir, get_normalized_features,
-    get_number_of_actions_from_branching, pickle_save)
+    create_dir, get_normalized_features, get_number_of_actions_from_branching,
+    pickle_save)
 
 """
 Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
@@ -18,8 +21,9 @@ Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":Tr
 Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 
-
-# todo: not all optimization methods with all models. Need to add this somewhere in the code
+# todo: not all optimization methods work with all models. Need to add this somewhere in the code
+# Likelihood computation is currently available for all reinforce and lvoc models
+#
 
 
 def prior_fit(
@@ -41,7 +45,6 @@ def prior_fit(
     :param model_index: model index, as displayed in rl_models.csv
     :param optimization_criterion: as string, choose one of ["pseudo_likelihood", "mer_performance_error", "performance_error"]
     :param pid: participant id, as int
-    :param plotting: whether to create plots
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
@@ -55,13 +58,6 @@ def prior_fit(
         parent_directory, f"results/mcrl/info_{exp_name}_data"
     )
     create_dir(model_info_directory)
-
-    # set random seed for optimization
-    if "seed" in optimization_params:
-        optimization_params["rstate"] = np.random.RandomState(
-            optimization_params["seed"]
-        )
-        del optimization_params["seed"]
 
     # add directory for reward plots, if plotting
     if plotting:
@@ -88,14 +84,16 @@ def prior_fit(
     strategy_space = strategies.strategy_spaces[strategy_space_type]
 
     # prepare participant and env for the optimization
-    participant = Participant(
-        exp_name, pid, excluded_trials=excluded_trials, get_strategies=False
-    )
-    participant.first_trial_data = participant.get_first_trial_data()
-    participant.all_trials_data = participant.get_all_trials_data()
-    print(len(participant.all_trials_data["actions"]))
-    env = GenericMouselabEnv(
-        len(participant.envs), pipeline=pipeline, ground_truth=participant.envs
+    # participant = Participant(exp_name, pid, excluded_trials=excluded_trials,
+    #                           get_strategies=False, get_weights=False)
+    # participant.first_trial_data = participant.get_first_trial_data()
+    # participant.all_trials_data = participant.get_all_trials_data()
+    # print(len(participant.all_trials_data["actions"]))
+    # env = GenericMouselabEnv(len(participant.envs), pipeline=pipeline,
+    #                          ground_truth=participant.envs)
+    exp_attributes = {}
+    participant, env = get_participant_context(
+        exp_name, pid, pipeline, exp_attributes=exp_attributes
     )
 
     # TODO document why
@@ -116,10 +114,7 @@ def prior_fit(
     num_actions = get_number_of_actions_from_branching(
         branching
     )  # Find out number of actions
-
-    if "features" in kwargs:
-        curr_features = kwargs["features"]
-    elif learner_attributes["habitual_features"] == "habitual":
+    if learner_attributes["habitual_features"] == "habitual":
         curr_features = features.implemented
     else:
         curr_features = features.microscope
@@ -157,9 +152,23 @@ def prior_fit(
     )
 
     # TODO: document what is this? Is this running simulations given priors?
-    (r_data, sim_data), p_data = optimizer.run_hp_model(
-        res[0], optimization_criterion, num_simulations=30
-    )
+    if optimization_criterion != "likelihood":
+        reward_data = optimizer.plot_rewards(i=min_index)
+        (r_data, sim_data), p_data = optimizer.run_hp_model(
+            res[0], optimization_criterion, num_simulations=4
+        )
+        # TODO: Add simulation code here
+    else:
+        learner, attributes = construct_model(
+            model_index, num_actions, normalized_features
+        )
+        optimizer = ParameterOptimizer(learner, attributes, participant, env)
+        (r_data, sim_data), p_data = optimizer.run_hp_model(
+            res[0], "reward", num_simulations=4
+        )
+        optimizer.reward_data = [r_data["mer"]]
+        optimizer.p_data = p_data
+        optimizer.plot_rewards(i=0)
     print(sim_data["info"], len(sim_data["info"]))
     pickle_save(
         sim_data,
@@ -170,12 +179,30 @@ def prior_fit(
 
 
 if __name__ == "__main__":
-    exp_name = sys.argv[1]
-    model_index = int(sys.argv[2])
-    optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
-    other_params = {}
-    if len(sys.argv) > 5:
-        other_params = ast.literal_eval(sys.argv[5])
+    random.seed(123)
+    # exp_name = sys.argv[1]
+    # model_index = int(sys.argv[2])
+    # optimization_criterion = sys.argv[3]
+    # pid = int(sys.argv[4])
+    # other_params = {}
+    # if len(sys.argv)>5:
+    #     other_params = ast.literal_eval(sys.argv[5])
 
-    prior_fit(exp_name, model_index, optimization_criterion, pid, **other_params)
+    exp_name = "v1.0"
+    model_index = 1825
+    optimization_criterion = "likelihood"
+    pid = 1
+    plotting = False
+    optimization_params = {
+        "optimizer": "hyperopt",
+        "num_simulations": 1,
+        "max_evals": 2000,
+    }
+    prior_fit(
+        exp_name,
+        model_index,
+        optimization_criterion,
+        pid,
+        plotting,
+        optimization_params=optimization_params,
+    )

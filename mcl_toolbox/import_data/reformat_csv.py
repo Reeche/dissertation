@@ -7,6 +7,9 @@ import json
 
 import numpy as np
 
+### Remember to change the number of trials!!!
+# todo: extract number of trials from the data
+
 data = pd.read_csv("data/dataclips.csv", sep=",")
 
 # remove unfinished data entries
@@ -14,8 +17,6 @@ data["endhit"].replace("", np.nan, inplace=False)
 data["hitid"].replace("HIT_ID", np.nan, inplace=False)
 data.dropna(subset=["endhit"], inplace=True)
 data = data.reset_index(drop=True)
-
-
 # data.drop(index=0, inplace=True) #drops first row
 
 
@@ -201,7 +202,7 @@ def copy_same_condition_for_all_trials():
 # load data
 data_mouselab = data[["datastring"]]
 
-# here you can set how the columns of the csv will be named. T
+# here you can set how the columns of the csv will be named.
 # here are some discrepancies between the csv output from postgres and what is required for the Computational Microscope
 # left is from raw csv; right is how you want it to be
 name_mapping = {
@@ -246,7 +247,7 @@ keyworddict = {
 
 # don't forget to change trial index
 mouselab_dict = format_json(
-    data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=35
+    data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=50
 )
 df = save_to_df(mouselab_dict, name_mapping)
 

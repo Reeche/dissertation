@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 from toolz import curry
 
+from mcl_toolbox.utils import *
+
+
 # ---------- Data wrangling ---------- #
 
 
@@ -66,7 +69,8 @@ def parse_json(df):
             pass
 
 
-def get_data(version, data_path=Path(Path(__file__).parents[2].joinpath("data"))):
+def get_data(version, data_path='data'):
+    head = Path(__file__).parents[2]
     data = {}
     for file in data_path.joinpath(f"human/{version}").glob("*"):
         name = file.stem

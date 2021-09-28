@@ -69,4 +69,4 @@ if __name__ == "__main__":
 
     dir_path = f"results/{exp_num}/strategy_clicks"
     create_dir(dir_path)
-    pickle_save((C, E), f"{dir_path}/{strategy_num + 1}_{num_simulations}.pkl")
+    pickle_save((C, E), f"{dir_path}/{strategy_num+1}_{num_simulations}.pkl")

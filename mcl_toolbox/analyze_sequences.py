@@ -5,18 +5,30 @@ from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
+
 from mcl_toolbox.computational_microscope.computational_microscope import \
     ComputationalMicroscope
+from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils.experiment_utils import Experiment
+from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
+                                              get_normalized_features,
+                                              pickle_load)
 
 """
 Run this file to analyse the inferred sequences of the participants. 
-Format: python3 analyze_sequences.py <reward_structure> <block> <pid>
-Example: python3 analyze_sequences.py c2.1_dec training none
+Format: python3 analyze_sequences.py <reward_structure> <block> <create_plot>
+Example: python3 analyze_sequences.py c2.1_dec training True
 """
 
 
-def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
+def analyse_sequences(
+    exp_num="v1.0",
+    block="training",
+    pids=None,
+    create_plot=False,
+    number_of_top_worst_strategies=3,
+    **kwargs,
+):
     # Initializations
     decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
     DS_proportions = learning_utils.pickle_load(
@@ -35,7 +47,6 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
 
     # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
     exp_pipelines = structure.exp_pipelines
-
     if exp_num not in structure.exp_reward_structures:
         raise (ValueError, "Reward structure not found.")
     reward_structure = structure.exp_reward_structures[exp_num]
@@ -63,13 +74,13 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
     else:
         exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
-    dir_path = f"../results/cm/inferred_strategies/{exp_num}"
+    dir_path = f"../../results/cm/inferred_strategies/{exp_num}"
     if block:
         dir_path += f"_{block}"
 
     try:
-        strategies_ = learning_utils.pickle_load(f"{dir_path}/strategies.pkl")
-        temperatures = learning_utils.pickle_load(f"{dir_path}/temperatures.pkl")
+        strategies_ = pickle_load(f"{dir_path}/strategies.pkl")
+        temperatures = pickle_load(f"{dir_path}/temperatures.pkl")
     except Exception as e:
         print("Exception", e)
         # exit()
@@ -82,20 +93,25 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
         save_path = f"../results/cm/plots/{exp_num}"
         if block:
             save_path += f"_{block}"
-    learning_utils.create_dir(save_path)
+    create_dir(save_path)
 
-    # adaptive and maladaptive strategies
-    if exp_num == "v1.0":
-        manual_strategy_list = [21, 63, 40, 50, 51]
-        maladaptive_strategy_list = [39, 23, 53, 70, 28]
-    elif exp_num == "c2.1_dec":
-        manual_strategy_list = [70, 23, 69, 65, 33]
-        maladaptive_strategy_list = [39, 42, 43, 51, 40]
-    elif exp_num == "c1.1":
-        # manual_strategy_list = [65, 33, 81, 34, 21, 69, 64, 25, 32, 88]
-        # maladaptive_strategy_list = [39, 30, 27, 28, 66, 24, 42]
-        manual_strategy_list = [65, 33, 34, 21, 69]
-        maladaptive_strategy_list = [39, 30, 27, 28, 66]
+    if create_plot:
+        exp.summarize(
+            features,
+            normalized_features,
+            strategy_weights,
+            decision_systems,
+            W_DS,
+            DS_proportions,
+            strategy_scores,
+            cluster_scores,
+            cluster_map,
+            number_of_top_worst_strategies=number_of_top_worst_strategies,
+            create_plot=create_plot,
+            precomputed_strategies=strategies_,
+            precomputed_temperatures=temperatures,
+            show_pids=False,
+        )
     else:
         manual_strategy_list = []
         maladaptive_strategy_list = []
@@ -119,13 +135,19 @@ def analyse_sequences(exp_num="v1.0", block="test", pids=None, **kwargs):
 
 
 if __name__ == "__main__":
-    # random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    if len(sys.argv) > 2:
-        block = sys.argv[2]
+    random.seed(123)
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # create_plot = True
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[2]
+    #     create_plot = sys.argv[3]
 
-    # exp_name = "c2.1_dec"
-    # block = "training"
+    exp_name = "c1.1"
+    block = "training"
+    create_plot = True
 
-    analyse_sequences(exp_name, block=block)
+    # create the plots
+    analyse_sequences(
+        exp_name, block=block, create_plot=True, number_of_top_worst_strategies=4
+    )
