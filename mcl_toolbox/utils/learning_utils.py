@@ -1565,13 +1565,14 @@ class Participant:
         excluded_trials=None,
         get_strategies=True,
         get_weights=True,
+re        data_path=None
     ):
         self.exp_num = exp_num
         self.pid = pid
         self.get_weights = get_weights
         self.excluded_trials = excluded_trials
         self.envs, self.scores, self.clicks, self.taken_paths = get_participant_details(
-            pid=self.pid, exp_num=self.exp_num
+            pid=self.pid, exp_num=self.exp_num, data_path=data_path
         )
         num_excluded = len(excluded_trials) if excluded_trials else 0
         self.num_trials = len(self.clicks) - num_excluded
