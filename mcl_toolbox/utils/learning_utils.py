@@ -1565,7 +1565,7 @@ class Participant:
         excluded_trials=None,
         get_strategies=True,
         get_weights=True,
-re        data_path=None
+        data_path=None
     ):
         self.exp_num = exp_num
         self.pid = pid
