@@ -10,11 +10,9 @@ from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
 from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.learning_utils import (
-    get_clicks,
-    get_participant_scores,
-    sidak_value,
-)
+from mcl_toolbox.utils.learning_utils import (get_clicks,
+                                              get_participant_scores,
+                                              sidak_value)
 from mcl_toolbox.utils.sequence_utils import get_acls
 
 # Matplotlib no grid
@@ -98,10 +96,14 @@ class Experiment:
         else:
             if hasattr(self.data, "pids"):
                 self.pids = self.data["pids"]
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = self.data["pids"]
             elif hasattr(self.data, "participants"):
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
             else:
                 self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
         if block:
             self.block = block
