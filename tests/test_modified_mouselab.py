@@ -45,7 +45,9 @@ parameters = [
 
 
 def load_env_state_for_participant(exp_name, pid, trial):
-    participant = Participant(exp_name, pid, excluded_trials=None, get_strategies=False, get_weights=False)
+    participant = Participant(
+        exp_name, pid, excluded_trials=None, get_strategies=False, get_weights=False
+    )
     pipeline = structure.exp_pipelines[exp_name]
     env = GenericMouselabEnv(
         len(participant.envs), pipeline=pipeline, ground_truth=participant.envs

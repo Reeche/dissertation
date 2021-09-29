@@ -348,14 +348,20 @@ def get_participant_details(
 def get_participant_weights(participant_num, exp_num="F1", criterion="all_features"):
     try:
         if criterion == "all_features":
-            participant_weights = pickle_load(f"../data/starting_weights_{exp_num}.pkl")
+            participant_weights = pickle_load(
+                parent_folder.joinpath(f"data/starting_weights_{exp_num}.pkl")
+            )
         elif type(criterion) == int:
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_{criterion}.pkl"
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_{criterion}.pkl"
+                )
             )
         elif criterion == "normalize":
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_normalized.pkl"
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_normalized.pkl"
+                )
             )
     except FileNotFoundError:
         print("Unable to load prior weights")
@@ -1421,7 +1427,9 @@ def get_normalized_strategy_weights():
     num_strategies = 38
     s_weights = np.zeros((38, 59))
     for s in range(num_strategies):
-        s_weights[s] = pickle_load(f"../data/strategy_weights/{s}.pkl")
+        s_weights[s] = pickle_load(
+            parent_folder.joinpath(f"data/strategy_weights/{s}.pkl")
+        )
     return s_weights
 
 

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from functools import partial
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -38,10 +39,14 @@ models = {
     "baseline_reinforce": BaselineREINFORCE,
 }
 
-curr_dir = os.path.abspath(os.path.dirname(__file__))
-param_config = json.load(open(os.path.join(curr_dir, "param_search_space.json")))
-model_config = json.load(open(os.path.join(curr_dir, "model_params.json")))
-model_details = json.load(open(os.path.join(curr_dir, "../models/models.json")))
+mcrl_modelling_dir = Path(__file__).parents[0]
+model_dir = Path(__file__).parents[1].joinpath("models")
+
+param_config = json.load(
+    open(mcrl_modelling_dir.joinpath("param_search_space.json"), "rb")
+)
+model_config = json.load(open(mcrl_modelling_dir.joinpath("model_params.json"), "rb"))
+model_details = json.load(open(model_dir.joinpath("models.json"), "rb"))
 
 
 def hyperopt_space(params_list):

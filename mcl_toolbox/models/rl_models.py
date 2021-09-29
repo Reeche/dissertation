@@ -1,4 +1,5 @@
 import inspect
+import pathlib as Path
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from functools import lru_cache, partial
@@ -42,6 +43,8 @@ normalize = [
 precision_epsilon = 1e-4
 quadrature_max_degree = 1e5
 sns.set_style("whitegrid")
+
+parent_folder = Path(__file__).parents[1]
 
 NS = 79
 
@@ -159,8 +162,12 @@ class BaseRSSL(Learner):
         self.gaussian = False
         # TODO:
         # Pass features and strategy weights to the model. For now, using a hack
-        self.strategy_weights = pickle_load("../data/microscope_weights.pkl")
-        self.features = pickle_load("../data/microscope_features.pkl")
+        self.strategy_weights = pickle_load(
+            parent_folder.joinpath("/data/microscope_weights.pkl")
+        )
+        self.features = pickle_load(
+            parent_folder.joinpath("/data/microscope_features.pkl")
+        )
         self.variance = 1  # Variance of the gaussian likelihood function
         self.action_log_probs = []
 

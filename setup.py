@@ -37,6 +37,6 @@ setup(
         "ipython",
         "pymannkendall",
         "scikit-learn",
-        "rpy2"
+        "rpy2",
     ],
 )
