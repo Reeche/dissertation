@@ -2,8 +2,9 @@ import os
 import sys
 from pathlib import Path
 
-from mcl_toolbox.computational_microscope.computational_microscope import \
-    ComputationalMicroscope
+from mcl_toolbox.computational_microscope.computational_microscope import (
+    ComputationalMicroscope,
+)
 from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils import learning_utils
 from mcl_toolbox.utils.analysis_utils import get_data

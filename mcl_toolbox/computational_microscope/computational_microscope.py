@@ -7,11 +7,16 @@ from hyperopt.fmin import generate_trials_to_calculate
 from joblib import load
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence
-from mcl_toolbox.utils.learning_utils import (construct_repeated_pipeline,
-                                              construct_reward_function,
-                                              pickle_load, reward_levels)
+from mcl_toolbox.utils.learning_utils import (
+    construct_repeated_pipeline,
+    construct_reward_function,
+    pickle_load,
+    reward_levels,
+)
 from mcl_toolbox.utils.sequence_utils import (
-    compute_trial_feature_log_likelihood, compute_trial_features)
+    compute_trial_feature_log_likelihood,
+    compute_trial_features,
+)
 
 
 # To ignore warnings of the computational microscope

@@ -3,16 +3,17 @@ from collections import defaultdict
 import numpy as np
 import scipy as sp
 
-from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (get_log_norm_cdf,
-                                              get_log_norm_pdf,
-                                              rows_mean,
-                                              temp_sigmoid)
-
-
 from mcl_toolbox.global_vars import hierarchical_params
+from mcl_toolbox.models.base_learner import Learner
+from mcl_toolbox.utils.learning_utils import (
+    get_log_norm_cdf,
+    get_log_norm_pdf,
+    rows_mean,
+    temp_sigmoid,
+)
 
 precision_epsilon = hierarchical_params.precision_epsilon
+
 
 class HierarchicalAgent:
     """Agent that performs the decision to terminate or continue"""

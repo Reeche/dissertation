@@ -214,7 +214,7 @@ def get_clicks(exp_num="v1.0", data_path=None):
     return clicks_data
 
 
-def get_participant_scores(exp_num="v1.0", num_participants=166):
+def get_participant_scores(exp_num="v1.0", num_participants=166, data_path=None):
     """
     Get scores of participants
     Params:
