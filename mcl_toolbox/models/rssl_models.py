@@ -5,7 +5,6 @@ import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import (beta_integrate,
-                                              compute_log_likelihood,
                                               get_log_beta_cdf,
                                               get_log_beta_pdf,
                                               get_log_norm_cdf,
