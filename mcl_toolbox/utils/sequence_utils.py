@@ -4,7 +4,8 @@ import numpy as np
 from scipy.special import logsumexp, softmax
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence
-from mcl_toolbox.utils.learning_utils import get_counts, get_normalized_feature_values
+from mcl_toolbox.utils.learning_utils import (get_counts,
+                                              get_normalized_feature_values)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 

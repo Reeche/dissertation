@@ -22,23 +22,18 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import (
-    break_ties_random,
-    clicks_overlap,
-    compute_transition_distance,
-    estimate_bayes_glm,
-    get_normalized_feature_values,
-    get_normalized_features,
-    get_normalized_weight_distance,
-    get_squared_performance_error,
-    get_strategy_sequences,
-    get_zero_params,
-    pickle_load,
-    rows_mean,
-    sample_coeffs,
-    strategy_accuracy,
-    temp_sigmoid,
-)
+from mcl_toolbox.utils.learning_utils import (break_ties_random,
+                                              clicks_overlap,
+                                              compute_transition_distance,
+                                              estimate_bayes_glm,
+                                              get_normalized_feature_values,
+                                              get_normalized_features,
+                                              get_normalized_weight_distance,
+                                              get_squared_performance_error,
+                                              get_strategy_sequences,
+                                              get_zero_params, pickle_load,
+                                              rows_mean, sample_coeffs,
+                                              strategy_accuracy, temp_sigmoid)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood, get_clicks
 

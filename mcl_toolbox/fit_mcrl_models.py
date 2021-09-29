@@ -6,13 +6,11 @@ import numpy as np
 
 from mcl_toolbox.global_vars import features, model, strategies, structure
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
-from mcl_toolbox.utils.fitting_utils import construct_model, get_participant_context
+from mcl_toolbox.utils.fitting_utils import (construct_model,
+                                             get_participant_context)
 from mcl_toolbox.utils.learning_utils import (
-    create_dir,
-    get_normalized_features,
-    get_number_of_actions_from_branching,
-    pickle_save,
-)
+    create_dir, get_normalized_features, get_number_of_actions_from_branching,
+    pickle_save)
 
 """
 Run this using: python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
