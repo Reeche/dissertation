@@ -260,9 +260,15 @@ class REINFORCE(Learner):
                 actions.append(action)
                 rewards.append(reward)
                 policy_loss += info["loss"]
+                
+                if done:
+                    trials_data["taken_paths"].append(info["taken_path"])
             trials_data["r"].append(np.sum(rewards))
+            trials_data["rewards"].append(rewards)
             trials_data["a"].append(actions)
             env.get_next_trial()
+
+        trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data["loss"] = -sum(self.action_log_probs)
         else:
