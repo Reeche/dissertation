@@ -84,9 +84,9 @@ class Experiment:
     This class contains all plots and analysis with regards to the Computational Micropscope
     """
 
-    def __init__(self, exp_num, cm=None, pids=None, block=None, **kwargs):
+    def __init__(self, exp_num, cm=None, pids=None, block=None, data_path=None, **kwargs):
         self.exp_num = exp_num
-        self.data = get_data(exp_num)
+        self.data = get_data(exp_num, data_path)
         self.cm = cm
         self.block = None
         if pids:

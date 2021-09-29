@@ -1,4 +1,3 @@
-import os
 import pickle
 from pathlib import Path
 
@@ -119,7 +118,7 @@ class structure:
 
 class model:
     model_attributes = pd.read_csv(
-        os.path.join(file_location, "models/rl_models.csv"), index_col=0
+        str(file_location.joinpath("models/rl_models.csv")), index_col=0
     )
     # TODO quick fix, we need to rename this column as it breaks the fit_mcrl_models.py code
     model_attributes.columns = [

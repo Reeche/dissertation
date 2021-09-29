@@ -192,7 +192,7 @@ def bool_to_string(truth):
     return "true" if truth else "false"
 
 
-def get_clicks(exp_num="v1.0"):
+def get_clicks(exp_num="v1.0", data_path=None):
     """
     Get clicks made by a particular participant
     Params:
@@ -201,7 +201,7 @@ def get_clicks(exp_num="v1.0"):
     Returns:
         clicks_data: The clicks made by the participant in all trials.
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     clicks_data = defaultdict(list)
     for _, row in mdf.iterrows():
@@ -223,7 +223,7 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     Returns:
         A dictionary of scores of participants with pid as key and rewards as values.
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     participant_scores = {}
     # for participant_num in range(num_participants):
@@ -235,7 +235,7 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     return participant_scores
 
 
-def get_environments(participant_num, exp_num="v1.0"):
+def get_environments(participant_num, exp_num="v1.0", data_path=None):
     """
     Get environments of a particular participant
     Params:
@@ -244,7 +244,7 @@ def get_environments(participant_num, exp_num="v1.0"):
     Returns:
         envs: The trial values that the participant observed
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     envs = []
@@ -255,8 +255,8 @@ def get_environments(participant_num, exp_num="v1.0"):
     return envs
 
 
-def get_taken_paths(participant_num, exp_num="F1"):
-    data = get_data(exp_num)
+def get_taken_paths(participant_num, exp_num="F1", data_path=None):
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     taken_paths = []
@@ -317,10 +317,7 @@ def get_participant_details(
     get_taken_paths=True,
     data_path=None,
 ):
-    if data_path:
-        data = get_data(exp_num, data_path)
-    else:
-        data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == pid]
     scores = []
@@ -431,9 +428,9 @@ def compute_likelihood_aic(num_parameters, likelihood):
     return likelihood_aic
 
 
-def get_excluded_participants(exp_num="F1", exclude_condition="MCFB"):
+def get_excluded_participants(exp_num="F1", exclude_condition="MCFB", data_path=None):
     conditions = {"NOFB": 0, "MCFB": 1, "ActionFB": 2}
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     pdf = data["participants"]
     pdf = pdf[~(pdf.condition == conditions[exclude_condition])]
     return list(set(pdf.pid))
@@ -1565,7 +1562,7 @@ class Participant:
         excluded_trials=None,
         get_strategies=True,
         get_weights=True,
-        data_path=None
+        data_path=None,
     ):
         self.exp_num = exp_num
         self.pid = pid
