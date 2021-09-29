@@ -94,8 +94,10 @@ class Experiment:
         else:
             if hasattr(self.data, "pids"):
                 self.pids = self.data["pids"]
-            else:
+            elif hasattr(self.data, "participants"):
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
+            else:
+                self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
         self.participants = {}
         if block:
             self.block = block
