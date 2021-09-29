@@ -19,6 +19,7 @@ setup(
     setup_requires=["wheel"],
     include_package_data=True,
     install_requires=[
+        "mouselab @ git+https://github.com/RationalityEnhancement/Rationality-Enhancement-Toolbox.git@master#egg=mouselab&subdirectory=MouseLab",  # noqa
         "graphviz",
         "statsmodels",
         "toolz",

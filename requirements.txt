@@ -84,3 +84,4 @@ zict==2.0.0
 setuptools>=52.0.0
 dill>=0.2.9
 rpy2>=3.4.5
+mouselab @ git+https://github.com/RationalityEnhancement/Rationality-Enhancement-Toolbox.git@master#egg=mouselab&subdirectory=MouseLab  # noqa

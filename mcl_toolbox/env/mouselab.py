@@ -6,7 +6,7 @@ from contracts import contract
 from gym import spaces
 from toolz import get, memoize
 
-from mcl_toolbox.envs.registry import registry
+from mouselab.envs.registry import registry
 from mcl_toolbox.utils.distributions import (PointMass, cmax, expectation,
                                              sample, smax)
 from mcl_toolbox.utils.graph_utils import (annotate_mdp_graph,
