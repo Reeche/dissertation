@@ -7,6 +7,7 @@ from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
+
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 

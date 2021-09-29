@@ -13,7 +13,7 @@ from mcl_toolbox.computational_microscope.computational_microscope import \
 from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
-Run this file to infer the averaged sequences of the participants. 
+Run this file to infer the averaged sequences of the participants.
 Format: python3 infer_sequences.py <exp name> <block>
 Example: python3 infer_sequences.py T1.1 training
 """

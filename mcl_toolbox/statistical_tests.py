@@ -4,9 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 import pymannkendall as mk
-from scipy.stats import (chi2_contingency, chisquare, fisher_exact,
-                         friedmanchisquare, ks_2samp, mannwhitneyu)
-from statsmodels.stats import proportion
+from scipy.stats import friedmanchisquare, ks_2samp, mannwhitneyu
 
 from mcl_toolbox.utils import distributions, learning_utils
 
@@ -124,7 +122,6 @@ def create_data_for_trend_test(
 
         strategy_temp = []
         cluster_temp = []
-        ds_temp = []
         for i in range(0, len(strategy_proportions_trialwise)):
             strategy_temp.append(
                 list(
@@ -361,7 +358,7 @@ if __name__ == "__main__":
     )
 
     print(
-        f" ----------- This tests whether the proportions of all 89 strategies across environments are equal  -----------"
+        " ----------- This tests whether the proportions of all 89 strategies across environments are equal  -----------"
     )
     strategy_difference_dict = {
         "increasing": strategy_df["increasing_variance"],
@@ -374,7 +371,7 @@ if __name__ == "__main__":
     )
 
     print(
-        f" ----------- This tests whether the proportions of all 13 strategy clusters across environments are equal  -----------"
+        " ----------- This tests whether the proportions of all 13 strategy clusters across environments are equal  -----------"
     )
     cluster_difference_dict = {
         "increasing": cluster_df["increasing_variance"],

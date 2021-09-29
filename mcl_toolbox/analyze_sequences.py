@@ -1,3 +1,4 @@
+import random
 import sys
 
 from mcl_toolbox.global_vars import features, strategies, structure
@@ -8,14 +9,11 @@ sys.modules["distributions"] = distributions
 
 from mcl_toolbox.computational_microscope.computational_microscope import \
     ComputationalMicroscope
-from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
-                                              get_normalized_features,
-                                              pickle_load)
+from mcl_toolbox.utils.learning_utils import create_dir, pickle_load
 
 """
-Run this file to analyse the inferred sequences of the participants. 
+Run this file to analyse the inferred sequences of the participants.
 Format: python3 analyze_sequences.py <reward_structure> <block> <create_plot>
 Example: python3 analyze_sequences.py c2.1_dec training True
 """
@@ -86,7 +84,7 @@ def analyse_sequences(
         # exit()
 
     if exp_num == "c2.1_dec":
-        save_path = f"../results/cm/plots/c2.1"
+        save_path = "../results/cm/plots/c2.1"
         if block:
             save_path += f"_{block}"
     else:

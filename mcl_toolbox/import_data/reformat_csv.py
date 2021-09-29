@@ -7,7 +7,7 @@ import json
 
 import numpy as np
 
-### Remember to change the number of trials!!!
+# Remember to change the number of trials!!!
 # todo: extract number of trials from the data
 
 data = pd.read_csv("data/dataclips.csv", sep=",")

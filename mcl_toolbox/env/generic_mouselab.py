@@ -160,7 +160,6 @@ class GenericMouselabEnv(gym.Env):
     def get_best_paths(self):
         trial = self.present_trial
         expected_path_values = trial.get_path_expected_values()
-        node_paths = trial.reverse_branch_map[0]
         best_paths = [
             k
             for k, v in expected_path_values.items()
@@ -315,8 +314,6 @@ class DummyParticipantNew:
         self.all_trials_data = self.get_all_trials_data()
 
     def get_all_trials_data(self):
-        actions = {} if not self.clicks else self.clicks
-        rewards = {} if not self.scores else self.scores
         total_data = {
             "actions": {},
             "rewards": {},

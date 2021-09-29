@@ -3,17 +3,14 @@
 import itertools as it
 # from utils import clear_screen, PriorityQueue
 import time
-from abc import ABC, abstractmethod
-from collections import Counter, defaultdict, deque, namedtuple
-
-import numpy as np
-
-np.set_printoptions(precision=3, linewidth=200)
-
+from abc import ABC
+from collections import defaultdict, deque
 from copy import deepcopy
 
-from toolz.curried import *
-from tqdm import tnrange, tqdm, trange
+import numpy as np
+from tqdm import tnrange
+
+np.set_printoptions(precision=3, linewidth=200)
 
 # from policies import *
 # from value_functions import *

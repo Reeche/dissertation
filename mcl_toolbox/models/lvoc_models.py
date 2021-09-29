@@ -1,16 +1,13 @@
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import mpmath as mp
 import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.models.rl_models import integrate
 from mcl_toolbox.utils.learning_utils import (break_ties_random,
                                               estimate_bayes_glm,
-                                              get_gaussian_max_probs,
                                               get_log_norm_cdf,
-                                              get_log_norm_pdf, get_mu_v,
-                                              mvprpb, norm_integrate,
+                                              get_log_norm_pdf, norm_integrate,
                                               rows_mean, sample_coeffs)
 
 
@@ -159,12 +156,10 @@ class LVOC(Learner):
 
         means = dists[:, 0]
         sigmas = np.sqrt(dists[:, 1])
-        variances = dists[:, 1]
         # Very important to select good bounds for proper sampling.
         ub = np.max(means + 5 * sigmas)
         lb = np.min(means - 5 * sigmas)
         if num_available_actions == 1:
-            probs = [1.0]
             selected_action_prob = 1
         else:
             # samples = np.random.multivariate_normal(means, np.diag(variances), size=n_samples)

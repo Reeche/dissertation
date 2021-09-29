@@ -88,8 +88,8 @@ class structure:
         12: 3,
     }
 
-    """ 
-    an exp pipeline is a list containing a tuple for each trial that is included, containing: 
+    """
+    an exp pipeline is a list containing a tuple for each trial that is included, containing:
     1) branching, e.g. [3,1,2]
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline

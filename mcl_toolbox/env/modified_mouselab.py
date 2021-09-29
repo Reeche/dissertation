@@ -10,7 +10,7 @@ from toolz import get
 from mcl_toolbox.utils import distributions
 from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
-""" This file defines the node, trial and trial sequence class for the 
+""" This file defines the node, trial and trial sequence class for the
     feature based representation of the Mouselab-MDP. This assumes that
     the environment structure is a tree symmetric in its branches
 """
@@ -342,7 +342,6 @@ class Trial:
             return 2 + max_branch_sum - max_taken_sum
 
     def get_node_feature_values(self, nodes, features, normalized_features):
-        node_labels = [node.label for node in nodes]
         num_features = len(features)
         feature_values = np.zeros((len(nodes), num_features))
         for i, node in enumerate(nodes):
@@ -1242,7 +1241,7 @@ class Node:
         if not self.observed:
             return 0
         present_node = self
-        while present_node.parent != None:
+        while present_node.parent is not None:
             if not present_node.parent.observed:
                 return 0
             present_node = present_node.parent

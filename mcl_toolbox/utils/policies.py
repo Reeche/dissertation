@@ -1,6 +1,4 @@
-import itertools as it
-import time
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import Counter, defaultdict, deque, namedtuple
 
 import numpy as np
@@ -9,10 +7,8 @@ from mcl_toolbox.utils.utils import PriorityQueue, softmax
 
 np.set_printoptions(precision=3, linewidth=200)
 import random
-from copy import deepcopy
 
-from scipy import stats
-from tqdm import tnrange, tqdm, trange
+from toolz import memoize
 
 from mcl_toolbox.utils.agents import Component, Model
 
@@ -180,7 +176,7 @@ class ActorCritic(Policy):
     def build_actor(self):
         from keras.layers import Dense
         from keras.models import Sequential
-        from keras.optimizers import Adam, Nadam
+        from keras.optimizers import Nadam
 
         actor = Sequential(
             [

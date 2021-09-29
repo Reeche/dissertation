@@ -1,11 +1,10 @@
-import ast
 import os
 import random
-import sys
 from pathlib import Path
 
-from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.global_vars import *
+import numpy as np
+
+from mcl_toolbox.global_vars import features, model, strategies, structure
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
 from mcl_toolbox.utils.fitting_utils import (construct_model,
                                              get_participant_context)
@@ -72,7 +71,6 @@ def prior_fit(
     )
     pipeline = structure.exp_pipelines[exp_name]
     branching = structure.branchings[exp_name]
-    excluded_trials = structure.excluded_trials[exp_name]
 
     # load model specific info
     learner_attributes = model.model_attributes.iloc[model_index].to_dict()
@@ -140,7 +138,7 @@ def prior_fit(
     print(f"Loss: {min(losses)}")
     min_index = np.argmin(losses)
     if plotting:
-        reward_data = optimizer.plot_rewards(
+        optimizer.plot_rewards(
             i=min_index, path=os.path.join(plot_directory, f"{pid}.png")
         )
     # save priors
@@ -153,7 +151,6 @@ def prior_fit(
 
     # TODO: document what is this? Is this running simulations given priors?
     if optimization_criterion != "likelihood":
-        reward_data = optimizer.plot_rewards(i=min_index)
         (r_data, sim_data), p_data = optimizer.run_hp_model(
             res[0], optimization_criterion, num_simulations=4
         )

@@ -9,8 +9,8 @@ from mcl_toolbox.utils import learning_utils
 from mcl_toolbox.utils.analysis_utils import get_data
 
 """
-Run this file to infer the averaged(?) sequences of the participants. 
-Format: python3 infer_sequences.py <pid> <reward_structure> <block> 
+Run this file to infer the averaged(?) sequences of the participants.
+Format: python3 infer_sequences.py <pid> <reward_structure> <block>
 Example: python3 infer_participant_sequences.py 1 v1.0 training
 """
 

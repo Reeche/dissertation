@@ -405,7 +405,6 @@ class ClickSequence:
         )
 
     def compute_log_likelihoods(self, weights, fit_temperatures=False):
-        num_trials = 1
         trial = TrialSequence(
             1, pipeline=self._pipeline, ground_truth=[self._env]
         ).trial_sequence[0]

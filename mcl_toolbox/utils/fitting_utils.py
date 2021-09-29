@@ -26,7 +26,6 @@ def construct_model(model_index, num_actions, normalized_features):
         num_priors = 2 * len(strategy_space)
     else:
         num_priors = len(features)
-    use_pseudo_rewards = learner_attributes["use_pseudo_rewards"]
     pr_weight = learner_attributes["pr_weight"]
     if not pr_weight:
         learner_attributes["pr_weight"] = 1
