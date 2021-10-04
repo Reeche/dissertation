@@ -520,8 +520,8 @@ if __name__ == "__main__":
     #test_for_trend(number_of_clicks, "Clicks")
 
     ### ANOVA and t-test require normality and equal variance. therefore now Kruskal-Willis test and Wilcoxon rank sum test
-    print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"], number_of_clicks["high_variance_low_cost"],
-                  number_of_clicks["low_variance_high_cost"], number_of_clicks["high_variance_low_cost"]))
+    print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5),
+                  number_of_clicks["low_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5)))
     print("Kruskal - High variance ", kruskal(number_of_clicks["high_variance_high_cost"], number_of_clicks["high_variance_low_cost"]))
     print("Kruskal - Low variance ", kruskal(number_of_clicks["low_variance_high_cost"], number_of_clicks["low_variance_low_cost"]))
     print("Kruskal - High cost ", kruskal(number_of_clicks["high_variance_high_cost"], number_of_clicks["low_variance_high_cost"]))
@@ -529,63 +529,63 @@ if __name__ == "__main__":
 
 # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
     # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
-    print(
-        "High variance - Low cost condition - first 5 vs last 5",
-        ranksums(
-            number_of_clicks["high_variance_low_cost"].head(5),
-            number_of_clicks["high_variance_low_cost"].tail(5)
-        ),
-    )
-    print(
-        "High variance - High cost condition - first 5 vs last 5",
-        ranksums(
-            number_of_clicks["high_variance_high_cost"].head(5),
-            number_of_clicks["high_variance_high_cost"].tail(5)
-        ),
-    )
-    print(
-        "Low variance - High cost condition - first 5 vs last 5",
-        ranksums(
-            number_of_clicks["low_variance_high_cost"].head(5),
-            number_of_clicks["low_variance_high_cost"].tail(5)
-        ),
-    )
-    print(
-        "Low variance - Low cost condition - first 5 vs last 5",
-        ranksums(
-            number_of_clicks["low_variance_low_cost"].head(5),
-            number_of_clicks["low_variance_low_cost"].tail(5)
-        ),
-    )
+    # print(
+    #     "High variance - Low cost condition - first 5 vs last 5",
+    #     ranksums(
+    #         number_of_clicks["high_variance_low_cost"].head(5),
+    #         number_of_clicks["high_variance_low_cost"].tail(5)
+    #     ),
+    # )
+    # print(
+    #     "High variance - High cost condition - first 5 vs last 5",
+    #     ranksums(
+    #         number_of_clicks["high_variance_high_cost"].head(5),
+    #         number_of_clicks["high_variance_high_cost"].tail(5)
+    #     ),
+    # )
+    # print(
+    #     "Low variance - High cost condition - first 5 vs last 5",
+    #     ranksums(
+    #         number_of_clicks["low_variance_high_cost"].head(5),
+    #         number_of_clicks["low_variance_high_cost"].tail(5)
+    #     ),
+    # )
+    # print(
+    #     "Low variance - Low cost condition - first 5 vs last 5",
+    #     ranksums(
+    #         number_of_clicks["low_variance_low_cost"].head(5),
+    #         number_of_clicks["low_variance_low_cost"].tail(5)
+    #     ),
+    # )
 
     # print("# of clicks at the end of the trial in cond 0 vs cond 1")
     # statistical tests: # of clicks at the end of the trial in cond 0 vs cond 1
     print(
         "High variance - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_high_cost"].tail(5),
-            number_of_clicks["high_variance_low_cost"].tail(5)
+            number_of_clicks["high_variance_high_cost"],
+            number_of_clicks["high_variance_low_cost"]
         ),
     )
     print(
         "Low variance - last 5 trials",
         ranksums(
-            number_of_clicks["low_variance_high_cost"].tail(5),
-            number_of_clicks["low_variance_low_cost"].tail(5)
+            number_of_clicks["low_variance_high_cost"],
+            number_of_clicks["low_variance_low_cost"]
         ),
     )
     print(
         "High cost - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_high_cost"].tail(5),
-            number_of_clicks["low_variance_high_cost"].tail(5)
+            number_of_clicks["high_variance_high_cost"],
+            number_of_clicks["low_variance_high_cost"]
         ),
     )
     print(
         "Low cost - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_low_cost"].tail(5),
-            number_of_clicks["low_variance_low_cost"].tail(5)
+            number_of_clicks["high_variance_low_cost"],
+            number_of_clicks["low_variance_low_cost"]
         ),
     )
 
