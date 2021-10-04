@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from mcl_toolbox.env.mouselab import MouselabEnv
 from mcl_toolbox.utils.distributions import Categorical
 from mcl_toolbox.utils.exact_utils import timed_solve_env
@@ -18,7 +20,7 @@ if __name__ == "__main__":
     cost = -1
     BRANCHING = [3, 1, 2]
     env = MouselabEnv.new_symmetric(BRANCHING, reward, seed=0, cost=cost)
-    exp_num = "F1"
+    exp_num = "v1.0"
     E = Experiment(exp_num)
     ground_truths = list(
         set([tuple(e) for p in E.participants.values() for e in p.envs])
@@ -27,4 +29,6 @@ if __name__ == "__main__":
     Q, V, pi, info = timed_solve_env(
         env, save_q=True, verbose=True, ground_truths=ground_truths
     )
-    pickle_save(info, f"data/{exp_num}_q.pkl")
+    file_location = Path(__file__).parents[1]
+    path = file_location.joinpath(f"data/{exp_num}_q.pkl")
+    pickle_save(info, path)

@@ -2,7 +2,7 @@ from mcl_toolbox.utils.model_utils import ModelFitter
 
 
 def test_models(
-    exp_name, pid, model_list, criterion="reward", optimization_params=None
+        exp_name, pid, model_list, criterion="reward", optimization_params=None
 ):
     if optimization_params is None:
         optimization_params = {
@@ -19,5 +19,5 @@ def test_models(
 
 
 if __name__ == "__main__":
-    test_models("v1.0", 0, range(5251, 6432))
-    # 5251
+    # Testing if all the models at least run successfully
+    test_models("v1.0", 0, range(6432))

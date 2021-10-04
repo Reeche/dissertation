@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import features, model, strategies, structure
@@ -39,15 +40,24 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 class ModelFitter:
     def __init__(self, exp_name, exp_attributes=None):
         self.exp_name = exp_name
-        self.normalized_features = get_normalized_features(
-            structure.exp_reward_structures[self.exp_name]
-        )
-        self.pipeline = structure.exp_pipelines[self.exp_name]
         if exp_attributes is None:
             exp_attributes = {}
-        self.E = Experiment(self.exp_name, **exp_attributes)
-        self.E.attach_pipeline(self.pipeline)
-        self.branching = structure.branchings[self.exp_name]
+        if 'experiment' in exp_attributes:
+            self.E = exp_attributes['experiment']
+            if self.E.pipeline is None:
+                raise ValueError("Please attach pipeline to the experiment")
+            if self.E.normalized_features is None:
+                raise ValueError("Please attach normalized features to the experiment")
+            self.pipeline = self.E.pipeline
+            self.normalized_features = self.E.normalized_features
+        else:
+            self.E = Experiment(self.exp_name, **exp_attributes)
+            self.pipeline = structure.exp_pipelines[self.exp_name]
+            self.E.attach_pipeline(self.pipeline)
+            self.normalized_features = get_normalized_features(
+                structure.exp_reward_structures[self.exp_name]
+            )
+        self.branching = self.pipeline[0][0]
         self.num_actions = get_number_of_actions_from_branching(
             self.branching
         )  # Find out number of actions
@@ -75,10 +85,11 @@ class ModelFitter:
 
     def get_q_fn(self, participant):
         q_fn = None
+        file_location = Path(__file__).parents[1]
         if hasattr(participant, "condition"):
             if participant.condition == "meta":
                 try:
-                    q_path = os.path.join(file_location, f"data/{self.exp_name}_q.pkl")
+                    q_path = file_location.joinpath(f"data/{self.exp_name}_q.pkl")
                     q_fn = pickle_load(q_path)["q_dictionary"]
                 except FileNotFoundError:
                     print("Q-fn could not be loaded")
@@ -187,7 +198,7 @@ class ModelFitter:
         if pid is not None:
             participant = self.E.participants[pid]
             q_fn, participant = self.get_q_fn(participant)
-            env = self.construct_env(participant)
+            env = self.construct_env(participant, q_fn=q_fn)
         self.update_attributes(env)
         learner, learner_attributes = self.construct_model(model_index)
         optimizer = ParameterOptimizer(
@@ -206,11 +217,14 @@ class ModelFitter:
         if plot_dir is not None:
             optimizer.reward_data = [r_data["mer"]]
             optimizer.p_data = p_data
-            optimizer.plot_rewards(i=0, path=os.path.join(plot_dir, plot_file))
+            optimizer.plot_rewards(i=0, path=plot_dir.joinpath(plot_file))
 
         if sim_dir is not None:
+            save_path = f"{participant.pid}_{model_index}_{num_simulations}.pkl"
+            if participant is None:
+                save_path = f"{model_index}_{num_simulations}.pkl"
             pickle_save(
                 sim_data,
-                os.path.join(sim_dir, f"{model_index}_{num_simulations}.pkl"),
+                sim_dir.joinpath(save_path),
             )
         return r_data, sim_data

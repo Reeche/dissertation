@@ -15,6 +15,7 @@ from mcl_toolbox.utils.analysis_utils import get_data
 from mcl_toolbox.utils.learning_utils import (
     get_clicks,
     get_participant_scores,
+    pickle_load,
     sidak_value,
 )
 from mcl_toolbox.utils.sequence_utils import get_acls
@@ -91,10 +92,10 @@ class Experiment:
     """
 
     def __init__(
-        self, exp_num, cm=None, pids=None, block=None, exclude_trials=None, **kwargs
+        self, exp_num, cm=None, pids=None, block=None, data_path=None, exclude_trials=None, **kwargs
     ):
         self.exp_num = exp_num
-        self.data = get_data(exp_num)
+        self.data = get_data(exp_num, data_path)
         self.cm = cm
         self.block = None
         if pids:
@@ -102,14 +103,10 @@ class Experiment:
         else:
             if hasattr(self.data, "pids"):
                 self.pids = self.data["pids"]
-                # assumes "participants" dataframe in init_participants function below
-                self.data["participants"] = self.data["pids"]
             elif hasattr(self.data, "participants"):
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
             else:
                 self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
-                # assumes "participants" dataframe in init_participants function below
-                self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
         self.excluded_trials = exclude_trials
         if block:
@@ -156,12 +153,13 @@ class Experiment:
             self.participants[pid] = p
 
         path = Path(__file__).parents[1]
-        f_path = f"{path}/data/inferred_strategies"
+        f_path = path.joinpath("data/inferred_strategies")
         if self.block is not None:
-            f_path += f"_{self.block}"
-        if os.path.exists(f_path):
-            strategies = pickle_load(f"{f_path}/{self.exp_num}_strategies.pkl")
-            temperatures = pickle_load(f"{f_path}/{self.exp_num}_temperatures.pkl")
+            f_path = f_path.joinpath(f"_{self.block}")
+        strategies_path = f_path.joinpath(f"{self.exp_num}_strategies.pkl")
+        if os.path.exists(strategies_path):
+            strategies = pickle_load(f_path.joinpath(f"{self.exp_num}_strategies.pkl"))
+            temperatures = pickle_load(f_path.joinpath(f"{self.exp_num}_temperatures.pkl"))
             self.infer_strategies(
                 precomputed_strategies=strategies,
                 precomputed_temperatures=temperatures,

@@ -79,9 +79,10 @@ def get_data(version, data_path=None):
     data = {}
     for file in data_path.joinpath(f"human/{version}").glob("*"):
         name = file.stem
-        df = pd.read_csv(file)
-        parse_json(df)
-        data[name] = drop_nan_cols(df)
+        if file.suffix == ".csv":
+            df = pd.read_csv(file)
+            parse_json(df)
+            data[name] = drop_nan_cols(df)
 
     # n_trials = df.pid.value_counts().max()
     # complete = df.pid.value_counts(sort=False).where(lambda x: x==n_trials).dropna().index

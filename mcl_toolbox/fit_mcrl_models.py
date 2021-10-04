@@ -21,46 +21,49 @@ Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 #
 
 # TODO: Add ability to remove trials and also use arbitrary pipelines
+# TODO: Add ability to pass the experiment object directly in exp_attributes
+# TODO: See what is the structure of the pipeline
+# TODO: Give right strategy weights to RSSL model for likelihood computation
 
 
-def prior_fit(
+def fit_model(
     exp_name,
+    pid,
     model_index,
     optimization_criterion,
-    pid,
-    plotting=True,
     optimization_params=None,
-    **kwargs,
+    exp_attributes = None,
+    sim_params = None,
+    simulate=True,
+    plotting=True
 ):
     """
 
     :param exp_name: experiment name, which is the folder name of the experiment in ../data/human/
+    :param pid: participant id, as int
     :param model_index: model index, as displayed in rl_models.csv
     :param optimization_criterion: as string, choose one of: ["pseudo_likelihood", "mer_performance_error", "performance_error"]
-    :param pid: participant id, as int
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
 
     # create directory to save priors in
     parent_directory = Path(__file__).parents[1]
-    prior_directory = os.path.join(parent_directory, f"results/mcrl/{exp_name}_priors")
+    prior_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
     create_dir(prior_directory)
-    # and directory to save fit model info in
-    model_info_directory = os.path.join(
-        parent_directory, f"results/mcrl/info_{exp_name}_data"
-    )
-    create_dir(model_info_directory)
 
-    # add directory for reward plots, if plotting
+    model_info_directory = None
     plot_directory = None
-    if plotting:
-        plot_directory = os.path.join(
-            parent_directory, f"results/mcrl/plots/{exp_name}_plots"
-        )
-        create_dir(plot_directory)
+    if simulate:
+        # and directory to save fit model info in
+        model_info_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_data")
+        create_dir(model_info_directory)
+        if plotting:
+            # add directory for reward plots, if plotting
+            plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
+            create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name)
+    mf = ModelFitter(exp_name, exp_attributes=exp_attributes)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -68,13 +71,15 @@ def prior_fit(
         optimization_params,
         params_dir=prior_directory,
     )
-    mf.simulate_params(
-        model_index,
-        res[0],
-        pid=pid,
-        sim_dir=model_info_directory,
-        plot_dir=plot_directory,
-    )
+    if simulate:
+        mf.simulate_params(
+            model_index,
+            res[0],
+            pid=pid,
+            sim_dir=model_info_directory,
+            plot_dir=plot_directory,
+            sim_params=sim_params
+        )
 
 
 if __name__ == "__main__":
@@ -87,21 +92,27 @@ if __name__ == "__main__":
     # if len(sys.argv)>5:
     #     other_params = ast.literal_eval(sys.argv[5])
 
-    exp_name = "v1.0"
-    model_index = 1729
-    optimization_criterion = "reward"
-    pid = 15
-    plotting = True
+    exp_name = "T1.1"
+    model_index = 1825
+    optimization_criterion = "likelihood"
+    pid = 4
+    num_simulations = 30
+    simulate = False
+    plotting = False
     optimization_params = {
         "optimizer": "hyperopt",
         "num_simulations": 1,
-        "max_evals": 20,
+        "max_evals": 20
     }
-    prior_fit(
-        exp_name,
-        model_index,
-        optimization_criterion,
-        pid,
-        plotting,
+    sim_params = {'num_simulations': num_simulations}
+    exp_attributes = {'block': 'test'}
+    fit_model(
+        exp_name=exp_name,
+        pid=pid,
+        model_index=model_index,
+        optimization_criterion=optimization_criterion,
+        simulate=simulate,
+        plotting=plotting,
         optimization_params=optimization_params,
+        exp_attributes=exp_attributes
     )
