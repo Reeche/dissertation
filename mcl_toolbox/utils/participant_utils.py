@@ -9,6 +9,8 @@ class ParticipantIterator:
         self.envs = self.participant.envs
         self.rewards = self.modify_scores(participant.scores, participant.clicks)
         self.taken_paths = self.participant.paths
+        self.strategies = self.participant.strategies
+        self.temperature = self.participant.temperature
         self.current_trial = 0
         self.current_click = 0
 

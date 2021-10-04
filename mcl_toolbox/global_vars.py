@@ -1,4 +1,3 @@
-import os
 import pickle
 from pathlib import Path
 
@@ -7,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 
 file_location = Path(__file__).parents[0]
+
 
 # RenameUnpickler from https://stackoverflow.com/a/53327348
 class RenameUnpickler(pickle.Unpickler):
@@ -26,22 +26,13 @@ def pickle_load(file_path):
     """
     Load the pickle file located at 'filepath'
     Params:
-        file_path  -- Location of the file to be loaded.
+        file_path  -- Location of the file to be loaded, as pathlib object.
     Returns:
         Unpickled object
     """
-    if not os.path.exists(file_path):
-        head, tail = os.path.split(__file__)
-        if file_path[0] == "/":
-            new_path = os.path.join(head, file_path[1:])
-        else:
-            new_path = os.path.join(head, file_path)
-        if os.path.exists(new_path):
-            file_path = new_path
-        else:
-            raise FileNotFoundError(f"{file_path} not found.")
-    file_obj = open(file_path, "rb")
-    return RenameUnpickler(file_obj).load()
+    with open(str(file_path), "rb") as file_obj:
+        unpickled_obj = RenameUnpickler(file_obj).load()
+    return unpickled_obj
 
 
 class structure:
@@ -96,13 +87,13 @@ class structure:
         12: 3,
     }
 
-    """ 
-    an exp pipeline is a list containing a tuple for each trial that is included, containing: 
+    """
+    an exp pipeline is a list containing a tuple for each trial that is included, containing:
     1) branching, e.g. [3,1,2]
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     """
-    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
+    exp_pipelines = pickle_load(file_location.joinpath("data/exp_pipelines.pkl"))
     # for some reason F1 is missing one trial
 
     exp_pipelines["F1"].append(exp_pipelines["F1"][0])
@@ -124,18 +115,10 @@ class structure:
         "transfer_task": "large_increasing",
     }
 
-    # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key
-    # todo: remove this
-    reward_dict = {
-        "increasing_variance": "v1.0",
-        "decreasing_variance": "c2.1",
-        "constant_variance": "c1.1",
-    }
-
 
 class model:
     model_attributes = pd.read_csv(
-        os.path.join(file_location, "models/rl_models.csv"), index_col=0
+        str(file_location.joinpath("models/rl_models.csv")), index_col=0
     )
     # TODO quick fix, we need to rename this column as it breaks the fit_mcrl_models.py code
     model_attributes.columns = [
@@ -149,7 +132,7 @@ class strategies:
     num_strategies = 89
     # strategy_space = list(range(1, num_strategies + 1))
     # problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83] #the microscope strategies are obtained from this
-    strategy_space = pickle_load(os.path.join(file_location, "data/strategy_space.pkl"))
+    strategy_space = pickle_load(file_location.joinpath("data/strategy_space.pkl"))
     strategy_spaces = {
         "participant": [
             6,
@@ -272,19 +255,17 @@ class strategies:
     }
 
     strategy_weights = pickle_load(
-        os.path.join(file_location, "data/microscope_weights.pkl")
+        file_location.joinpath("data/microscope_weights.pkl")
     )
-    strategy_distances = pickle_load(
-        os.path.join(file_location, "data/L2_distances.pkl")
-    )
+    strategy_distances = pickle_load(file_location.joinpath("data/L2_distances.pkl"))
 
 
 class features:
     microscope = pickle_load(
-        os.path.join(file_location, "data/microscope_features.pkl")
+        file_location.joinpath("data/microscope_features.pkl")
     )  # this is 51 features
     implemented = pickle_load(
-        os.path.join(file_location, "data/implemented_features.pkl")
+        file_location.joinpath("data/implemented_features.pkl")
     )  # this is 56 features
 
 

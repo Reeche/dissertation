@@ -11,7 +11,6 @@ class ibsLVOC(LVOC):
         self.max_k_iters = max_k_iters
 
     def store_action_likelihood(self, env, given_action):
-        current_trial = env.present_trial
         available_actions = env.get_available_actions()
         action_index = available_actions.index(given_action)
         num_available_actions = len(available_actions)
@@ -76,7 +75,6 @@ class IBSRSSL(RSSL):
         self.max_k_iter = max_k_iter
 
     def get_strategy_log_likelihood(self, strategy_index):
-        params = self.params
         num_repeats = 1
         ll = 0
         for _ in range(num_repeats):
@@ -111,7 +109,6 @@ class SimRSSL(RSSL):
         self.maxiter = maxiter
 
     def get_strategy_log_likelihood(self, strategy_index):
-        params = self.params
         count = np.zeros(self.num_strategies)
         for _ in range(self.max_iter):
             # Histogram sampling

@@ -1,6 +1,7 @@
 import random
 import sys
 
+from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
@@ -8,14 +9,11 @@ sys.modules["distributions"] = distributions
 
 from mcl_toolbox.computational_microscope.computational_microscope import \
     ComputationalMicroscope
-from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
-                                              get_normalized_features,
-                                              pickle_load)
+from mcl_toolbox.utils.learning_utils import create_dir, pickle_load
 
 """
-Run this file to analyse the inferred sequences of the participants. 
+Run this file to analyse the inferred sequences of the participants.
 Format: python3 analyze_sequences.py <reward_structure> <block> <create_plot>
 Example: python3 analyze_sequences.py c2.1_dec training True
 """
@@ -30,14 +28,16 @@ def analyse_sequences(
     **kwargs,
 ):
     # Initializations
-    decision_systems = pickle_load("../data/decision_systems.pkl")
-    DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
-    W_DS = pickle_load("../data/strategy_decision_weights.pkl")
-    cluster_map = pickle_load("../data/kl_cluster_map.pkl")
-    strategy_scores = pickle_load(
-        "../data/strategy_scores.pkl"
+    decision_systems = learning_utils.pickle_load("data/decision_systems.pkl")
+    DS_proportions = learning_utils.pickle_load(
+        "data/strategy_decision_proportions.pkl"
+    )
+    W_DS = learning_utils.pickle_load("data/strategy_decision_weights.pkl")
+    cluster_map = learning_utils.pickle_load("data/kl_cluster_map.pkl")
+    strategy_scores = learning_utils.pickle_load(
+        "data/strategy_scores.pkl"
     )  # todo: update strategy scores to contain all environments, currently only increasing variance
-    cluster_scores = pickle_load("../data/cluster_scores.pkl")
+    cluster_scores = learning_utils.pickle_load("data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
@@ -55,8 +55,10 @@ def analyse_sequences(
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
     pipeline = [pipeline[0] for _ in range(100)]
 
-    normalized_features = get_normalized_features(reward_structure)  # tuple of 2
-    W = get_modified_weights(strategy_space, strategy_weights)
+    normalized_features = learning_utils.get_normalized_features(
+        reward_structure
+    )  # tuple of 2
+    W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
         pipeline,
         strategy_space,
@@ -82,7 +84,7 @@ def analyse_sequences(
         # exit()
 
     if exp_num == "c2.1_dec":
-        save_path = f"../results/cm/plots/c2.1"
+        save_path = "../results/cm/plots/c2.1"
         if block:
             save_path += f"_{block}"
     else:
@@ -109,41 +111,25 @@ def analyse_sequences(
             show_pids=False,
         )
     else:
-        (
-            strategy_proportions,
-            strategy_proportions_trialwise,
-            cluster_proportions,
-            cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
-            top_n_strategies,
-            worst_n_strategies,
-        ) = exp.summarize(
-            features,
-            normalized_features,
-            strategy_weights,
-            decision_systems,
-            W_DS,
-            DS_proportions,
-            strategy_scores,
-            cluster_scores,
-            cluster_map,
-            number_of_top_worst_strategies=number_of_top_worst_strategies,
-            create_plot=create_plot,
-            precomputed_strategies=strategies_,
-            precomputed_temperatures=temperatures,
-            show_pids=False,
-        )
-        return (
-            strategy_proportions,
-            strategy_proportions_trialwise,
-            cluster_proportions,
-            cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
-            top_n_strategies,
-            worst_n_strategies,
-        )
+        manual_strategy_list = []
+        maladaptive_strategy_list = []
+
+    exp.summarize(
+        features,
+        normalized_features,
+        strategy_weights,
+        decision_systems,
+        W_DS,
+        DS_proportions,
+        strategy_scores,
+        cluster_scores,
+        cluster_map,
+        manual_strategy_list,
+        maladaptive_strategy_list,
+        precomputed_strategies=strategies_,
+        precomputed_temperatures=temperatures,
+        show_pids=False,
+    )
 
 
 if __name__ == "__main__":

@@ -9,19 +9,17 @@ from mcl_toolbox.utils.sequence_utils import get_clicks
 
 class SDSS(Learner):
     def __init__(self, params, attributes):
-
+        super().__init__(params, attributes)
         self._bandit_params = np.array(params["bandit_params"])
         self._num_strategies = int(self._bandit_params.shape[0] / 2)
         self._threshold = params["bernoulli_threshold"]
-        self._features = attributes["features"]
-        self._num_features = len(self._features)
+        self._num_features = len(self.features)
         self._learner = attributes["learner"]
 
         self.learners = []
         for i in range(self._num_strategies):
             self.learners.append(self._learner(params, attributes))
 
-        strategy_space = range(1, self._num_strategies + 1)
         # In SDSS, by design RSSL doesn't learn using PRs or feedback
         self.rssl = RSSL({"priors": self._bandit_params, "pr_weight": 1}, attributes)
 
@@ -88,13 +86,13 @@ class SDSS(Learner):
         trial = env.present_trial
         env.reset_trial()
         actions = get_clicks(
-            trial, self._features, strategy_weights, self.normalized_features
+            trial, self.features, strategy_weights, self.normalized_features
         )
         f_list = []
         r_list = []
         env.reset_trial()
         for action in actions:
-            f = env.get_feature_state(self._features, self.normalized_features)[action]
+            f = env.get_feature_state(self.features, self.normalized_features)[action]
             _, r, _, _ = env.step(action)
             r_list.append(r)
             f_list.append(f)

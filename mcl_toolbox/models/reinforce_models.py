@@ -9,7 +9,6 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 
 class Policy(nn.Module):
@@ -89,7 +88,6 @@ class REINFORCE(Learner):
 
     def get_action_probs(self, env):
         available_actions = env.get_available_actions()
-        present_node_map = env.present_trial.node_map
         X = np.zeros((self.num_actions, self.num_features))
         feature_state = env.get_feature_state()
         for action in available_actions:
@@ -132,7 +130,6 @@ class REINFORCE(Learner):
     def get_end_episode_returns(self):
         returns = []
         self.term_rewards.insert(0, 0)
-        term_rewards = self.term_rewards[::-1]
         R = 0
         offset = 0
         if self.path_learn:
@@ -189,7 +186,6 @@ class REINFORCE(Learner):
                 env.step(node)
 
     def take_action(self, env, trial_info):
-        taken_path = None
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
@@ -211,7 +207,6 @@ class REINFORCE(Learner):
         end_episode = False
         if "end_episode" in trial_info:
             end_episode = trial_info["end_episode"]
-        available_actions = env.get_available_actions()
         policy_loss = 0
         if not end_episode:
             term_reward = self.get_term_reward(env)
@@ -260,9 +255,15 @@ class REINFORCE(Learner):
                 actions.append(action)
                 rewards.append(reward)
                 policy_loss += info["loss"]
+
+                if done:
+                    trials_data["taken_paths"].append(info["taken_path"])
             trials_data["r"].append(np.sum(rewards))
+            trials_data["rewards"].append(rewards)
             trials_data["a"].append(actions)
             env.get_next_trial()
+
+        trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data["loss"] = -sum(self.action_log_probs)
         else:
@@ -312,9 +313,7 @@ class BaselineREINFORCE(REINFORCE):
 
     def finish_episode(self):
         """Computing gradients and updating parameters."""
-        R = 0
         policy_loss = []
-        value_loss = []
 
         returns = self.get_end_episode_returns()
         returns = torch.tensor(returns).float()
@@ -347,7 +346,6 @@ class BaselineREINFORCE(REINFORCE):
         return policy_loss.item()
 
     def take_action(self, env, trial_info):
-        taken_path = None
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()

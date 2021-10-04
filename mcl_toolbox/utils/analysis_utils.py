@@ -1,12 +1,21 @@
+import ast
+import json
 import os
 import re
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from toolz import curry
 
-from mcl_toolbox.utils import *
+from mcl_toolbox.utils.utils import str_join
+
+sns.set_style("white")
+sns.set_context("notebook", font_scale=1.4)
+sns.set_palette("deep", color_codes=True)
+
 
 # ---------- Data wrangling ---------- #
 
@@ -47,10 +56,6 @@ def reformat_name(name):
 
 # ---------- Loading data ---------- #
 
-import ast
-import json
-from glob import glob
-
 
 def parse_json(df):
     def can_eval(x):
@@ -68,13 +73,12 @@ def parse_json(df):
             pass
 
 
-def get_data(version, data_path="data"):
-    head = Path(__file__).parents[2]
+def get_data(version, data_path=None):
+    if data_path is None:
+        data_path = Path(__file__).parents[2].joinpath("data")
     data = {}
-    for file in glob(
-        os.path.join(head, "{}/human/{}/*.csv".format(data_path, version))
-    ):
-        name = os.path.basename(file)[:-4]
+    for file in data_path.joinpath(f"human/{version}").glob("*"):
+        name = file.stem
         df = pd.read_csv(file)
         parse_json(df)
         data[name] = drop_nan_cols(df)
@@ -100,7 +104,6 @@ def load(file, version=None, func=lambda x: x):
 # ---------- Statistics ---------- #
 
 try:
-    import rpy2.robjects as ro
     from rpy2.robjects import pandas2ri
 
     pandas2ri.activate()
@@ -227,13 +230,6 @@ def get_rtable(results, p_col=None):
 
 
 # ---------- Plotting ---------- #
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set_style("white")
-sns.set_context("notebook", font_scale=1.4)
-sns.set_palette("deep", color_codes=True)
 
 
 class Figures(object):

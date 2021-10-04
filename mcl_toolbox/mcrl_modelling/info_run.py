@@ -1,7 +1,6 @@
 import logging
 import sys
 
-import numpy as np
 import pandas as pd
 from optimizer import ParameterOptimizer
 
@@ -186,7 +185,7 @@ control_pids = [
 def main():
     exp_pipelines = pickle_load("../data/exp_pipelines.pkl")
     exp_reward_structures = pickle_load("../data/exp_reward_structures.pkl")
-    features = pickle_load(f"../data/implemented_features.pkl")
+    features = pickle_load("../data/implemented_features.pkl")
 
     exp_num = sys.argv[1]
     normalized_features = get_normalized_features(exp_reward_structures[exp_num])
@@ -203,8 +202,6 @@ def main():
     optimization_criterion = sys.argv[3]
 
     model_index = int(sys.argv[2])
-    num_models = len(model_attributes)
-    rewards = []
 
     num_simulations = 10
     num_evals = 100  # For hyperopt only
@@ -293,7 +290,6 @@ def main():
         print(res[0])
         losses = [trial["result"]["loss"] for trial in res[1]]
         print(f"Loss: {min(losses)}")
-        min_index = np.argmin(losses)
         create_dir(f"results/{exp_num}_plots")
         # reward_data = optimizer.plot_rewards(i=min_index, path=f"results/{exp_num}_plots/{pid}.png")
         # pickle_save(reward_data, f"{d}/{pid}_{optimization_criterion}_{model_index}.pkl")

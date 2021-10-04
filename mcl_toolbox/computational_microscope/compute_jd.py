@@ -12,7 +12,7 @@ from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 def get_strategy_weights(weights_path, num_features, num_strategies):
     strategy_weights = np.zeros((num_strategies, num_features))
     for i in range(num_strategies):
-        strategy_weights[i] = pickle_load(f"{weights_path}/{i+1}_20000.pkl")
+        strategy_weights[i] = pickle_load(f"{weights_path}/{i + 1}_20000.pkl")
     return strategy_weights
 
 
