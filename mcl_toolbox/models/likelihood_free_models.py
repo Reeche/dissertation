@@ -92,6 +92,7 @@ class IBSRSSL(RSSL):
         return -ll / num_repeats  # LL
 
     def compute_log_likelihood(self, clicks, chosen_strategy):
+        trial = None
         strategy_index = self.strategy_space.index(chosen_strategy)
         log_likelihood = self.get_strategy_log_likelihood(strategy_index)
         actions_strategy_log_likelihood = self.get_action_strategy_likelihood(
@@ -120,6 +121,7 @@ class SimRSSL(RSSL):
         return np.log(count[strategy_index])
 
     def compute_log_likelihood(self, clicks, chosen_strategy):
+        trial = None
         strategy_index = self.strategy_space.index(chosen_strategy)
         log_likelihood = self.get_strategy_log_likelihood(strategy_index)
         actions_strategy_log_likelihood = self.get_action_strategy_likelihood(

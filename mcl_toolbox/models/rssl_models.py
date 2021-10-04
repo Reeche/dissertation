@@ -1,13 +1,17 @@
 from collections import defaultdict
-import numpy as np
-import mpmath as mp
 
+import mpmath as mp
+import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (beta_integrate, get_log_beta_cdf,
-                                              get_log_beta_pdf,
-                                              get_log_norm_cdf,
-                                              get_log_norm_pdf, norm_integrate)
+from mcl_toolbox.utils.learning_utils import (
+    beta_integrate,
+    get_log_beta_cdf,
+    get_log_beta_pdf,
+    get_log_norm_cdf,
+    get_log_norm_pdf,
+    norm_integrate,
+)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 precision_epsilon = 1e-4
@@ -41,11 +45,11 @@ class RSSL(Learner):
             self.variance = np.exp(attributes["gaussian_var"])
         self.stochastic_updating = attributes["stochastic_updating"]
         self.action_log_probs = False
-        if 'strategy_probs' in attributes:
-            self.strategy_probs = attributes['strategy_probs']
+        if "strategy_probs" in attributes:
+            self.strategy_probs = attributes["strategy_probs"]
 
     def gaussian_likelihood(
-            self, strategy_index
+        self, strategy_index
     ):  # Numerical integration to compute the likelihood under the gaussian distribution
         priors = self.priors
         num_strategies = self.num_strategies
@@ -53,11 +57,14 @@ class RSSL(Learner):
         sigmas = np.sqrt(priors[num_strategies:])
         max_val = np.max(means + 5 * sigmas)
         min_val = np.min(means - 5 * sigmas)
-        likelihood = mp.quad(lambda x: norm_integrate(x, strategy_index, means, sigmas), [min_val, max_val])
+        likelihood = mp.quad(
+            lambda x: norm_integrate(x, strategy_index, means, sigmas),
+            [min_val, max_val],
+        )
         return likelihood
 
     def bernoulli_likelihood(
-            self, strategy_index
+        self, strategy_index
     ):  # Numerical integration to compute the likelihood under the beta distribution
         priors = self.priors
         num_strategies = self.num_strategies
@@ -65,7 +72,10 @@ class RSSL(Learner):
         betas = priors[num_strategies:]
         max_val = 1
         min_val = 0
-        likelihood = mp.quad(lambda x: beta_integrate(x, strategy_index, alphas, betas), [min_val, max_val])
+        likelihood = mp.quad(
+            lambda x: beta_integrate(x, strategy_index, alphas, betas),
+            [min_val, max_val],
+        )
         return likelihood
 
     def get_max_likelihoods(self, strategy_index):
@@ -94,9 +104,8 @@ class RSSL(Learner):
         return np.argmax(values)
 
     def update_bernoulli_params(self, reward, strategy_index):
-        self.num_strategies
         normalized_prob = (reward - self.lower_limit) / (
-                self.upper_limit - self.lower_limit
+            self.upper_limit - self.lower_limit
         )
         priors = self.priors
         if self.stochastic_updating:
@@ -114,13 +123,13 @@ class RSSL(Learner):
         num_strategies = self.num_strategies
         priors = self.priors
         priors[strategy_index] = (
-                                         priors[strategy_index + num_strategies] * reward
-                                         + priors[strategy_index] * var
-                                 ) / (priors[strategy_index + num_strategies] + var)
+            priors[strategy_index + num_strategies] * reward
+            + priors[strategy_index] * var
+        ) / (priors[strategy_index + num_strategies] + var)
         priors[strategy_index + num_strategies] = (
-                priors[strategy_index + num_strategies]
-                * var
-                / (priors[strategy_index + num_strategies] + var)
+            priors[strategy_index + num_strategies]
+            * var
+            / (priors[strategy_index + num_strategies] + var)
         )
 
     def update_params(self, reward, strategy_index):
@@ -139,12 +148,13 @@ class RSSL(Learner):
         return strategy_index
 
     def apply_strategy(self, env, trial, strategy_index, info=None):
-        S = self.strategy_space[strategy_index]
+        strategy_space = self.strategy_space[strategy_index]
+        taken_path = None
         if info is not None:
-            if 'actions' in info:
-                actions = info['actions']
+            if "actions" in info:
+                actions = info["actions"]
         else:
-            actions = strategy_dict[S](trial)
+            actions = strategy_dict[strategy_space](trial)
         env.reset_trial()
         r_list = []
         delays = []
@@ -157,8 +167,8 @@ class RSSL(Learner):
             delays.append(self.delay_scale * delay)
             prs.append(self.get_pseudo_reward(env))
         if info is not None:
-            taken_path = info['taken_path']
-            r_list = info['rewards']
+            taken_path = info["taken_path"]
+            r_list = info["rewards"]
         delay = env.get_feedback({"action": 0, "taken_path": taken_path})
         delays.append(delay)
         info = {"taken_path": taken_path, "delays": delays, "prs": prs}
@@ -189,11 +199,17 @@ class RSSL(Learner):
                 ll = self.strategy_probs[trial_num]
                 log_prob = self.compute_log_likelihood(chosen_strategy)
                 action_log_probs.append(ll + float(log_prob))
-                info = {'taken_path': participant.get_trial_path(), 'actions': clicks, 'rewards': rewards}
+                info = {
+                    "taken_path": participant.get_trial_path(),
+                    "actions": clicks,
+                    "rewards": rewards,
+                }
                 participant.current_trial += 1
             else:
                 strategy_index = self.select_strategy()
-            clicks, r_list, info = self.apply_strategy(env, trial, strategy_index, info=info)
+            clicks, r_list, info = self.apply_strategy(
+                env, trial, strategy_index, info=info
+            )
             reward = np.sum(r_list)
             update_reward = reward.copy()
             update_reward -= (len(r_list) - 1) * self.subjective_cost

@@ -12,9 +12,11 @@ from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
 from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.learning_utils import (get_clicks,
-                                              get_participant_scores,
-                                              sidak_value)
+from mcl_toolbox.utils.learning_utils import (
+    get_clicks,
+    get_participant_scores,
+    sidak_value,
+)
 from mcl_toolbox.utils.sequence_utils import get_acls
 
 # Matplotlib no grid
@@ -88,7 +90,9 @@ class Experiment:
     This class contains all plots and analysis with regards to the Computational Micropscope
     """
 
-    def __init__(self, exp_num, cm=None, pids=None, block=None, exclude_trials=None, **kwargs):
+    def __init__(
+        self, exp_num, cm=None, pids=None, block=None, exclude_trials=None, **kwargs
+    ):
         self.exp_num = exp_num
         self.data = get_data(exp_num)
         self.cm = cm
@@ -158,9 +162,11 @@ class Experiment:
         if os.path.exists(f_path):
             strategies = pickle_load(f"{f_path}/{self.exp_num}_strategies.pkl")
             temperatures = pickle_load(f"{f_path}/{self.exp_num}_temperatures.pkl")
-            self.infer_strategies(precomputed_strategies=strategies,
-                                  precomputed_temperatures=temperatures,
-                                  show_pids=False)
+            self.infer_strategies(
+                precomputed_strategies=strategies,
+                precomputed_temperatures=temperatures,
+                show_pids=False,
+            )
         self.num_trials = max(trial_nums, key=trial_nums.count)
 
     def init_planning_data(self):

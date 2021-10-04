@@ -1,8 +1,9 @@
+import os
 import random
 
 from mcl_toolbox.global_vars import *
-from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.learning_utils import create_dir
+from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
 Run this using: 
@@ -21,14 +22,15 @@ Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 
 # TODO: Add ability to remove trials and also use arbitrary pipelines
 
+
 def prior_fit(
-        exp_name,
-        model_index,
-        optimization_criterion,
-        pid,
-        plotting=True,
-        optimization_params=None,
-        **kwargs,
+    exp_name,
+    model_index,
+    optimization_criterion,
+    pid,
+    plotting=True,
+    optimization_params=None,
+    **kwargs,
 ):
     """
 
@@ -59,10 +61,20 @@ def prior_fit(
         create_dir(plot_directory)
 
     mf = ModelFitter(exp_name)
-    res, prior, obj_fn = mf.fit_model(model_index, pid, optimization_criterion, optimization_params,
-                                      params_dir=prior_directory)
-    mf.simulate_params(model_index, res[0], pid=pid, sim_dir=model_info_directory,
-                       plot_dir=plot_directory)
+    res, prior, obj_fn = mf.fit_model(
+        model_index,
+        pid,
+        optimization_criterion,
+        optimization_params,
+        params_dir=prior_directory,
+    )
+    mf.simulate_params(
+        model_index,
+        res[0],
+        pid=pid,
+        sim_dir=model_info_directory,
+        plot_dir=plot_directory,
+    )
 
 
 if __name__ == "__main__":

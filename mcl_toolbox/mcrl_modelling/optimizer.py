@@ -17,8 +17,7 @@ from mcl_toolbox.models.lvoc_models import LVOC
 from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE
 from mcl_toolbox.models.rssl_models import RSSL
 from mcl_toolbox.models.sdss_models import SDSS
-from mcl_toolbox.utils.learning_utils import (compute_objective,
-                                              get_relevant_data)
+from mcl_toolbox.utils.learning_utils import compute_objective, get_relevant_data
 from mcl_toolbox.utils.participant_utils import ParticipantIterator
 
 loggers_to_shut_up = [
@@ -384,7 +383,7 @@ class ParameterOptimizer:
         self.objective = objective
         self.num_simulations = num_simulations
         # p_data = construct_p_data(self.participant, self.pipeline)
-        p_data = {'mer': []}
+        p_data = {"mer": []}
         data = self.objective_fn(params, get_sim_data=True)
         return data, p_data
 

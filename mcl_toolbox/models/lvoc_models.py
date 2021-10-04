@@ -4,11 +4,15 @@ import mpmath as mp
 import numpy as np
 
 from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (break_ties_random,
-                                              estimate_bayes_glm,
-                                              get_log_norm_cdf,
-                                              get_log_norm_pdf, norm_integrate,
-                                              rows_mean, sample_coeffs)
+from mcl_toolbox.utils.learning_utils import (
+    break_ties_random,
+    estimate_bayes_glm,
+    get_log_norm_cdf,
+    get_log_norm_pdf,
+    norm_integrate,
+    rows_mean,
+    sample_coeffs,
+)
 
 
 class LVOC(Learner):

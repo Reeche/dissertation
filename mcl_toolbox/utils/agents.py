@@ -1,6 +1,7 @@
 """Agents that operate in discrete fully observable environments."""
 
 import itertools as it
+
 # from utils import clear_screen, PriorityQueue
 import time
 from abc import ABC

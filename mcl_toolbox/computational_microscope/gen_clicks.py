@@ -1,9 +1,13 @@
 import sys
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
-                                              get_normalized_features,
-                                              pickle_load, pickle_save)
+from mcl_toolbox.utils.learning_utils import (
+    create_dir,
+    get_modified_weights,
+    get_normalized_features,
+    pickle_load,
+    pickle_save,
+)
 from mcl_toolbox.utils.sequence_utils import get_clicks
 
 

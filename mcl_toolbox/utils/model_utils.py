@@ -1,14 +1,16 @@
 import os
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.global_vars import *
-from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
-
+from mcl_toolbox.global_vars import features, model, strategies, structure
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
+from mcl_toolbox.utils.experiment_utils import Experiment
 from mcl_toolbox.utils.learning_utils import (
-    get_normalized_features, get_number_of_actions_from_branching,
-    pickle_save)
+    get_normalized_features,
+    get_number_of_actions_from_branching,
+    pickle_load,
+    pickle_save,
+)
+from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
 implemented_features = features.implemented
 microscope_features = features.microscope
@@ -20,9 +22,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
     strategy_probs = {}
     for trial_num in range(env.num_trials):
         chosen_strategy = participant.strategies[trial_num]
-        strategy_weights = w[chosen_strategy - 1] * (
-                1 / participant.temperature
-        )
+        strategy_weights = w[chosen_strategy - 1] * (1 / participant.temperature)
         ll = compute_log_likelihood(
             env.present_trial,
             participant.clicks[trial_num],
@@ -36,7 +36,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
     return strategy_probs
 
 
-class ModelFitter():
+class ModelFitter:
     def __init__(self, exp_name, exp_attributes=None):
         self.exp_name = exp_name
         self.normalized_features = get_normalized_features(
@@ -59,9 +59,7 @@ class ModelFitter():
     def update_attributes(self, env):
         self.pipeline = env.pipeline
         self.branching = self.pipeline[0][0]
-        self.num_actions = get_number_of_actions_from_branching(
-            self.branching
-        )
+        self.num_actions = get_number_of_actions_from_branching(self.branching)
         if env.normalized_features is not None:
             self.normalized_features = env.normalized_features
 
@@ -98,7 +96,9 @@ class ModelFitter():
         learner_attributes = model_attributes.iloc[model_index].to_dict()
         learner = learner_attributes["model"]
         strategy_space_type = learner_attributes["strategy_space_type"]
-        strategy_space_type = strategy_space_type if strategy_space_type else "microscope"
+        strategy_space_type = (
+            strategy_space_type if strategy_space_type else "microscope"
+        )
         strategy_space = strategy_spaces[strategy_space_type]
         if learner_attributes["habitual_features"] == "habitual":
             feature_space = implemented_features
@@ -126,18 +126,31 @@ class ModelFitter():
     def construct_optimizer(self, model_index, pid, optimization_criterion):
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
-        self.participant, self.env = self.get_participant_context(
-            pid)
+        self.participant, self.env = self.get_participant_context(pid)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
             strategy_weights = strategies.strategy_weights
-            strategy_probs = get_strategy_probs(self.env, self.participant, learner_attributes['features'],
-                                                self.normalized_features, strategy_weights)
-            learner_attributes['strategy_probs'] = strategy_probs
-        optimizer = ParameterOptimizer(learner, learner_attributes, self.participant, self.env)
+            strategy_probs = get_strategy_probs(
+                self.env,
+                self.participant,
+                learner_attributes["features"],
+                self.normalized_features,
+                strategy_weights,
+            )
+            learner_attributes["strategy_probs"] = strategy_probs
+        optimizer = ParameterOptimizer(
+            learner, learner_attributes, self.participant, self.env
+        )
         return optimizer
 
-    def fit_model(self, model_index, pid, optimization_criterion, optimization_params, params_dir=None):
+    def fit_model(
+        self,
+        model_index,
+        pid,
+        optimization_criterion,
+        optimization_params,
+        params_dir=None,
+    ):
         self.model_index = model_index
         optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
         res, prior, obj_fn = optimizer.optimize(
@@ -155,13 +168,21 @@ class ModelFitter():
             )
         return res, prior, obj_fn
 
-    def simulate_params(self, model_index, params, sim_params=None, env=None, pid=None,
-                        sim_dir=None, plot_dir=None):
+    def simulate_params(
+        self,
+        model_index,
+        params,
+        sim_params=None,
+        env=None,
+        pid=None,
+        sim_dir=None,
+        plot_dir=None,
+    ):
         if sim_params is None:
-            sim_params = {'num_simulations': 30}
+            sim_params = {"num_simulations": 30}
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
-        num_simulations = sim_params['num_simulations']
+        num_simulations = sim_params["num_simulations"]
         participant = None
         if pid is not None:
             participant = self.E.participants[pid]
@@ -169,7 +190,9 @@ class ModelFitter():
             env = self.construct_env(participant)
         self.update_attributes(env)
         learner, learner_attributes = self.construct_model(model_index)
-        optimizer = ParameterOptimizer(learner, learner_attributes, participant=participant, env=env)
+        optimizer = ParameterOptimizer(
+            learner, learner_attributes, participant=participant, env=env
+        )
         if participant is None:
             (r_data, sim_data), p_data = optimizer.run_hp_model_nop(
                 params, "reward", num_simulations=num_simulations
@@ -183,14 +206,11 @@ class ModelFitter():
         if plot_dir is not None:
             optimizer.reward_data = [r_data["mer"]]
             optimizer.p_data = p_data
-            optimizer.plot_rewards(i=0, path=os.path.join(plot_dir,
-                                   plot_file))
+            optimizer.plot_rewards(i=0, path=os.path.join(plot_dir, plot_file))
 
         if sim_dir is not None:
             pickle_save(
                 sim_data,
-                os.path.join(
-                    sim_dir, f"{model_index}_{num_simulations}.pkl"
-                ),
+                os.path.join(sim_dir, f"{model_index}_{num_simulations}.pkl"),
             )
         return r_data, sim_data

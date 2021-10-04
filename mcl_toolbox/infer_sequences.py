@@ -8,8 +8,9 @@ from mcl_toolbox.utils import distributions, learning_utils
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from mcl_toolbox.computational_microscope.computational_microscope import \
-    ComputationalMicroscope
+from mcl_toolbox.computational_microscope.computational_microscope import (
+    ComputationalMicroscope,
+)
 from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
