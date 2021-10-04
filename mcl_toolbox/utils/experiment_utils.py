@@ -1,7 +1,5 @@
 import itertools
 import operator
-import os
-import sys
 from collections import Counter, OrderedDict, defaultdict
 
 import matplotlib.pyplot as plt
@@ -86,9 +84,11 @@ class Experiment:
     This class contains all plots and analysis with regards to the Computational Micropscope
     """
 
-    def __init__(self, exp_num, cm=None, pids=None, block=None, **kwargs):
+    def __init__(
+        self, exp_num, cm=None, pids=None, block=None, data_path=None, **kwargs
+    ):
         self.exp_num = exp_num
-        self.data = get_data(exp_num)
+        self.data = get_data(exp_num, data_path)
         self.cm = cm
         self.block = None
         if pids:
@@ -96,8 +96,14 @@ class Experiment:
         else:
             if hasattr(self.data, "pids"):
                 self.pids = self.data["pids"]
-            else:
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = self.data["pids"]
+            elif hasattr(self.data, "participants"):
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
+            else:
+                self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
         if block:
             self.block = block
@@ -157,7 +163,6 @@ class Experiment:
         max_evals=30,
         show_pids=True,
     ):
-        leftout_pids = []
         cm = self.cm
         pids = []
         if precomputed_strategies:
@@ -414,7 +419,6 @@ class Experiment:
 
     def get_paths_to_optimal(self, clusters=False, optimal_S=21, optimal_C=10):
         trajectory_counts = self.get_trajectory_counts(clusters=clusters)
-        total_trajectories = sum(list(trajectory_counts.values()))
         optimal_trajectories = {}
         penultimate_strategies = []
         for t in trajectory_counts.keys():
@@ -475,7 +479,6 @@ class Experiment:
                 "Strategies not found. Please initialize strategies before initializing\
                                     the weights."
             )
-        no_inference = False
         self.decision_systems = decision_systems
         for pid in self.pids:
             if not hasattr(self.participants[pid], "strategies"):
@@ -705,7 +708,7 @@ class Experiment:
             labels=labels,
         )
 
-    ### Emperical validations
+    # Emperical validations
     def plot_strategy_scores(self, strategy_scores):
         """
         I think this one only works for the increasing variance environment (see input)
@@ -722,7 +725,6 @@ class Experiment:
                 pid: [strategy_scores[s] for s in self.participants[pid].strategies]
                 for pid in self.pids
             }
-        num_trials = self.num_trials  # Change this
         scores = list(self.participant_strategy_scores.values())
         data = []
         for score in scores:
@@ -897,7 +899,7 @@ class Experiment:
         print("Number of strategies used", len(S))
         return S
 
-    ### About the top n adaptive strategies and maladaptive strategies
+    # About the top n adaptive strategies and maladaptive strategies
     def plot_adaptive_maladaptive_strategies_vs_rest(
         self, adaptive_strategy_list, maladaptive_strategy_list, plot=True
     ):
@@ -1078,7 +1080,13 @@ class Experiment:
         ]
 
         for strategy in strategies_list:
-            # data.append([reward_structures, strategy_labels[strategies_list.index(strategy)], reward_structures[strategy]*100])
+            data.append(
+                [
+                    reward_structures,
+                    strategy_labels[strategies_list.index(strategy)],
+                    reward_structures[strategy] * 100,
+                ]
+            )
             data.append(
                 [self.exp_num, strategy, reward_structures_count[strategy] * 100]
             )
@@ -1114,7 +1122,7 @@ class Experiment:
             bbox_inches="tight",
         )
 
-    ### All about changes ###
+    # all about changes
     def trial_decision_system_change_rate(self, decision_system_by_trial):
         difference = np.diff(decision_system_by_trial, axis=0)
         # difference_sum = np.sum(difference, axis=1)
@@ -1126,7 +1134,6 @@ class Experiment:
             "Satisficing and stopping",
         ]
         fig = plt.figure(figsize=(15, 10))
-        prefix = "Decision System"
         for i in range(difference.shape[1]):
             plt.plot(
                 range(1, difference.shape[0] + 1),
@@ -1195,8 +1202,8 @@ class Experiment:
                 final_repetition_count.append(number_of_trials_before_last_trial)
                 # print("The last item in Repetition Frequency", tr[0][1][-1])
 
-        average_trials_repetition = np.mean(final_repetition_count)
-        median_trials_repetition = np.median(final_repetition_count)
+        # average_trials_repetition = np.mean(final_repetition_count)
+        # median_trials_repetition = np.median(final_repetition_count)
         # print("Median final strategy usage: ", median_trials_repetition)
         # print("Mean final strategy usage:", average_trials_repetition)
 
@@ -1335,7 +1342,7 @@ class Experiment:
         self.analyze_trajectory(cluster_trajectory, print_trajectories=True)
         print("\n")
 
-    ### About score development
+    # About score development
     def average_score_development(self, participant_data):
         # plot the average score development
         participant_score = get_participant_scores(
@@ -1360,7 +1367,7 @@ class Experiment:
         plt.close(fig)
         return None
 
-    ### About clicks
+    # About clicks
     def plot_average_clicks(self):
         clicks = get_clicks(self.exp_num)
         participant_click_dict = {key: None for key in clicks}
@@ -1385,7 +1392,7 @@ class Experiment:
         plt.close(fig)
         return None
 
-    ### Get only used strategies
+    # Get only used strategies
     def filter_used_strategy_adaptive_maladaptive(self, n=5):
         n = 3
         strategy_dict = OrderedDict(
@@ -1398,7 +1405,7 @@ class Experiment:
         # pickles strategy range from 0 - 88
         if self.exp_num == "c2.1":
             strategy_score_dict = pd.read_pickle(
-                f"../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+                "../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
             )
         else:
             strategy_score_dict = pd.read_pickle(

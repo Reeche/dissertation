@@ -9,6 +9,8 @@ from mcl_toolbox.utils.learning_utils import (get_log_norm_cdf,
                                               get_log_norm_pdf, rows_mean,
                                               temp_sigmoid)
 
+precision_epsilon = hierarchical_params.precision_epsilon
+
 
 class HierarchicalAgent:
     """Agent that performs the decision to terminate or continue"""

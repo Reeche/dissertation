@@ -1,10 +1,15 @@
 import inspect
+import pathlib as Path
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from functools import lru_cache, partial
 from math import sqrt
 
+import matplotlib.pyplot as plt
+import mpmath as mp
+import numpy as np
 import scipy as sp
+import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,7 +22,18 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import *
+from mcl_toolbox.utils.learning_utils import (break_ties_random,
+                                              clicks_overlap,
+                                              compute_transition_distance,
+                                              estimate_bayes_glm,
+                                              get_normalized_feature_values,
+                                              get_normalized_features,
+                                              get_normalized_weight_distance,
+                                              get_squared_performance_error,
+                                              get_strategy_sequences,
+                                              get_zero_params, pickle_load,
+                                              rows_mean, sample_coeffs,
+                                              strategy_accuracy, temp_sigmoid)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood, get_clicks
 
@@ -42,6 +58,8 @@ normalize = [
 precision_epsilon = 1e-4
 quadrature_max_degree = 1e5
 sns.set_style("whitegrid")
+
+parent_folder = Path(__file__).parents[1]
 
 NS = 79
 
@@ -159,8 +177,12 @@ class BaseRSSL(Learner):
         self.gaussian = False
         # TODO:
         # Pass features and strategy weights to the model. For now, using a hack
-        self.strategy_weights = pickle_load("../data/microscope_weights.pkl")
-        self.features = pickle_load("../data/microscope_features.pkl")
+        self.strategy_weights = pickle_load(
+            parent_folder.joinpath("/data/microscope_weights.pkl")
+        )
+        self.features = pickle_load(
+            parent_folder.joinpath("/data/microscope_features.pkl")
+        )
         self.variance = 1  # Variance of the gaussian likelihood function
         self.action_log_probs = []
 
@@ -216,7 +238,6 @@ class BaseRSSL(Learner):
         return np.argmax(values)
 
     def update_bernoulli_params(self, reward, strategy_index):
-        num_strategies = self.num_strategies
         normalized_prob = (reward - self.lower_limit) / (
             self.upper_limit - self.lower_limit
         )
@@ -296,12 +317,6 @@ class BaseRSSL(Learner):
         trials_data = defaultdict(list)
         num_trials = env.num_trials
         temperature = all_trials_data["temperature"]
-        first_trial_data = {
-            "actions": all_trials_data["actions"][0],
-            "rewards": all_trials_data["rewards"][0],
-            "taken_path": all_trials_data["taken_paths"][0],
-            "strategy": all_trials_data["strategies"][0],
-        }
         for trial_num in range(num_trials):
             trial = env.trial_sequence.trial_sequence[trial_num]
             if compute_likelihood:
@@ -806,7 +821,6 @@ class BaseLVOC(Learner):
         self, env, new_action, reward, first_trial, first_action=False, first_path=None
     ):
         if not first_action:
-            action = self.next_action
             features = self.next_features
         if first_trial or new_action == 0:
             self.next_action, self.next_features = self.get_first_trial_action_details(
@@ -909,7 +923,6 @@ class BaseLVOC(Learner):
         self, env, new_action, reward, first_trial, first_action=False, first_path=None
     ):
         if not first_action:
-            action = self.next_action
             features = self.next_features
         self.next_action, self.next_features = self.store_action_likelihood(
             env, new_action
@@ -2555,9 +2568,7 @@ class NullLVOC(BaseLVOC):
                 actions.append(next_action)
                 while True:
                     action = next_action
-                    features = self.next_features
                     term_reward = self.get_term_reward(env)
-                    term_features = self.get_term_features(env)
                     self.term_rewards.append(term_reward)
                     _, _, done, _ = env.step(action)
                     reward = trial_rewards[r_index]
@@ -2595,9 +2606,7 @@ class NullLVOC(BaseLVOC):
                 actions.append(next_action)
                 while True:
                     action = next_action
-                    features = self.next_features
                     term_reward = self.get_term_reward(env)
-                    term_features = self.get_term_features(env)
                     self.term_rewards.append(term_reward)
                     if trial_num == 0:
                         _, _, done, _ = env.step(action)
@@ -2624,6 +2633,7 @@ class NullLVOC(BaseLVOC):
                             taken_path = self.first_trial_data["taken_path"]
                         else:
                             taken_path = info
+                        trials_data["taken_paths"].append(taken_path)
                         trials_data["r"].append(np.sum(rewards))
                         trials_data["a"].append(actions)
                         env.get_next_trial()
@@ -2653,12 +2663,7 @@ class NullRSSL(BaseRSSL):
         trials_data = defaultdict(list)
         num_trials = env.num_trials
         temperature = all_trials_data["temperature"]
-        first_trial_data = {
-            "actions": all_trials_data["actions"][0],
-            "rewards": all_trials_data["rewards"][0],
-            "taken_path": all_trials_data["taken_paths"][0],
-            "strategy": all_trials_data["strategies"][0],
-        }
+
         for trial_num in range(num_trials):
             trial = env.trial_sequence.trial_sequence[trial_num]
             if compute_likelihood:

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
@@ -26,7 +25,6 @@ def construct_model(model_index, num_actions, normalized_features):
         num_priors = 2 * len(strategy_space)
     else:
         num_priors = len(features)
-    use_pseudo_rewards = learner_attributes["use_pseudo_rewards"]
     pr_weight = learner_attributes["pr_weight"]
     if not pr_weight:
         learner_attributes["pr_weight"] = 1
@@ -43,8 +41,8 @@ def construct_model(model_index, num_actions, normalized_features):
     return learner, learner_attributes
 
 
-def get_participant_context(exp_num, pid, pipeline, exp_attributes={}):
-    E = Experiment(exp_num, **exp_attributes)
+def get_participant_context(exp_num, pid, pipeline, data_path=None, exp_attributes={}):
+    E = Experiment(exp_num, data_path=data_path, **exp_attributes)
     E.attach_pipeline(pipeline)
     participant = E.participants[pid]
     q_fn = None
@@ -52,7 +50,7 @@ def get_participant_context(exp_num, pid, pipeline, exp_attributes={}):
     if "condition" in dir(participant):
         if participant.condition == "meta":
             try:
-                q_path = os.path.join(file_location, f"data/{exp_num}_q.pkl")
+                q_path = file_location.joinpath(f"data/{exp_num}_q.pkl")
                 q_fn = pickle_load(q_path)["q_dictionary"]
             except FileNotFoundError:
                 print("Q-fn could not be loaded")

@@ -182,7 +182,7 @@ class ComputationalMicroscope:
             # algo = partial(tpe.suggest, n_startup_jobs=30)
             algo = tpe.suggest
             trials = generate_trials_to_calculate([{"strategy_T": 1}])
-            ## Max evals should be greater than 1
+            # max evals should be greater than 1
             best_params = fmin(
                 fn=nll,
                 space=parameter_space,

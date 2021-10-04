@@ -7,9 +7,8 @@ from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import (beta_integrate, get_log_beta_cdf,
                                               get_log_beta_pdf,
                                               get_log_norm_cdf,
-                                              get_log_norm_pdf,
-                                              get_normalized_features,
-                                              norm_integrate, pickle_load)
+                                              get_log_norm_pdf, norm_integrate,
+                                              pickle_load)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 
 NS = 79
@@ -103,7 +102,6 @@ class RSSL(Learner):
         return np.argmax(values)
 
     def update_bernoulli_params(self, reward, strategy_index):
-        num_strategies = self.num_strategies
         normalized_prob = (reward - self.lower_limit) / (
             self.upper_limit - self.lower_limit
         )

@@ -2,6 +2,7 @@ import os
 import pickle
 from collections import Counter, defaultdict
 from functools import lru_cache, partial
+from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -22,7 +23,16 @@ from mcl_toolbox.utils.distributions import Categorical, Normal
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
-mvprpb = importr("mvprpb")
+
+# import r package by first installing if not on user's machine
+try:
+    mvprpb = importr("mvprpb")
+except:
+    utils = importr("utils")
+    utils.install_packages("mvprpb")
+    mvprpb = importr("mvprpb")
+
+parent_folder = Path(__file__).parents[1]
 
 small_level_map = {
     0: 0,
@@ -144,22 +154,13 @@ def pickle_load(file_path):
     """
     Load the pickle file located at 'filepath'
     Params:
-        file_path  -- Location of the file to be loaded.
+        file_path  -- Location of the file to be loaded, as pathlib object.
     Returns:
         Unpickled object
     """
-    if not os.path.exists(file_path):
-        head, tail = os.path.split(__file__)
-        if file_path[0] == "/":
-            new_path = os.path.join(head, file_path[1:])
-        else:
-            new_path = os.path.join(head, file_path)
-        if os.path.exists(new_path):
-            file_path = new_path
-        else:
-            raise FileNotFoundError(f"{file_path} not found.")
-    obj = pickle.load(open(file_path, "rb"))
-    return obj
+    with open(str(file_path), "rb") as file_obj:
+        unpickled_obj = pickle.load(file_obj)
+    return unpickled_obj
 
 
 def create_dir(file_path):
@@ -191,7 +192,7 @@ def bool_to_string(truth):
     return "true" if truth else "false"
 
 
-def get_clicks(exp_num="v1.0"):
+def get_clicks(exp_num="v1.0", data_path=None):
     """
     Get clicks made by a particular participant
     Params:
@@ -200,7 +201,7 @@ def get_clicks(exp_num="v1.0"):
     Returns:
         clicks_data: The clicks made by the participant in all trials.
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     clicks_data = defaultdict(list)
     for _, row in mdf.iterrows():
@@ -213,7 +214,7 @@ def get_clicks(exp_num="v1.0"):
     return clicks_data
 
 
-def get_participant_scores(exp_num="v1.0", num_participants=166):
+def get_participant_scores(exp_num="v1.0", num_participants=166, data_path=None):
     """
     Get scores of participants
     Params:
@@ -222,16 +223,19 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     Returns:
         A dictionary of scores of participants with pid as key and rewards as values.
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     participant_scores = {}
-    for participant_num in range(num_participants):
+    # for participant_num in range(num_participants):
+    for (
+        participant_num
+    ) in num_participants:  # changed this to output score for a set list of pid's
         score_list = list(mdf[mdf.pid == participant_num]["score"])
         participant_scores[participant_num] = score_list
     return participant_scores
 
 
-def get_environments(participant_num, exp_num="v1.0"):
+def get_environments(participant_num, exp_num="v1.0", data_path=None):
     """
     Get environments of a particular participant
     Params:
@@ -240,7 +244,7 @@ def get_environments(participant_num, exp_num="v1.0"):
     Returns:
         envs: The trial values that the participant observed
     """
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     envs = []
@@ -251,8 +255,8 @@ def get_environments(participant_num, exp_num="v1.0"):
     return envs
 
 
-def get_taken_paths(participant_num, exp_num="F1"):
-    data = get_data(exp_num)
+def get_taken_paths(participant_num, exp_num="F1", data_path=None):
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     taken_paths = []
@@ -305,9 +309,15 @@ def construct_reward_function(params_list, dist_type="categorical"):
 
 
 def get_participant_details(
-    pid, exp_num, get_envs=True, get_scores=True, get_clicks=True, get_taken_paths=True
+    pid,
+    exp_num,
+    get_envs=True,
+    get_scores=True,
+    get_clicks=True,
+    get_taken_paths=True,
+    data_path=None,
 ):
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == pid]
     scores = []
@@ -335,14 +345,20 @@ def get_participant_details(
 def get_participant_weights(participant_num, exp_num="F1", criterion="all_features"):
     try:
         if criterion == "all_features":
-            participant_weights = pickle_load(f"../data/starting_weights_{exp_num}.pkl")
+            participant_weights = pickle_load(
+                parent_folder.joinpath(f"data/starting_weights_{exp_num}.pkl")
+            )
         elif type(criterion) == int:
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_{criterion}.pkl"
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_{criterion}.pkl"
+                )
             )
         elif criterion == "normalize":
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_normalized.pkl"
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_normalized.pkl"
+                )
             )
     except FileNotFoundError:
         print("Unable to load prior weights")
@@ -412,9 +428,9 @@ def compute_likelihood_aic(num_parameters, likelihood):
     return likelihood_aic
 
 
-def get_excluded_participants(exp_num="F1", exclude_condition="MCFB"):
+def get_excluded_participants(exp_num="F1", exclude_condition="MCFB", data_path=None):
     conditions = {"NOFB": 0, "MCFB": 1, "ActionFB": 2}
-    data = get_data(exp_num)
+    data = get_data(exp_num, data_path)
     pdf = data["participants"]
     pdf = pdf[~(pdf.condition == conditions[exclude_condition])]
     return list(set(pdf.pid))
@@ -439,8 +455,12 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
 
 
 def get_normalized_features(exp_num):
-    max_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/max.pkl")
-    min_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/min.pkl")
+    max_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl")
+    )
+    min_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl")
+    )
     return max_feature_values, min_feature_values
 
 
@@ -856,7 +876,7 @@ def get_delay_penalty(q_data, env, action_sequence):
         else:
             delay = 2 + max_action_q - present_action_q
         delays.append(delay)
-        if action is not 13:
+        if action != 13:
             env_copy[action] = str(env[action])
     return delays
 
@@ -1404,7 +1424,9 @@ def get_normalized_strategy_weights():
     num_strategies = 38
     s_weights = np.zeros((38, 59))
     for s in range(num_strategies):
-        s_weights[s] = pickle_load(f"../data/strategy_weights/{s}.pkl")
+        s_weights[s] = pickle_load(
+            parent_folder.joinpath(f"data/strategy_weights/{s}.pkl")
+        )
     return s_weights
 
 
@@ -1540,13 +1562,14 @@ class Participant:
         excluded_trials=None,
         get_strategies=True,
         get_weights=True,
+        data_path=None,
     ):
         self.exp_num = exp_num
         self.pid = pid
         self.get_weights = get_weights
         self.excluded_trials = excluded_trials
         self.envs, self.scores, self.clicks, self.taken_paths = get_participant_details(
-            pid=self.pid, exp_num=self.exp_num
+            pid=self.pid, exp_num=self.exp_num, data_path=data_path
         )
         num_excluded = len(excluded_trials) if excluded_trials else 0
         self.num_trials = len(self.clicks) - num_excluded

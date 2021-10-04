@@ -3,8 +3,7 @@ import operator
 import numpy as np
 from scipy.special import logsumexp, softmax
 
-from mcl_toolbox.env.modified_mouselab import (TrialSequence,
-                                               get_termination_mers)
+from mcl_toolbox.env.modified_mouselab import TrialSequence
 from mcl_toolbox.utils.learning_utils import (get_counts,
                                               get_normalized_feature_values)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
@@ -406,7 +405,6 @@ class ClickSequence:
         )
 
     def compute_log_likelihoods(self, weights, fit_temperatures=False):
-        num_trials = 1
         trial = TrialSequence(
             1, pipeline=self._pipeline, ground_truth=[self._env]
         ).trial_sequence[0]

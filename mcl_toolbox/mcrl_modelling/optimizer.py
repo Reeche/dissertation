@@ -1,7 +1,7 @@
 import json
 import logging
-import os
 from functools import partial
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -38,10 +38,14 @@ models = {
     "baseline_reinforce": BaselineREINFORCE,
 }
 
-curr_dir = os.path.abspath(os.path.dirname(__file__))
-param_config = json.load(open(os.path.join(curr_dir, "param_search_space.json")))
-model_config = json.load(open(os.path.join(curr_dir, "model_params.json")))
-model_details = json.load(open(os.path.join(curr_dir, "../models/models.json")))
+mcrl_modelling_dir = Path(__file__).parents[0]
+model_dir = Path(__file__).parents[1].joinpath("models")
+
+param_config = json.load(
+    open(mcrl_modelling_dir.joinpath("param_search_space.json"), "rb")
+)
+model_config = json.load(open(mcrl_modelling_dir.joinpath("model_params.json"), "rb"))
+model_details = json.load(open(model_dir.joinpath("models.json"), "rb"))
 
 
 def hyperopt_space(params_list):
@@ -138,7 +142,6 @@ def parse_config(
     learner, learner_attributes, hierarchical=False, hybrid=False, general_params=False
 ):
     params_list = []
-    bandit_prior = False
     learner_params = model_config[learner]
     param_models = param_config["model_params"]
 
@@ -277,7 +280,6 @@ class ParameterOptimizer:
         self.reward_data = []
 
     def objective_fn(self, params, get_sim_data=False):
-        features = self.learner_attributes["features"]
         num_priors = self.learner_attributes["num_priors"]
         priors = combine_priors(params, num_priors)
         params["priors"] = priors
@@ -396,7 +398,7 @@ class ParameterOptimizer:
             data.append([i + 1, m, "participant"])
         reward_data = pd.DataFrame(data, columns=["x", "y", "algo"])
         if plot:
-            ax = sns.lineplot(x="x", y="y", hue="algo", data=reward_data)
+            sns.lineplot(x="x", y="y", hue="algo", data=reward_data)
             plt.savefig(path, bbox_inches="tight")
             plt.show()
         return reward_data

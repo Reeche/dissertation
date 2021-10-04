@@ -1,8 +1,9 @@
+import heapq
 import itertools as it
 
 import numpy as np
 # ---------- Functional utils ---------- #
-from toolz.curried import *
+from toolz.curried import compose, curry
 
 max = curry(max)
 min = curry(min)
@@ -21,6 +22,7 @@ def invoke(name, obj):
 
 lmap = curry(compose(list, map))
 amap = curry(compose(np.array, lmap))
+
 
 # ---------- Other ---------- #
 def str_join(args, sep=" "):
@@ -70,9 +72,6 @@ class Labeler(object):
         return self._xs[label]
 
     __call__ = label
-
-
-import heapq
 
 
 class PriorityQueue(list):

@@ -21,7 +21,6 @@ class SDSS(Learner):
         for i in range(self._num_strategies):
             self.learners.append(self._learner(params, attributes))
 
-        strategy_space = range(1, self._num_strategies + 1)
         # In SDSS, by design RSSL doesn't learn using PRs or feedback
         self.rssl = RSSL({"priors": self._bandit_params, "pr_weight": 1}, attributes)
 

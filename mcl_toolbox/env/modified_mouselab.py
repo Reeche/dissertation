@@ -10,7 +10,7 @@ from toolz import get
 from mcl_toolbox.utils import distributions
 from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
-""" This file defines the node, trial and trial sequence class for the 
+""" This file defines the node, trial and trial sequence class for the
     feature based representation of the Mouselab-MDP. This assumes that
     the environment structure is a tree symmetric in its branches
 """
@@ -342,7 +342,6 @@ class Trial:
             return 2 + max_branch_sum - max_taken_sum
 
     def get_node_feature_values(self, nodes, features, normalized_features):
-        node_labels = [node.label for node in nodes]
         num_features = len(features)
         feature_values = np.zeros((len(nodes), num_features))
         for i, node in enumerate(nodes):
@@ -768,6 +767,7 @@ class Node:
             "get_level_observed_std": self.get_level_observed_std,
             "successor_uncertainty": self.total_successor_uncertainty,
             "num_clicks_adaptive": self.trial.get_num_clicks,
+            "num_clicks": self.trial.get_num_clicks,
             "max_expected_return": self.calculate_max_expected_return,
             "trial_level_std": self.get_trial_level_std,
             "soft_satisficing": self.soft_satisficing,
@@ -776,6 +776,7 @@ class Node:
             "termination_constant": self.term_feature,
             "value": self.get_value,
             "is_observed": self.is_observed,
+            "return_if_terminating": self.max_expected_if_terminal,
         }
 
         self.termination_map = {
@@ -1045,6 +1046,7 @@ class Node:
         return min(branch_counts)
 
     def constant_feature(self):
+        # Also referred to as "offset"
         return 1
 
     def soft_pruning(self):
@@ -1223,6 +1225,9 @@ class Node:
         )
         return max(expected_path_values.values())
 
+    def max_expected_if_terminal(self):
+        return self.calculate_max_expected_return() * (1 - self.term_feature())
+
     def is_path_to_leaf_observed(self):
         if not self.children:
             return 1
@@ -1236,7 +1241,7 @@ class Node:
         if not self.observed:
             return 0
         present_node = self
-        while present_node.parent != None:
+        while present_node.parent is not None:
             if not present_node.parent.observed:
                 return 0
             present_node = present_node.parent
@@ -1257,6 +1262,9 @@ class Node:
         return sorted_features_list
 
     def compute_feature_list_values(self, features, adaptive_satisficing={}):
+        """
+        NOTE: unused in this package.
+        """
         evaluated_features = [1]
         for feature in features:
             if (
@@ -1286,34 +1294,57 @@ class Node:
         return evaluated_features
 
     def compute_termination_feature_values(self, features, adaptive_satisficing={}):
+        """
+        Prefixes:
+            - 'hp' = hard pruning
+            - 'hs' = hard satisficing
+
+        Args:
+            features: features to consider, as list
+            adaptive_satisficing: not really sure, if provided used in number of clicks (adaptive) feature #TODO
+
+        Returns: feature values
+
+        """
         evaluated_features = []
+        features_regardless_terminal = [
+            "max_expected_return",
+            "constant",
+            "return_if_terminating",
+            "num_clicks",
+        ]
         for feature in features:
+            # if feature is neither hard-pruned or satisficed and not one of these "special ones"
             if (
                 feature[:2] != "hp"
                 and feature[:2] != "hs"
-                and feature
-                not in [
-                    "num_clicks_adaptive",
-                    "max_expected_return",
-                    "soft_satisficing",
-                    "constant",
-                ]
+                and feature != "num_clicks_adaptive"
+                and feature != "soft_satisficing"
+                and feature not in features_regardless_terminal
             ):
+                # if we're not in a terminal state
                 if not (self == self.root):
+                    # if the feature is only for terminal states, put the value to -1
                     if feature in self.termination_map.keys():
+                        # TODO why isn't this 0?
                         evaluated_features.append(-1)
+                    # otherwise, evaluate from feature map
                     else:
                         evaluated_features.append(self.feature_function_map[feature]())
+                # if we're in a terminal state
                 else:
+                    # evaluate from termination map
                     if feature in self.termination_map.keys():
                         evaluated_features.append(self.termination_map[feature]())
                     else:
                         evaluated_features.append(0)
+            # if hard pruned, pass through that function (same terminal logic)
             elif feature[:2] == "hp":
                 if not (self == self.root):
                     evaluated_features.append(self.hard_pruning(float(feature[3:])))
                 else:
                     evaluated_features.append(0)
+            # if hard satisficing, pass through that function (same terminal logic)
             elif feature[:2] == "hs":
                 if self == self.root:
                     evaluated_features.append(
@@ -1322,11 +1353,14 @@ class Node:
                 else:
                     evaluated_features.append(-1)
             elif feature == "soft_satisficing":
+                # TODO it seems this feature could just be in the first if (?)
                 if not self == self.root:
                     evaluated_features.append(self.feature_function_map[feature]())
                 else:
                     evaluated_features.append(0)
             elif feature == "num_clicks_adaptive":
+                # TODO it seems like the num_clicks_adaptive function could take the adaptive_satisficing argument
+                # so it wouldn't look like a num_clicks feature to people trying to modify the code
                 if not (self == self.root):
                     if len(adaptive_satisficing) != 0:
                         as_value = sigmoid(
@@ -1342,6 +1376,6 @@ class Node:
                         evaluated_features.append(0)
                 else:
                     evaluated_features.append(0)
-            elif feature in ["max_expected_return", "constant"]:
+            elif feature in features_regardless_terminal:
                 evaluated_features.append(self.feature_function_map[feature]())
         return evaluated_features
