@@ -4,7 +4,8 @@ from mcl_toolbox.models.lvoc_models import LVOC
 from mcl_toolbox.models.rssl_models import RSSL
 
 
-# Might not work as expected
+# currently none of these work as expected. Since
+# they are not used, to be modified later
 class ibsLVOC(LVOC):
     def __init__(self, params, attributes, max_k_iters=int(5e4)):
         super().__init__(params, attributes)
