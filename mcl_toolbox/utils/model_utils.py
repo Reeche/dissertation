@@ -38,7 +38,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 
 
 class ModelFitter:
-    def __init__(self, exp_name, exp_attributes=None):
+    def __init__(self, exp_name, exp_attributes=None, data_path=None):
         self.exp_name = exp_name
         if exp_attributes is None:
             exp_attributes = {
@@ -56,7 +56,7 @@ class ModelFitter:
             self.normalized_features = self.E.normalized_features
         else:
             del exp_attributes['experiment']
-            self.E = Experiment(self.exp_name, **exp_attributes)
+            self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
             self.pipeline = structure.exp_pipelines[self.exp_name]
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
