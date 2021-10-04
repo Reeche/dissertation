@@ -39,6 +39,7 @@ class GenericMouselabEnv(gym.Env):
             self.repeat_cost = -cost * 10
         self.feedback = feedback
         self.q_fn = q_fn
+        self.feature_state = None
         self.features = None
         self.normalized_features = None
         if self.feedback == "meta" and self.q_fn is None:
