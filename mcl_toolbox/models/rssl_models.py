@@ -1,7 +1,7 @@
 from collections import defaultdict
-
-import mpmath as mp
 import numpy as np
+import mpmath as mp
+
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import (beta_integrate, get_log_beta_cdf,
