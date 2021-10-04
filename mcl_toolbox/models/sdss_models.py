@@ -13,7 +13,6 @@ class SDSS(Learner):
         self._bandit_params = np.array(params["bandit_params"])
         self._num_strategies = int(self._bandit_params.shape[0] / 2)
         self._threshold = params["bernoulli_threshold"]
-        self._num_features = len(self.features)
         self._learner = attributes["learner"]
 
         self.learners = []
@@ -28,7 +27,7 @@ class SDSS(Learner):
         else:
             # Assuming blank slate
             self._strategy_weights = np.zeros(
-                (self._num_strategies, self._num_features)
+                (self._num_strategies, self.num_features)
             )
 
         self.action_log_probs = []

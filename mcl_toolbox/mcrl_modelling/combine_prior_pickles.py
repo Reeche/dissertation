@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from mcl_toolbox.utils.learning_utils import create_dir, pickle_load, pickle_save
+from mcl_toolbox.utils.learning_utils import (create_dir, pickle_load,
+                                              pickle_save)
 
 exp_name = "v1.0"
 blocks = {

@@ -41,9 +41,13 @@ class ModelFitter:
     def __init__(self, exp_name, exp_attributes=None):
         self.exp_name = exp_name
         if exp_attributes is None:
-            exp_attributes = {}
-        if 'experiment' in exp_attributes:
-            self.E = exp_attributes['experiment']
+            exp_attributes = {
+                "exclude_trials": None,
+                "block": None,
+                "experiment": None
+            }
+        if exp_attributes['experiment'] is not None:
+            self.E = exp_attributes["experiment"]
             if self.E.pipeline is None:
                 raise ValueError("Please attach pipeline to the experiment")
             if self.E.normalized_features is None:
@@ -51,6 +55,7 @@ class ModelFitter:
             self.pipeline = self.E.pipeline
             self.normalized_features = self.E.normalized_features
         else:
+            del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, **exp_attributes)
             self.pipeline = structure.exp_pipelines[self.exp_name]
             self.E.attach_pipeline(self.pipeline)
@@ -155,12 +160,12 @@ class ModelFitter:
         return optimizer
 
     def fit_model(
-        self,
-        model_index,
-        pid,
-        optimization_criterion,
-        optimization_params,
-        params_dir=None,
+            self,
+            model_index,
+            pid,
+            optimization_criterion,
+            optimization_params,
+            params_dir=None,
     ):
         self.model_index = model_index
         optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
@@ -180,14 +185,14 @@ class ModelFitter:
         return res, prior, obj_fn
 
     def simulate_params(
-        self,
-        model_index,
-        params,
-        sim_params=None,
-        env=None,
-        pid=None,
-        sim_dir=None,
-        plot_dir=None,
+            self,
+            model_index,
+            params,
+            sim_params=None,
+            env=None,
+            pid=None,
+            sim_dir=None,
+            plot_dir=None,
     ):
         if sim_params is None:
             sim_params = {"num_simulations": 30}

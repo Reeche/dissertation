@@ -39,6 +39,7 @@ class GenericMouselabEnv(gym.Env):
             self.repeat_cost = -cost * 10
         self.feedback = feedback
         self.q_fn = q_fn
+        self.feature_state = None
         self.features = None
         self.normalized_features = None
         if self.feedback == "meta" and self.q_fn is None:
@@ -217,6 +218,9 @@ class GenericMouselabEnv(gym.Env):
         if self.feature_state is None:
             if self.features is not None:
                 return self.construct_feature_state()
+            else:
+                # see base_learner.py for example of attaching features
+                raise ValueError("Features need to be attached with attach_features method.")
         return self.feature_state
 
     def env_action(self, a):

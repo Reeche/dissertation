@@ -1,7 +1,8 @@
 import sys
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import create_dir, pickle_load, pickle_save
+from mcl_toolbox.utils.learning_utils import (create_dir, pickle_load,
+                                              pickle_save)
 
 
 def gen_envs(pipeline):

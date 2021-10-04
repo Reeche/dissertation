@@ -7,8 +7,10 @@ from gym import spaces
 from mouselab.envs.registry import registry
 from toolz import get, memoize
 
-from mcl_toolbox.utils.distributions import PointMass, cmax, expectation, sample, smax
-from mcl_toolbox.utils.graph_utils import annotate_mdp_graph, graph_from_adjacency_list
+from mcl_toolbox.utils.distributions import (PointMass, cmax, expectation,
+                                             sample, smax)
+from mcl_toolbox.utils.graph_utils import (annotate_mdp_graph,
+                                           graph_from_adjacency_list)
 
 NO_CACHE = False
 if NO_CACHE:

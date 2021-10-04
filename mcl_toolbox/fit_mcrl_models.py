@@ -1,7 +1,6 @@
-import os
+from pathlib import Path
 import random
 
-from mcl_toolbox.global_vars import *
 from mcl_toolbox.utils.learning_utils import create_dir
 from mcl_toolbox.utils.model_utils import ModelFitter
 
@@ -19,10 +18,6 @@ Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 # todo: not all optimization methods work with all models. Need to add this somewhere in the code
 # Likelihood computation is currently available for all reinforce and lvoc models
 #
-
-# TODO: Add ability to remove trials and also use arbitrary pipelines
-# TODO: Add ability to pass the experiment object directly in exp_attributes
-# TODO: See what is the structure of the pipeline
 # TODO: Give right strategy weights to RSSL model for likelihood computation
 
 
@@ -32,10 +27,10 @@ def fit_model(
     model_index,
     optimization_criterion,
     optimization_params=None,
-    exp_attributes = None,
-    sim_params = None,
+    exp_attributes=None,
+    sim_params=None,
     simulate=True,
-    plotting=True
+    plotting=False,
 ):
     """
 
@@ -56,7 +51,9 @@ def fit_model(
     plot_directory = None
     if simulate:
         # and directory to save fit model info in
-        model_info_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_data")
+        model_info_directory = parent_directory.joinpath(
+            f"results/mcrl/{exp_name}_data"
+        )
         create_dir(model_info_directory)
         if plotting:
             # add directory for reward plots, if plotting
@@ -78,7 +75,7 @@ def fit_model(
             pid=pid,
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
-            sim_params=sim_params
+            sim_params=sim_params,
         )
 
 
@@ -92,20 +89,25 @@ if __name__ == "__main__":
     # if len(sys.argv)>5:
     #     other_params = ast.literal_eval(sys.argv[5])
 
-    exp_name = "T1.1"
+    exp_name = "v1.0"
     model_index = 1825
-    optimization_criterion = "likelihood"
+    optimization_criterion = "pseudo_likelihood"
     pid = 4
     num_simulations = 30
-    simulate = False
+    simulate = True
     plotting = False
     optimization_params = {
         "optimizer": "hyperopt",
-        "num_simulations": 1,
-        "max_evals": 20
+        "num_simulations": 5,
+        "max_evals": 20,
     }
-    sim_params = {'num_simulations': num_simulations}
-    exp_attributes = {'block': 'test'}
+    sim_params = {"num_simulations": num_simulations}
+    exp_attributes = {
+        "exclude_trials": None,  # Trials to be excluded
+        "block": None,  # Block of the experiment
+        "experiment": None  # Experiment object can be passed directly with
+        # pipeline and normalized features attached
+    }
     fit_model(
         exp_name=exp_name,
         pid=pid,
@@ -114,5 +116,5 @@ if __name__ == "__main__":
         simulate=simulate,
         plotting=plotting,
         optimization_params=optimization_params,
-        exp_attributes=exp_attributes
+        exp_attributes=exp_attributes,
     )

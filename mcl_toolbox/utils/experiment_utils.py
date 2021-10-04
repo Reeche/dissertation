@@ -28,10 +28,9 @@ np.seterr(all="ignore")
 
 
 class Participant:
-    def __init__(self, pid, condition=None, exclude_trials=None):
+    def __init__(self, pid, condition=None):
         self.pid = pid
         self.condition = condition
-        self.exclude_trials = exclude_trials
         self.strategies = None
         self.temperature = 1
 
@@ -42,12 +41,25 @@ class Participant:
             modified_clicks.append([int(c) for c in clicks] + [0])
         self.clicks = modified_clicks
 
-    def attach_trial_data(self, data):
+    def get_excluded_data(self, data):
+        data = [d for i, d in enumerate(data) if i not in self.excluded_trials]
+        return data
+
+    def exclude_trial_data(self):
+        self.clicks = self.get_excluded_data(self.clicks)
+        self.paths = self.get_excluded_data(self.paths)
+        self.envs = self.get_excluded_data(self.envs)
+        self.scores = self.get_excluded_data(self.scores)
+
+    def attach_trial_data(self, data, exclude_trials=None):
+        self.excluded_trials = exclude_trials
         self.clicks = [q["click"]["state"]["target"] for q in data.queries]
         self.modify_clicks()
         self.paths = [[int(p) for p in path] for path in data.path]
         self.envs = [[0] + sr[1:] for sr in data.state_rewards]
         self.scores = data.score
+        if exclude_trials is not None:
+            self.exclude_trial_data()
         columns = list(data.columns).copy()
         columns_to_remove = ["pid", "queries", "state_rewards"]
         # make it list of rewards
@@ -92,7 +104,14 @@ class Experiment:
     """
 
     def __init__(
-        self, exp_num, cm=None, pids=None, block=None, data_path=None, exclude_trials=None, **kwargs
+        self,
+        exp_num,
+        cm=None,
+        pids=None,
+        block=None,
+        data_path=None,
+        exclude_trials=None,
+        **kwargs,
     ):
         self.exp_num = exp_num
         self.data = get_data(exp_num, data_path)
@@ -108,9 +127,9 @@ class Experiment:
             else:
                 self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
         self.participants = {}
-        self.excluded_trials = exclude_trials
         if block:
             self.block = block
+        self.excluded_trials = exclude_trials
         self.additional_constraints = kwargs
         self.participant_strategies = {}
         self.participant_temperatures = {}
@@ -148,23 +167,32 @@ class Experiment:
 
             p = Participant(pid, condition)
             trial_nums.append(len(p_trials_data))
-            p.attach_trial_data(p_trials_data)
+            p.attach_trial_data(p_trials_data, exclude_trials=self.excluded_trials)
             p.condition = condition
             self.participants[pid] = p
 
         path = Path(__file__).parents[1]
         f_path = path.joinpath("data/inferred_strategies")
         if self.block is not None:
-            f_path = f_path.joinpath(f"_{self.block}")
-        strategies_path = f_path.joinpath(f"{self.exp_num}_strategies.pkl")
-        if os.path.exists(strategies_path):
-            strategies = pickle_load(f_path.joinpath(f"{self.exp_num}_strategies.pkl"))
-            temperatures = pickle_load(f_path.joinpath(f"{self.exp_num}_temperatures.pkl"))
+            prefix = f"{self.exp_num}_{self.block}"
+        else:
+            prefix = f"{self.exp_num}"
+        # this assumes that the strategies were supplied for blocked experiment
+        # (meaning excluded trials are also included)
+        if os.path.exists(f_path.joinpath(f"{prefix}_strategies.pkl")):
+            strategies = pickle_load(f_path.joinpath(f"{prefix}_strategies.pkl"))
+            temperatures = pickle_load(f_path.joinpath(f"{prefix}_temperatures.pkl"))
             self.infer_strategies(
                 precomputed_strategies=strategies,
                 precomputed_temperatures=temperatures,
                 show_pids=False,
             )
+            if self.excluded_trials is not None:
+                for pid in self.pids:
+                    participant = self.participants[pid]
+                    strategies = participant.strategies
+                    participant.strategies = participant.get_excluded_data(strategies)
+                    self.participant_strategies[pid] = participant.strategies
         self.num_trials = max(trial_nums, key=trial_nums.count)
 
     def init_planning_data(self):
