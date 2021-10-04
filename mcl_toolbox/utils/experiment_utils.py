@@ -120,12 +120,16 @@ class Experiment:
         if pids:
             self.pids = pids
         else:
-            if hasattr(self.data, "pids"):
-                self.pids = self.data["pids"]
-            elif hasattr(self.data, "participants"):
+            if hasattr(self.data, "participants"):
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
+            elif hasattr(self.data, "pids"):
+                self.pids = self.data["pids"]
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = self.data["pids"]
             else:
                 self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
+                # assumes "participants" dataframe in init_participants function below
+                self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
         if block:
             self.block = block
