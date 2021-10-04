@@ -218,6 +218,9 @@ class GenericMouselabEnv(gym.Env):
         if self.feature_state is None:
             if self.features is not None:
                 return self.construct_feature_state()
+            else:
+                # see based_learner.py for example of attaching features
+                raise ValueError("Features need to be attached with attach_features method.")
         return self.feature_state
 
     def env_action(self, a):
