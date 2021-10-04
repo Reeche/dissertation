@@ -42,7 +42,7 @@ class GenericMouselabEnv(gym.Env):
         self.feature_state = None
         self.features = None
         # if no feature state already
-        self.feature_state = self.get_feature_state()
+        self.get_feature_state()
         self.normalized_features = None
         if self.feedback == "meta" and self.q_fn is None:
             raise ValueError("Q-function is required to compute metacognitive feedback")
