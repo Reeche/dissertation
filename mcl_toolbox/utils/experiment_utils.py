@@ -112,7 +112,17 @@ class Experiment:
         data_path=None,
         exclude_trials=None,
         **kwargs,
-    ):
+    ): 
+        """
+        
+        :param exp_num: experiment name, should match folder experiment is saved in
+        :param cm: ComputationalMicroscope object, from mcl_toolbox.computational_microscope
+        :param pids: pids to consider (otherwise figured out from the data files)
+        :param block: block to consider, if only considering some blocks in data
+        :param data_path: where the experiment folder exists
+        :param exclude_trials: trials to exclude, if only considering some trials in data
+        :param kwargs: any odditional constraints to the participant data (#TODO)
+        """
         self.exp_num = exp_num
         self.data = get_data(exp_num, data_path)
         self.cm = cm
