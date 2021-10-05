@@ -1,11 +1,10 @@
 import unittest
 
-from costometer.utils import create_mcrl_reward_distribution
 from mouselab.envs.registry import registry
 from parameterized import parameterized
 
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.utils.learning_utils import construct_repeated_pipeline
+from mcl_toolbox.utils.learning_utils import construct_repeated_pipeline, create_mcrl_reward_distribution
 
 """
 Currently only tests costs to make sure they are being experienced
