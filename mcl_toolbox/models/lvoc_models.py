@@ -262,6 +262,7 @@ class LVOC(Learner):
                 actions.append(action)
             trials_data["r"].append(np.sum(rewards))
             trials_data["a"].append(actions)
+            trials_data["costs"].append(rewards)
             env.get_next_trial()
         # Likelihoods are stored in action_log_probs
         if self.action_log_probs:

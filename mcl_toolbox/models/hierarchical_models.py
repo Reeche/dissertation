@@ -252,6 +252,7 @@ class HierarchicalLearner(Learner):
             env.get_next_trial()
             trials_data["a"].append(actions)
             trials_data["r"].append(np.sum(rewards))
+            trials_data["costs"].append(rewards)
         if self.decision_agent.action_log_probs and self.actor_agent.action_log_probs:
             trials_data["loss"] = -(
                 np.sum(self.decision_agent.action_log_probs)

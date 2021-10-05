@@ -259,8 +259,8 @@ class REINFORCE(Learner):
                 if done:
                     trials_data["taken_paths"].append(info["taken_path"])
             trials_data["r"].append(np.sum(rewards))
-            trials_data["rewards"].append(rewards)
             trials_data["a"].append(actions)
+            trials_data["costs"].append(rewards)
             env.get_next_trial()
 
         trials_data["envs"] = env.ground_truth

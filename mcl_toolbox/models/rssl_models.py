@@ -211,6 +211,7 @@ class RSSL(Learner):
                 env, trial, strategy_index, info=info
             )
             reward = np.sum(r_list)
+            trials_data["costs"].append(r_list)
             update_reward = reward.copy()
             update_reward -= (len(r_list) - 1) * self.subjective_cost
             update_reward -= np.sum(info["delays"])

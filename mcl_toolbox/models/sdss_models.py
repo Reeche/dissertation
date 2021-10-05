@@ -107,6 +107,7 @@ class SDSS(Learner):
             chosen_strategy = self.rssl.select_strategy()
             actions, r_list = self.get_learner_details(env, chosen_strategy)
             reward = np.sum(r_list)
+            trials_data["costs"].append(r_list)
             self.update_bernoulli_params(reward, chosen_strategy)
             trials_data["r"].append(reward)
             trials_data["w"].append(self._strategy_weights[chosen_strategy])
