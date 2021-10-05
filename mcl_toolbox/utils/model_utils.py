@@ -39,6 +39,18 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 
 class ModelFitter:
     def __init__(self, exp_name, exp_attributes=None, data_path=None):
+        """
+        
+        :param exp_name: name, or folder, where experiment data is saved
+        :param exp_attributes: dictionary, may contain:
+            "block"          : None,  # Block of the experiment
+            "exclude_trials" : None  # Trials to include
+            and EITHER
+            "experiment"     : Experiment object can be passed directly with pipeline and normalized features attached
+            OR
+            the experiment must be in the global_vars in the structure object
+        :param data_path: path where data for experiment exp_name is saved
+        """
         self.exp_name = exp_name
         if exp_attributes is None:
             exp_attributes = {
