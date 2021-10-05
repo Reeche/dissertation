@@ -35,7 +35,10 @@ class ParticipantIterator:
         self.current_click += 1
         if self.current_click == len(self.participant.clicks[self.current_trial]):
             done = True
-            taken_path = self.taken_paths[self.current_trial]
+            if len(self.taken_paths) > 0:
+                taken_path = self.taken_paths[self.current_trial]
+            else:
+                taken_path = None
             self.current_trial += 1
             self.current_click = 0
         return reward, taken_path, done
