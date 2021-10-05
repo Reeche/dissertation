@@ -249,6 +249,7 @@ class HierarchicalLearner(Learner):
                     actions.append(action)
                     if done:
                         trials_data["taken_paths"].append(taken_path)
+                        break
             env.get_next_trial()
             trials_data["a"].append(actions)
             trials_data["r"].append(np.sum(rewards))
