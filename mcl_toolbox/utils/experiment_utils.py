@@ -114,7 +114,7 @@ class Experiment:
         **kwargs,
     ): 
         """
-        
+
         :param exp_num: experiment name, should match folder experiment is saved in
         :param cm: ComputationalMicroscope object, from mcl_toolbox.computational_microscope
         :param pids: pids to consider (otherwise figured out from the data files)
@@ -134,12 +134,14 @@ class Experiment:
                 self.pids = sorted(np.unique(self.data["participants"]["pid"]).tolist())
             elif hasattr(self.data, "pids"):
                 self.pids = self.data["pids"]
-                # assumes "participants" dataframe in init_participants function below
+                # "participants" dataframe is assumed in init_participants function below
                 self.data["participants"] = self.data["pids"]
             else:
                 self.pids = sorted(np.unique(self.data["mouselab-mdp"]["pid"]).tolist())
-                # assumes "participants" dataframe in init_participants function below
-                self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
+        # if no pid or participants file, create one from self.pids (needs to be reachable when pids given)
+        if "participants" not in self.data:
+            # "participants" dataframe is assumed in init_participants function below
+            self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
         if block:
             self.block = block
