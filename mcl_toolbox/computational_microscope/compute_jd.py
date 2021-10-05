@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.utils.learning_utils import (create_dir, get_modified_weights,
                                               get_normalized_features,

@@ -1,9 +1,8 @@
 from queue import PriorityQueue
 from random import choice, shuffle
 
-from numpy import argsort
-
 from mcl_toolbox.env.modified_mouselab import TrialSequence, approx_max
+from numpy import argsort
 
 """ This file contains the 89 algorithmic strategies implemented for
     'Measuring how people learn how to plan'

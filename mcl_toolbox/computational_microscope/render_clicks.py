@@ -3,7 +3,6 @@ import shutil
 
 import imageio
 from graphviz import Digraph
-
 from mcl_toolbox.env.modified_mouselab import TrialSequence
 from mcl_toolbox.utils import Experiment
 
