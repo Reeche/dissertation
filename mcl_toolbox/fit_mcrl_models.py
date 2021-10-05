@@ -23,15 +23,16 @@ Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":Tr
 
 
 def fit_model(
-    exp_name,
-    pid,
-    model_index,
-    optimization_criterion,
-    optimization_params=None,
-    exp_attributes=None,
-    sim_params=None,
-    simulate=True,
-    plotting=False,
+        exp_name,
+        pid,
+        model_index,
+        optimization_criterion,
+        optimization_params=None,
+        exp_attributes=None,
+        sim_params=None,
+        simulate=True,
+        plotting=False,
+        data_path=None
 ):
     """
 
@@ -61,7 +62,7 @@ def fit_model(
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, exp_attributes=exp_attributes)
+    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -94,11 +95,19 @@ if __name__ == "__main__":
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
-            "block"         : None,  # Block of the experiment
-            "experiment"    : None  # Experiment object can be passed directly with
+            "block": None,  # Block of the experiment
+            "experiment": None  # Experiment object can be passed directly with
             # pipeline and normalized features attached
         }
         other_params["exp_attributes"] = exp_attributes
+
+    if "optimization_params" not in other_params:
+        optimization_params = {
+            "optimizer": "hyperopt",
+            "num_simulations": 30,
+            "max_evals": 200
+        }
+        other_params["optimization_params"] = optimization_params
 
     fit_model(
         exp_name=exp_name,
