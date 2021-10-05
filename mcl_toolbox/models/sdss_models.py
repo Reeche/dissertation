@@ -77,7 +77,7 @@ class SDSS(Learner):
             action, reward, done, taken_path = learner.act_and_learn(env)
             actions.append(action)
             rewards.append(reward)
-        return actions, rewards
+        return actions, rewards, done, taken_path
 
     def apply_strategy(self, env, strategy_num):
         strategy_weights = self.learners[strategy_num].get_weights()
@@ -105,9 +105,10 @@ class SDSS(Learner):
         trials_data = defaultdict(list)
         for trial_num in range(num_trials):
             chosen_strategy = self.rssl.select_strategy()
-            actions, r_list = self.get_learner_details(env, chosen_strategy)
+            actions, r_list, _, taken_path = self.get_learner_details(env, chosen_strategy)
             reward = np.sum(r_list)
             trials_data["costs"].append(r_list)
+            trials_data["taken_paths"].append(taken_path)
             self.update_bernoulli_params(reward, chosen_strategy)
             trials_data["r"].append(reward)
             trials_data["w"].append(self._strategy_weights[chosen_strategy])

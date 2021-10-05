@@ -255,11 +255,14 @@ class LVOC(Learner):
             actions, rewards, self.term_rewards = [], [], []
             done = False
             while not done:
-                action, reward, done, _ = self.act_and_learn(
+                action, reward, done, taken_path = self.act_and_learn(
                     env, trial_info={"participant": participant}
                 )
                 rewards.append(reward)
                 actions.append(action)
+                if done:
+                    trials_data["taken_paths"].append(taken_path)
+
             trials_data["r"].append(np.sum(rewards))
             trials_data["a"].append(actions)
             trials_data["costs"].append(rewards)
