@@ -78,7 +78,6 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    random.seed(123)
     # exp_name = sys.argv[1]
     # model_index = int(sys.argv[2])
     # optimization_criterion = sys.argv[3]
