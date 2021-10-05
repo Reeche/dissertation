@@ -8,7 +8,6 @@ def test_models(
 ):
     mf = ModelFitter(exp_name)
     for model_index in model_list:
-        print(model_index)
         optimizer = mf.construct_optimizer(model_index, pid, criterion)
         _, _, _ = optimizer.optimize(criterion, **optimization_params)
     return None
