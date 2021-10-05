@@ -10,8 +10,6 @@ python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pi
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : 
 {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
-
-Use the code in mcrl_modelling/prior_fitting.py to submit jobs to the cluster.
 """
 
 
@@ -94,7 +92,7 @@ if __name__ == "__main__":
     optimization_criterion = "pseudo_likelihood"
     pid = 4
     num_simulations = 30
-    simulate = True
+    simulate = False
     plotting = False
     optimization_params = {
         "optimizer": "hyperopt",
