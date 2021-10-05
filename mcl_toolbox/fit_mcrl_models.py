@@ -1,3 +1,6 @@
+import sys
+import ast
+
 from pathlib import Path
 import random
 
@@ -41,7 +44,7 @@ def fit_model(
     """
 
     # create directory to save priors in
-    parent_directory = Path(__file__).parents[1]
+    parent_directory = Path(__file__).resolve().parents[1]
     prior_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
     create_dir(prior_directory)
 
@@ -78,40 +81,29 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # other_params = {}
-    # if len(sys.argv)>5:
-    #     other_params = ast.literal_eval(sys.argv[5])
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    other_params = {}
+    if len(sys.argv)>5:
+        other_params = ast.literal_eval(sys.argv[5])
+    else:
+        other_params = {}
 
-    exp_name = "v1.0"
-    model_index = 1825
-    optimization_criterion = "pseudo_likelihood"
-    pid = 4
-    num_simulations = 30
-    simulate = False
-    plotting = False
-    optimization_params = {
-        "optimizer": "hyperopt",
-        "num_simulations": 5,
-        "max_evals": 20,
-    }
-    sim_params = {"num_simulations": num_simulations}
-    exp_attributes = {
-        "exclude_trials": None,  # Trials to be excluded
-        "block": None,  # Block of the experiment
-        "experiment": None  # Experiment object can be passed directly with
-        # pipeline and normalized features attached
-    }
+    if "exp_attributes" not in other_params:
+        exp_attributes = {
+            "exclude_trials": None,  # Trials to be excluded
+            "block"         : None,  # Block of the experiment
+            "experiment"    : None  # Experiment object can be passed directly with
+            # pipeline and normalized features attached
+        }
+        other_params["exp_attributes"] = exp_attributes
+
     fit_model(
         exp_name=exp_name,
         pid=pid,
         model_index=model_index,
         optimization_criterion=optimization_criterion,
-        simulate=simulate,
-        plotting=plotting,
-        optimization_params=optimization_params,
-        exp_attributes=exp_attributes,
+        **other_params,
     )
