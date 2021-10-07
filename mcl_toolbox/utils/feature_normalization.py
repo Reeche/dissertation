@@ -6,8 +6,11 @@ from mouselab.envs.registry import registry
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence
 from mcl_toolbox.global_vars import strategies
-from mcl_toolbox.utils.learning_utils import (construct_repeated_pipeline,
-                                              pickle_save)
+from mcl_toolbox.utils.learning_utils import (
+    construct_repeated_pipeline,
+    create_mcrl_reward_distribution,
+    pickle_save,
+)
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 from mcl_toolbox.utils.sequence_utils import compute_trial_features
 

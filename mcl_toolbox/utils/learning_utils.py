@@ -20,6 +20,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 from mcl_toolbox.utils.analysis_utils import get_data
 from mcl_toolbox.utils.distributions import Categorical, Normal
 
+from mouselab.envs.registry import registry
+
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
@@ -272,6 +274,26 @@ def construct_repeated_pipeline(branching, reward_function, num_trials):
 
 def construct_pipeline(branchings, reward_distributions):
     return list(zip(branchings, reward_distributions))
+
+
+def create_mcrl_reward_distribution(experiment_setting, reward_dist="categorical"):
+    """
+    Creates MCRL reward distribution given experiment setting ala mouselab package
+    @param experiment_setting: on experiment registry in mouselab package
+    @param reward_dist: type of probability distribution (e.g. Categorical, Normal)
+    @return: reward_distribution as the MCRL project uses
+    """
+    reward_dictionary = registry(experiment_setting).reward_dictionary
+    reward_inputs = [
+        reward_dictionary[depth + 1].vals for depth in range(len(reward_dictionary))
+    ]
+
+    # build reward distribution for pipeline with experiment details
+    reward_distributions = construct_reward_function(
+        reward_inputs,
+        reward_dist,
+    )
+    return reward_distributions
 
 
 def get_number_of_actions_from_branching(branching):
