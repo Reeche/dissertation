@@ -146,7 +146,7 @@ class LVOC(Learner):
         num_available_actions = len(available_actions)
         feature_vals = self.get_action_features(env)
         dists = np.zeros((num_available_actions, 2))
-        cov = np.linalg.inv(self.precision)
+        cov = np.linalg.inv(self.precision*self.num_samples)
         for index, action in enumerate(available_actions):
             computed_features = feature_vals[action]
             dists[index][0] = np.dot(computed_features, self.mean)
