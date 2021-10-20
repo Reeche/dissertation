@@ -1,25 +1,33 @@
+import heapq
 import itertools as it
 
 import numpy as np
 # ---------- Functional utils ---------- #
-from toolz.curried import *
+from toolz.curried import compose, curry
 
 max = curry(max)
 min = curry(min)
 call = lambda f: f()
+
+
 @curry
 def attr(name, obj):
     return getattr(obj, name)
+
+
 @curry
 def invoke(name, obj):
     return getattr(obj, name)()
 
+
 lmap = curry(compose(list, map))
 amap = curry(compose(np.array, lmap))
 
+
 # ---------- Other ---------- #
-def str_join(args, sep=' '):
+def str_join(args, sep=" "):
     return sep.join(map(str, args))
+
 
 def dict_product(d):
     """All possible combinations of values in lists in `d`"""
@@ -30,19 +38,24 @@ def dict_product(d):
     for v in list(it.product(*d.values())):
         yield dict(zip(d.keys(), v))
 
+
 def cum_returns(rewards):
     return np.flip(np.cumsum(np.flip(rewards, 0)), 0)
+
 
 def clear_screen():
     print(chr(27) + "[2J")
     clear_output()
 
+
 def softmax(x, temp=1):
     ex = np.exp((x - x.max()) / temp)
     return ex / ex.sum()
 
+
 class Labeler(object):
     """Assigns unique integer labels."""
+
     def __init__(self, init=()):
         self._labels = {}
         self._xs = []
@@ -61,7 +74,6 @@ class Labeler(object):
     __call__ = label
 
 
-import heapq
 class PriorityQueue(list):
     def __init__(self, key, max_first=True):
         self.key = key
@@ -69,6 +81,6 @@ class PriorityQueue(list):
 
     def pop(self):
         return heapq.heappop(self)[1]
-        
+
     def push(self, item):
         heapq.heappush(self, (self.inv * self.key(item), item))

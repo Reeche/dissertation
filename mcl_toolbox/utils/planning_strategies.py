@@ -1,8 +1,9 @@
 from queue import PriorityQueue
-from random import shuffle, choice
+from random import choice, shuffle
+
+from numpy import argsort
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence, approx_max
-from numpy import argsort
 
 """ This file contains the 89 algorithmic strategies implemented for
     'Measuring how people learn how to plan'
@@ -14,6 +15,7 @@ strategy_dict = {}
 def strategy(name):
     def wrapper(func):
         strategy_dict[name] = func
+
     return wrapper
 
 
@@ -26,7 +28,7 @@ def get_second_max_dist_value(trial):
 
 def observe_till_root(trial, node):
     present_node = node
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         if present_node.parent.observed:
             break
         present_node.parent.observe()
@@ -35,7 +37,7 @@ def observe_till_root(trial, node):
 
 def observe_till_root_with_pruning(trial, node):
     present_node = node
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         if present_node.parent.observed:
             return 0
         present_node.parent.observe()
@@ -48,7 +50,7 @@ def observe_till_root_with_pruning(trial, node):
 def observe_randomly_till_root(trial, node):
     present_node = node
     nodes = []
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         nodes.append(present_node.parent)
         present_node = present_node.parent
     shuffle(nodes)
@@ -60,7 +62,7 @@ def observe_randomly_till_root(trial, node):
 def get_nodes_till_root(trial, node):
     present_node = node
     nodes = []
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         nodes.append(present_node.parent)
         present_node = present_node.parent
     return nodes
@@ -69,7 +71,7 @@ def get_nodes_till_root(trial, node):
 def observe_path_from_root_to_node(trial, node):
     present_node = node
     nodes = [present_node]
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         nodes.append(present_node.parent)
         present_node = present_node.parent
     nodes = nodes[::-1]
@@ -105,6 +107,7 @@ def get_max_leaves(trial):
     best_nodes = [node for node in leaf_nodes if node.value == max_leaf_value]
     return best_nodes
 
+
 def observe_nodes_satisficing(trial, nodes, satisficing_value):
     shuffle(nodes)
     satisficing_value_observed = False
@@ -118,6 +121,7 @@ def observe_nodes_satisficing(trial, nodes, satisficing_value):
     else:
         return 0
 
+
 def get_max_nodes(trial, nodes):
     node_values = [node.value for node in nodes]
     max_value = max(node_values)
@@ -125,30 +129,31 @@ def get_max_nodes(trial, nodes):
     shuffle(max_nodes)
     return max_nodes
 
+
 def observe_node_path_subtree(trial, node, random=True):
     observe_till_root(trial, node)
     present_node = node
-    while(present_node.parent.label != 0):
+    while present_node.parent.label != 0:
         present_node = present_node.parent
     path_root = present_node
     if random:
         successors = path_root.get_successor_nodes()
-        unobserved_successors = [
-            node for node in successors if not node.observed]
+        unobserved_successors = [node for node in successors if not node.observed]
         shuffle(unobserved_successors)
         for node in unobserved_successors:
             node.observe()
     else:
+
         def observe_successors(node):
             if not node.children:
                 return
             successors = node.get_successor_nodes()
-            unobserved_successors = [
-                node for node in successors if not node.observed]
+            unobserved_successors = [node for node in successors if not node.observed]
             for child in unobserved_successors:
                 if not child.observed:
                     child.observe()
                 observe_successors(child)
+
         observe_successors(path_root)
 
 
@@ -161,7 +166,7 @@ def compare_paths_satisficing(trial, best_nodes):
     max_nodes = [node for node in best_nodes if node.value == max_node_value]
     if len(max_nodes) == 1:
         return
-    while(1):
+    while 1:
         parent_pointers = []
         parent_values = []
         for i, p in enumerate(temp_pointers):
@@ -174,7 +179,8 @@ def compare_paths_satisficing(trial, best_nodes):
         if parent_values:
             max_parent_value = max(parent_values)
             max_nodes = [
-                node for node in parent_pointers if node.value == max_parent_value]
+                node for node in parent_pointers if node.value == max_parent_value
+            ]
             if len(max_nodes) == 1:
                 break
             temp_pointers = parent_pointers
@@ -186,7 +192,7 @@ def get_top_root(node):
         return node
     else:
         temp = node
-        while(temp.parent != node.root):
+        while temp.parent != node.root:
             temp = temp.parent
         return temp
 
@@ -217,15 +223,18 @@ def get_subtree_leaves(subtree_root):
             successor_leaves.append(s)
     return successor_leaves
 
+
 def get_mid_nodes(trial):
     max_depth = trial.max_depth
     d = max_depth // 2
     nodes = trial.level_map[d + 1].copy()
     return nodes
 
+
 def observe_nodes(nodes):
     for node in nodes:
         node.observe()
+
 
 @strategy(1)
 def goal_setting_random_path(trial):
@@ -243,7 +252,7 @@ def goal_setting_random_path(trial):
 @strategy(2)
 def inverse_randomized_breadth_first_search(trial):
     max_depth = trial.max_depth
-    for d in list(range(1, max_depth+1))[::-1]:
+    for d in list(range(1, max_depth + 1))[::-1]:
         nodes = trial.level_map[d]
         shuffle(nodes)
         observe_nodes(nodes)
@@ -253,7 +262,7 @@ def inverse_randomized_breadth_first_search(trial):
 @strategy(3)
 def randomized_breadth_first_search(trial):
     max_depth = trial.max_depth
-    for d in list(range(1, max_depth+1)):
+    for d in list(range(1, max_depth + 1)):
         nodes = trial.level_map[d]
         shuffle(nodes)
         observe_nodes(nodes)
@@ -297,27 +306,30 @@ def best_first_search_expected_value(trial):
 
 @strategy(6)
 def ancestor_priority(trial):
-    """ Choose nodes according to the priority 0.8*number of
+    """Choose nodes according to the priority 0.8*number of
     ancestor nodes + 0.2*number of successor nodes
     """
     unobserved_nodes = trial.unobserved_nodes.copy()
     unobserved_nodes.remove(trial.node_map[0])
     shuffle(unobserved_nodes)
-    while(len(unobserved_nodes) != 0):
+    while len(unobserved_nodes) != 0:
         scores = []
         ancestor_scores = []
         for node in unobserved_nodes:
             ancestor_count = node.get_observed_ancestor_count()
             successor_count = node.get_observed_successor_count()
-            score = 0.8*ancestor_count + 0.2*successor_count
+            score = 0.8 * ancestor_count + 0.2 * successor_count
             scores.append(score)
             ancestor_scores.append(ancestor_count)
         max_score = max(scores)
         max_indices = [i for i, s in enumerate(scores) if s == max_score]
         max_ancestor_scores = [ancestor_scores[i] for i in max_indices]
         max_max_ancestor_scores = max(max_ancestor_scores)
-        max_total_nodes = [unobserved_nodes[max_indices[i]] for i, s in enumerate(
-            max_ancestor_scores) if s == max_max_ancestor_scores]
+        max_total_nodes = [
+            unobserved_nodes[max_indices[i]]
+            for i, s in enumerate(max_ancestor_scores)
+            if s == max_max_ancestor_scores
+        ]
         node = choice(max_total_nodes)
         node.observe()
         unobserved_nodes.remove(node)
@@ -326,27 +338,30 @@ def ancestor_priority(trial):
 
 @strategy(7)
 def successor_priority(trial):
-    """ Choose nodes according to the priority 0.8*number of
+    """Choose nodes according to the priority 0.8*number of
     successor nodes + 0.2*number of ancestor nodes
     """
     unobserved_nodes = trial.unobserved_nodes.copy()
     unobserved_nodes.remove(trial.node_map[0])
     shuffle(unobserved_nodes)
-    while(len(unobserved_nodes) != 0):
+    while len(unobserved_nodes) != 0:
         scores = []
         successor_scores = []
         for node in unobserved_nodes:
             ancestor_count = node.get_observed_ancestor_count()
             successor_count = node.get_observed_successor_count()
-            score = 0.8*successor_count + 0.2*ancestor_count
+            score = 0.8 * successor_count + 0.2 * ancestor_count
             scores.append(score)
             successor_scores.append(successor_count)
         max_score = max(scores)
         max_indices = [i for i, s in enumerate(scores) if s == max_score]
         max_successor_scores = [successor_scores[i] for i in max_indices]
         max_max_successor_scores = max(max_successor_scores)
-        max_total_nodes = [unobserved_nodes[max_indices[i]] for i, s in enumerate(
-            max_successor_scores) if s == max_max_successor_scores]
+        max_total_nodes = [
+            unobserved_nodes[max_indices[i]]
+            for i, s in enumerate(max_successor_scores)
+            if s == max_max_successor_scores
+        ]
         node = choice(max_total_nodes)
         node.observe()
         unobserved_nodes.remove(node)
@@ -385,7 +400,7 @@ def backward_path_subtree_goal_setting(trial):
 @strategy(10)
 def randomized_sibling_breadth_first_search(trial):
     max_depth = trial.max_depth
-    for d in list(range(1, max_depth+1)):
+    for d in list(range(1, max_depth + 1)):
         nodes = trial.level_map[d]
         shuffle(nodes)
         for node in nodes:
@@ -403,7 +418,7 @@ def immediate_ancestor_priority(trial):
     unobserved_nodes = trial.unobserved_nodes.copy()
     unobserved_nodes.remove(trial.node_map[0])
     shuffle(unobserved_nodes)
-    while(len(unobserved_nodes) != 0):
+    while len(unobserved_nodes) != 0:
         scores = []
         ancestor_scores = []
         for node in unobserved_nodes:
@@ -411,16 +426,22 @@ def immediate_ancestor_priority(trial):
             immediate_successor_count = node.get_immediate_successor_count()
             ancestor_count = node.get_observed_ancestor_count()
             successor_count = node.get_observed_successor_count()
-            score = 0.6*immediate_ancestor_count + 0.2*ancestor_count + (
-                0.15*immediate_successor_count + 0.05*successor_count)
+            score = (
+                0.6 * immediate_ancestor_count
+                + 0.2 * ancestor_count
+                + (0.15 * immediate_successor_count + 0.05 * successor_count)
+            )
             scores.append(score)
             ancestor_scores.append(immediate_ancestor_count)
         max_score = max(scores)
         max_indices = [i for i, s in enumerate(scores) if s == max_score]
         max_ancestor_scores = [ancestor_scores[i] for i in max_indices]
         max_max_ancestor_scores = max(max_ancestor_scores)
-        max_total_nodes = [unobserved_nodes[max_indices[i]] for i, s in enumerate(
-            max_ancestor_scores) if s == max_max_ancestor_scores]
+        max_total_nodes = [
+            unobserved_nodes[max_indices[i]]
+            for i, s in enumerate(max_ancestor_scores)
+            if s == max_max_ancestor_scores
+        ]
         node = choice(max_total_nodes)
         node.observe()
         unobserved_nodes.remove(node)
@@ -432,7 +453,7 @@ def immediate_successor_priority(trial):
     unobserved_nodes = trial.unobserved_nodes.copy()
     unobserved_nodes.remove(trial.node_map[0])
     shuffle(unobserved_nodes)
-    while(len(unobserved_nodes) != 0):
+    while len(unobserved_nodes) != 0:
         scores = []
         successor_scores = []
         for node in unobserved_nodes:
@@ -440,16 +461,22 @@ def immediate_successor_priority(trial):
             immediate_successor_count = node.get_immediate_successor_count()
             ancestor_count = node.get_observed_ancestor_count()
             successor_count = node.get_observed_successor_count()
-            score = 0.6*immediate_successor_count + 0.2*successor_count + (
-                0.15*immediate_ancestor_count + 0.05*ancestor_count)
+            score = (
+                0.6 * immediate_successor_count
+                + 0.2 * successor_count
+                + (0.15 * immediate_ancestor_count + 0.05 * ancestor_count)
+            )
             scores.append(score)
             successor_scores.append(immediate_successor_count)
         max_score = max(scores)
         max_indices = [i for i, s in enumerate(scores) if s == max_score]
         max_successor_scores = [successor_scores[i] for i in max_indices]
         max_max_successor_scores = max(max_successor_scores)
-        max_total_nodes = [unobserved_nodes[max_indices[i]] for i, s in enumerate(
-            max_successor_scores) if s == max_max_successor_scores]
+        max_total_nodes = [
+            unobserved_nodes[max_indices[i]]
+            for i, s in enumerate(max_successor_scores)
+            if s == max_max_successor_scores
+        ]
         node = choice(max_total_nodes)
         node.observe()
         unobserved_nodes.remove(node)
@@ -521,7 +548,7 @@ def goal_setting_equivalent_goals_level_by_level(trial):
     best_nodes = get_max_leaves(trial)
     # Check if this still holds in case of unequal path lengths
     temp_pointers = best_nodes
-    while(1):
+    while 1:
         parent_pointers = []
         for i, p in enumerate(temp_pointers):
             if p.parent.label != 0:
@@ -532,6 +559,7 @@ def goal_setting_equivalent_goals_level_by_level(trial):
             return [node.label for node in trial.observed_nodes] + [0]
         temp_pointers = parent_pointers
         shuffle(temp_pointers)
+
 
 @strategy(18)
 def goal_setting_equivalent_goals_random(trial):
@@ -581,15 +609,17 @@ def approximate_optimal(trial):
             break
         shuffle(required_nodes)
         max_value = trial.max_values_by_depth[max_depth]
-        satisficing_observed = observe_nodes_satisficing(trial, required_nodes, max_value)
+        satisficing_observed = observe_nodes_satisficing(
+            trial, required_nodes, max_value
+        )
     return [node.label for node in trial.observed_nodes] + [0]
 
 
 @strategy(22)
 def positive_forward_satisficing(trial):
-    """ Terminate on finding positive root.
-        If no positive root node is found,
-        terminates after exploring all root nodes
+    """Terminate on finding positive root.
+    If no positive root node is found,
+    terminates after exploring all root nodes
     """
     root_nodes = trial.node_map[0].children.copy()
     shuffle(root_nodes)
@@ -709,6 +739,7 @@ def satisficing_dfs(trial):
                 res = dfs(child)
                 if res == 1:
                     return 1
+
     shuffle(root_nodes)
     for root_node in root_nodes:
         res = dfs(root_node)
@@ -736,8 +767,7 @@ def satisficing_positive_root_leaves(trial):
     observe_nodes(root_nodes)
     for root in root_nodes:
         if root.value > 0:
-            res = observe_leaves_of_root(
-                trial, root, satisficing_value=max_value)
+            res = observe_leaves_of_root(trial, root, satisficing_value=max_value)
             if res == 1:
                 break
     return [node.label for node in trial.observed_nodes] + [0]
@@ -776,7 +806,7 @@ def best_first_search_observed_roots(trial):
     for node in root_nodes:
         node.observe()
         pq.put((-node.value, node.label))
-    while(not pq.empty()):
+    while not pq.empty():
         _, node_num = pq.get()
         node = trial.node_map[node_num]
         children = node.children.copy()
@@ -800,7 +830,7 @@ def satisficing_best_first_search_observed_roots(trial):
         if node.value >= max_value:
             return [node.label for node in trial.observed_nodes] + [0]
         pq.put((-node.value, node.label))
-    while(not pq.empty()):
+    while not pq.empty():
         _, node_num = pq.get()
         node = trial.node_map[node_num]
         children = node.children.copy()
@@ -834,7 +864,7 @@ def random_planning(trial):
     shuffle(nodes)
     node_labels = [node.label for node in nodes]
     termination_index = node_labels.index(0)
-    return node_labels[:termination_index+1]
+    return node_labels[: termination_index + 1]
 
 
 @strategy(40)
@@ -881,6 +911,7 @@ def explore_roots_non_optimal(trial):
                     root.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(43)
 def consecutive_second_extra(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -897,6 +928,7 @@ def consecutive_second_extra(trial):
             else:
                 previous = True
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(44)
 def explore_one_subtree_random(trial):
@@ -1187,12 +1219,14 @@ def root_leaves_termination_positive(trial):
                     break
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(66)
 def explore_single_mid_node(trial):
     mid_nodes = get_mid_nodes(trial)
     shuffle(mid_nodes)
     mid_nodes[0].observe()
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(67)
 def best_leaf_single_node_path(trial):
@@ -1207,6 +1241,7 @@ def best_leaf_single_node_path(trial):
             node.parent.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(68)
 def best_leaf_complete_path(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -1219,6 +1254,7 @@ def best_leaf_complete_path(trial):
         observe_till_root(trial, node)
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(69)
 def best_subtree(trial):
     root_nodes = trial.node_map[0].children.copy()
@@ -1228,6 +1264,7 @@ def best_subtree(trial):
     selected_node = choice(max_nodes)
     explore_subtree_random(selected_node)
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(70)
 def best_root_child(trial):
@@ -1242,6 +1279,7 @@ def best_root_child(trial):
     selected_child.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(71)
 def root_leaf_mid(trial):
     root_nodes = trial.node_map[0].children.copy()
@@ -1254,6 +1292,7 @@ def root_leaf_mid(trial):
     observe_nodes(leaf_nodes)
     observe_nodes(mid_nodes)
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(72)
 def mid_root_leaf(trial):
@@ -1268,6 +1307,7 @@ def mid_root_leaf(trial):
     observe_nodes(leaf_nodes)
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(73)
 def explore_two_leaves(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -1275,12 +1315,14 @@ def explore_two_leaves(trial):
     observe_nodes(leaf_nodes[:2])
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(74)
 def explore_all_mid_nodes(trial):
     mid_nodes = get_mid_nodes(trial)
     shuffle(mid_nodes)
     observe_nodes(mid_nodes)
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(75)
 def explore_best_leaf_roots(trial):
@@ -1296,6 +1338,7 @@ def explore_best_leaf_roots(trial):
             root.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(76)
 def explore_random_max_path(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -1306,6 +1349,7 @@ def explore_random_max_path(trial):
         if leaf.value >= max_value:
             observe_till_root(trial, leaf)
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(77)
 def positive_extra_leaf(trial):
@@ -1320,6 +1364,7 @@ def positive_extra_leaf(trial):
             count += 1
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(78)
 def positive_parent_leaf(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -1331,6 +1376,7 @@ def positive_parent_leaf(trial):
             break
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(79)
 def explore_positive_subtrees(trial):
     root_nodes = trial.node_map[0].children.copy()
@@ -1341,6 +1387,7 @@ def explore_positive_subtrees(trial):
     for node in positive_nodes:
         explore_subtree_random(node)
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(80)
 def general_root_leaves(trial):
@@ -1361,6 +1408,7 @@ def general_root_leaves(trial):
                 break
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(81)
 def positive_root_path(trial):
     root_nodes = trial.node_map[0].children.copy()
@@ -1374,6 +1422,7 @@ def positive_root_path(trial):
             if chosen_leaf.value > 0:
                 break
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(82)
 def breadth_first_search_termination(trial):
@@ -1390,6 +1439,7 @@ def breadth_first_search_termination(trial):
                 if node.value >= max_value:
                     break
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(83)
 def explore_siblings(trial):
@@ -1409,6 +1459,7 @@ def explore_siblings(trial):
                 max_found = True
                 break
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(84)
 def explore_subtree_mid(trial):
@@ -1430,6 +1481,7 @@ def explore_subtree_mid(trial):
                 max_found = True
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(85)
 def explore_center_leaves(trial):
     leaf_nodes = trial.get_leaf_nodes()
@@ -1440,6 +1492,7 @@ def explore_center_leaves(trial):
     observe_nodes(leaf_nodes)
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(86)
 def mid_subtree_leaf(trial):
     mid_nodes = get_mid_nodes(trial)
@@ -1449,6 +1502,7 @@ def mid_subtree_leaf(trial):
         selected_child = choice(node.children)
         selected_child.observe()
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(87)
 def leaves_middle_subtrees(trial):
@@ -1461,6 +1515,7 @@ def leaves_middle_subtrees(trial):
         selected_leaf = choice(leaves)
         selected_leaf.parent.observe()
     return [node.label for node in trial.observed_nodes] + [0]
+
 
 @strategy(88)
 def leaves_middle_subtrees_satisficing(trial):
@@ -1483,6 +1538,7 @@ def leaves_middle_subtrees_satisficing(trial):
             selected_leaf.parent.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 @strategy(89)
 def leaves_middle_subtree(trial):
     root_nodes = trial.node_map[0].children.copy()
@@ -1495,17 +1551,19 @@ def leaves_middle_subtree(trial):
     selected_leaf.parent.observe()
     return [node.label for node in trial.observed_nodes] + [0]
 
+
 if __name__ == "__main__":
     from mcl_toolbox.utils.learning_utils import Participant
-    p = Participant(exp_num='T1.1', pid=1,
-                    feature_criterion='normalize', excluded_trials=list(range(11)))
+
+    p = Participant(
+        exp_num="T1.1",
+        pid=1,
+        feature_criterion="normalize",
+        excluded_trials=list(range(11)),
+    )
     trials = p.envs
     num_trials = len(trials)
-    env = TrialSequence(
-        num_trials,
-        pipeline,
-        ground_truth=trials
-    )
+    env = TrialSequence(num_trials, pipeline, ground_truth=trials)
     for strategy in range(1, 40):
         trial = env.trial_sequence[0]
         trial.reset_observations()
