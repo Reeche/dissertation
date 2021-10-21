@@ -1,7 +1,9 @@
 import json
-import logging
+import os
+
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+
 from functools import partial
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -142,6 +144,7 @@ def parse_config(
     learner, learner_attributes, hierarchical=False, hybrid=False, general_params=False
 ):
     params_list = []
+    bandit_prior = False
     learner_params = model_config[learner]
     param_models = param_config["model_params"]
 
@@ -153,6 +156,9 @@ def parse_config(
     for i, param in enumerate(extra_params):
         if param in learner_attributes and learner_attributes[param]:
             params_list.append(param_info(param_models[param], param))
+        # else:
+        #     con = learner_params["extra_param_defaults"][i]
+        #     params_list.append(param_info(make_constant(con), param))
 
     # General params
     if general_params:
@@ -212,6 +218,7 @@ def construct_p_data(participant, pipeline):
 
 
 def construct_objective_fn(optimizer, objective, p_data, pipeline):
+    # construct objective function based on the selected optimizer and objective
     objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
         if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
@@ -280,21 +287,35 @@ class ParameterOptimizer:
         self.reward_data = []
 
     def objective_fn(self, params, get_sim_data=False):
-        num_priors = self.learner_attributes["num_priors"]
+        """
+        This function takes the selected parameters, created an agent with those parameters and run simulations
+
+        Args:
+            params: parameters
+            get_sim_data:
+
+        Returns: relevant data according to the learner
+
+        """
+        # returns relevant_data, which contains e.g. reward, loss
+        features = self.learner_attributes['features']
+        num_priors = self.learner_attributes['num_priors']
         priors = combine_priors(params, num_priors)
-        params["priors"] = priors
+        params['priors'] = priors
         if self.learner == "sdss":
-            num_strategies = int(params["num_strategies"])
+            num_strategies = int(params['num_strategies'])
             bandit_params = np.ones(2 * num_strategies)
-            bandit_params[:num_strategies] *= params["alpha"]
-            bandit_params[num_strategies:] *= params["beta"]
-            params["bandit_params"] = bandit_params
-            self.learner_attributes["learner"] = self.model
-            self.learner_attributes["strategy_space"] = list(range(num_strategies))
+            bandit_params[:num_strategies] *= params['alpha']
+            bandit_params[num_strategies:] *= params['beta']
+            params['bandit_params'] = bandit_params
+            self.learner_attributes['learner'] = self.model
+            self.learner_attributes['strategy_space'] = list(range(num_strategies))
         elif self.learner == "hierarchical_learner":
-            self.learner_attributes["actor"] = self.model
+            self.learner_attributes['actor'] = self.model
+
+        # the agent is the selected model with corresponding priors to be fitted
         agent = models[self.learner](params, self.learner_attributes)
-        del params["priors"]
+        del params['priors']
         if self.learner == "sdss":
             del params["bandit_params"]
         simulations_data = agent.run_multiple_simulations(
@@ -311,8 +332,11 @@ class ParameterOptimizer:
             "likelihood",
         ]:
             self.reward_data.append(relevant_data["mer"])
-            if self.objective == "pseudo_likelihood":
-                relevant_data["sigma"] = params["lik_sigma"]
+        if self.objective == "pseudo_likelihood":
+            relevant_data['sigma'] = params['lik_sigma']
+        if self.objective == "clicks_overlap":
+            self.click_data.append(relevant_data["a"])
+            self.reward_data.append(relevant_data["mer"])
         if get_sim_data:
             return relevant_data, simulations_data
         else:
@@ -321,15 +345,32 @@ class ParameterOptimizer:
     def get_prior(self):
         return get_space(self.learner, self.learner_attributes, self.optimizer)
 
-    def optimize(
-        self,
-        objective,
-        num_simulations=1,
-        optimizer="pyabc",
-        db_path="sqlite:///test.db",
-        compute_likelihood=False,
-        max_evals=100,
-    ):
+    def optimize(self, objective, num_simulations=1, optimizer="pyabc",
+                 db_path="sqlite:///test.db", compute_likelihood=False,
+                 max_evals=100):
+        """
+        This function first gets the relevant participant data,
+        creates a lambda function as required by fmin function
+        Calling the lambda function creates simulated data depending on num_simulation
+        The lambda function is called max_evals times in optimize_hyperopt_params.
+
+        Example: num_simulation: 30, max_evals: 400, model: reinforce
+        The model is initated with a set of parameters and creates simulated data for 30 runs
+        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are optimised based on the 30 runs and participant data.
+        Then the updated parameters are passed to the model and another 30 runs are created with the new parameters
+        The loop continues 400 times.
+
+        Args:
+            objective:
+            num_simulations:
+            optimizer:
+            db_path:
+            compute_likelihood:
+            max_evals:
+
+        Returns: res: results
+
+        """
         self.objective = objective
         self.compute_likelihood = compute_likelihood
         self.num_simulations = num_simulations
@@ -337,36 +378,21 @@ class ParameterOptimizer:
         prior = self.get_prior()
         p_data = construct_p_data(self.participant, self.pipeline)
         self.p_data = p_data
-        distance_fn = construct_objective_fn(
-            optimizer, objective, p_data, self.pipeline
-        )
+        distance_fn = construct_objective_fn(optimizer, objective, p_data, self.pipeline)
         observation = get_relevant_data(p_data, self.objective)
         if objective == "likelihood":
             self.compute_likelihood = True
         if optimizer == "pyabc":
-            res = estimate_pyabc_posterior(
-                self.objective_fn,
-                prior,
-                distance_fn,
-                observation,
-                db_path,
-                num_populations=5,
-            )
+            res = estimate_pyabc_posterior(self.objective_fn, prior, distance_fn, observation,
+                                           db_path, num_populations=5)
         else:
             objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
-            res = optimize_hyperopt_params(
-                objective_fn, prior, max_evals=max_evals, show_progressbar=True
-            )
+            res = optimize_hyperopt_params(objective_fn, prior, max_evals=max_evals,
+                                           show_progressbar=True)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
-    def run_model(
-        self,
-        params,
-        objective,
-        num_simulations=1,
-        optimizer="pyabc",
-        db_path="sqlite:///test.db",
-    ):
+    def run_model(self, params, objective, num_simulations=1, optimizer="pyabc",
+                  db_path="sqlite:///test.db"):
         self.objective = objective
         self.num_simulations = num_simulations
         p_data = construct_p_data(self.participant, self.pipeline)
@@ -392,16 +418,49 @@ class ParameterOptimizer:
         data = []
         for j in range(len(self.reward_data[i])):
             for k in range(len(self.reward_data[i][j])):
-                data.append([k + 1, self.reward_data[i][j][k], "algo"])
-        p_mer = self.p_data["mer"]
+                data.append([k + 1, self.reward_data[i][j][k], "algo"])  # reward data of the algorithm
+        p_mer = self.p_data["mer"]  # reward data of the participant
         for i, m in enumerate(p_mer):
             data.append([i + 1, m, "participant"])
-        reward_data = pd.DataFrame(data, columns=["x", "y", "algo"])
+        reward_data = pd.DataFrame(data, columns=["Number of trials", "Reward", "Type"])
         if plot:
-            sns.lineplot(x="x", y="y", hue="algo", data=reward_data)
-            plt.savefig(path, bbox_inches="tight")
-            plt.show()
+            ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=reward_data)
+            plt.savefig(path, bbox_inches='tight')
+            #plt.show()
+            plt.close()
         return reward_data
+
+    def plot_clicks(self, i=0, path="", plot=True):
+
+        # # number of clicks of the algorithm
+        # data = []
+        # for j in range(len(self.click_data[i])):
+        #     for k in range(len(self.click_data[i][j])):
+        #         data.append([k + 1, len(self.click_data[i][j][k]), "algo"])  # reward data of the algorithm
+
+        algo_num_actions = dict((k, []) for k in range(len(self.click_data[0])))
+        for j in range(len(self.click_data[i])):
+            for k in range(len(self.click_data[i][j])):
+                algo_num_actions[k] = len(self.click_data[i][j][k])
+
+        # number of clicks of the participants
+        p_actions = self.p_data["a"]  # reward data of the participant
+        p_num_actions = dict((k, []) for k in range(len(p_actions)))
+        for num_of_trial, clicks_of_trial in enumerate(p_actions):
+            p_num_actions[num_of_trial] = len(clicks_of_trial)
+
+        algo_num_actions = pd.DataFrame.from_dict(algo_num_actions, orient='index')
+        p_num_actions = pd.DataFrame.from_dict(p_num_actions, orient='index')
+        if plot:
+            plt.plot(algo_num_actions, label="Algorithm")
+            plt.plot(p_num_actions, label="Participant")
+            plt.xlabel('Trials')
+            plt.ylabel('Number of clicks')
+            plt.legend()
+            #plt.show()
+            plt.savefig(path, bbox_inches='tight')
+            plt.close()
+        return algo_num_actions, p_num_actions
 
     def plot_history(self, history, prior, obj_fn):
         # fig, ax = plt.subplots()
@@ -435,9 +494,9 @@ class ParameterOptimizer:
 
         mean_prior_rewards = np.mean(prior_rewards, axis=0)
         mean_posterior_rewards = np.mean(posterior_rewards, axis=0)
-        plt.plot(mean_prior_rewards, label="Prior")
-        plt.plot(mean_posterior_rewards, label="Posterior")
-        plt.plot(self.participant.scores, label="Participant")
+        plt.plot(mean_prior_rewards, label='Prior')
+        plt.plot(mean_posterior_rewards, label='Posterior')
+        plt.plot(self.participant.scores, label='Participant')
         plt.legend()
         plt.show()
 
@@ -457,15 +516,8 @@ def plot_model_selection_results(run_history, model_names):
 
 
 class BayesianModelSelection:
-    def __init__(
-        self,
-        models_list,
-        model_attributes,
-        participant,
-        env,
-        objective,
-        num_simulations,
-    ):
+    def __init__(self, models_list, model_attributes, participant, env,
+                 objective, num_simulations):
         self.optimizers = []
         self.models = []
         self.participant = participant
@@ -489,16 +541,11 @@ class BayesianModelSelection:
             priors.append(opt.get_prior())
         p_data = construct_p_data(self.participant, self.pipeline)
         observation = get_relevant_data(p_data, self.objective)
-        distance_fn = construct_objective_fn(
-            "pyabc", self.objective, p_data, self.pipeline
-        )
-        transitions = [
-            MultivariateNormalTransition(scaling=0.1) for _ in range(self.num_models)
-        ]
-        abc = pyabc.ABCSMC(
-            models, priors, distance_fn, transitions=transitions, population_size=100
-        )
-        db_path = "sqlite:///" + "test.db"
+        distance_fn = construct_objective_fn("pyabc", self.objective, p_data, self.pipeline)
+        transitions = [MultivariateNormalTransition(scaling=0.1) for _ in range(self.num_models)]
+        abc = pyabc.ABCSMC(models, priors, distance_fn, transitions=transitions,
+                           population_size=100)
+        db_path = ("sqlite:///" + "test.db")
         abc.new(db_path, observation)
         history = abc.run(max_nr_populations=5)
         return history

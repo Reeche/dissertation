@@ -1,13 +1,14 @@
 import pandas as pd
+import numpy as np
+import json
 
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
 import json
 
-import numpy as np
 
-# Remember to change the number of trials!!!
+### Remember to change the number of trials!!!
 # todo: extract number of trials from the data
 
 data = pd.read_csv("data/dataclips.csv", sep=",")
@@ -245,20 +246,21 @@ keyworddict = {
     "trial_type": 1,
 }
 
-# don't forget to change trial index
-mouselab_dict = format_json(
-    data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=50
-)
-df = save_to_df(mouselab_dict, name_mapping)
+if __name__ == "__main__":
+    # don't forget to change trial index
+    mouselab_dict = format_json(
+        data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=35
+    )
+    df = save_to_df(mouselab_dict, name_mapping)
 
-# create participants csv
-# get bonus information from mouselab df and add this to the participants csv
-df["bonus"] = pd.to_numeric(df["bonus"])
-bonus_temp = df.groupby(["pid"]).sum()
-data_participants = data[["workerid", "status", "beginexp", "cond"]]
-data_participants["pid"] = bonus_temp.index
-data_participants["bonus"] = bonus_temp["bonus"]
-data_participants = data_participants.rename(columns={"cond": "condition"})
+    # create participants csv
+    # get bonus information from mouselab df and add this to the participants csv
+    df["bonus"] = pd.to_numeric(df["bonus"])
+    bonus_temp = df.groupby(["pid"]).sum()
+    data_participants = data[["workerid", "status", "beginexp", "cond"]]
+    data_participants["pid"] = bonus_temp.index
+    data_participants["bonus"] = bonus_temp["bonus"]
+    data_participants = data_participants.rename(columns={"cond": "condition"})
 
-split_participants_df_into_conditions(data_participants)
-data_participants.to_csv("participants_all.csv", index=True, index_label="pid")
+    split_participants_df_into_conditions(data_participants)
+    data_participants.to_csv("participants_all.csv", index=True, index_label="pid")
