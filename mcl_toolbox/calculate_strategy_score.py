@@ -18,32 +18,32 @@ c1.1: constant_variance
 c2.1_dec: decreasing_variance
 
 How to run: python3 calculate_strategy_score.py <strategy> <exp_num> <num_simulation>
-Example: python3 calculate_strategy_score.py c2.1_dec 100000
+Example: python3 mcl_toolbox/calculate_strategy_score.py c2.1_dec 1000 1
 """
 
 exp_num = sys.argv[1]
 num_simulations = int(sys.argv[2])  # at least 200k is recommended
 click_cost = int(sys.argv[3])
-reward_level = sys.argv[4]
+if len(sys.argv) > 4:
+    reward_level = sys.argv[4]
 
 score_list = {}
 click_list = {}
 
 # if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
-# if exp_num is "v1.0" or "c1.1" or "c2.1_dec":
-#     exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
-# else:
+exp_pipelines = learning_utils.pickle_load("mcl_toolbox/data/exp_pipelines.pkl")
+
 
 # Adjust the environment that you want to simulate in global_vars.py
-reward_dist = "categorical"
-num_trials = 35
-reward_distributions = learning_utils.construct_reward_function(
-    structure.reward_levels[reward_level], reward_dist
-)
-repeated_pipeline = learning_utils.construct_repeated_pipeline(
-    structure.branchings[exp_num], reward_distributions, num_trials
-)
-exp_pipelines = {exp_num: repeated_pipeline}
+# reward_dist = "categorical"
+# num_trials = 35
+# reward_distributions = learning_utils.construct_reward_function(
+#     structure.reward_levels[reward_level], reward_dist
+# )
+# repeated_pipeline = learning_utils.construct_repeated_pipeline(
+#     structure.branchings[exp_num], reward_distributions, num_trials
+# )
+# exp_pipelines = {exp_num: repeated_pipeline}
 
 # loops through all strategies and saves into a list
 for strategy in range(0, 89):
@@ -75,12 +75,12 @@ for strategy in range(0, 89):
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print("Score results", score_results)
-dir = "../results/cm/strategy_scores/"
+dir = "results/cm/strategy_scores/"
 learning_utils.create_dir(dir)
 # learning_utils.pickle_save(
 #     score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores.pkl"
 # )
 print("Number of clicks", click_list)
 learning_utils.pickle_save(
-    click_list, f"{dir}/{exp_num}_numberclicks_{click_cost}_strategy_scores.pkl"
+    click_list, f"{dir}/{exp_num}_strategy_scores.pkl"
 )

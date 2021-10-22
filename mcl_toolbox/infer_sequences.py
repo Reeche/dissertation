@@ -86,7 +86,7 @@ def infer_experiment_sequences(
     # create save path
     parent_directory = Path(__file__).parents[1]
     save_path = os.path.join(
-        parent_directory, f"results/inferred_strategies/{reward_structure}"
+        parent_directory, f"results/cm/inferred_strategies/{exp_num}"
     )
     # save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
@@ -105,12 +105,13 @@ if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
     block = None
+    number_of_trials = int(sys.argv[2])
     if len(sys.argv) > 2:
-        block = sys.argv[2]
+        block = sys.argv[3]
 
     # exp_name = "c2.1_dec"
     # block = "training"
 
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=50
+        exp_name, number_of_trials, block, max_evals=2
     )  # max_evals have to be at least 2 for testing

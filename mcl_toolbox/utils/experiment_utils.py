@@ -1,10 +1,7 @@
 import itertools
-import sys
-import os
 import operator
 import os
 from collections import Counter, OrderedDict, defaultdict
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -601,7 +598,7 @@ class Experiment:
         plt.ylim(top=np.max(mean_dsw) + 0.2)
         plt.legend(prop={"size": 22}, ncol=2, loc="upper center")
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
             bbox_inches="tight",
         )
         plt.close(fig)
@@ -751,13 +748,13 @@ class Experiment:
         plt.legend(prop={"size": 22}, ncol=3, loc="upper center")
         if cluster:
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
                 dpi=400,
                 bbox_inches="tight",
             )
         else:
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
                 dpi=400,
                 bbox_inches="tight",
             )
@@ -1024,7 +1021,7 @@ class Experiment:
             plt.tick_params(labelsize=22)
             plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
                 dpi=400,
                 bbox_inches="tight",
             )
@@ -1061,7 +1058,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 22}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1113,7 +1110,7 @@ class Experiment:
             )
             # plt.show()
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                 bbox_inches="tight",
             )
             plt.close(fig)
@@ -1157,7 +1154,7 @@ class Experiment:
         sns.barplot(x="Experiment", y="Proportion (%)", hue="Strategy", data=df)
         # plt.show()
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png",
             bbox_inches="tight",
         )
 
@@ -1180,7 +1177,7 @@ class Experiment:
         plt.ylim(top=60)
         # plt.show()
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png",
             bbox_inches="tight",
         )
 
@@ -1211,7 +1208,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1243,7 +1240,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1397,7 +1394,7 @@ class Experiment:
             plt.xlabel("Trial Number", size=24)
             plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_cluster.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_cluster.png",
                 bbox_inches="tight",
             )
         else:
@@ -1406,7 +1403,7 @@ class Experiment:
             plt.xlabel("Trial Number", size=24)
             plt.ylabel("Percentage of people who changed strategy", fontsize=24)
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_strategy.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_strategy.png",
                 bbox_inches="tight",
             )
         plt.close(fig)
@@ -1458,14 +1455,14 @@ class Experiment:
         plt.xlabel("Trial Number", size=24)
         plt.ylabel(f"Average score for {self.exp_num}", fontsize=24)
         plt.savefig(
-            f"../results/cm/plots/{self.exp_num}_{self.block}/score_development.png",
+            f"results/cm/plots/{self.exp_num}_{self.block}/score_development.png",
             bbox_inches="tight",
         )
         plt.close(fig)
         return None
 
     # About clicks
-    def plot_average_clicks(self):
+    def plot_average_clicks(self, plotting):
         clicks = get_clicks(self.exp_num)
         participant_click_dict = {key: None for key in clicks}
         for pid, click_sequence in clicks.items():
@@ -1483,7 +1480,7 @@ class Experiment:
             plt.ylabel(f"Average number of clicks for {self.exp_num}", fontsize=24)
             # plt.show()
             plt.savefig(
-                f"../results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
+                f"results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
                 bbox_inches="tight",
             )
             plt.close(fig)
@@ -1501,11 +1498,11 @@ class Experiment:
         # pickles strategy range from 0 - 88
         if self.exp_num == "c2.1":
             strategy_score_dict = pd.read_pickle(
-                f"../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+                f"results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
             )
         else:
             strategy_score_dict = pd.read_pickle(
-                f"../results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+                f"results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
             )
 
         for strategy_number, _ in strategy_dict.items():
