@@ -1,19 +1,42 @@
 from setuptools import setup
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setup(
-    name='mcl_toolbox',
-    version='',
-    packages=['mcl_toolbox', 'mcl_toolbox.env', 'mcl_toolbox.utils', 'mcl_toolbox.models', 'mcl_toolbox.mcrl_modelling',
-              'mcl_toolbox.computational_microscope'],
-    url='',
-    license='',
-    author='Ruiqi He, Yash Raj Jain',
-    author_email='',
-    description='',
-    install_requires=requirements
+    name="mcl_toolbox",
+    version="",
+    packages=[
+        "mcl_toolbox",
+        "mcl_toolbox.env",
+        "mcl_toolbox.utils",
+        "mcl_toolbox.models",
+        "mcl_toolbox.mcrl_modelling",
+        "mcl_toolbox.computational_microscope",
+    ],
+    url="",
+    license="",
+    author="Ruiqi He, Yash Raj Jain",
+    author_email="",
+    description="",
+    setup_requires=["wheel"],
+    include_package_data=True,
+    install_requires=[
+        "mouselab @ git+https://github.com/RationalityEnhancement/Rationality-Enhancement-Toolbox.git@master#egg=mouselab&subdirectory=MouseLab",  # noqa
+        "graphviz",
+        "statsmodels",
+        "toolz",
+        "mpmath",
+        "pandas",
+        "hyperopt",
+        "torch",
+        "matplotlib",
+        "scipy",
+        "pyabc",
+        "seaborn",
+        "joblib",
+        "numpy",
+        "imageio",
+        "ipython",
+        "pymannkendall",
+        "scikit-learn",
+        "rpy2",
+    ],
 )
-
-

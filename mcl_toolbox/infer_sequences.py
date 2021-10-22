@@ -23,22 +23,19 @@ def infer_experiment_sequences(
     exp_num="F1", num_trials=35, block="training", pids=None, max_evals=50, **kwargs
 ):
     """
-
-    Args:
-        exp_num: this is bla
-        num_trials: this is a interger
-        block:
-        pids:
-        max_evals:
-        **kwargs:
-
-    Returns:
-
+    Infer the averaged sequences of the participants in an experiment.
+    :param exp_num: experiment name, e.g. F1
+    :param block: block, e.g. "training" or "test"
+    :param pids: list of participants to use, otherwise None. could be useful to exclude paticipants in dataframe.
+    :param max_evals: max optimization evals for fmin
+    :return: strategy and temperature dicts with a key for every pid in the experiment. The strategies are a list for each trial, the temperature is temperature over all trials.
+    Saves data either to results/inferred_strategies/<exp_num> or results/inferred_strategies/<exp_num_block>
     """
     # Initializations
 
     # 79 strategies out of 89
     strategy_space = strategies.strategy_space
+    # no habitual features because each trial is considered individually
     microscope_features = features.microscope
     strategy_weights = strategies.strategy_weights
 
@@ -67,7 +64,8 @@ def infer_experiment_sequences(
     pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(
-        reward_structure)  # tuple of 2
+        reward_structure
+    )  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
         pipeline,
@@ -105,18 +103,15 @@ def infer_experiment_sequences(
 
 if __name__ == "__main__":
     random.seed(123)
-    # exp_name = sys.argv[1]  # e.g. c2.1_dec
-    # number_of_trials = int(sys.argv[2])
-    # block = sys.argv[3]
+    exp_name = sys.argv[1]  # e.g. c2.1_dec
+    block = None
+    number_of_trials = int(sys.argv[2])
+    if len(sys.argv) > 2:
+        block = sys.argv[3]
 
-    # "high_variance_high_cost"
-    # "high_variance_low_cost"
-    # "low_variance_high_cost"
-    # "low_variance_low_cost"
+    # exp_name = "c2.1_dec"
+    # block = "training"
 
-    exp_name = "c1.1"  # high_cost --> check reward_levels in global_vars.py
-    block = "training"
-    number_of_trials = 35
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=50
+        exp_name, number_of_trials, block, max_evals=2
     )  # max_evals have to be at least 2 for testing

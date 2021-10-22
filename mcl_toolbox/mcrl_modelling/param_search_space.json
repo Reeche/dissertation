@@ -71,6 +71,10 @@
         "tau": {
             "type": "loguniform",
             "range": [1e-3, 1e3]
+        },
+        "gaussian_var": {
+            "type": "loguniform",
+            "range": [1e-3, 1e3]
         }
     },
     "decision_params": {

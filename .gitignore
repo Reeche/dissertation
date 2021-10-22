@@ -145,12 +145,12 @@ python/__pycache__
 
 # the results folder
 results/*
-results_*/
 
 mcl_toolbox/import_data/data/*
 
 # the data folder
 data/human/*
 
-# remove all the readpickle files
-*/readpickle.py
+# q-fns
+mcl_toolbox/mcl_toolbox/data/F1_q.pkl
+mcl_toolbox/mcl_toolbox/data/v1.0_q.pkl

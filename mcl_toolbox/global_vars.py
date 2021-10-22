@@ -46,26 +46,34 @@ def pickle_load(file_path):
 
 
 class structure:
+    # excluded trials by Yash (and Val?)
     excluded_trials = {
         "v1.0": None,
-        "c1.1": None,
+        "F1": None,
+        "T1.1": list(range(11)),
+        "c1.1": list(range(30)),
         "c2.1": None,
-        "c2.1_dec": None,
-        "low_variance_high_cost": None,
-        "low_variance_low_cost": None,
-        "high_variance_high_cost": None,
-        "high_variance_low_cost": None
+        "IRL1": list(range(30, 66)),
     }
+
+    # excluded_trials = {
+    #     "v1.0": None,
+    #     "c1.1": None,
+    #     "c2.1": None,
+    #     "c2.1_dec": None,
+    #     "low_variance_high_cost": None,
+    #     "low_variance_low_cost": None,
+    #     "high_variance_high_cost": None,
+    #     "high_variance_low_cost": None
+    # }
 
     branchings = {
         "v1.0": [3, 1, 2],
+        "F1": [3, 1, 2],
+        "T1.1": [3, 1, 1, 2, 3],
         "c1.1": [3, 1, 2],
         "c2.1": [3, 1, 2],
-        "c2.1_dec": [3, 1, 2],
-        "low_variance_high_cost": [3, 1, 2],
-        "low_variance_low_cost": [3, 1, 2],
-        "high_variance_high_cost": [3, 1, 2],
-        "high_variance_low_cost": [3, 1, 2],
+        "IRL1": [3, 1, 2],
     }
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     level_values_decreasing = [
@@ -82,20 +90,17 @@ class structure:
         "high_decreasing": level_values_decreasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
-        "low_variance_high_cost": low_variance_values * 3,
-        "low_variance_low_cost": low_variance_values * 3,
-        "high_variance_high_cost": high_variance_values * 3,
-        "high_variance_low_cost": high_variance_values * 3,
+        "low_variance": low_variance_values * 3,
+        "high_variance": high_variance_values * 3,
     }
 
     reward_exps = {
+        "F1": "categorical",
         "c1.1": "categorical",
         "c2.1": "categorical",
+        "T1.1": "normal",
         "v1.0": "categorical",
-        "high_variance_high_cost": "categorical",#running 3
-        "high_variance_low_cost": "categorical",#running 4
-        "low_variance_high_cost": "categorical",#running 1
-        "low_variance_low_cost": "categorical",#running 2
+        "IRL1": "categorical",
     }
 
     small_level_map = {
@@ -127,29 +132,24 @@ class structure:
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {
         "v1.0": "high_increasing",
+        "F1": "high_increasing",
         "c1.1": "low_constant",
         "c2.1_dec": "high_decreasing",
-        "c2.1": "high_decreasing",
+        "T1.1": "large_increasing",
+        "IRL1": "high_increasing",
     }
 
     normalized_value_directories = {
         "increasing_variance": "high_increasing",
         "constant_variance": "low_constant",
         "decreasing_variance": "high_decreasing",
-    }
-
-    # this is redundant given exp_reward_structures above but for now, my code need exp_num to be the value and the other one to be the key
-    # todo: remove this
-    reward_dict = {
-        "increasing_variance": "v1.0",
-        "decreasing_variance": "c2.1",
-        "constant_variance": "c1.1",
+        "transfer_task": "large_increasing",
     }
 
 
 class model:
     model_attributes = pd.read_csv(
-        os.path.join(file_location, "models/rl_models.csv"), index_col=0
+        str(file_location.joinpath("models/rl_models.csv")), index_col=0
     )
     # TODO quick fix, we need to rename this column as it breaks the fit_mcrl_models.py code
     model_attributes.columns = [
@@ -163,7 +163,7 @@ class strategies:
     num_strategies = 89
     # strategy_space = list(range(1, num_strategies + 1))
     # problematic_strategies = [19, 20, 25, 35, 38, 52, 68, 77, 81, 83] #the microscope strategies are obtained from this
-    strategy_space = pickle_load(os.path.join(file_location, "data/strategy_space.pkl"))
+    strategy_space = pickle_load(file_location.joinpath("data/strategy_space.pkl"))
     strategy_spaces = {
         "participant": [
             6,
@@ -202,87 +202,6 @@ class strategies:
             87,
             88,
         ],
-        "microscope_filtered": [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            21,
-            22,
-            23,
-            24,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31,
-            32,
-            33,
-            34,
-            36,
-            37,
-            39,
-            40,
-            41,
-            42,
-            43,
-            44,
-            45,
-            46,
-            47,
-            48,
-            49,
-            50,
-            51,
-            53,
-            54,
-            55,
-            56,
-            57,
-            58,
-            59,
-            60,
-            61,
-            62,
-            63,
-            64,
-            65,
-            66,
-            67,
-            69,
-            70,
-            71,
-            72,
-            73,
-            74,
-            75,
-            76,
-            78,
-            79,
-            80,
-            82,
-            84,
-            85,
-            86,
-            87,
-            88,
-            89,
-        ],
         "microscope": [
             1,
             2,
@@ -302,13 +221,10 @@ class strategies:
             16,
             17,
             18,
-            19,
-            20,
             21,
             22,
             23,
             24,
-            25,
             26,
             27,
             28,
@@ -318,10 +234,8 @@ class strategies:
             32,
             33,
             34,
-            35,
             36,
             37,
-            38,
             39,
             40,
             41,
@@ -335,7 +249,6 @@ class strategies:
             49,
             50,
             51,
-            52,
             53,
             54,
             55,
@@ -351,7 +264,6 @@ class strategies:
             65,
             66,
             67,
-            68,
             69,
             70,
             71,
@@ -360,13 +272,10 @@ class strategies:
             74,
             75,
             76,
-            77,
             78,
             79,
             80,
-            81,
             82,
-            83,
             84,
             85,
             86,
@@ -377,19 +286,17 @@ class strategies:
     }
 
     strategy_weights = pickle_load(
-        os.path.join(file_location, "data/microscope_weights.pkl")
+        file_location.joinpath("data/microscope_weights.pkl")
     )
-    strategy_distances = pickle_load(
-        os.path.join(file_location, "data/L2_distances.pkl")
-    )
+    strategy_distances = pickle_load(file_location.joinpath("data/L2_distances.pkl"))
 
 
 class features:
     microscope = pickle_load(
-        os.path.join(file_location, "data/microscope_features.pkl")
+        file_location.joinpath("data/microscope_features.pkl")
     )  # this is 51 features
     implemented = pickle_load(
-        os.path.join(file_location, "data/implemented_features.pkl")
+        file_location.joinpath("data/implemented_features.pkl")
     )  # this is 56 features
 
 
