@@ -1,49 +1,156 @@
 {
-    "hierarchical_learner": {
-        "decision_rules": ["adaptive_satisficing", "threshold", "confidence_bound"],
-        "actors": ["lvoc", "reinforce", "baseline_reinforce"]
-    },
-    "lvoc": {
-        "prs": [true, false],
-        "pr_weight": [true, false],
-        "prior": [true, false],
-        "termination_value_known":  [true, false],
-        "montecarlo_updates": [true, false],
-        "delay_scale": [true, false],
-        "vicarious_learning": [true, false],
-        "subjective_cost": [true, false]
-    },
-    "reinforce": {
-        "prs": [true, false],
-        "pr_weight": [true, false],
-        "prior": [true, false],
-        "termination_value_known":  [true, false],
-        "montecarlo_updates": [true, false],
-        "delay_scale": [true, false],
-        "vicarious_learning": [true, false],
-        "subjective_cost": [true, false]
-    },
-    "baseline_reinforce": {
-        "prs": [true, false],
-        "pr_weight": [true, false],
-        "prior": [true, false],
-        "termination_value_known":  [true, false],
-        "montecarlo_updates": [true, false],
-        "delay_scale": [true, false],
-        "vicarious_learning": [true, false],
-        "subjective_cost": [true, false]
-    },
-    "rssl": {
-        "strategy_spaces": ["microscope", "participant"],
-        "stochastic_updating": [true, false],
-        "prs": [true, false],
-        "pr_weight": [true, false],
-        "prior": [true, false],
-        "is_null": [true, false],
-        "is_gaussian": [true, false]
-    },
-    "sdss": {
-        "selectors": ["rssl"],
-        "learners": ["lvoc", "reinforce", "baseline_reinforce"]
-    }
+  "hierarchical_learner": {
+    "decision_rules": [
+      "adaptive_satisficing",
+      "threshold",
+      "confidence_bound"
+    ],
+    "actors": [
+      "lvoc",
+      "reinforce",
+      "baseline_reinforce"
+    ]
+  },
+  "lvoc": {
+    "prs": [
+      true,
+      false
+    ],
+    "pr_weight": [
+      true,
+      false
+    ],
+    "prior": [
+      true,
+      false
+    ],
+    "termination_value_known": [
+      true,
+      false
+    ],
+    "montecarlo_updates": [
+      true,
+      false
+    ],
+    "delay_scale": [
+      true,
+      false
+    ],
+    "vicarious_learning": [
+      true,
+      false
+    ],
+    "subjective_cost": [
+      true,
+      false
+    ]
+  },
+  "reinforce": {
+    "prs": [
+      true,
+      false
+    ],
+    "pr_weight": [
+      true,
+      false
+    ],
+    "prior": [
+      true,
+      false
+    ],
+    "termination_value_known": [
+      true,
+      false
+    ],
+    "montecarlo_updates": [
+      true,
+      false
+    ],
+    "delay_scale": [
+      true,
+      false
+    ],
+    "vicarious_learning": [
+      true,
+      false
+    ],
+    "subjective_cost": [
+      true,
+      false
+    ]
+  },
+  "baseline_reinforce": {
+    "prs": [
+      true,
+      false
+    ],
+    "pr_weight": [
+      true,
+      false
+    ],
+    "prior": [
+      true,
+      false
+    ],
+    "termination_value_known": [
+      true,
+      false
+    ],
+    "montecarlo_updates": [
+      true,
+      false
+    ],
+    "delay_scale": [
+      true,
+      false
+    ],
+    "vicarious_learning": [
+      true,
+      false
+    ],
+    "subjective_cost": [
+      true,
+      false
+    ]
+  },
+  "rssl": {
+    "strategy_spaces": [
+      "microscope",
+      "participant"
+    ],
+    "stochastic_updating": [
+      true,
+      false
+    ],
+    "prs": [
+      true,
+      false
+    ],
+    "pr_weight": [
+      true,
+      false
+    ],
+    "prior": [
+      true,
+      false
+    ],
+    "is_null": [
+      true,
+      false
+    ],
+    "is_gaussian": [
+      true,
+      false
+    ]
+  },
+  "sdss": {
+    "selectors": [
+      "rssl"
+    ],
+    "learners": [
+      "lvoc",
+      "reinforce",
+      "baseline_reinforce"
+    ]
+  }
 }

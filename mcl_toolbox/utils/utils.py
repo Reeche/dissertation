@@ -1,10 +1,9 @@
-import itertools as it
 import heapq
-import numpy as np
+import itertools as it
 
+import numpy as np
 # ---------- Functional utils ---------- #
-from toolz.curried import curry, compose
-from mcl_toolbox.utils.analysis_utils import get_data
+from toolz.curried import compose, curry
 
 max = curry(max)
 min = curry(min)
@@ -46,7 +45,7 @@ def cum_returns(rewards):
 
 def clear_screen():
     print(chr(27) + "[2J")
-    # clear_output() #todo: what is this function doing and where it is?
+    clear_output()
 
 
 def softmax(x, temp=1):
@@ -85,11 +84,3 @@ class PriorityQueue(list):
 
     def push(self, item):
         heapq.heappush(self, (self.inv * self.key(item), item))
-
-
-def get_all_pid_for_env(exp_num):
-    """get a list of all pid for a certain condition"""
-    if exp_num == "c2.1_dec":
-        exp_num = "c2.1"
-    data = get_data(exp_num)
-    return list(data["participants"]["pid"])

@@ -44,7 +44,7 @@ def compute_trial_features(pipeline, ground_truth, trial_actions, features_list)
     return action_feature_values
 
 
-def normalize(pipeline, features_list, num_simulations=100):
+def normalize(pipeline, features_list, num_simulations=1000):
     # num_strategies = len(strategy_space)
     simulated_features = []
     for strategy_num in strategy_space:
@@ -68,17 +68,16 @@ def normalize(pipeline, features_list, num_simulations=100):
 
 
 if __name__ == "__main__":
-    exp_num = "high_cost"
-    num_simulations = 100
+    exp_num = "high_variance_low_cost"
+    num_simulations = 1000
     features_list = pickle_load("../data/implemented_features.pkl")
     branching = [3, 1, 2]
     # for your case replace normal_reward_val with your own distribution or
-    # just replace the pipeline variable with the pipeline you create for your
-    # new experiment
+    # just replace the pipeline variable with the pipeline you create for your new experiment
     pipeline = construct_repeated_pipeline(branching, reward_val, num_simulations)
     max_fv, min_fv = normalize(pipeline, features_list, num_simulations)
     # exp_branching = "_".join([str(b) for b in branching])
-    dir_path = f"normalized_values/{exp_num}"
+    dir_path = f"../data/normalized_values/{exp_num}"
     create_dir(dir_path)
     pickle_save(max_fv, dir_path + "/max.pkl")
     pickle_save(min_fv, dir_path + "/min.pkl")

@@ -21,7 +21,7 @@ sys.modules["distributions"] = distributions
 """
 Run this file to analyse the inferred sequences of the participants. 
 Format: python3 analyze_sequences.py <reward_structure> <num_trials> <block> <create_plot>
-Example: python3 analyze_sequences.py c2.1_dec 35 training True
+Example: python3 mcl_toolbox/analyze_sequences.py c2.1_dec 35 training True
 
 Please remember to set a seed
 """
@@ -51,14 +51,14 @@ def analyse_sequences(
 
     """
     # Initializations
-    decision_systems = pickle_load("../data/decision_systems.pkl")
-    DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
-    W_DS = pickle_load("../data/strategy_decision_weights.pkl")
-    cluster_map = pickle_load("../data/kl_cluster_map.pkl")
+    decision_systems = pickle_load("mcl_toolbox/data/decision_systems.pkl")
+    DS_proportions = pickle_load("mcl_toolbox/data/strategy_decision_proportions.pkl")
+    W_DS = pickle_load("mcl_toolbox/data/strategy_decision_weights.pkl")
+    cluster_map = pickle_load("mcl_toolbox/data/kl_cluster_map.pkl")
     strategy_scores = pickle_load(
-        "../data/strategy_scores.pkl"
+        "mcl_toolbox/data/strategy_scores.pkl"
     )  # todo: update strategy scores to contain all environments, currently only increasing variance
-    cluster_scores = pickle_load("../data/cluster_scores.pkl")
+    cluster_scores = pickle_load("mcl_toolbox/data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
@@ -120,11 +120,11 @@ def analyse_sequences(
         # exit()
 
     if exp_num == "c2.1_dec":
-        save_path = f"../results/cm/plots/c2.1"
+        save_path = f"results/cm/plots/c2.1"
         if block:
             save_path += f"_{block}"
     else:
-        save_path = f"../results/cm/plots/{exp_num}"
+        save_path = f"results/cm/plots/{exp_num}"
         if block:
             save_path += f"_{block}"
     create_dir(save_path)
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     block = sys.argv[3]
     create_plot = sys.argv[4]
 
-    # exp_name = "c1.1"
+    # exp_name = "v1.0"
     # block = "training"
     # number_of_trials = 35
     # create_plot = True

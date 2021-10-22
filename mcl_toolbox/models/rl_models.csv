@@ -1,4 +1,4 @@
-,model,decision_rule,use_pseudo_rewards,pr_weight,actor,term,selector,learner,strategy_space_type,stochastic_updating,subjective_cost,vicarious_learning,termination_value_known,montecarlo_updates,is_null,is_gaussian,bandit_prior,prior,features
+,model,decision_rule,use_pseudo_rewards,pr_weight,actor,term,selector,learner,strategy_space_type,stochastic_updating,subjective_cost,vicarious_learning,termination_value_known,montecarlo_updates,is_null,is_gaussian,bandit_prior,prior,habitual_features
 0,hierarchical_learner,adaptive_satisficing,True,True,lvoc,True,,,,,True,True,True,True,True,,,strategy_weight,habitual
 1,hierarchical_learner,adaptive_satisficing,True,True,lvoc,True,,,,,True,True,True,True,False,,,strategy_weight,habitual
 2,hierarchical_learner,adaptive_satisficing,True,True,lvoc,True,,,,,True,True,True,False,True,,,strategy_weight,habitual

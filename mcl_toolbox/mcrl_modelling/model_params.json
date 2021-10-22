@@ -25,8 +25,8 @@
     "rssl": {
         "params": [],
         "prior": ["gaussian_prior", "bernoulli_prior"],
-        "extra_params": [],
-        "extra_param_defaults": [false, false]
+        "extra_params": ["delay_scale"],
+        "extra_param_defaults": [0]
     },
     "sdss": {
         "params": ["bernoulli_threshold", "alpha", "beta", "num_strategies"],

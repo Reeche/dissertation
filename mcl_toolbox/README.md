@@ -1,7 +1,9 @@
 # Modeling MCRL
+
 This repository contains code for learning mechanisms implemented for modeling how people learn how to plan.
 
 The algorithms implemented are:
+
 1. LVOC and its variants
 2. Hierarchical LVOC and its variants
 3. REINFORCE and its variants
@@ -121,27 +123,26 @@ The algorithms implemented are:
 |  |  +--F1/									<-- data for the experiment with increasing variance and 3-1-2 branching
 ```
 
-
-
 # Considered Reinforcement Learning Models
 
 | column | description | values | notes |
 |---|---|---|---|
-| model |   |   |   |
-| decision_rule |   |   |   |
-| use_pseudo_rewards |   |   |   |
-| pr_weight |   |   |   |
-| actor |   |   |   |
-| term |   |   |   |
-| selector |   |   |   |
-| learner |   |   |   |
-| strategy_space_type |   |   |   |
-| stochastic_updating |   |   |   |
-| subjective_cost |   |   |   |
-| vicarious_learning |   |   |   |
-| termination_value_known |   |   |   |
-| montecarlo_updates |   |   |   |
-| is_null |   |   |   |
-| is_gaussian |   |   |   |
-| bandit_prior |   |   |   |
-| prior |   |   |   |
+| model | Describes the general model class  | hierarchical_learner, sdss, lvoc, reinforce, rssl  |   |
+| decision_rule | The decision rule in the top level of the hierarchical learner that decides whether or not to plan further | threshold, adaptive_satisficing, confidence_bound  |   |
+| use_pseudo_rewards | Whether or not the models use pseudo rewards  |   |   |
+| pr_weight | Weight to the pseudo rewards  |   |   |
+| actor | Determines the lower level learner of the hierarchical learner  |   |   |
+| term | Whether or not the bottom level learner in the hierarchical learner terminates  |   |   |
+| selector | Determines the top level of the SDSS model  |   |   |
+| learner | Determines the bottom level learner of the SDSS model  |   |   |
+| strategy_space_type | Which strategy space to consider (one with all strategies and one with reduced set of most frequent strategies)  |   |   |
+| stochastic_updating | This is uses in the RSSL model to decide how to update the priors (based on a cointoss or explicit probability) |   |   |
+| subjective_cost | This is a parameter added to every click to incorporate additional planning costs people might have  |   |   |
+| vicarious_learning | Whether or not the model does vicarious learning  |   |   |
+| termination_value_known | Whether or not the termination value is assumed by the model  |   |   |
+| montecarlo_updates | Whether or not the model performs monte-carlo updates at the end of a trial  |   |   |
+| is_null | Whether or not the model learns at all  |   | If true, it doesn't update its parameters. Only the initial parameters are used.  |
+| is_gaussian | Whether or not the RSSL model is gaussian (if not gaussian, it is binomial)  |   |   |
+| bandit_prior | Whether or not we fit the prior for the top level RSSL model in the SDSS learner  |   |   |
+| prior | This determines what kind of parameters are optimized for. strategy_weight optimizes for feature based learners and other priors optimize for rssl parameters (2 x num_strategies parameters)  |   |   |
+| features | Two feature sets are considered. One without habitual features and one with habitual features  |   |   |

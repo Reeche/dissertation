@@ -1,17 +1,19 @@
 import itertools as it
 from collections import Counter
-from functools import total_ordering, lru_cache
+from functools import lru_cache, total_ordering
 
 import numpy as np
 import scipy.stats
 from toolz import reduce
 
-LARGE_CACHE_SIZE = int(2**20)
-CACHE_SIZE = int(2**14)
-SMALL_CACHE_SIZE = int(2**16)
+LARGE_CACHE_SIZE = int(2 ** 20)
+CACHE_SIZE = int(2 ** 14)
+SMALL_CACHE_SIZE = int(2 ** 16)
+
 
 class Distribution(object):
     """Represents a probability distribution."""
+
     def __add__(self, other):
         raise NotImplementedError()
 
@@ -24,20 +26,22 @@ class Distribution(object):
 
 class Normal(Distribution):
     """Normal distribution."""
+
     def __init__(self, mu, sigma):
         super().__init__()
         self.mu = mu
         self.sigma = sigma
 
     def __repr__(self):
-        return 'Norm({:.2f}, {:.2f})'.format(self.mu, self.sigma)
+        return "Norm({:.2f}, {:.2f})".format(self.mu, self.sigma)
 
     def __add__(self, other):
-        if hasattr(other, 'mu'):
-            return Normal(self.mu + other.mu,
-                          (self.sigma ** 2 + other.sigma ** 2) ** 0.5)
+        if hasattr(other, "mu"):
+            return Normal(
+                self.mu + other.mu, (self.sigma ** 2 + other.sigma ** 2) ** 0.5
+            )
         # if isinstance(other, PointMass):
-        if hasattr(other, 'val'):
+        if hasattr(other, "val"):
             return Normal(self.mu + other.val, self.sigma)
         else:
             return Normal(self.mu + other, self.sigma)
@@ -49,9 +53,11 @@ class Normal(Distribution):
 
     def to_discrete(self, n=10, max_sigma=2):
         d = scipy.stats.norm(self.mu, self.sigma)
-        vals = np.linspace(-max_sigma*self.sigma+self.mu, max_sigma*self.sigma+self.mu, n)
+        vals = np.linspace(
+            -max_sigma * self.sigma + self.mu, max_sigma * self.sigma + self.mu, n
+        )
         delta = vals[1] - vals[0]
-        bins = np.array((-np.inf, *(vals[1:] - delta/2), np.inf))
+        bins = np.array((-np.inf, *(vals[1:] - delta / 2), np.inf))
         probs = np.diff(d.cdf(bins))
         return Categorical(vals, probs)
 
@@ -69,10 +75,10 @@ class Normal(Distribution):
 
     def sample_nocache(self):
         return self.mu + self.sigma * np.random.randn()
-    
+
     def var(self):
-        return self.sigma**2
-    
+        return self.sigma ** 2
+
     def std(self):
         return self.sigma
 
@@ -80,8 +86,10 @@ class Normal(Distribution):
     def fit(cls, samples):
         return cls(*scipy.stats.norm.fit(samples))
 
+
 class NormalMixture(Distribution):
     """Normal distribution."""
+
     def __init__(self, mu, sigma, weights):
         super().__init__()
         self.mu = np.array(mu)
@@ -92,7 +100,7 @@ class NormalMixture(Distribution):
         self._norm = scipy.stats.norm(mu, sigma)
 
     def __repr__(self):
-        return 'NormMix'
+        return "NormMix"
 
     def to_sampledist(self, n=10000):
         d = SampleDist(self.sample(n))
@@ -124,20 +132,21 @@ class NormalMixture(Distribution):
 @total_ordering
 class Categorical(Distribution):
     """Categorical distribution."""
+
     def __init__(self, vals, probs=None):
         super().__init__()
         self.vals = tuple(vals)
         if probs is None:
-            self.probs = tuple(1/len(vals) for _ in range(len(vals)))
+            self.probs = tuple(1 / len(vals) for _ in range(len(vals)))
         else:
             self.probs = tuple(probs)
 
-        self._hash = hash(str(self.vals) + str(self.probs))
+        self._hash = hash((self.vals, self.probs))
 
     @lru_cache(None)
     def var(self):
         return sum(v ** 2 * p for v, p in self) - self.expectation() ** 2
-    
+
     @lru_cache(None)
     def std(self):
         return self.var() ** 0.5
@@ -146,18 +155,28 @@ class Categorical(Distribution):
         # This is for sorting belief states.
         return True
 
+    # next three methods so we can use in dictionary key
+    # source: https://stackoverflow.com/a/4901847
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return (self.probs, self.vals) == (other.probs, other.vals)
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def __hash__(self):
+        # want the hash to be the same across runs for dictionary keys
         return self._hash
 
-    def __eq__(self, other):
-        return hasattr(other, 'sample')
-
     def __repr__(self):
-        return 'Cat'
+        return "Cat"
 
     def __str__(self):
-        return 'Categorical(vals={}, probs={})'.format(
-            np.array(self.vals), np.array(self.probs))
+        return "Categorical(vals={}, probs={})".format(
+            np.array(self.vals), np.array(self.probs)
+        )
 
     def __iter__(self):
         return zip(self.vals, self.probs)
@@ -167,10 +186,10 @@ class Categorical(Distribution):
 
     @lru_cache(maxsize=None)
     def __add__(self, other):
-        if hasattr(other, 'probs'):
+        if hasattr(other, "probs"):
             # print(f'add({id(self) % 1000}, {id(other) % 1000})')
             return cross((self, other), lambda s, o: s + o)
-        if hasattr(other, 'val'):
+        if hasattr(other, "val"):
             return self.apply(lambda v: v + other.val)
         else:
             return self.apply(lambda v: v + other)
@@ -195,6 +214,7 @@ class Categorical(Distribution):
 
 class PointMass(Categorical):
     """A distribution with all mass on one value."""
+
     def __init__(self, val):
         super().__init__([val], [1])
         self._samples = [val]
@@ -203,12 +223,12 @@ class PointMass(Categorical):
         return hash(self.vals[0])
 
     def __repr__(self):
-        return 'P({})'.format(round(self.vals[0], 2))
+        return "P({})".format(round(self.vals[0], 2))
         # return 'PointMass({})'.format(round(self.vals[0], 2))
 
     def __add__(self, other):
         # if isinstance(other, Distribution):
-        if hasattr(other, 'sample'):
+        if hasattr(other, "sample"):
             return other + self.vals[0]
         else:
             return PointMass(other + self.vals[0])
@@ -222,6 +242,7 @@ class PointMass(Categorical):
 
 class ScipyDistribution(Distribution):
     """Distribution based on a distribution in scipy.stats,"""
+
     def sample(self, n=None):
         return self._dist.rvs(n)
 
@@ -231,13 +252,14 @@ class ScipyDistribution(Distribution):
 
 class Beta(ScipyDistribution):
     """Distribution over [0,1]."""
+
     def __init__(self, alpha, beta):
         self.alpha = alpha
         self.beta = beta
         self._dist = scipy.stats.beta(alpha, beta)
 
     def __repr__(self):
-        return 'Beta({:.2f}, {:.2f})'.format(self.alpha, self.beta)
+        return "Beta({:.2f}, {:.2f})".format(self.alpha, self.beta)
 
     def observe(self, val):
         if val:
@@ -248,6 +270,7 @@ class Beta(ScipyDistribution):
 
 class GenerativeModel(Distribution):
     """Distribution represented by a generative model."""
+
     def __init__(self, sample, kind=None, args=None):
         super().__init__()
         self._sample = sample
@@ -256,16 +279,20 @@ class GenerativeModel(Distribution):
 
     def __repr__(self):
         if self.kind:
-            return '{}{}'.format(self.kind, self.args)
+            return "{}{}".format(self.kind, self.args)
 
     def __add__(self, other):
-        if hasattr(other, 'sample'):
+        if hasattr(other, "sample"):
+
             def sample(n=None):
                 return self.sample(n) + other.sample(n)
+
         else:
+
             def sample(n=None):
                 return self.sample(n) + other
-        return GenerativeModel(sample, kind='add', args=(self, other))
+
+        return GenerativeModel(sample, kind="add", args=(self, other))
 
     @lru_cache(maxsize=CACHE_SIZE)
     def sample(self, n=None):
@@ -292,6 +319,7 @@ ZERO = PointMass(0)
 #     except AttributeError:
 #         return val
 
+
 def sample(val):
     try:
         return val.sample()
@@ -308,19 +336,20 @@ def sample(val):
 
 #     return Categorical(outcomes.keys(), outcomes.values())
 
+
 def cross(dists, f=None):
     if f is None:
         f = lambda *x: x
     outcomes = Counter()
     for outcome_probs in it.product(*dists):
         o, p = zip(*outcome_probs)
-        outcomes[f(*o)] += reduce(lambda x, y: x*y, p)
+        outcomes[f(*o)] += reduce(lambda x, y: x * y, p)
 
     return Categorical(outcomes.keys(), outcomes.values())
 
 
-
 __no_default__ = 25
+
 
 # @lru_cache(maxsize=None)
 def cmax(dists, default=__no_default__):
@@ -331,14 +360,14 @@ def cmax(dists, default=__no_default__):
         if default is not __no_default__:
             return default
         else:
-            raise ValueError('dmax() arg is an empty sequence')
+            raise ValueError("dmax() arg is an empty sequence")
     else:
         return cross(dists, max)
 
 
 # @lru_cache(maxsize=None)
 def dmax(dists, default=__no_default__):
-    assert 0 
+    assert 0
     dists = tuple(dists)
     if len(dists) == 1:
         return dists[0]
@@ -346,12 +375,13 @@ def dmax(dists, default=__no_default__):
         if default is not __no_default__:
             return default
         else:
-            raise ValueError('dmax() arg is an empty sequence')
+            raise ValueError("dmax() arg is an empty sequence")
 
     def sample(n=None):
         return reduce(np.maximum, [d.sample(n) for d in dists])
 
-    return GenerativeModel(sample, kind='dmax', args=dists)
+    return GenerativeModel(sample, kind="dmax", args=dists)
+
 
 # @lru_cache(CACHE_SIZE)
 def smax(dists, default=__no_default__):
@@ -359,7 +389,7 @@ def smax(dists, default=__no_default__):
         if default is not __no_default__:
             return default
         else:
-            raise ValueError('dmax() arg is an empty sequence')
+            raise ValueError("dmax() arg is an empty sequence")
     elif len(dists) == 1:
         return dists[0]
     elif len(dists) == 2:
@@ -378,13 +408,14 @@ def normal_approximation(dist, samples=10000):
 
 class SampleDist(Distribution):
     """A distribution represented by samples."""
+
     def __init__(self, samples):
         super().__init__()
         self._samples = samples
-        self.len = len(samples) if hasattr(samples, '__len__') else None
+        self.len = len(samples) if hasattr(samples, "__len__") else None
 
     def __repr__(self):
-        return 'SD({})'.format(id(self) % 1000)
+        return "SD({})".format(id(self) % 1000)
 
     def sample(self):
         return np.random.choice(self._samples)
@@ -394,9 +425,9 @@ class SampleDist(Distribution):
 
     @lru_cache(SMALL_CACHE_SIZE)
     def __add__(self, other):
-        if hasattr(other, '_samples'):
+        if hasattr(other, "_samples"):
             return SampleDist(self._samples + other._samples)
-        elif hasattr(other, 'sample'):
+        elif hasattr(other, "sample"):
             return SampleDist(self._samples + other.sample(self.len))
         else:
             return SampleDist(self._samples + other)

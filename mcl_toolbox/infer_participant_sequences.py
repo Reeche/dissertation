@@ -1,13 +1,11 @@
-import sys
 import os
+import sys
 from pathlib import Path
 
-from mcl_toolbox.global_vars import structure, strategies, features
+from mcl_toolbox.computational_microscope.computational_microscope import \
+    ComputationalMicroscope
+from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils import learning_utils
-
-from mcl_toolbox.computational_microscope.computational_microscope import (
-    ComputationalMicroscope,
-)
 from mcl_toolbox.utils.analysis_utils import get_data
 
 """
@@ -60,8 +58,7 @@ def infer_many_participant_sequences(
     :param exp_num_list: list of experiment names
     :param pid_list: list of pids as integers
     :param block: block name, None if we want to look at all
-    :return: saves inferred strategy and temperature files for each participant in
-    results/inferred_participant_sequences/{exp_num}
+    :return: saves inferred strategy and temperature files for each participant in results/inferred_participant_sequences/{exp_num}
     """
     for exp in exp_num_list:
         for pid in pid_list:
