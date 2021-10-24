@@ -10,6 +10,8 @@ from mcl_toolbox.utils.learning_utils import (
     get_number_of_actions_from_branching,
     pickle_load,
     pickle_save,
+    construct_repeated_pipeline,
+    construct_reward_function
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
@@ -38,7 +40,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 
 
 class ModelFitter:
-    def __init__(self, exp_name, exp_attributes=None, data_path=None):
+    def __init__(self, exp_name, num_trials, exp_attributes=None, data_path=None):
         """
         
         :param exp_name: name, or folder, where experiment data is saved
@@ -69,7 +71,21 @@ class ModelFitter:
         else:
             del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
-            self.pipeline = structure.exp_pipelines[self.exp_name]
+
+            # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
+            if self.exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
+                reward_dist = "categorical"
+                reward_structure = structure.exp_reward_structures[self.exp_name]
+                reward_distributions = construct_reward_function(
+                    structure.reward_levels[reward_structure], reward_dist
+                )
+                repeated_pipeline = construct_repeated_pipeline(
+                    structure.branchings[self.exp_name], reward_distributions, num_trials
+                )
+                # self.pipeline = {self.exp_name: repeated_pipeline}
+                self.pipeline = repeated_pipeline
+            else:
+                self.pipeline = structure.exp_pipelines[self.exp_name]
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
                 structure.exp_reward_structures[self.exp_name]

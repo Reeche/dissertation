@@ -40,7 +40,7 @@ def infer_experiment_sequences(
     strategy_weights = strategies.strategy_weights
 
     # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
-    if exp_num not in ["v1.0", "c1.1", "c2.1_dec"]:
+    if exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
         reward_dist = "categorical"
         reward_structure = exp_num
         reward_distributions = learning_utils.construct_reward_function(
