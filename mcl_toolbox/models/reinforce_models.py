@@ -262,7 +262,7 @@ class REINFORCE(Learner):
             trials_data["a"].append(actions)
             trials_data["costs"].append(rewards)
             env.get_next_trial()
-
+        # add trial ground truths
         trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data["loss"] = -sum(self.action_log_probs)
