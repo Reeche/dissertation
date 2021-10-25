@@ -10,6 +10,8 @@ from mcl_toolbox.utils.learning_utils import (
     get_number_of_actions_from_branching,
     pickle_load,
     pickle_save,
+    construct_repeated_pipeline,
+    construct_reward_function
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
@@ -38,7 +40,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 
 
 class ModelFitter:
-    def __init__(self, exp_name, exp_attributes=None, data_path=None):
+    def __init__(self, exp_name, exp_attributes=None, data_path=None, **pipeline_kwargs):
         """
         
         :param exp_name: name, or folder, where experiment data is saved
@@ -50,6 +52,9 @@ class ModelFitter:
             OR
             the experiment must be in the global_vars in the structure object
         :param data_path: path where data for experiment exp_name is saved
+        :param pipeline_kwargs: keyword arguments when necessary, two possible inputs:
+                                   - exp_setting in MouseLab registry as string, e.g. 'high_increasing'
+                                   - num_trials as integer, e.g. 30
         """
         self.exp_name = exp_name
         if exp_attributes is None:
@@ -58,6 +63,9 @@ class ModelFitter:
                 "block": None,
                 "experiment": None
             }
+        if 'experiment' not in exp_attributes:
+            exp_attributes['experiment'] = None
+
         if exp_attributes['experiment'] is not None:
             self.E = exp_attributes["experiment"]
             if self.E.pipeline is None:
@@ -68,12 +76,25 @@ class ModelFitter:
             self.normalized_features = self.E.normalized_features
         else:
             del exp_attributes['experiment']
-            self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
-            self.pipeline = structure.exp_pipelines[self.exp_name]
+            self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
+
+            # Check if experiment, already in global_vars for backwards compatibility
+            if self.exp_name in structure.exp_pipelines.keys():
+                self.pipeline = structure.exp_pipelines[self.exp_name]
+                self.normalized_features = get_normalized_features(
+                    structure.exp_reward_structures[self.exp_name]
+                )
+            else:
+                if ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
+                    raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
+                                     "num_trials")
+                else:
+                    reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                    branching = registry(pipeline_kwargs["exp_setting"]).branching
+                    self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                    self.normalized_features = get_normalized_features(exp_setting)
             self.E.attach_pipeline(self.pipeline)
-            self.normalized_features = get_normalized_features(
-                structure.exp_reward_structures[self.exp_name]
-            )
+
         self.branching = self.pipeline[0][0]
         self.num_actions = get_number_of_actions_from_branching(
             self.branching

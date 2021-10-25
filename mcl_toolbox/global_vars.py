@@ -1,3 +1,4 @@
+import os
 import pickle
 from pathlib import Path
 
@@ -26,16 +27,26 @@ def pickle_load(file_path):
     """
     Load the pickle file located at 'filepath'
     Params:
-        file_path  -- Location of the file to be loaded, as pathlib object.
+        file_path  -- Location of the file to be loaded.
     Returns:
         Unpickled object
     """
-    with open(str(file_path), "rb") as file_obj:
-        unpickled_obj = RenameUnpickler(file_obj).load()
-    return unpickled_obj
+    if not os.path.exists(file_path):
+        head, tail = os.path.split(__file__)
+        if file_path[0] == "/":
+            new_path = os.path.join(head, file_path[1:])
+        else:
+            new_path = os.path.join(head, file_path)
+        if os.path.exists(new_path):
+            file_path = new_path
+        else:
+            raise FileNotFoundError(f"{file_path} not found.")
+    file_obj = open(file_path, "rb")
+    return RenameUnpickler(file_obj).load()
 
 
 class structure:
+    # excluded trials by Yash (and Val?)
     excluded_trials = {
         "v1.0": None,
         "F1": None,
@@ -45,6 +56,17 @@ class structure:
         "IRL1": list(range(30, 66)),
     }
 
+    # excluded_trials = {
+    #     "v1.0": None,
+    #     "c1.1": None,
+    #     "c2.1": None,
+    #     "c2.1_dec": None,
+    #     "low_variance_high_cost": None,
+    #     "low_variance_low_cost": None,
+    #     "high_variance_high_cost": None,
+    #     "high_variance_low_cost": None
+    # }
+
     branchings = {
         "v1.0": [3, 1, 2],
         "F1": [3, 1, 2],
@@ -53,13 +75,23 @@ class structure:
         "c2.1": [3, 1, 2],
         "IRL1": [3, 1, 2],
     }
-    level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
-    const_var_values = [[-10, -5, 5, 10]]
+    level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
+    level_values_decreasing = [
+        [0],
+        [-6, -3, 3, 6],
+        [-11, -6, 6, 11],
+        [-67, -34, 34, 67],
+    ]
+    const_var_values = [[-30, -15, 15, 30]]
+    high_variance_values = [[-1000, -50, -50, -50, -20, -20, 50, 50, 50, 100, 100]]
+    low_variance_values = [[-6, -4, -2, 2, 4, 6]]
     reward_levels = {
-        "high_increasing": level_values[1:],
-        "high_decreasing": level_values[1:][::-1],
+        "high_increasing": level_values_increasing[1:],
+        "high_decreasing": level_values_decreasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
+        "low_variance": low_variance_values * 3,
+        "high_variance": high_variance_values * 3,
     }
 
     reward_exps = {
@@ -87,15 +119,14 @@ class structure:
         12: 3,
     }
 
-    """
-    an exp pipeline is a list containing a tuple for each trial that is included, containing:
+    """ 
+    an exp pipeline is a list containing a tuple for each trial that is included, containing: 
     1) branching, e.g. [3,1,2]
     2) reward function, as a functools.partial parametrized by a function reward_function and a level distribution of a list of random variables (using construct_reward_function in learning_utils)
     the function construct_repeated_pipeline is used to create a pipeline
     """
-    exp_pipelines = pickle_load(file_location.joinpath("data/exp_pipelines.pkl"))
+    exp_pipelines = pickle_load("data/exp_pipelines.pkl")
     # for some reason F1 is missing one trial
-
     exp_pipelines["F1"].append(exp_pipelines["F1"][0])
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
