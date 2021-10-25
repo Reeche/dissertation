@@ -1,26 +1,26 @@
-import os
-import random
 import sys
+import os
 from pathlib import Path
-
-from mcl_toolbox.global_vars import features, strategies, structure
-from mcl_toolbox.utils import distributions, learning_utils
+import random
+from mcl_toolbox.computational_microscope.computational_microscope import (
+    ComputationalMicroscope,
+)
+from mcl_toolbox.utils.experiment_utils import Experiment
+from mcl_toolbox.global_vars import structure, strategies, features
+from mcl_toolbox.utils import learning_utils, distributions
 
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
-from mcl_toolbox.computational_microscope.computational_microscope import \
-    ComputationalMicroscope
-from mcl_toolbox.utils.experiment_utils import Experiment
 
 """
-Run this file to infer the averaged sequences of the participants.
-Format: python3 infer_sequences.py <exp name> <block>
-Example: python3 infer_sequences.py T1.1 training
+Run this file to infer the averaged sequences of the participants. 
+Format: python3 infer_sequences.py <exp name> <num_trials> <block>
+Example: python3 mcl_toolbox/infer_sequences.py T1.1 35 training
 """
 
 
 def infer_experiment_sequences(
-    exp_num="F1", block="training", pids=None, max_evals=50, **kwargs
+    exp_num="F1", num_trials=35, block="training", pids=None, max_evals=50, **kwargs
 ):
     """
     Infer the averaged sequences of the participants in an experiment.
@@ -39,12 +39,23 @@ def infer_experiment_sequences(
     microscope_features = features.microscope
     strategy_weights = strategies.strategy_weights
 
-    # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
-    exp_pipelines = structure.exp_pipelines
-
-    if exp_num not in structure.exp_reward_structures:
-        raise (ValueError, "Reward structure not found.")
-    reward_structure = structure.exp_reward_structures[exp_num]
+    # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
+    if exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
+        reward_dist = "categorical"
+        reward_structure = exp_num
+        reward_distributions = learning_utils.construct_reward_function(
+            structure.reward_levels[reward_structure], reward_dist
+        )
+        repeated_pipeline = learning_utils.construct_repeated_pipeline(
+            structure.branchings[exp_num], reward_distributions, num_trials
+        )
+        exp_pipelines = {exp_num: repeated_pipeline}
+    else:
+        # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
+        exp_pipelines = structure.exp_pipelines
+        if exp_num not in structure.exp_reward_structures:
+            raise (ValueError, "Reward structure not found.")
+        reward_structure = structure.exp_reward_structures[exp_num]
 
     if exp_num not in exp_pipelines:
         raise (ValueError, "Experiment pipeline not found.")
@@ -75,9 +86,9 @@ def infer_experiment_sequences(
     # create save path
     parent_directory = Path(__file__).parents[1]
     save_path = os.path.join(
-        parent_directory, f"results/inferred_strategies/{reward_structure}"
+        parent_directory, f"results/cm/inferred_strategies/{exp_num}"
     )
-    # save_path = f"../results/inferred_strategies/{exp_num}"
+    # save_path = f"../results/cm/inferred_strategies/{exp_num}"
     if block:
         save_path += f"_{block}"
     learning_utils.create_dir(save_path)
@@ -94,12 +105,13 @@ if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
     block = None
+    number_of_trials = int(sys.argv[2])
     if len(sys.argv) > 2:
-        block = sys.argv[2]
+        block = sys.argv[3]
 
     # exp_name = "c2.1_dec"
     # block = "training"
 
     infer_experiment_sequences(
-        exp_name, block=block, max_evals=50
+        exp_name, number_of_trials, block, max_evals=2
     )  # max_evals have to be at least 2 for testing

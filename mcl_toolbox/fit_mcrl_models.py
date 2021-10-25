@@ -9,10 +9,9 @@ from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
 Run this using: 
-python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
+python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <number_of_trials> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : 
-{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
+Example: python3 mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 35 "{\"plotting\":True, \"optimization_params\" :{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
 """
 
 
@@ -25,6 +24,7 @@ Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":Tr
 def fit_model(
         exp_name,
         pid,
+        number_of_trials,
         model_index,
         optimization_criterion,
         optimization_params=None,
@@ -62,7 +62,7 @@ def fit_model(
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path)
+    mf = ModelFitter(exp_name, number_of_trials, exp_attributes=exp_attributes, data_path=data_path)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -86,11 +86,19 @@ if __name__ == "__main__":
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
     other_params = {}
-    if len(sys.argv)>5:
-        other_params = ast.literal_eval(sys.argv[5])
+    if len(sys.argv)>6:
+        other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
+
+    # exp_name = 'v1.0'
+    # model_index = 1
+    # optimization_criterion = 'pseudo_likelihood'
+    # pid = 1
+    # number_of_trials = 35
+    # other_params = {}
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
@@ -104,14 +112,15 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 30,
-            "max_evals": 200
+            "num_simulations": 2,
+            "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
 
     fit_model(
         exp_name=exp_name,
         pid=pid,
+        number_of_trials=number_of_trials,
         model_index=model_index,
         optimization_criterion=optimization_criterion,
         **other_params,
