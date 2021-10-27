@@ -282,13 +282,21 @@ def average_performance_clicks(
         plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
         create_dir(plot_directory)
 
+        # plot the boxplot of the last n trials
+        fig, ax = plt.subplots()
+        last_trials = all_participant_clicks.tail(35)
+        last_trials_mean = last_trials.mean(axis=1)
+        # last_trials_mean = last_trials_mean.mean()
+        plt.boxplot(last_trials_mean)
+        # plt.show()
+
         #plt.plot(algo_mean, label=model_index)
         plt.plot(algo_mean, label="Model")
         # plt.plot(participant_mean, label="Participant", linewidth=3.0)
         x = range(0, 35)
 
         # add error bars
-        plt.errorbar(x=x, y=participant_mean, yerr=participant_sem, label='error bar of participant')
+        # plt.errorbar(x=x, y=participant_mean, yerr=participant_sem, label='error bar of participant')
 
         # add shaded area
         plt.fill_between(x, participant_mean-participant_std, participant_mean+participant_std, alpha=0.5, label='SD of participants')
@@ -297,8 +305,6 @@ def average_performance_clicks(
         plt.xlabel('Trials')
         plt.ylabel('Averaged number of clicks')
         plt.title(plot_title)
-
-
 
         # remove duplicated labels
         handles, labels = plt.gca().get_legend_handles_labels()
@@ -310,7 +316,39 @@ def average_performance_clicks(
             bbox_inches="tight",
         )
         plt.close()
-    return {model_index: average_difference}
+
+    return all_participant_clicks, {model_index: average_difference}
+
+def create_boxplots(exp_num_list, optimization_criterion, model_index):
+    click_dict = {}
+    for exp_num in exp_num_list:
+        pid_list = get_all_pid_for_env(exp_num)
+        all_participant_clicks, _ = average_performance_clicks(
+            exp_num,
+            pid_list,
+            optimization_criterion,
+            model_index=model_index,
+            plot_title="",
+            plotting=True,
+        )
+        click_dict[exp_num] = all_participant_clicks.mean(axis=1)
+
+    click_dict["HVHC"] = click_dict.pop("high_variance_high_cost")
+    click_dict["HVLC"] = click_dict.pop("high_variance_low_cost")
+    click_dict["LVHC"] = click_dict.pop("low_variance_high_cost")
+    click_dict["LVLC"] = click_dict.pop("low_variance_low_cost")
+    fig, ax = plt.subplots()
+    ax.boxplot(click_dict.values())
+    ax.set_xticklabels(click_dict.keys())
+
+    parent_directory = Path(__file__).parents[1]
+    plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/boxplot")
+    create_dir(plot_directory)
+    plt.savefig(
+        f"{plot_directory}/{optimization_criterion}_{model_index}.png",
+        bbox_inches="tight",
+    )
+    plt.close()
 
 
 def group_adaptive_maladaptive_participant_list(exp_num, model_index):
@@ -594,9 +632,9 @@ def create_bic_table(exp_num, pid_list, optimization_criterion, model_list):
 
 
 if __name__ == "__main__":
-    exp_num_list = ["low_variance_low_cost"]
-    # exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
-    #                 'low_variance_low_cost']
+    # exp_num_list = ["low_variance_low_cost"]
+    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
+                    'low_variance_low_cost']
 
     optimization_criterion = "number_of_clicks_likelihood"
     # model_list = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',
@@ -609,28 +647,31 @@ if __name__ == "__main__":
 
 
     ## Create the plots
-    for exp_num in exp_num_list:
-        models_temp = {}
-        pid_list = get_all_pid_for_env(exp_num)
-        for model_index in model_list:
-            average_difference = average_performance_clicks(
-                exp_num,
-                pid_list,
-                optimization_criterion,
-                model_index=model_index,
-                plot_title="",
-                plotting=True,
-            )
+    # for exp_num in exp_num_list:
+    #     models_temp = {}
+    #     pid_list = get_all_pid_for_env(exp_num)
+    #     for model_index in model_list:
+    #         all_participant_clicks, average_difference = average_performance_clicks(
+    #             exp_num,
+    #             pid_list,
+    #             optimization_criterion,
+    #             model_index=model_index,
+    #             plot_title="",
+    #             plotting=True,
+    #         )
+    #
+    #         models_temp.update(average_difference)
 
-            models_temp.update(average_difference)
-
-        ##save multi-model plots with several models in one plot
+        #save multi-model plots with several models in one plot
         # plt.savefig(
-        #     f"results/mcrl/plots/multi_model/{exp_num}_{optimization_criterion}_multi_model.png",
+        #     f"results/mcrl/plots/multi_model/{exp_num}_{optimization_criterion}_boxplots.png",
         #     bbox_inches="tight",
         # )
+        # plt.show()
         # plt.close()
 
+    ## Create boxplots for the last n trials
+    create_boxplots(exp_num_list, optimization_criterion, 1855)
 
     ## Compare between models
     # compare_models_df = pd.DataFrame.from_dict(models_temp, orient='index', columns=[exp_num])
