@@ -91,6 +91,13 @@ def get_data(version, data_path=None):
 
     return data
 
+def get_all_pid_for_env(exp_num):
+    """get a list of all pid for a certain condition"""
+    if exp_num == "c2.1_dec":
+        exp_num = "c2.1"
+    data = get_data(exp_num)
+    return list(data["participants"]["pid"])
+
 
 @curry
 def load(file, version=None, func=lambda x: x):

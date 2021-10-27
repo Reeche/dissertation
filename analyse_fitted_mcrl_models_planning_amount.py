@@ -9,8 +9,10 @@ import numpy as np
 import itertools
 import pymannkendall as mk
 from collections import OrderedDict
+from scipy.stats import sem
 
-from mcl_toolbox.utils.utils import get_all_pid_for_env
+
+from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 from mcl_toolbox.utils.learning_utils import pickle_load, create_dir
 from mcl_toolbox.analyze_sequences import analyse_sequences
 
@@ -266,6 +268,10 @@ def average_performance_clicks(
     participant_mean = all_participant_clicks.mean(axis=1)
     algo_mean = all_algo_clicks.mean(axis=1)
 
+    # get standard error and standard deviation of the participants
+    participant_std = all_participant_clicks.std(axis=1)
+    participant_sem = all_participant_clicks.sem(axis=1)
+
     # calculate the difference in number of clicks
     # average difference
     average_difference = np.sum(abs(participant_mean - algo_mean))
@@ -278,10 +284,21 @@ def average_performance_clicks(
 
         #plt.plot(algo_mean, label=model_index)
         plt.plot(algo_mean, label="Model")
-        plt.plot(participant_mean, label="Participant", linewidth=3.0)
+        # plt.plot(participant_mean, label="Participant", linewidth=3.0)
+        x = range(0, 35)
+
+        # add error bars
+        plt.errorbar(x=x, y=participant_mean, yerr=participant_sem, label='error bar of participant')
+
+        # add shaded area
+        plt.fill_between(x, participant_mean-participant_std, participant_mean+participant_std, alpha=0.5, label='SD of participants')
+
+        # add labels
         plt.xlabel('Trials')
         plt.ylabel('Averaged number of clicks')
         plt.title(plot_title)
+
+
 
         # remove duplicated labels
         handles, labels = plt.gca().get_legend_handles_labels()
@@ -577,9 +594,9 @@ def create_bic_table(exp_num, pid_list, optimization_criterion, model_list):
 
 
 if __name__ == "__main__":
-    # exp_num_list = ["low_variance_low_cost"]
-    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
-                    'low_variance_low_cost']
+    exp_num_list = ["low_variance_low_cost"]
+    # exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
+    #                 'low_variance_low_cost']
 
     optimization_criterion = "number_of_clicks_likelihood"
     # model_list = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',

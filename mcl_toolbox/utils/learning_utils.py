@@ -12,7 +12,7 @@ import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
 # TODO: change/add your R_HOME path
-# os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
+os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
@@ -1492,7 +1492,7 @@ def get_clicks_per_trial(participant_clicks, algorithm_clicks):
 
 
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
-        """Compute the objective value to be minimized based on the optimization
+    """Compute the objective value to be minimized based on the optimization
            criterion and the data obtained by running the model with a given set
            of parameters
 
