@@ -18,9 +18,9 @@ python3 -m unittest tests.test_model_fitter
 
 # here, the name is just used for loading in participant data
 new_pipeline = [["F1", "high_increasing", 3, 31],
-                    ["c1.1", "low_constant", 1, 15]]
+                    ["c1.1", "low_constant", 1, 60]]
 old_pipeline = [["F1", "test", 3],
-                ["c1.1","train_final", 1]]
+                ["c1.1","test", 1]]
 
 metrics = ["likelihood", "pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 
