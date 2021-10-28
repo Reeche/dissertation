@@ -1561,7 +1561,8 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         )
         # multivariate_normal_objective = -mn.logpdf(mean_mer, mean=p_data['mer'], cov=sigma ** 2)
         objective_value = normal_objective
-    # print(objective_value)
+    else:
+        raise("Objective value not supported or misspelled.")
     return objective_value
 
 
