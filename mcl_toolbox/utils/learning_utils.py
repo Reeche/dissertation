@@ -1505,7 +1505,7 @@ def get_relevant_data(simulations_data, criterion):
     elif criterion in ["strategy_accuracy", "strategy_transition"]:
         return {"s": simulations_data["s"]}
     elif criterion in ["clicks_overlap"]:
-        return {"a": simulations_data["a"]}
+        return {"a": simulations_data["a"], "mer": simulations_data["mer"]}
     elif criterion in ["likelihood"]:
         if "loss" in simulations_data:
             return {"loss": simulations_data["loss"], "mer": simulations_data["mer"]}
