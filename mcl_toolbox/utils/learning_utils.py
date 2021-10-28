@@ -1505,7 +1505,7 @@ def get_relevant_data(simulations_data, criterion):
     elif criterion in ["strategy_accuracy", "strategy_transition"]:
         return {"s": simulations_data["s"]}
     elif criterion in ["clicks_overlap"]:
-        return {"a": simulations_data["a"]}
+        return {"a": simulations_data["a"], "mer": simulations_data["mer"]}
     elif criterion in ["likelihood"]:
         if "loss" in simulations_data:
             return {"loss": simulations_data["loss"], "mer": simulations_data["mer"]}
@@ -1561,7 +1561,8 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         )
         # multivariate_normal_objective = -mn.logpdf(mean_mer, mean=p_data['mer'], cov=sigma ** 2)
         objective_value = normal_objective
-    # print(objective_value)
+    else:
+        raise("Objective value not supported or misspelled.")
     return objective_value
 
 
