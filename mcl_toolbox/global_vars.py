@@ -53,7 +53,6 @@ class structure:
         "T1.1": list(range(11)),
         "c1.1": list(range(30)),
         "c2.1": None,
-        "IRL1": list(range(30, 66)),
     }
 
     # excluded_trials = {
@@ -73,7 +72,6 @@ class structure:
         "T1.1": [3, 1, 1, 2, 3],
         "c1.1": [3, 1, 2],
         "c2.1": [3, 1, 2],
-        "IRL1": [3, 1, 2],
     }
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     level_values_decreasing = [
@@ -100,7 +98,6 @@ class structure:
         "c2.1": "categorical",
         "T1.1": "normal",
         "v1.0": "categorical",
-        "IRL1": "categorical",
     }
 
     small_level_map = {
@@ -136,7 +133,6 @@ class structure:
         "c1.1": "low_constant",
         "c2.1_dec": "high_decreasing",
         "T1.1": "large_increasing",
-        "IRL1": "high_increasing",
     }
 
     normalized_value_directories = {
