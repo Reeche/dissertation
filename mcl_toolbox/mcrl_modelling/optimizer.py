@@ -287,6 +287,7 @@ class ParameterOptimizer:
         elif self.learner in ["hierarchical_learner"]:
             self.model = models[self.learner_attributes["actor"]]
         self.reward_data = []
+        self.click_data = []
 
     def objective_fn(self, params, get_sim_data=False):
         """
