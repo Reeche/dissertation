@@ -9,7 +9,7 @@ import statsmodels
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 
-from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, ttest_ind, shapiro, bartlett, kruskal, ranksums
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, shapiro, bartlett, kruskal, ranksums
 from mcl_toolbox.analyze_sequences import analyse_sequences
 from mcl_toolbox.utils.statistics_utils import create_comparable_data
 
@@ -181,8 +181,8 @@ def create_data_for_trend_test(
         maladaptive_trend[strategy_name] = worst_n_strategies
 
         # Clicks
+        number_of_clicks = number_of_clicks - 1
         average_clicks[exp_num] = number_of_clicks.mean(axis=1)
-    print("bla")
     return (
         strategy_trend,
         cluster_trend,
@@ -438,12 +438,8 @@ def equivalence_test(name_distribution_dict):
 if __name__ == "__main__":
     random.seed(123)
     number_of_trials = 35
-    number_of_participants = 14
-    # reward_exps = {
-    #     "increasing_variance": "v1.0",
-    #     "decreasing_variance": "c2.1_dec",
-    #     "constant_variance": "c1.1",
-    # }
+    # number_of_participants = 14
+
     reward_exps = {"high_variance_low_cost": "high_variance_low_cost",
                    "high_variance_high_cost": "high_variance_high_cost",
                    "low_variance_low_cost": "low_variance_low_cost",
@@ -517,15 +513,15 @@ if __name__ == "__main__":
 
     print(" -----------------Number of clicks-----------------")
 
-    #test_for_trend(number_of_clicks, "Clicks")
+    # test_for_trend(number_of_clicks, "Clicks")
 
     ### ANOVA and t-test require normality and equal variance. therefore now Kruskal-Willis test and Wilcoxon rank sum test
-    print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5),
-                  number_of_clicks["low_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5)))
-    print("Kruskal - High variance ", kruskal(number_of_clicks["high_variance_high_cost"], number_of_clicks["high_variance_low_cost"]))
-    print("Kruskal - Low variance ", kruskal(number_of_clicks["low_variance_high_cost"], number_of_clicks["low_variance_low_cost"]))
-    print("Kruskal - High cost ", kruskal(number_of_clicks["high_variance_high_cost"], number_of_clicks["low_variance_high_cost"]))
-    print("Kruskal - Low cost ", kruskal(number_of_clicks["high_variance_low_cost"], number_of_clicks["low_variance_low_cost"]))
+    # print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5),
+    #               number_of_clicks["low_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5)))
+    # print("Wilcoxon ranksum - High variance ", ranksums(number_of_clicks["high_variance_high_cost"], number_of_clicks["high_variance_low_cost"]))
+    # print("Wilcoxon ranksum - Low variance ", ranksums(number_of_clicks["low_variance_high_cost"], number_of_clicks["low_variance_low_cost"]))
+    # print("Wilcoxon ranksum - High cost ", ranksums(number_of_clicks["high_variance_high_cost"], number_of_clicks["low_variance_high_cost"]))
+    # print("Wilcoxon ranksum - Low cost ", ranksums(number_of_clicks["high_variance_low_cost"], number_of_clicks["low_variance_low_cost"]))
 
 # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
     # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
@@ -560,34 +556,34 @@ if __name__ == "__main__":
 
     # print("# of clicks at the end of the trial in cond 0 vs cond 1")
     # statistical tests: # of clicks at the end of the trial in cond 0 vs cond 1
-    print(
-        "High variance - last 5 trials",
-        ranksums(
-            number_of_clicks["high_variance_high_cost"],
-            number_of_clicks["high_variance_low_cost"]
-        ),
-    )
-    print(
-        "Low variance - last 5 trials",
-        ranksums(
-            number_of_clicks["low_variance_high_cost"],
-            number_of_clicks["low_variance_low_cost"]
-        ),
-    )
-    print(
-        "High cost - last 5 trials",
-        ranksums(
-            number_of_clicks["high_variance_high_cost"],
-            number_of_clicks["low_variance_high_cost"]
-        ),
-    )
-    print(
-        "Low cost - last 5 trials",
-        ranksums(
-            number_of_clicks["high_variance_low_cost"],
-            number_of_clicks["low_variance_low_cost"]
-        ),
-    )
+    # print(
+    #     "High variance - last 5 trials",
+    #     ranksums(
+    #         number_of_clicks["high_variance_high_cost"],
+    #         number_of_clicks["high_variance_low_cost"]
+    #     ),
+    # )
+    # print(
+    #     "Low variance - last 5 trials",
+    #     ranksums(
+    #         number_of_clicks["low_variance_high_cost"],
+    #         number_of_clicks["low_variance_low_cost"]
+    #     ),
+    # )
+    # print(
+    #     "High cost - last 5 trials",
+    #     ranksums(
+    #         number_of_clicks["high_variance_high_cost"],
+    #         number_of_clicks["low_variance_high_cost"]
+    #     ),
+    # )
+    # print(
+    #     "Low cost - last 5 trials",
+    #     ranksums(
+    #         number_of_clicks["high_variance_low_cost"],
+    #         number_of_clicks["low_variance_low_cost"]
+    #     ),
+    # )
 
     #### Equivalence test ####
     # equivalence_test(number_of_clicks)

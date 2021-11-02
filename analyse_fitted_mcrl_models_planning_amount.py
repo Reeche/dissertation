@@ -282,24 +282,19 @@ def average_performance_clicks(
         plot_directory = os.path.join(parent_directory, f"mcl_toolbox/results/mcrl/plots/average/")
         create_dir(plot_directory)
 
-        # plot the boxplot of the last n trials
-        fig, ax = plt.subplots()
-        last_trials = all_participant_clicks.tail(35)
-        last_trials_mean = last_trials.mean(axis=1)
-        # last_trials_mean = last_trials_mean.mean()
-        plt.boxplot(last_trials_mean)
-        # plt.show()
-
         #plt.plot(algo_mean, label=model_index)
         plt.plot(algo_mean, label="Model")
-        # plt.plot(participant_mean, label="Participant", linewidth=3.0)
-        x = range(0, 35)
+        plt.plot(participant_mean, label="Participant", linewidth=3.0)
+
 
         # add error bars
         # plt.errorbar(x=x, y=participant_mean, yerr=participant_sem, label='error bar of participant')
 
-        # add shaded area
-        plt.fill_between(x, participant_mean-participant_std, participant_mean+participant_std, alpha=0.5, label='SD of participants')
+        # add confidence area as shaded area
+        x = range(0, 35)
+        # sns.lineplot(x=x, y=participant_mean, ci=95)
+        ci = 1.96 * participant_sem
+        plt.fill_between(x, participant_mean-ci, participant_mean+ci, alpha=0.3, label='95% CI')
 
         # add labels
         plt.xlabel('Trials')
@@ -348,6 +343,7 @@ def create_boxplots(exp_num_list, optimization_criterion, model_index):
         f"{plot_directory}/{optimization_criterion}_{model_index}.png",
         bbox_inches="tight",
     )
+    plt.show()
     plt.close()
 
 
@@ -447,17 +443,7 @@ def statistical_tests_between_groups(
     # )
     # parameter_names = pickle_load(first_file)  # header are the parameters
 
-    # parameter_names = ["tau", "lr", "inverse_temperature", "gamma", "lik_sigma", "theta", "pr_weight",
-    #                    "prior_0", "prior_1", "prior_2", "prior_3", "prior_4", "prior_5", "prior_6", "prior_7",
-    #                    "prior_8", "prior_9", "prior_10", "prior_11", "prior_12", "prior_13", "prior_14", "prior_15",
-    #                    "prior_16", "prior_17", "prior_18", "prior_19", "prior_20", "prior_21", "prior_22", "prior_23",
-    #                    "prior_24", "prior_25", "prior_26", "prior_27", "prior_28", "prior_29", "prior_30", "prior_31",
-    #                    "prior_32", "prior_33", "prior_34", "prior_35", "prior_36", "prior_37", "prior_38", "prior_39",
-    #                    "prior_40", "prior_41", "prior_42", "prior_43", "prior_44", "prior_45", "prior_46", "prior_47",
-    #                    "prior_48", "prior_49", "prior_50", "prior_51", "prior_52", "prior_53", "prior_54", "prior_55"]
-
-    ## if LVOC
-    parameter_names = ["tau", "standard_dev", "num_samples", "eps", "lik_sigma", "theta", "pr_weight",
+    parameter_names = ["tau", "lr", "inverse_temperature", "gamma", "lik_sigma", "theta", "pr_weight",
                        "prior_0", "prior_1", "prior_2", "prior_3", "prior_4", "prior_5", "prior_6", "prior_7",
                        "prior_8", "prior_9", "prior_10", "prior_11", "prior_12", "prior_13", "prior_14", "prior_15",
                        "prior_16", "prior_17", "prior_18", "prior_19", "prior_20", "prior_21", "prior_22", "prior_23",
@@ -466,13 +452,23 @@ def statistical_tests_between_groups(
                        "prior_40", "prior_41", "prior_42", "prior_43", "prior_44", "prior_45", "prior_46", "prior_47",
                        "prior_48", "prior_49", "prior_50", "prior_51", "prior_52", "prior_53", "prior_54", "prior_55"]
 
+    ## if LVOC
+    # parameter_names = ["tau", "standard_dev", "num_samples", "eps", "lik_sigma", "theta", "pr_weight",
+    #                    "prior_0", "prior_1", "prior_2", "prior_3", "prior_4", "prior_5", "prior_6", "prior_7",
+    #                    "prior_8", "prior_9", "prior_10", "prior_11", "prior_12", "prior_13", "prior_14", "prior_15",
+    #                    "prior_16", "prior_17", "prior_18", "prior_19", "prior_20", "prior_21", "prior_22", "prior_23",
+    #                    "prior_24", "prior_25", "prior_26", "prior_27", "prior_28", "prior_29", "prior_30", "prior_31",
+    #                    "prior_32", "prior_33", "prior_34", "prior_35", "prior_36", "prior_37", "prior_38", "prior_39",
+    #                    "prior_40", "prior_41", "prior_42", "prior_43", "prior_44", "prior_45", "prior_46", "prior_47",
+    #                    "prior_48", "prior_49", "prior_50", "prior_51", "prior_52", "prior_53", "prior_54", "prior_55"]
+
     df = pd.DataFrame(
         # index=list(parameter_names[0][0].keys()),
         index=parameter_names,
         columns=[
-            "Adaptive participants",
+            "Highly adaptive participants",
             "Maladaptive participants",
-            "Other participants",
+            "Mod. adaptive participants",
         ],
     )
     pid_dict_reversed = {}
@@ -632,7 +628,7 @@ def create_bic_table(exp_num, pid_list, optimization_criterion, model_list):
 
 
 if __name__ == "__main__":
-    # exp_num_list = ["low_variance_low_cost"]
+    # exp_num_list = ["low_variance_high_cost"]
     exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
                     'low_variance_low_cost']
 
@@ -641,12 +637,12 @@ if __name__ == "__main__":
     #               '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855',
     #               '1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
-    #model_list = ['1823', '1759', '415', '31', '1919', '1855', '479', '95']  # '5038', '5134'
+    # model_list = ['1823', '1759', '415', '31', '1919', '479', '95', '1855']  # '5038', '5134'
 
     model_list = ['1855']
 
 
-    ## Create the plots
+    # Create the plots
     # for exp_num in exp_num_list:
     #     models_temp = {}
     #     pid_list = get_all_pid_for_env(exp_num)
@@ -671,7 +667,7 @@ if __name__ == "__main__":
         # plt.close()
 
     ## Create boxplots for the last n trials
-    create_boxplots(exp_num_list, optimization_criterion, 1855)
+    # create_boxplots(exp_num_list, optimization_criterion, 1855)
 
     ## Compare between models
     # compare_models_df = pd.DataFrame.from_dict(models_temp, orient='index', columns=[exp_num])
@@ -689,7 +685,7 @@ if __name__ == "__main__":
     #     pid_dict = group_adaptive_maladaptive_participant_list(exp_num, model_index)
     #     for keys, values in pid_dict.items():
     #         print("Condition", exp_num_list, keys)
-    #         df = create_dataframe_of_fitted_pid(exp_num, values, optimization_criterion)
+    #         df = create_dataframe_of_fitted_pid(exp_num, values, optimization_criterion, model_list)
 
 
     ## Create averaged plots for each group of participants
@@ -704,8 +700,8 @@ if __name__ == "__main__":
 
 
     ##group best model by performance of participants (adaptive, maladaptive) and creates overall plot
-    # statistical_tests_between_groups(exp_num="high_variance_high_cost", optimization_criterion="number_of_clicks_likelihood",
-    #                                  model_index=1823, summary=True)
+    statistical_tests_between_groups(exp_num="low_variance_low_cost", optimization_criterion="number_of_clicks_likelihood",
+                                     model_index=1855, summary=True)
 
     # for model_index in model_list:
         ## calculate and plot the average performance given a model for all participants
@@ -714,7 +710,7 @@ if __name__ == "__main__":
         ##calculate and plot the average performance given a model after grouping participants
         # group_adaptive_maladaptive_participant_list(exp_num_list, model_index)
 
-    ## Create and export BIC list to csv for Matlab code
+    # Create and export BIC list to csv for Matlab code
     # for exp_num in exp_num_list:
     #     # exp_num = 'high_variance_high_cost'
     #     # pid_list = [0, 1, 10]'

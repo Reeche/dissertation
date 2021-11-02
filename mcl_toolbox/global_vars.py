@@ -74,6 +74,10 @@ class structure:
         "c1.1": [3, 1, 2],
         "c2.1": [3, 1, 2],
         "IRL1": [3, 1, 2],
+        "low_variance_high_cost": [3, 1, 2],
+        "low_variance_low_cost": [3, 1, 2],
+        "high_variance_high_cost": [3, 1, 2],
+        "high_variance_low_cost": [3, 1, 2],
     }
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     level_values_decreasing = [
@@ -90,8 +94,10 @@ class structure:
         "high_decreasing": level_values_decreasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
-        "low_variance": low_variance_values * 3,
-        "high_variance": high_variance_values * 3,
+        "low_variance_high_cost": low_variance_values * 3,
+        "low_variance_low_cost": low_variance_values * 3,
+        "high_variance_high_cost": high_variance_values * 3,
+        "high_variance_low_cost": high_variance_values * 3,
     }
 
     reward_exps = {
@@ -101,6 +107,10 @@ class structure:
         "T1.1": "normal",
         "v1.0": "categorical",
         "IRL1": "categorical",
+        "high_variance_high_cost": "categorical",
+        "high_variance_low_cost": "categorical",
+        "low_variance_high_cost": "categorical",
+        "low_variance_low_cost": "categorical",
     }
 
     small_level_map = {

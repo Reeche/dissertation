@@ -5,19 +5,18 @@ import json
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
-import json
-
 
 ### Remember to change the number of trials!!!
-# todo: extract number of trials from the data
 
-data = pd.read_csv("data/dataclips.csv", sep=",")
+data = pd.read_csv("data/dataclips_threecond_full.csv", sep=",")
 
 # remove unfinished data entries
 data["endhit"].replace("", np.nan, inplace=False)
 data["hitid"].replace("HIT_ID", np.nan, inplace=False)
 data.dropna(subset=["endhit"], inplace=True)
 data = data.reset_index(drop=True)
+
+
 # data.drop(index=0, inplace=True) #drops first row
 
 
@@ -30,13 +29,29 @@ def split_participants_df_into_conditions(df):
     Returns:
 
     """
-    df_increasing = df[df["condition"] == 0]
-    df_decreasing = df[df["condition"] == 1]
-    df_constant = df[df["condition"] == 2]
+    df_increasing = df[df["condition"] == 0]  # low cost
+    df_decreasing = df[df["condition"] == 1]  # high cost
+    df_constant = df[df['condition'] == 2]
 
-    df_increasing.to_csv("../../data/human/v1.0/participants.csv", sep=",", index=False)
-    df_decreasing.to_csv("../../data/human/c2.1/participants.csv", sep=",", index=False)
+    df_increasing.to_csv(
+        "../../data/human/v1.0/participants.csv", sep=",", index=False
+    )
+    df_decreasing.to_csv(
+        "../../data/human/c2.1/participants.csv", sep=",", index=False
+    )
     df_constant.to_csv("../../data/human/c1.1/participants.csv", sep=",", index=False)
+
+    # df_high_variance_low_click_cost = df[df["condition"] == 0]
+    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    # df_high_variance_high_click_cost = df[df["condition"] == 2]
+    # df_low_variance_low_click_cost = df[df["condition"] == 3]
+
+    # df_high_variance_low_click_cost.to_csv(
+    #     "../../data/human/high_variance_low_cost/participants.csv", sep=",", index=False)
+    # df_low_variance_high_click_cost.to_csv(
+    #     "../../data/human/low_variance_high_cost/participants.csv", sep=",", index=False)
+    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
+    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
 
 
 def flatten(d, sep="_"):
@@ -126,8 +141,8 @@ def format_json(df, col_name, keyword_dict, no_trials):
                     all_rewards_dict[keyword_name] = reward_value_list
                 else:
                     all_rewards_dict[keyword_name] = reward_value_list[
-                        (keyword_len * trial_id) : (keyword_len * (trial_id + 1))
-                    ]
+                                                     (keyword_len * trial_id): (keyword_len * (trial_id + 1))
+                                                     ]
 
             trial_dict[trial_id] = all_rewards_dict
         mouselab_dict[index] = trial_dict
@@ -145,11 +160,27 @@ def split_mouselab_df_into_conditions(df):
     """
     df_increasing = df[df["condition"] == 0]
     df_decreasing = df[df["condition"] == 1]
-    df_constant = df[df["condition"] == 2]
-    df_increasing.to_csv("../../data/human/v1.0/mouselab-mdp.csv", sep=",", index=False)
-    df_decreasing.to_csv("../../data/human/c2.1/mouselab-mdp.csv", sep=",", index=False)
+    df_constant = df[df['condition'] == 2]
+    df_increasing.to_csv(
+        "../../data/human/v1.0/mouselab-mdp.csv", sep=",", index=False
+    )
+    df_decreasing.to_csv(
+        "../../data/human/c2.1/mouselab-mdp.csv", sep=",", index=False
+    )
     df_constant.to_csv("../../data/human/c1.1/mouselab-mdp.csv", sep=",", index=False)
 
+
+    # df_high_variance_low_click_cost = df[df["condition"] == 0]
+    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    # df_high_variance_high_click_cost = df[df["condition"] == 2]
+    # df_low_variance_low_click_cost = df[df["condition"] == 3]
+    #
+    # df_high_variance_low_click_cost.to_csv(
+    #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_low_variance_high_click_cost.to_csv(
+    #     "../../data/human/low_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 def save_to_df(participant_dict, name_mapping):
     """
@@ -182,7 +213,7 @@ def save_to_df(participant_dict, name_mapping):
 
     df = replace_trialtype_tomouselab(df)
     split_mouselab_df_into_conditions(df)
-    df.to_csv("mouselab-mdp_all.csv", sep=",", index=False)
+    df.to_csv("mouselab-mdp_all_threecond_full.csv", sep=",", index=False)
     return df
 
 
@@ -263,4 +294,4 @@ if __name__ == "__main__":
     data_participants = data_participants.rename(columns={"cond": "condition"})
 
     split_participants_df_into_conditions(data_participants)
-    data_participants.to_csv("participants_all.csv", index=True, index_label="pid")
+    data_participants.to_csv("participants_all_threecond_full.csv", index=True, index_label="pid")
