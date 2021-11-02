@@ -353,7 +353,7 @@ class BaselineREINFORCE(REINFORCE):
             m, baseline = self.get_action_details(env)
             self.policy.saved_log_probs.append(m.log_prob(action_tensor))
             self.value_policy.baselines.append(baseline)
-            self.action_log_probs.append(m.log_prob(action_tensor))
+            self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
             action = self.get_action(env)
         delay = env.get_feedback({"action": action})
