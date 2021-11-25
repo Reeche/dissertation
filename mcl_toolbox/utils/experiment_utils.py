@@ -1047,10 +1047,9 @@ class Experiment:
         # for plotting n adaptive and n maladaptive
         # todo: set number of n automatically
         fig = plt.figure(figsize=(15, 8))
-        print(single_strategies_df)
         # for the first n adaptive ones
         # for i in range(single_strategies_df.shape[0]):  # the strategies
-        for i in range(0, 3):  # the first n adaptive strategies
+        for i in range(0, 4):  # the first n adaptive strategies
             # label = f"Strategy {single_strategies_df.index[i]}"
             ## load strategy names from the strategy_names.pkl file
             strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
@@ -1062,7 +1061,7 @@ class Experiment:
                 label=label,
                 linewidth=3.0,
             )
-        for i in range(3, 6):  # the last n maladaptive ones strategies
+        for i in range(4, 8):  # the last n maladaptive ones strategies
             # label = f"Strategy {single_strategies_df.index[i]}"
             ## load strategy names from the strategy_names.pkl file
             strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
@@ -1077,7 +1076,7 @@ class Experiment:
         plt.xlabel("Trial Number", fontsize=28)
         plt.ylabel("Proportion (%)", fontsize=28)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=50)
+        plt.ylim(top=60)
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 18}, ncol=1, loc="upper center")
         plt.savefig(
