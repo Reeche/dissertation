@@ -1,6 +1,6 @@
 import pandas as pd
 
-object = pd.read_pickle("cluster_scores.pkl")
+object = pd.read_pickle("strategy_names.pkl")
 print(len(object))
 print(object)
 

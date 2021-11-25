@@ -730,7 +730,10 @@ class Experiment:
             if labels:
                 label = labels[i]
             else:
-                label = f"{prefix} {S[i]}"
+                # label = f"{prefix} {S[i]}"
+                # load strategy names from the strategy_names.pkl file
+                strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
+                label = strategy_name_mapping.get(S[i])
             plt.plot(
                 range(1, S_proportions.shape[0] + 1),
                 S_proportions[:, i] * 100,
@@ -937,7 +940,7 @@ class Experiment:
             cluster_dict = dict(cluster_dict)
             return cluster_dict
 
-    def get_top_k_strategies(self, k=70):
+    def get_sorted_strategies(self):
         """
         Get the top k strategies from each trial.
         Example: 35 trials, look at each trial and get the top k strategies in each trial and put them together in a set
@@ -960,7 +963,7 @@ class Experiment:
                 if v > 0:
                     total_set.add(s)
         S = list(total_set)
-        print("Number of strategies used", len(S))
+        # print("Number of strategies used", len(S))
         return S
 
     ### About the top n adaptive strategies and maladaptive strategies
@@ -968,7 +971,7 @@ class Experiment:
         self, adaptive_strategy_list, maladaptive_strategy_list, plot=True
     ):
         """
-        This function sums up the proportion of the top 3 adaptive strategies and worst 3 maladaptive strategies and
+        This function sums up the proportion of the top n adaptive strategies and worst n maladaptive strategies and
         plots them against the summed proportions of the rest
 
         Args:
@@ -1041,22 +1044,42 @@ class Experiment:
                 else:
                     continue
 
-        # for plotting 5 adaptive and 5 maladaptive
+        # for plotting n adaptive and n maladaptive
+        # todo: set number of n automatically
         fig = plt.figure(figsize=(15, 8))
-        for i in range(single_strategies_df.shape[0]):  # the strategies
-            label = f"Strategy {single_strategies_df.index[i]}"
+        print(single_strategies_df)
+        # for the first n adaptive ones
+        # for i in range(single_strategies_df.shape[0]):  # the strategies
+        for i in range(0, 3):  # the first n adaptive strategies
+            # label = f"Strategy {single_strategies_df.index[i]}"
+            ## load strategy names from the strategy_names.pkl file
+            strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
+            label = strategy_name_mapping.get(single_strategies_df.index[i])
             plt.plot(
                 range(1, single_strategies_df.shape[1] + 1),
                 single_strategies_df.iloc[i] * 100,
+                'D-',
                 label=label,
                 linewidth=3.0,
             )
+        for i in range(3, 6):  # the last n maladaptive ones strategies
+            # label = f"Strategy {single_strategies_df.index[i]}"
+            ## load strategy names from the strategy_names.pkl file
+            strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
+            label = strategy_name_mapping.get(single_strategies_df.index[i])
+            plt.plot(
+                range(1, single_strategies_df.shape[1] + 1),
+                single_strategies_df.iloc[i] * 100,
+                '--',
+                label=label,
+                linewidth=3.0,
+                )
         plt.xlabel("Trial Number", fontsize=28)
         plt.ylabel("Proportion (%)", fontsize=28)
         # plt.title(title, fontsize=24)
-        plt.ylim(top=95)
+        plt.ylim(top=50)
         plt.tick_params(labelsize=22)
-        plt.legend(prop={"size": 22}, ncol=3, loc="upper center")
+        plt.legend(prop={"size": 18}, ncol=1, loc="upper center")
         plt.savefig(
             f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
             dpi=400,
@@ -1127,7 +1150,7 @@ class Experiment:
             self.get_strategy_proportions()
         )  # porportion of strategies
 
-        strategies_set = self.get_top_k_strategies(k=70)
+        strategies_set = self.get_sorted_strategies()
         strategies_list = sorted(list(strategies_set))  # get top k strategies
 
         data = []
@@ -1629,19 +1652,19 @@ class Experiment:
 
         if create_plot:
             # plot regarding strategy clusters
-            self.plot_cluster_proportions(C=plot_clusters)
-            self.trial_cluster_change_rate(
-                self.trial_cluster_proportions, C=plot_clusters
-            )
-            self.plot_clusters_proportions_intotal()
-
-            # plot regarding decision systems
-            # mean_dsw = self.plot_average_ds()
-            # self.trial_decision_system_change_rate(mean_dsw)
-            # self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
-
-            # plot regarding the strategies
-            S = self.get_top_k_strategies(k=70)
+            # self.plot_cluster_proportions(C=plot_clusters)
+            # self.trial_cluster_change_rate(
+            #     self.trial_cluster_proportions, C=plot_clusters
+            # )
+            # self.plot_clusters_proportions_intotal()
+            #
+            # # plot regarding decision systems
+            # # mean_dsw = self.plot_average_ds()
+            # # self.trial_decision_system_change_rate(mean_dsw)
+            # # self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
+            #
+            # # plot regarding the strategies
+            S = self.get_sorted_strategies()
             self.plot_strategy_proportions_pertrial(S)
             self.plot_strategies_proportions_intotal()
             self.plot_strategy_scores(strategy_scores)  # not saved as plot
@@ -1658,18 +1681,18 @@ class Experiment:
             )
 
             # plot regarding the change between trials
-            self.analysis_change_percentage(precomputed_strategies, cluster_map)
-            # self.plot_parallel_coordinates(mode=cluster_mode)
-
-            # plots regarding the score development
-            if self.exp_num == "c2.1_dec":
-                self.exp_num = "c2.1"
-            data = get_data(self.exp_num)
-            participant_data = data["participants"]
-            self.average_score_development(participant_data)
+            # self.analysis_change_percentage(precomputed_strategies, cluster_map)
+            # # self.plot_parallel_coordinates(mode=cluster_mode)
+            #
+            # # plots regarding the score development
+            # if self.exp_num == "c2.1_dec":
+            #     self.exp_num = "c2.1"
+            # data = get_data(self.exp_num)
+            # participant_data = data["participants"]
+            # self.average_score_development(participant_data)
 
             # plot about click development
-            self.plot_average_clicks(plotting=True)
+            # self.plot_average_clicks(plotting=True)
 
         else:
             strategy_proportions = self.get_strategy_proportions()

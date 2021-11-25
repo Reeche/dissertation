@@ -209,5 +209,5 @@ if __name__ == "__main__":
 
     # create the plots
     analyse_sequences(
-        exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=5
+        exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=3
     )
