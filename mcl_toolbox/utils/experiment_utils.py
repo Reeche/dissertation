@@ -1049,29 +1049,41 @@ class Experiment:
         fig = plt.figure(figsize=(15, 8))
         # for the first n adaptive ones
         # for i in range(single_strategies_df.shape[0]):  # the strategies
-        for i in range(0, 4):  # the first n adaptive strategies
+        strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
+        # Falk wanted the "Random final outcome search for the best possible outcome" to be renamed to "Goal-setting"
+        strategy_name_mapping[21] = "Goal-setting"
+        # Falk wanted Goal-setting to be on the top
+        label = strategy_name_mapping.get(single_strategies_df.index[3])
+        plt.plot(
+            range(1, single_strategies_df.shape[1] + 1),
+            single_strategies_df.iloc[3] * 100,
+            'D-',
+            label=label,
+            linewidth=2.0,
+            alpha=0.7
+        )
+        for i in range(0, 3):  # the first n adaptive strategies
             # label = f"Strategy {single_strategies_df.index[i]}"
-            ## load strategy names from the strategy_names.pkl file
-            strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
             label = strategy_name_mapping.get(single_strategies_df.index[i])
             plt.plot(
                 range(1, single_strategies_df.shape[1] + 1),
                 single_strategies_df.iloc[i] * 100,
                 'D-',
                 label=label,
-                linewidth=3.0,
+                linewidth=2.0,
+                alpha=0.7
             )
         for i in range(4, 8):  # the last n maladaptive ones strategies
             # label = f"Strategy {single_strategies_df.index[i]}"
             ## load strategy names from the strategy_names.pkl file
-            strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
             label = strategy_name_mapping.get(single_strategies_df.index[i])
             plt.plot(
                 range(1, single_strategies_df.shape[1] + 1),
                 single_strategies_df.iloc[i] * 100,
                 '--',
                 label=label,
-                linewidth=3.0,
+                linewidth=2.0,
+                alpha=0.7
                 )
         plt.xlabel("Trial Number", fontsize=28)
         plt.ylabel("Proportion (%)", fontsize=28)
