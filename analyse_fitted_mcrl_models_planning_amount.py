@@ -285,7 +285,12 @@ def average_performance_clicks(
         #plt.plot(algo_mean, label=model_index)
         plt.plot(algo_mean, label="Model")
         plt.plot(participant_mean, label="Participant", linewidth=3.0)
-
+        if exp_num == "low_variance_high_cost":
+            plt.axhline(y=0, color='r', linestyle='-')
+        if exp_num == "low_variance_low_cost":
+            plt.axhline(y=3.8, color='r', linestyle='-', label='optimal number of clicks')
+        else:
+            plt.axhline(y=12, color='r', linestyle='-', label='optimal number of clicks')
 
         # add error bars
         # plt.errorbar(x=x, y=participant_mean, yerr=participant_sem, label='error bar of participant')
@@ -306,6 +311,10 @@ def average_performance_clicks(
         by_label = OrderedDict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys())
         # plt.show()
+        if exp_num in ["low_variance_high_cost", "low_variance_low_cost"]:
+            plt.ylim(top=6)
+        else:
+            plt.ylim(top=13)
         plt.savefig(
             f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
             bbox_inches="tight",
@@ -642,21 +651,21 @@ if __name__ == "__main__":
     model_list = ['1855']
 
 
-    # Create the plots
-    # for exp_num in exp_num_list:
-    #     models_temp = {}
-    #     pid_list = get_all_pid_for_env(exp_num)
-    #     for model_index in model_list:
-    #         all_participant_clicks, average_difference = average_performance_clicks(
-    #             exp_num,
-    #             pid_list,
-    #             optimization_criterion,
-    #             model_index=model_index,
-    #             plot_title="",
-    #             plotting=True,
-    #         )
-    #
-    #         models_temp.update(average_difference)
+    ###Create the plots
+    for exp_num in exp_num_list:
+        models_temp = {}
+        pid_list = get_all_pid_for_env(exp_num)
+        for model_index in model_list:
+            all_participant_clicks, average_difference = average_performance_clicks(
+                exp_num,
+                pid_list,
+                optimization_criterion,
+                model_index=model_index,
+                plot_title="",
+                plotting=True,
+            )
+
+            models_temp.update(average_difference)
 
         #save multi-model plots with several models in one plot
         # plt.savefig(
