@@ -8,7 +8,7 @@ from scipy import stats
 import numpy as np
 import itertools
 
-from mcl_toolbox.utils.utils import get_all_pid_for_env
+from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 from mcl_toolbox.utils.learning_utils import pickle_load, create_dir
 from mcl_toolbox.analyze_sequences import analyse_sequences
 
@@ -144,12 +144,15 @@ def average_performance_reward(
     number_of_participants = len(pid_list)
 
     for pid in pid_list:
-        data = pickle_load(
-            os.path.join(
-                reward_info_directory,
-                f"{pid}_{optimization_criterion}_{model_index}.pkl",
+        try:
+            data = pickle_load(
+                os.path.join(
+                    reward_info_directory,
+                    f"{pid}_{optimization_criterion}_{model_index}.pkl",
+                )
             )
-        )
+        except:
+            print(f"{pid} and mode {model_index} not found")
         data_temp["Reward"] = data_temp["Reward"].add(data["Reward"])
 
     # create averaged values
@@ -162,15 +165,27 @@ def average_performance_reward(
         create_dir(plot_directory)
         # plt.ylim(-30, 30)
         plt.title(plot_title)
+        # Falk wanted plots
         ax = sns.lineplot(
-            x="Number of trials", y="Reward", hue="Type", data=data_average
+            x="Number of trials", y="Reward", data=data_average[data_average["Type"]=="participant"], legend="full"
         )
+        ax = sns.lineplot(
+            x="Number of trials", y="Reward", data=data_average[data_average["Type"]=="algo"], legend="full"
+        )
+        plt.ylim(12, 37)
+        # ax = sns.lineplot(
+        #     x="Number of trials", y="Reward", hue="Type", data=data_average[data_average["Type"]=="algo"], legend="full"
+        # )
+        # plt.savefig(
+        #     f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
+        #     bbox_inches="tight",
+        # )
         plt.savefig(
-            f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
+            f"falk_LVOC.png",
             bbox_inches="tight",
         )
-        plt.show()
-        plt.close()
+        # plt.show()
+        # plt.close()
     return data_average
 
 
@@ -482,37 +497,29 @@ if __name__ == "__main__":
     # optimization_criterion = sys.argv[2]
 
     # exp_num_list = ["v1.0", "c2.1_dec", "c1.1"]
-    exp_num_list = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost',
-                    'low_variance_low_cost']
+    exp_num_list = ["v1.0"]
 
-    optimization_criterion = "clicks_overlap"
-    # model_list = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',
-    #           '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855']
-    model_list = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
+    optimization_criterion = "pseudo_likelihood"
+    # model_list = ['1757']
+    model_list = ['1852', '1757'] #1757 is LVOC
+    # model_list = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
     # statistical_test_between_envs(exp_num_list, model_index=1918)
     # Run t-test and statistical summary
-    # for exp_num in exp_num_list:
-    #     for model_index in model_list:
-    #         pid_list = get_all_pid_for_env(exp_num)
-    #         average_performance(
-    #             exp_num,
-    #             pid_list,
-    #             optimization_criterion,
-    #             model_index=model_index,
-    #             plot_title="",
-    #             plotting=True,
-    #         )
-    average_performance_clicks(
-        'low_variance_low_cost',
-        ['3', '5', '6'],
-        optimization_criterion,
-        model_index=159,
-        plot_title="",
-        plotting=True,
-    )
+    for exp_num in exp_num_list:
+        for model_index in model_list:
+            pid_list = get_all_pid_for_env(exp_num)
+            average_performance_reward(
+                exp_num,
+                pid_list,
+                optimization_criterion,
+                model_index=model_index,
+                plot_title="",
+                plotting=True,
+            )
+    plt.show()
     # create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
-    df = create_dataframe_of_fitted_pid('low_variance_low_cost', '3', optimization_criterion)
+    # df = create_dataframe_of_fitted_pid('low_variance_low_cost', '3', optimization_criterion)
 
     # # group best model by performance of participants (adaptive, maladaptive) and creates overall plot
     # group_by_adaptive_malapdaptive_participants(exp_num, optimization_criterion, model_index=1853, plotting=False) #if plotting, then it needs model_index
