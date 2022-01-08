@@ -10,6 +10,8 @@ from mcl_toolbox.utils.learning_utils import (
     get_number_of_actions_from_branching,
     pickle_load,
     pickle_save,
+    construct_repeated_pipeline,
+    construct_reward_function
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
@@ -69,7 +71,41 @@ class ModelFitter:
         else:
             del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
-            self.pipeline = structure.exp_pipelines[self.exp_name]
+
+            # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
+            if self.exp_name not in ["c1.1", "c2.1_dec", "F1", "IRL1", "T1.1"]:
+                reward_dist = "categorical"
+                reward_structure = structure.exp_reward_structures[self.exp_name]
+                reward_distributions = construct_reward_function(
+                    structure.reward_levels[reward_structure], reward_dist
+                )
+                repeated_pipeline = construct_repeated_pipeline(
+                    structure.branchings[self.exp_name], reward_distributions, 35
+                )
+                # self.pipeline = {self.exp_name: repeated_pipeline}
+                self.pipeline = repeated_pipeline
+            elif self.exp_name == "exp_mouselab":
+                reward_dist = "categorical"
+                reward_structure_training = structure.exp_reward_structures["v1.0"]
+                reward_structure_test = structure.exp_reward_structures["T1.1"]
+
+                reward_distributions_training = construct_reward_function(
+                    structure.reward_levels[reward_structure_training], reward_dist
+                )
+                reward_distributions_test = construct_reward_function(
+                    structure.reward_levels[reward_structure_test], reward_dist
+                )
+
+                repeated_pipeline_training = construct_repeated_pipeline(
+                    structure.branchings["v1.0"], reward_distributions_training, 35
+                )
+                repeated_pipeline_test = construct_repeated_pipeline(
+                    structure.branchings["T1.1"], reward_distributions_test, 35
+                )
+                repeated_pipeline = repeated_pipeline_training + repeated_pipeline_test
+                self.pipeline = repeated_pipeline
+            else:
+                self.pipeline = structure.exp_pipelines[self.exp_name]
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
                 structure.exp_reward_structures[self.exp_name]
@@ -207,7 +243,7 @@ class ModelFitter:
             plot_dir=None,
     ):
         if sim_params is None:
-            sim_params = {"num_simulations": 30}
+            sim_params = {"num_simulations": 10}
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
         num_simulations = sim_params["num_simulations"]

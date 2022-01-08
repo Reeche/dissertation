@@ -1524,10 +1524,10 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         p_a = {0: p_data['a']}
         a_a = {0: sim_data['a']}
         objective_value = -clicks_overlap(p_a, a_a)[0]
-    elif criterion == "number_of_clicks":
-        p_a = {0: p_data['a']}
-        a_a = {0: sim_data['a']}
-        objective_value = -number_of_clicks(p_a, a_a)[0]
+    # elif criterion == "number_of_clicks":
+    #     p_a = {0: p_data['a']}
+    #     a_a = {0: sim_data['a']}
+    #     objective_value = -number_of_clicks(p_a, a_a)[0]
     elif criterion == "likelihood":
         objective_value = np.mean(sim_data['loss'])
     elif criterion == "mer_performance_error":
@@ -1535,7 +1535,7 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     elif criterion == "pseudo_likelihood":
         mean_mer = np.mean(sim_data['mer'], axis=0)
         sigma = np.exp(sim_data["sigma"])
-        objective_value = -np.sum(
+        normal_objective = -np.sum(
             [
                 norm.logpdf(x, loc=y, scale=sigma)
                 for x, y in zip(mean_mer, p_data["mer"])

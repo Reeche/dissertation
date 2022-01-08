@@ -31,7 +31,7 @@ def fit_model(
         exp_attributes=None,
         sim_params=None,
         simulate=True,
-        plotting=False,
+        plotting=True,
         data_path=None
 ):
     """
@@ -82,15 +82,22 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    exp_name = sys.argv[1]
-    model_index = int(sys.argv[2])
-    optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
+    # exp_name = sys.argv[1]
+    # model_index = int(sys.argv[2])
+    # optimization_criterion = sys.argv[3]
+    # pid = int(sys.argv[4])
+    # other_params = {}
+    # if len(sys.argv)>5:
+    #     other_params = ast.literal_eval(sys.argv[5])
+    # else:
+    #     other_params = {}
+
+    exp_name = "v1.0"
+    model_index = 1823
+    optimization_criterion = "pseudo_likelihood"
+    pid = 1
     other_params = {}
-    if len(sys.argv)>5:
-        other_params = ast.literal_eval(sys.argv[5])
-    else:
-        other_params = {}
+    # number_of_trials = 35
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
@@ -104,8 +111,8 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 30,
-            "max_evals": 200
+            "num_simulations": 2,
+            "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
 

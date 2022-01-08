@@ -1,5 +1,7 @@
 import json
 import os
+import logging
+from pathlib import Path
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 
@@ -435,8 +437,8 @@ class ParameterOptimizer:
         reward_data = pd.DataFrame(data, columns=["Number of trials", "Reward", "Type"])
         if plot:
             ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=reward_data)
-            plt.savefig(path, bbox_inches='tight')
-            #plt.show()
+            # plt.savefig(path, bbox_inches='tight')
+            plt.show()
             plt.close()
         return reward_data
 
