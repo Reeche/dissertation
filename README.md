@@ -22,7 +22,7 @@ pip install -e .
 cd mcl_toolbox
 ```
 
-The process of installing the dependency ```torch``` varies by system. While the rest of the dependencies install automatically, PyTorch will have to be installed manually from the [PyTorch website].(https://pytorch.org/get-started/locally/)
+The process of installing the dependency ```torch``` varies by system. While the rest of the dependencies install automatically, PyTorch will have to be installed manually from the [PyTorch website](https://pytorch.org/get-started/locally/).
 
 ### Import data
 Assuming you are working with the Mouselab-MDP repository and with a postgres database: 
