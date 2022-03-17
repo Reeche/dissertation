@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 import random
 
-from mcl_toolbox.utils.learning_utils import create_dir
+from mcl_toolbox.utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
 from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
@@ -96,7 +96,6 @@ if __name__ == "__main__":
     optimization_criterion = "number_of_clicks_likelihood"
     pid = 1
     other_params = {"plotting": False}
-    # number_of_trials = 35
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
@@ -122,3 +121,5 @@ if __name__ == "__main__":
         optimization_criterion=optimization_criterion,
         **other_params,
     )
+
+# python3 fit_mcrl_models.py high_variance_high_cost 0 number_of_clicks_likelihood 1 "{\"plotting\":False, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
