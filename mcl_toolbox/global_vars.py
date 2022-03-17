@@ -54,18 +54,12 @@ class structure:
         "c1.1": list(range(30)),
         "c2.1": None,
         "IRL1": list(range(30, 66)),
+        "low_variance_high_cost": None,
+        "low_variance_low_cost": None,
+        "high_variance_high_cost": None,
+        "high_variance_low_cost": None
     }
 
-    # excluded_trials = {
-    #     "v1.0": None,
-    #     "c1.1": None,
-    #     "c2.1": None,
-    #     "c2.1_dec": None,
-    #     "low_variance_high_cost": None,
-    #     "low_variance_low_cost": None,
-    #     "high_variance_high_cost": None,
-    #     "high_variance_low_cost": None
-    # }
 
     branchings = {
         "v1.0": [3, 1, 2],
@@ -147,6 +141,10 @@ class structure:
         "c2.1_dec": "high_decreasing",
         "T1.1": "large_increasing",
         "IRL1": "high_increasing",
+        "low_variance_high_cost": "low_variance_high_cost",
+        "low_variance_low_cost": "low_variance_low_cost",
+        "high_variance_high_cost": "high_variance_high_cost",
+        "high_variance_low_cost": "high_variance_low_cost",
     }
 
     normalized_value_directories = {

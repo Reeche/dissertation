@@ -11,8 +11,7 @@ from mcl_toolbox.utils.model_utils import ModelFitter
 Run this using: 
 python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : 
-{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
+Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
 """
 
 
@@ -92,11 +91,11 @@ if __name__ == "__main__":
     # else:
     #     other_params = {}
 
-    exp_name = "v1.0"
-    model_index = 1823
-    optimization_criterion = "pseudo_likelihood"
+    exp_name = "high_variance_high_cost"
+    model_index = 0
+    optimization_criterion = "number_of_clicks_likelihood"
     pid = 1
-    other_params = {}
+    other_params = {"plotting": False}
     # number_of_trials = 35
 
     if "exp_attributes" not in other_params:

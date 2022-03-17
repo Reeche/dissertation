@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import numpy as np
 from condor_utils import create_sub_file, submit_sub_file
 
 bid = 500
@@ -17,8 +18,8 @@ exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_hi
 
 # models = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
 
-models = ['5038', '5134']
-
+# models = ['5038', '5134']
+models = list(range(0, 100))
 pid_dict = {
     'high_variance_high_cost': [0, 1, 10, 18, 22, 25, 30, 32, 38, 41, 46, 47, 49, 57, 60, 63, 65, 70, 74, 76, 81, 83,
                                 88, 89, 94, 103, 108, 109, 111, 114, 116, 118, 125, 129, 134, 139, 149, 150, 156, 161,
@@ -49,3 +50,5 @@ for exp_num_ in exp_num:
 
 # python3 mcl_toolbox/fit_mcrl_models.py v1.0 861 pseudo_likelihood 1 hyperopt 2 2
 # python3 mcl_toolbox/fit_mcrl_models.py <exp_num> <model_index> <optimization criterion> <pid> hyperopt <num_simulation> <max_eval>
+#python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" :
+#{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
