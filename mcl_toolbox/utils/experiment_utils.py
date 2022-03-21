@@ -11,14 +11,14 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
-from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.learning_utils import (
+from utils.analysis_utils import get_data #for running on the server, remove mcl_toolbox. part
+from utils.learning_utils import ( #for running on the server, remove mcl_toolbox. part
     get_clicks,
     get_participant_scores,
     pickle_load,
     sidak_value,
 )
-from mcl_toolbox.utils.sequence_utils import get_acls
+from utils.sequence_utils import get_acls #for running on the server, remove mcl_toolbox. part
 
 # Matplotlib no grid
 plt.rcParams["axes.grid"] = False

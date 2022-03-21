@@ -2,9 +2,9 @@ from collections import defaultdict
 
 import numpy as np
 
-from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.models.rssl_models import RSSL
-from mcl_toolbox.utils.sequence_utils import get_clicks
+from models.base_learner import Learner #for running on the server, remove mcl_toolbox. part
+from models.rssl_models import RSSL #for running on the server, remove mcl_toolbox. part
+from utils.sequence_utils import get_clicks #for running on the server, remove mcl_toolbox. part
 
 
 class SDSS(Learner):

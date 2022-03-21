@@ -3,9 +3,9 @@ from collections import defaultdict
 import numpy as np
 import scipy as sp
 
-from mcl_toolbox.global_vars import hierarchical_params
-from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (get_log_norm_cdf,
+from global_vars import hierarchical_params #for runnigng on the server, remove mcl_toolbox part
+from models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
+from utils.learning_utils import (get_log_norm_cdf, #for runnigng on the server, remove mcl_toolbox part
                                               get_log_norm_pdf, rows_mean,
                                               temp_sigmoid)
 

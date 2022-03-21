@@ -12,15 +12,15 @@ import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
 # TODO: change/add your R_HOME path
-os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
+# os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma, norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.distributions import Categorical, Normal
+from utils.analysis_utils import get_data #for runnigng on the server, remove mcl_toolbox part
+from utils.distributions import Categorical, Normal
 
 from mouselab.envs.registry import registry
 

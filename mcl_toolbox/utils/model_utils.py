@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 
-from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
-from mcl_toolbox.global_vars import features, model, strategies, structure
-from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
-from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.utils.learning_utils import (
+from env.generic_mouselab import GenericMouselabEnv #for runnigng on the server, remove mcl_toolbox part
+from global_vars import features, model, strategies, structure  #for runnigng on the server, remove mcl_toolbox part
+from mcrl_modelling.optimizer import ParameterOptimizer #for runnigng on the server, remove mcl_toolbox part
+from utils.experiment_utils import Experiment #for runnigng on the server, remove mcl_toolbox part
+from utils.learning_utils import ( #for runnigng on the server, remove mcl_toolbox part
     get_normalized_features,
     get_number_of_actions_from_branching,
     pickle_load,
@@ -13,7 +13,7 @@ from mcl_toolbox.utils.learning_utils import (
     construct_repeated_pipeline,
     construct_reward_function
 )
-from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
+from utils.sequence_utils import compute_log_likelihood #for runnigng on the server, remove mcl_toolbox part
 
 implemented_features = features.implemented
 microscope_features = features.microscope

@@ -4,8 +4,8 @@ import ast
 from pathlib import Path
 import random
 
-from mcl_toolbox.utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.model_utils import ModelFitter
+from utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
+from utils.model_utils import ModelFitter
 
 """
 Run this using: 
@@ -81,21 +81,25 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # other_params = {}
-    # if len(sys.argv)>5:
-    #     other_params = ast.literal_eval(sys.argv[5])
-    # else:
-    #     other_params = {}
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    other_params = {}
+    if len(sys.argv)>5:
+        other_params = ast.literal_eval(sys.argv[5])
+        # other_params = {"plotting": sys.argv[5],
+        #     "optimization_params": {"optimizer": sys.argv[6],
+        #                 "num_simulations": sys.argv[7],
+        #                 "max_evals": sys.argv[8]}}
+    else:
+        other_params = {}
 
-    exp_name = "high_variance_high_cost"
-    model_index = 0
-    optimization_criterion = "number_of_clicks_likelihood"
-    pid = 1
-    other_params = {"plotting": False}
+    # exp_name = "high_variance_high_cost"
+    # model_index = 0
+    # optimization_criterion = "number_of_clicks_likelihood"
+    # pid = 1
+    # other_params = {"plotting": True}
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
@@ -109,8 +113,8 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 2,
-            "max_evals": 2
+            "num_simulations": 50,
+            "max_evals": 500
         }
         other_params["optimization_params"] = optimization_params
 
@@ -123,3 +127,4 @@ if __name__ == "__main__":
     )
 
 # python3 fit_mcrl_models.py high_variance_high_cost 0 number_of_clicks_likelihood 1 "{\"plotting\":False, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
+# python3 fit_mcrl_models.py high_variance_high_cost 0 number_of_clicks_likelihood 1 True hyperopt 2 2

@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from mcl_toolbox.models.base_learner import Learner
+from models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
 
 
 class Policy(nn.Module):

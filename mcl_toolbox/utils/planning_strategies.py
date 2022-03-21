@@ -3,7 +3,7 @@ from random import choice, shuffle
 
 from numpy import argsort
 
-from mcl_toolbox.env.modified_mouselab import TrialSequence, approx_max
+from env.modified_mouselab import TrialSequence, approx_max #for running on the server, remove mcl_toolbox. part
 
 """ This file contains the 89 algorithmic strategies implemented for
     'Measuring how people learn how to plan'

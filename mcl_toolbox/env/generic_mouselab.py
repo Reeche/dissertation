@@ -2,10 +2,10 @@ import gym
 import numpy as np
 from gym import spaces
 
-from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
-from mcl_toolbox.utils.distributions import Categorical
-from mcl_toolbox.utils.env_utils import get_num_actions
-from mcl_toolbox.utils.sequence_utils import compute_current_features
+from env.modified_mouselab import TrialSequence, reward_val #for runnigng on the server, remove mcl_toolbox part
+from utils.distributions import Categorical #for runnigng on the server, remove mcl_toolbox part
+from utils.env_utils import get_num_actions #for runnigng on the server, remove mcl_toolbox part
+from utils.sequence_utils import compute_current_features #for runnigng on the server, remove mcl_toolbox part
 
 
 class GenericMouselabEnv(gym.Env):

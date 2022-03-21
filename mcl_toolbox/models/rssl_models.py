@@ -3,8 +3,8 @@ from collections import defaultdict
 import mpmath as mp
 import numpy as np
 
-from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (
+from models.base_learner import Learner #for running on the server, remove mcl_toolbox. part
+from utils.learning_utils import ( #for running on the server, remove mcl_toolbox. part
     beta_integrate,
     get_log_beta_cdf,
     get_log_beta_pdf,
@@ -12,7 +12,7 @@ from mcl_toolbox.utils.learning_utils import (
     get_log_norm_pdf,
     norm_integrate,
 )
-from mcl_toolbox.utils.planning_strategies import strategy_dict
+from utils.planning_strategies import strategy_dict #for running on the server, remove mcl_toolbox. part
 
 precision_epsilon = 1e-4
 quadrature_max_degree = 1e5

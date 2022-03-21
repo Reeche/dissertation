@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
-from mcl_toolbox.env.modified_mouselab import get_termination_mers
-from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
+from env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
+from utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
 
 
 class Learner(ABC):

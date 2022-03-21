@@ -3,7 +3,7 @@ import os
 import logging
 from pathlib import Path
 
-os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+# os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 
 from functools import partial
 
@@ -15,15 +15,15 @@ import seaborn as sns
 from hyperopt import Trials, fmin, hp, tpe
 from pyabc.transition import MultivariateNormalTransition
 
-from mcl_toolbox.env.modified_mouselab import get_termination_mers
-from mcl_toolbox.models.hierarchical_models import HierarchicalLearner
-from mcl_toolbox.models.lvoc_models import LVOC
-from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE
-from mcl_toolbox.models.rssl_models import RSSL
-from mcl_toolbox.models.sdss_models import SDSS
-from mcl_toolbox.utils.learning_utils import (compute_objective,
+from env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
+from models.hierarchical_models import HierarchicalLearner #for runnigng on the server, remove mcl_toolbox part
+from models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
+from models.reinforce_models import REINFORCE, BaselineREINFORCE #for runnigng on the server, remove mcl_toolbox part
+from models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
+from models.sdss_models import SDSS #for runnigng on the server, remove mcl_toolbox part
+from utils.learning_utils import (compute_objective, #for runnigng on the server, remove mcl_toolbox part
                                               get_relevant_data)
-from mcl_toolbox.utils.participant_utils import ParticipantIterator
+from utils.participant_utils import ParticipantIterator #for runnigng on the server, remove mcl_toolbox part
 
 loggers_to_shut_up = [
     "hyperopt.tpe",
@@ -438,8 +438,8 @@ class ParameterOptimizer:
         reward_data = pd.DataFrame(data, columns=["Number of trials", "Reward", "Type"])
         if plot:
             ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=reward_data)
-            # plt.savefig(path, bbox_inches='tight')
-            plt.show()
+            plt.savefig(path, bbox_inches='tight')
+            # plt.show()
             plt.close()
         return reward_data
 

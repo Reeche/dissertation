@@ -3,8 +3,8 @@ from collections import defaultdict
 import mpmath as mp
 import numpy as np
 
-from mcl_toolbox.models.base_learner import Learner
-from mcl_toolbox.utils.learning_utils import (break_ties_random,
+from models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
+from utils.learning_utils import (break_ties_random, #for runnigng on the server, remove mcl_toolbox part
                                               estimate_bayes_glm,
                                               get_log_norm_cdf,
                                               get_log_norm_pdf, norm_integrate,
