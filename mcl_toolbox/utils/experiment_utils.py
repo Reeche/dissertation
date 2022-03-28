@@ -11,14 +11,14 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
-from utils.analysis_utils import get_data #for running on the server, remove mcl_toolbox. part
-from utils.learning_utils import ( #for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.analysis_utils import get_data #for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.learning_utils import ( #for running on the server, remove mcl_toolbox. part
     get_clicks,
     get_participant_scores,
     pickle_load,
     sidak_value,
 )
-from utils.sequence_utils import get_acls #for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.sequence_utils import get_acls #for running on the server, remove mcl_toolbox. part
 
 # Matplotlib no grid
 plt.rcParams["axes.grid"] = False
@@ -108,9 +108,9 @@ class Experiment:
         exp_num,
         cm=None,
         pids=None,
-        block=None,
+        # block=None,
         data_path=None,
-        exclude_trials=None,
+        #exclude_trials=None,
         **kwargs,
     ):
         """
@@ -126,7 +126,7 @@ class Experiment:
         self.exp_num = exp_num
         self.data = get_data(exp_num, data_path)
         self.cm = cm
-        self.block = None
+        # self.block = kwargs["block"]
         if pids:
             self.pids = pids
         else:
@@ -143,10 +143,15 @@ class Experiment:
             # "participants" dataframe is assumed in init_participants function below
             self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
-        if block:
-            self.block = block
-        self.excluded_trials = exclude_trials
-        self.additional_constraints = kwargs
+        if "block" in kwargs:
+            self.block = kwargs["block"]
+        self.excluded_trials = kwargs["exclude_trials"]
+        if "cost" in kwargs: #if exp_attributes contain the click cost
+            self.cost = kwargs["cost"]
+        if "additional_constraints" in kwargs:
+            self.additional_constraints = kwargs["additional_constraints"]
+        else:
+            self.additional_constraints = None
         self.participant_strategies = {}
         self.participant_temperatures = {}
         self.init_participants()
@@ -157,10 +162,14 @@ class Experiment:
     def init_participants(self):
         participants_data = self.data["participants"]
         self.conditions = set()
-        for constraint in self.additional_constraints.keys():
-            participants_data = participants_data[
-                participants_data[constraint] == self.additional_constraints[constraint]
-            ]
+        if self.additional_constraints:
+            for constraint in self.additional_constraints.keys():
+                participants_data = participants_data[
+                    participants_data[constraint] == self.additional_constraints[constraint]
+                ]
+                pids = participants_data["pid"].tolist()
+                self.pids = [p for p in pids if p in self.pids]
+        else:
             pids = participants_data["pid"].tolist()
             self.pids = [p for p in pids if p in self.pids]
         trial_nums = []

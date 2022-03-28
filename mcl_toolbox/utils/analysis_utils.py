@@ -10,7 +10,7 @@ import pandas as pd
 import seaborn as sns
 from toolz import curry
 
-from utils.utils import str_join #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.utils import str_join #for runnigng on the server, remove mcl_toolbox part
 
 sns.set_style("white")
 sns.set_context("notebook", font_scale=1.4)

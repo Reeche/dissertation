@@ -3,10 +3,10 @@ import operator
 import numpy as np
 from scipy.special import logsumexp, softmax
 
-from env.modified_mouselab import TrialSequence #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import (get_counts, #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.modified_mouselab import TrialSequence #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.learning_utils import (get_counts, #for runnigng on the server, remove mcl_toolbox part
                                               get_normalized_feature_values)
-from utils.planning_strategies import strategy_dict #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.planning_strategies import strategy_dict #for runnigng on the server, remove mcl_toolbox part
 
 
 def get_accuracy_position(

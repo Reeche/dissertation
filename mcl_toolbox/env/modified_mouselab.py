@@ -7,8 +7,8 @@ from typing import List
 import numpy as np
 from toolz import get
 
-from utils import distributions #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils import distributions #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
 
 """ This file defines the node, trial and trial sequence class for the
     feature based representation of the Mouselab-MDP. This assumes that

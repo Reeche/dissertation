@@ -10,5 +10,5 @@ sys.modules["distributions"] = distributions
 # object3 = pd.read_pickle("../../results/mcrl/low_variance_low_cost/info_low_variance_low_cost_data/3_number_of_clicks_likelihood_1823.pkl")
 # object4 = pd.read_pickle("../../results/mcrl/low_variance_low_cost/low_variance_low_cost_priors/3_number_of_clicks_likelihood_95.pkl")
 
-object = pd.read_pickle("../data/normalized_values/high_variance_low_cost/max.pkl")
+object = pd.read_pickle("../data/exp_pipelines.pkl")
 print(len(object))

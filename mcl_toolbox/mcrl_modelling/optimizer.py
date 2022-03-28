@@ -15,15 +15,15 @@ import seaborn as sns
 from hyperopt import Trials, fmin, hp, tpe
 from pyabc.transition import MultivariateNormalTransition
 
-from env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
-from models.hierarchical_models import HierarchicalLearner #for runnigng on the server, remove mcl_toolbox part
-from models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
-from models.reinforce_models import REINFORCE, BaselineREINFORCE #for runnigng on the server, remove mcl_toolbox part
-from models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
-from models.sdss_models import SDSS #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import (compute_objective, #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.hierarchical_models import HierarchicalLearner #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.sdss_models import SDSS #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.learning_utils import (compute_objective, #for runnigng on the server, remove mcl_toolbox part
                                               get_relevant_data)
-from utils.participant_utils import ParticipantIterator #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.participant_utils import ParticipantIterator #for runnigng on the server, remove mcl_toolbox part
 
 loggers_to_shut_up = [
     "hyperopt.tpe",

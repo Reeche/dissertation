@@ -9,7 +9,7 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 # exp_num = ['high_variance_high_cost']
 # models = ['1823']
-# pid_dict = {'high_variance_high_cost': [18]}
+# pid_dict = {'high_variance_high_cost': [18, 22, 25, 30, 32, 38]}
 
 
 exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost']
@@ -20,7 +20,9 @@ exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_hi
 
 # models = ['5038', '5134']
 # models = list(range(0, 100)) # started 18.03.2022
-models = list(range(100, 200)) # started 21.03.2022
+# models = list(range(100, 200)) # started 21.03.2022
+# models = list(range(200, 250)) # started 22.03.2022
+models = list(range(250, 300)) # started 22.03.2022
 
 
 pid_dict = {
@@ -39,20 +41,27 @@ pid_dict = {
 
 # num_simulation = 2  # 30
 # max_eval = 2  # 400
-for exp_num_ in exp_num:
-    for models_ in models:
-        pids = pid_dict.get(exp_num_)
-        if pids:
-            for pid in pids:
-                # args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, True, 'hyperopt', num_simulation, max_eval]
-                args = [exp_num_, models_, 'number_of_clicks_likelihood', pid]
-                # args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, "{\'plotting\':True, \'optimization_params\': {\'optimizer\':\'hyperopt\', \'num_simulations\': 2, \'max_evals\': 2}}"]
-                sub_file = create_sub_file(script, args, process_arg=False, num_runs=1, num_cpus=1, req_mem=2000,
-                                           logs=False, errs=True, outputs=True)
-                submit_sub_file(sub_file, bid)
-                time.sleep(0.5)
+# for exp_num_ in exp_num:
+#     for models_ in models:
+#         pids = pid_dict.get(exp_num_)
+#         if pids:
+#             for pid in pids:
+#                 # args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, True, 'hyperopt', num_simulation, max_eval]
+#                 args = [exp_num_, models_, 'number_of_clicks_likelihood', pid]
+#                 # args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, "{\'plotting\':True, \'optimization_params\': {\'optimizer\':\'hyperopt\', \'num_simulations\': 2, \'max_evals\': 2}}"]
+#                 sub_file = create_sub_file(script, args, process_arg=False, num_runs=1, num_cpus=1, req_mem=2000,
+#                                            logs=False, errs=True, outputs=True)
+#                 submit_sub_file(sub_file, bid)
+#                 time.sleep(0.5)
 
-# python3 mcl_toolbox/fit_mcrl_models.py v1.0 861 pseudo_likelihood 1 hyperopt 2 2
-# python3 mcl_toolbox/fit_mcrl_models.py <exp_num> <model_index> <optimization criterion> <pid> hyperopt <num_simulation> <max_eval>
-#python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" :
-#{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
+with open("parameters.txt", "w") as parameters:
+    for exp_num_ in exp_num:
+        for models_ in models:
+            pids = pid_dict.get(exp_num_)
+            if pids:
+                for pid in pids:
+                    args = [exp_num_, models_, 'number_of_clicks_likelihood', pid]
+                    args_str = " ".join(str(x) for x in args) + "\n"
+                    parameters.write(args_str)
+
+submit_sub_file("sub_multiple.sub", bid)

@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 
-from env.generic_mouselab import GenericMouselabEnv #for runnigng on the server, remove mcl_toolbox part
-from global_vars import features, model, strategies, structure  #for runnigng on the server, remove mcl_toolbox part
-from mcrl_modelling.optimizer import ParameterOptimizer #for runnigng on the server, remove mcl_toolbox part
-from utils.experiment_utils import Experiment #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import ( #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.global_vars import features, model, strategies, structure  #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.experiment_utils import Experiment #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.learning_utils import ( #for runnigng on the server, remove mcl_toolbox part
     get_normalized_features,
     get_number_of_actions_from_branching,
     pickle_load,
@@ -13,7 +13,7 @@ from utils.learning_utils import ( #for runnigng on the server, remove mcl_toolb
     construct_repeated_pipeline,
     construct_reward_function
 )
-from utils.sequence_utils import compute_log_likelihood #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.sequence_utils import compute_log_likelihood #for runnigng on the server, remove mcl_toolbox part
 
 implemented_features = features.implemented
 microscope_features = features.microscope
@@ -58,7 +58,8 @@ class ModelFitter:
             exp_attributes = {
                 "exclude_trials": None,
                 "block": None,
-                "experiment": None
+                "experiment": None,
+                "cost": 1,
             }
         if exp_attributes['experiment'] is not None:
             self.E = exp_attributes["experiment"]
@@ -71,7 +72,6 @@ class ModelFitter:
         else:
             del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
-
             # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
             if self.exp_name not in ["c1.1", "c2.1_dec", "F1", "IRL1", "T1.1"]:
                 reward_dist = "categorical"
@@ -118,6 +118,10 @@ class ModelFitter:
         self.participant = None
         self.env = None
         self.model_index = None
+        if exp_attributes['cost'] is not None:
+            self.cost = exp_attributes['cost']
+        else:
+            self.cost = 1
 
     def update_attributes(self, env):
         self.pipeline = env.pipeline
@@ -131,6 +135,7 @@ class ModelFitter:
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
+            cost=self.cost,
             feedback=participant.condition,
             q_fn=q_fn,
         )
