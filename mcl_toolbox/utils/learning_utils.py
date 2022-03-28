@@ -1499,21 +1499,48 @@ def get_cluster_dict(clusters, strategy_space):
 
 
 def get_relevant_data(simulations_data, criterion):
-    if criterion in ["reward", "performance_error"]:
-        return {"r": simulations_data["r"], "mer": simulations_data["mer"]}
-    elif criterion in ["distance"]:
-        return {"w": simulations_data["w"]}
-    elif criterion in ["strategy_accuracy", "strategy_transition"]:
-        return {"s": simulations_data["s"]}
-    elif criterion in ["clicks_overlap"]:
-        return {"a": simulations_data["a"]}
+    if criterion in ['reward', 'performance_error']:
+        return {'r': simulations_data['r'], "mer": simulations_data["mer"]}
+    elif criterion in ['distance']:
+        return {'w': simulations_data['w']}
+    elif criterion in ['strategy_accuracy', 'strategy_transition']:
+        return {'s': simulations_data['s']}
+    elif criterion in ['clicks_overlap']:
+        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
+    elif criterion in ['number_of_clicks']:
+        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
+    elif criterion in ['number_of_clicks_likelihood']:
+        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
     elif criterion in ["likelihood"]:
         if "loss" in simulations_data:
             return {"loss": simulations_data["loss"], "mer": simulations_data["mer"]}
         return {"mer": simulations_data["mer"]}
-    else:
-        return {"mer": simulations_data["mer"]}
+    else:  # pseudo_likelihood
+        return {'mer': simulations_data['mer']}
 
+
+def get_clicks_per_trial(participant_clicks, algorithm_clicks):
+    """
+    Get the clicks per trial of the participant and algorithm by looping through the different runs of the algorithm
+
+    Args:
+        participant_clicks:
+        algorithm_clicks:
+
+    Returns: two nested lists
+
+    """
+    for algorithm_click_sequence in algorithm_clicks:
+        p_number_of_clicks_per_trial = []
+        a_number_of_clicks_per_trial = []
+        for p_clicks, a_clicks in zip(participant_clicks, algorithm_click_sequence):
+            p_clicks = [click for click in p_clicks if click not in [0, None]]
+            a_clicks = [click for click in a_clicks if click not in [0, None]]
+
+            p_number_of_clicks_per_trial.append(len(p_clicks))
+            a_number_of_clicks_per_trial.append(len(a_clicks))
+
+    return p_number_of_clicks_per_trial, a_number_of_clicks_per_trial
 
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     """Compute the objective value to be minimized based on the optimization
@@ -1528,7 +1555,6 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         pipeline -- Defines the reward function for each trial
         sigma -- Used to compute the pseudo-likelihood
     """
-    # print(sim_data, p_data)
     if criterion == "reward":
         objective_value = -np.mean(sim_data["r"])
     elif criterion == "performance_error":
@@ -1562,7 +1588,12 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         )
         # multivariate_normal_objective = -mn.logpdf(mean_mer, mean=p_data['mer'], cov=sigma ** 2)
         objective_value = normal_objective
-    # print(objective_value)
+    elif criterion == "number_of_clicks_likelihood":
+        # get the number of clicks of the participant and of the algorithm
+        p_number_of_clicks_per_trial, a_number_of_clicks_per_trial = get_clicks_per_trial(p_data['a'], sim_data['a'])
+        objective_value = -np.sum([norm.logpdf(y, x, np.exp(sim_data["sigma"])) for x, y in
+                                   zip(p_number_of_clicks_per_trial, a_number_of_clicks_per_trial)])
+    # print("Criterion: ", criterion, objective_value)
     return objective_value
 
 

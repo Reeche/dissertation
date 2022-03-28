@@ -77,7 +77,8 @@ def fit_model(
             pid=pid,
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
-            sim_params=sim_params,
+            # sim_params=sim_params,
+            sim_params=optimization_params
         )
 
 
@@ -88,23 +89,25 @@ if __name__ == "__main__":
     pid = int(sys.argv[4])
     number_of_trials = int(sys.argv[5])
     other_params = {}
-    if len(sys.argv)>6:
+    if len(sys.argv) > 6:
         other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
 
-    # exp_name = 'v1.0'
-    # model_index = 1
-    # optimization_criterion = 'pseudo_likelihood'
+    # exp_name = "high_variance_high_cost"
+    # model_index = 0
+    # optimization_criterion = "number_of_clicks_likelihood"
+    # # optimization_criterion = "pseudo_likelihood"
     # pid = 1
+    # other_params = {"plotting": True}
     # number_of_trials = 35
-    # other_params = {}
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
-            "experiment": None  # Experiment object can be passed directly with
+            "experiment": None,  # Experiment object can be passed directly with
+            "click_cost": 1
             # pipeline and normalized features attached
         }
         other_params["exp_attributes"] = exp_attributes

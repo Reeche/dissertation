@@ -58,7 +58,8 @@ class ModelFitter:
             exp_attributes = {
                 "exclude_trials": None,
                 "block": None,
-                "experiment": None
+                "experiment": None,
+                "click_cost": 1
             }
         if exp_attributes['experiment'] is not None:
             self.E = exp_attributes["experiment"]
@@ -73,7 +74,7 @@ class ModelFitter:
             self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
 
             # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
-            if self.exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
+            if self.exp_name not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
                 reward_dist = "categorical"
                 reward_structure = structure.exp_reward_structures[self.exp_name]
                 reward_distributions = construct_reward_function(
@@ -98,6 +99,10 @@ class ModelFitter:
         self.participant = None
         self.env = None
         self.model_index = None
+        if exp_attributes['click_cost'] is not None:
+            self.click_cost = exp_attributes['click_cost']
+        else:
+            self.click_cost = 1
 
     def update_attributes(self, env):
         self.pipeline = env.pipeline
@@ -111,6 +116,7 @@ class ModelFitter:
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
+            cost=self.click_cost,
             feedback=participant.condition,
             q_fn=q_fn,
         )
