@@ -108,9 +108,9 @@ class Experiment:
         exp_num,
         cm=None,
         pids=None,
-        # block=None,
+        block=None,
         data_path=None,
-        # exclude_trials=None,
+        exclude_trials=None,
         **kwargs,
     ):
         """
@@ -146,11 +146,11 @@ class Experiment:
         if "block" in kwargs:
             self.block = kwargs["block"]
         else:
-            self.block = None
+            self.block = block
         if "exclude_trials" in kwargs:
             self.excluded_trials = kwargs["exclude_trials"]
         else:
-            self.excluded_trials = None
+            self.excluded_trials = exclude_trials
         if "click_cost" in kwargs: #if exp_attributes contain the click cost
             self.cost = kwargs["click_cost"]
         if "additional_constraints" in kwargs:

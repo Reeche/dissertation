@@ -11,7 +11,7 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
@@ -1504,11 +1504,7 @@ def get_relevant_data(simulations_data, criterion):
         return {'w': simulations_data['w']}
     elif criterion in ['strategy_accuracy', 'strategy_transition']:
         return {'s': simulations_data['s']}
-    elif criterion in ['clicks_overlap']:
-        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
-    elif criterion in ['number_of_clicks']:
-        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
-    elif criterion in ['number_of_clicks_likelihood']:
+    elif criterion in ['clicks_overlap', 'number_of_clicks_likelihood']:
         return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
     elif criterion in ["likelihood"]:
         if "loss" in simulations_data:

@@ -11,7 +11,8 @@ from mcl_toolbox.utils.learning_utils import (
     pickle_load,
     pickle_save,
     construct_repeated_pipeline,
-    construct_reward_function
+    construct_reward_function,
+    create_mcrl_reward_distribution
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
@@ -86,16 +87,27 @@ class ModelFitter:
                     structure.exp_reward_structures[self.exp_name]
                 )
             else:
-                if ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
-                    raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
-                                     "num_trials")
-                else:
-                    reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
-                    branching = registry(pipeline_kwargs["exp_setting"]).branching
-                    self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
-                    self.normalized_features = get_normalized_features(exp_setting)
+                reward_dist = "categorical"
+                reward_structure = structure.exp_reward_structures[self.exp_name]
+                reward_distributions = construct_reward_function(
+                    structure.reward_levels[reward_structure], reward_dist
+                )
+                repeated_pipeline = construct_repeated_pipeline(
+                    structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
+                )
+                self.pipeline = repeated_pipeline
+                # if ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
+                #     raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
+                #                      "num_trials")
+                # else:
+                #     reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                #     branching = registry(pipeline_kwargs["exp_setting"]).branching
+                #     self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                #     self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
-
+            self.normalized_features = get_normalized_features(
+                structure.exp_reward_structures[self.exp_name]
+            )
         self.branching = self.pipeline[0][0]
         self.num_actions = get_number_of_actions_from_branching(
             self.branching

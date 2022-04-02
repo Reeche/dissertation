@@ -62,7 +62,7 @@ def fit_model(
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, number_of_trials, exp_attributes=exp_attributes, data_path=data_path)
+    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path, number_of_trials=number_of_trials)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -83,32 +83,31 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    exp_name = sys.argv[1]
-    model_index = int(sys.argv[2])
-    optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
-    number_of_trials = int(sys.argv[5])
-    other_params = {}
-    if len(sys.argv) > 6:
-        other_params = ast.literal_eval(sys.argv[6])
-    else:
-        other_params = {}
+    # exp_name = sys.argv[1]
+    # model_index = int(sys.argv[2])
+    # optimization_criterion = sys.argv[3]
+    # pid = int(sys.argv[4])
+    # number_of_trials = int(sys.argv[5])
+    # other_params = {}
+    # if len(sys.argv) > 6:
+    #     other_params = ast.literal_eval(sys.argv[6])
+    # else:
+    #     other_params = {}
 
-    # exp_name = "high_variance_high_cost"
-    # model_index = 0
-    # optimization_criterion = "number_of_clicks_likelihood"
-    # # optimization_criterion = "pseudo_likelihood"
-    # pid = 1
-    # other_params = {"plotting": True}
-    # number_of_trials = 35
+    exp_name = "high_variance_high_cost"
+    model_index = 0
+    optimization_criterion = "number_of_clicks_likelihood"
+    # optimization_criterion = "pseudo_likelihood"
+    pid = 1
+    other_params = {"plotting": True}
+    number_of_trials = 35
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
-            "experiment": None,  # Experiment object can be passed directly with
+            "experiment": None,  # Experiment object can be passed directly with pipeline and normalized features attached
             "click_cost": 1
-            # pipeline and normalized features attached
         }
         other_params["exp_attributes"] = exp_attributes
 
