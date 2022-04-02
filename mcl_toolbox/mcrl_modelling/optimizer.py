@@ -241,6 +241,7 @@ def optimize_hyperopt_params(
     method=tpe.suggest,
     init_evals=30,
     show_progressbar=False,
+    rstate=None
 ):
     estimator = partial(method, n_startup_jobs=init_evals)
     trials = Trials() if trials else None
@@ -251,6 +252,7 @@ def optimize_hyperopt_params(
         max_evals=max_evals,
         trials=trials,
         show_progressbar=show_progressbar,
+        rstate=rstate,
     )
     return best_params, trials
 
@@ -360,7 +362,7 @@ class ParameterOptimizer:
 
     def optimize(self, objective, num_simulations=1, optimizer="pyabc",
                  db_path="sqlite:///test.db", compute_likelihood=False,
-                 max_evals=100):
+                 max_evals=100, rstate=None):
         """
         This function first gets the relevant participant data,
         creates a lambda function as required by fmin function
@@ -380,6 +382,7 @@ class ParameterOptimizer:
             db_path:
             compute_likelihood:
             max_evals:
+            rstate: random state for hyperopt
 
         Returns: res: results
 
@@ -401,7 +404,7 @@ class ParameterOptimizer:
         else:
             objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
             res = optimize_hyperopt_params(objective_fn, prior, max_evals=max_evals,
-                                           show_progressbar=True)  # returns best parameters (res) and trials
+                                           show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
     def run_model(self, params, objective, num_simulations=1, optimizer="pyabc",

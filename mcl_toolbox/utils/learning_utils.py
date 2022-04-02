@@ -11,8 +11,7 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-# TODO: change/add your R_HOME path
-os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
+
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
@@ -1594,6 +1593,8 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         objective_value = -np.sum([norm.logpdf(y, x, np.exp(sim_data["sigma"])) for x, y in
                                    zip(p_number_of_clicks_per_trial, a_number_of_clicks_per_trial)])
     # print("Criterion: ", criterion, objective_value)
+    else:
+        raise("Objective value not supported or misspelled.")
     return objective_value
 
 

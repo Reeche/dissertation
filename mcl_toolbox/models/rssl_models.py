@@ -223,6 +223,8 @@ class RSSL(Learner):
             trials_data["s"].append(chosen_strategy)
             trials_data["a"].append(clicks)
             env.get_next_trial()
+        # add trial ground truths
+        trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data["loss"] = -np.sum(action_log_probs)
         else:

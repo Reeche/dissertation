@@ -118,6 +118,8 @@ class Learner(ABC):
             for param in ["r", "w", "a", "loss", "decision_params", "s", "info"]:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
+            # reset participant, needed for likelihood object fxn
+            participant.reset()
         total_m_mers = []
         for i in range(len(simulations_data["a"])):
             m_mers = get_termination_mers(
