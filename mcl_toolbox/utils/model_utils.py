@@ -81,12 +81,15 @@ class ModelFitter:
             self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
 
             # Check if experiment, already in global_vars for backwards compatibility
+            #check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
             if self.exp_name in structure.exp_pipelines.keys():
                 self.pipeline = structure.exp_pipelines[self.exp_name]
                 self.normalized_features = get_normalized_features(
                     structure.exp_reward_structures[self.exp_name]
                 )
-            else:
+
+            # if you want to add your experiment setting to global_vars.py instead of using the registry
+            elif self.exp_name in structure.branchings.keys():
                 reward_dist = "categorical"
                 reward_structure = structure.exp_reward_structures[self.exp_name]
                 reward_distributions = construct_reward_function(
@@ -96,14 +99,16 @@ class ModelFitter:
                     structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
                 )
                 self.pipeline = repeated_pipeline
-                # if ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
-                #     raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
-                #                      "num_trials")
-                # else:
-                #     reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
-                #     branching = registry(pipeline_kwargs["exp_setting"]).branching
-                #     self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
-                #     self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
+
+            elif ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
+                raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
+                                 "num_trials")
+            # if you want to use the registry to store experiment information
+            else:
+                reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                branching = registry(pipeline_kwargs["exp_setting"]).branching
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
                 structure.exp_reward_structures[self.exp_name]
