@@ -11,6 +11,7 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
+
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
@@ -86,11 +87,11 @@ def get_log_beta_pdf(x, a, b):
     log_x = mp.log(x)
     log_ox = mp.log(1 - x)
     res = (
-        (a - 1) * log_x
-        + (b - 1) * log_ox
-        + mp.loggamma(a + b)
-        - mp.loggamma(a)
-        - mp.loggamma(b)
+            (a - 1) * log_x
+            + (b - 1) * log_ox
+            + mp.loggamma(a + b)
+            - mp.loggamma(a)
+            - mp.loggamma(b)
     )
     return res
 
@@ -136,8 +137,8 @@ def softmax(x):
 
 
 def get_mu_v(mu, variances, index):
-    m = mu[index] - np.concatenate((mu[:index], mu[index + 1 :]))
-    v = np.concatenate((variances[:index], variances[index + 1 :]))
+    m = mu[index] - np.concatenate((mu[:index], mu[index + 1:]))
+    v = np.concatenate((variances[:index], variances[index + 1:]))
     cv = np.diag(v) + variances[index]
     return m, cv
 
@@ -231,7 +232,7 @@ def get_participant_scores(exp_num="v1.0", num_participants=166, data_path=None)
     participant_scores = {}
     # for participant_num in range(num_participants):
     for (
-        participant_num
+            participant_num
     ) in num_participants:  # changed this to output score for a set list of pid's
         score_list = list(mdf[mdf.pid == participant_num]["score"])
         participant_scores[participant_num] = score_list
@@ -332,13 +333,13 @@ def construct_reward_function(params_list, dist_type="categorical"):
 
 
 def get_participant_details(
-    pid,
-    exp_num,
-    get_envs=True,
-    get_scores=True,
-    get_clicks=True,
-    get_taken_paths=True,
-    data_path=None,
+        pid,
+        exp_num,
+        get_envs=True,
+        get_scores=True,
+        get_clicks=True,
+        get_taken_paths=True,
+        data_path=None,
 ):
     data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
@@ -488,7 +489,7 @@ def get_normalized_features(exp_num):
 
 
 def get_transformed_weights(
-    participant_num, trial_weights, trial_features, features_list
+        participant_num, trial_weights, trial_features, features_list
 ):
     """
     Get transformed weights according the feature list across all trials by zeroing all features in a trial
@@ -719,8 +720,8 @@ def get_weight_distance(participant_weights, algorithm_weights):
     p_w = np.multiply(participant_weights[:, :-3], p_beta)
     num_trials = a_w.shape[1]
     average_euclidean_distance = (
-        np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
-        / num_trials
+            np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
+            / num_trials
     )
     return average_euclidean_distance
 
@@ -772,8 +773,8 @@ def get_normalized_weight_distance(participant_weights, algorithm_weights):
     a_w = normalize_weights(a_w)
     p_w = normalize_weights(p_w)
     average_euclidean_distance = (
-        np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
-        / num_trials
+            np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
+            / num_trials
     )
     return average_euclidean_distance
 
@@ -794,8 +795,8 @@ def compute_rpe(r, init_pe=0):
     for i in range(1, num_trials):
         cumulative_average_score_list.append(cumulative_score_list[i - 1] / i)
     rpe = [
-        np.absolute(r[i] - cumulative_average_score_list[i]) for i in range(num_trials)
-    ][: num_trials - 1]
+              np.absolute(r[i] - cumulative_average_score_list[i]) for i in range(num_trials)
+          ][: num_trials - 1]
     return rpe
 
 
@@ -989,11 +990,11 @@ def clicks_overlap(participant_clicks, algorithm_clicks):
     """
 
     def compute_average_trial_proportion(
-        participant_click_sequence, algorithm_click_sequence
+            participant_click_sequence, algorithm_click_sequence
     ):
         ratios = []
         for p_clicks, a_clicks in zip(
-            participant_click_sequence, algorithm_click_sequence
+                participant_click_sequence, algorithm_click_sequence
         ):
             p_clicks = [click for click in p_clicks if click not in [0, None]]
             a_clicks = [click for click in a_clicks if click not in [0, None]]
@@ -1077,7 +1078,7 @@ def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequen
     """
 
     def compute_participant_strategy_accuracy(
-        participant_strategy_sequence, algorithm_strategy_sequence
+            participant_strategy_sequence, algorithm_strategy_sequence
     ):
         participant_strategy_sequence = np.array(participant_strategy_sequence)
         algorithm_strategy_sequence = np.array(algorithm_strategy_sequence)
@@ -1113,28 +1114,28 @@ def compute_transition_distance(participants_strategies, algorithm_strategies):
         algorithm_strategies
     )
     transition_distance = (
-        participant_transition_matrix - algorithm_transition_matrix
-    ) ** 2
+                                  participant_transition_matrix - algorithm_transition_matrix
+                          ) ** 2
     mse_distance = np.sum(transition_distance)
     return mse_distance
 
 
 def make_bar_plot(
-    x,
-    y,
-    figure_size=(15, 7),
-    title="",
-    xlabel="",
-    ylabel="",
-    line_label="",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    tick_options={},
-    dir_path=None,
-    show=True,
+        x,
+        y,
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        line_label="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
 ):
     """
     Makes bar plot with given inputs
@@ -1175,21 +1176,21 @@ def make_bar_plot(
 
 
 def make_plot(
-    x,
-    y,
-    figure_size=(15, 7),
-    title="",
-    xlabel="",
-    ylabel="",
-    line_label="",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    tick_options={},
-    dir_path=None,
-    show=True,
+        x,
+        y,
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        line_label="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
 ):
     """
     Makes plot with given inputs
@@ -1230,19 +1231,19 @@ def make_plot(
 
 
 def plot_multiple(
-    data={},
-    figure_size=(15, 7),
-    title="",
-    xlabel="",
-    ylabel="",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    tick_options={},
-    dir_path=None,
-    show=True,
+        data={},
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
 ):
     """
     Makes plot with multiple lines
@@ -1284,17 +1285,17 @@ def plot_multiple(
 
 
 def plot_performance(
-    participant_performance,
-    algorithm_performance,
-    participant_num=None,
-    algo="Algorithm",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    dir_path=None,
-    show=True,
+        participant_performance,
+        algorithm_performance,
+        participant_num=None,
+        algo="Algorithm",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        dir_path=None,
+        show=True,
 ):
     """
     Plot the performance of algorithm and participant
@@ -1537,6 +1538,7 @@ def get_clicks_per_trial(participant_clicks, algorithm_clicks):
 
     return p_number_of_clicks_per_trial, a_number_of_clicks_per_trial
 
+
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     """Compute the objective value to be minimized based on the optimization
        criterion and the data obtained by running the model with a given set
@@ -1589,11 +1591,11 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     elif criterion == "number_of_clicks_likelihood":
         # get the number of clicks of the participant and of the algorithm
         p_number_of_clicks_per_trial, a_number_of_clicks_per_trial = get_clicks_per_trial(p_data['a'], sim_data['a'])
-        objective_value = -np.sum([norm.logpdf(y, x, np.exp(sim_data["sigma"])) for x, y in
-                                   zip(p_number_of_clicks_per_trial, a_number_of_clicks_per_trial)])
+        objective_value = -np.sum([norm.logpdf(x, loc=y, scale=np.exp(sim_data["sigma"])) for x, y in
+                                   zip(a_number_of_clicks_per_trial, p_number_of_clicks_per_trial)])
     # print("Criterion: ", criterion, objective_value)
     else:
-        raise("Objective value not supported or misspelled.")
+        raise ("Objective value not supported or misspelled.")
     return objective_value
 
 
@@ -1610,14 +1612,14 @@ class Participant:
     """
 
     def __init__(
-        self,
-        exp_num,
-        pid,
-        strategy_weights=None,
-        excluded_trials=None,
-        get_strategies=True,
-        get_weights=True,
-        data_path=None,
+            self,
+            exp_num,
+            pid,
+            strategy_weights=None,
+            excluded_trials=None,
+            get_strategies=True,
+            get_weights=True,
+            data_path=None,
     ):
         self.exp_num = exp_num
         self.pid = pid

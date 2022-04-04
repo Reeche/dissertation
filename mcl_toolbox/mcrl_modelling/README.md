@@ -44,3 +44,23 @@ The compute_objective function in learning_utils.py is negated for some criteria
 Currently, pyabc is not able to optimise for these criteria: "reward", "strategy_accuracy", "clicks_overlap"
 
 ### Model features
+* `decision_rule` - only applicable to hierarchical learners and has three options: adaptive satisficing, confidence bound, threshold
+* `use_pseudo_rewards` - pseudo reward is defined as evaluating after each click how much additional benefit that one click as resulted in
+* `pr_weight` - whether we want to have scaling for the pseudo-reward
+* `actor` - only applicable to hierarchical learners and can be one of the three options: reinforce, baseline reinforce, LVOC
+* `term` - ???
+* `selector` - only applicable for SDSS. The only option is: RSSL
+* `learner` - only applicable for SDSS. The options are: reinforce, baseline reinforce, LVOC
+* `strategy_space_type` - "microscope" uses all strategies, "participant" uses only the common ones. where is this differentiation found? In global_vars.py???
+* `stochastic_updating` - only applicable for RSSL/SDSS models. If true, then learning is done stochastically, i.e. not necessarily after each trial (or click???)
+* `subjective_cost` - only applicable to LVOC
+* `vicarious_learning` - only applicable to LVOC. What would have been if I terminate now
+* `termination_value_known` - ???
+* `montecarlo_updates` - use return after acting not just to update current action but also proceeding actions (action = clicks or click sequences from previous trials???)
+* `is_null` - if true, then the model is not updating the weights, i.e. not learning
+* `termination_value_known` - ???
+* `is_gaussian` - only applicable to RSSL/SDSS model. If false, the model uses a bernoulli prior. If true, it uses a Gaussian prior
+* `bandit_prior` - only applicable to SDSS. Always true for SDSS. What does this mean??? 
+* `prior` - used by the optimizer to see which parameters to optimize for. Can be one of the three options: 
+  bernoulli prior, gaussian prior, strategy weight. How does this connect to "is_gaussian"???
+* `habitual_features` - Is there a list which features are habitual and which ones are not? I can only see a pickle "implemented_features.pkl" containing all features. 

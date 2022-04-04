@@ -172,11 +172,8 @@ class Experiment:
                 participants_data = participants_data[
                     participants_data[constraint] == self.additional_constraints[constraint]
                     ]
-                pids = participants_data["pid"].tolist()
-                self.pids = [p for p in pids if p in self.pids]
-        else:
-            pids = participants_data["pid"].tolist()
-            self.pids = [p for p in pids if p in self.pids]
+        pids = participants_data["pid"].tolist()
+        self.pids = [p for p in pids if p in self.pids]
         trial_nums = []
         for pid in self.pids:
             p_data = participants_data[participants_data.pid == pid]
