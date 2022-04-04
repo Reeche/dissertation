@@ -223,7 +223,8 @@ def construct_objective_fn(optimizer, objective, p_data, pipeline):
     # construct objective function based on the selected optimizer and objective
     objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
-        if objective in ["reward", "strategy_accuracy", "clicks_overlap"]: #todo: why negative?
+        # todo: currently, the pyabc is not able to optimize these three criteria
+        if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
             objective_fn = lambda x, y: -compute_objective(objective, x, y, pipeline)
         else:
             objective_fn = lambda x, y: compute_objective(objective, x, y, pipeline)

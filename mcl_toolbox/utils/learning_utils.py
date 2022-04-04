@@ -1540,7 +1540,10 @@ def get_clicks_per_trial(participant_clicks, algorithm_clicks):
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     """Compute the objective value to be minimized based on the optimization
        criterion and the data obtained by running the model with a given set
-       of parameters
+       of parameters.
+       reward, strategy accuracy, clicks_overlap, likelihood, pseudo-likelihood
+       are naturally objectives we want to maximize,
+       but to be compatible with hyperopt which only minimizes, we negate them.
 
     Arguments:
         criterion {str} -- The objective to evaluate
