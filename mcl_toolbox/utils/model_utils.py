@@ -121,7 +121,7 @@ class ModelFitter:
         self.participant = None
         self.env = None
         self.model_index = None
-        if exp_attributes['click_cost'] is not None:
+        if 'click_cost' in exp_attributes and exp_attributes['click_cost'] is not None:
             self.click_cost = exp_attributes['click_cost']
         else:
             self.click_cost = 1
