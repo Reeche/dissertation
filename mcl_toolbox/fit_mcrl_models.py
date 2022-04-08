@@ -62,7 +62,7 @@ def fit_model(
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, number_of_trials, exp_attributes=exp_attributes, data_path=data_path)
+    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path, number_of_trials=number_of_trials)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -77,7 +77,8 @@ def fit_model(
             pid=pid,
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
-            sim_params=sim_params,
+            # sim_params=sim_params,
+            sim_params=optimization_params
         )
 
 
@@ -88,24 +89,25 @@ if __name__ == "__main__":
     pid = int(sys.argv[4])
     number_of_trials = int(sys.argv[5])
     other_params = {}
-    if len(sys.argv)>6:
+    if len(sys.argv) > 6:
         other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
 
-    # exp_name = 'v1.0'
-    # model_index = 1
-    # optimization_criterion = 'pseudo_likelihood'
+    # exp_name = "high_variance_high_cost"
+    # model_index = 0
+    # optimization_criterion = "number_of_clicks_likelihood"
+    # # optimization_criterion = "pseudo_likelihood"
     # pid = 1
+    # other_params = {"plotting": True}
     # number_of_trials = 35
-    # other_params = {}
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
-            "experiment": None  # Experiment object can be passed directly with
-            # pipeline and normalized features attached
+            "experiment": None,  # Experiment object can be passed directly with pipeline and normalized features attached
+            "click_cost": 1
         }
         other_params["exp_attributes"] = exp_attributes
 

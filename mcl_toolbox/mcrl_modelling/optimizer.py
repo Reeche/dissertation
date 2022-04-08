@@ -223,6 +223,7 @@ def construct_objective_fn(optimizer, objective, p_data, pipeline):
     # construct objective function based on the selected optimizer and objective
     objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
+        # todo: currently, the pyabc is not able to optimize these three criteria
         if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
             objective_fn = lambda x, y: -compute_objective(objective, x, y, pipeline)
         else:
@@ -342,6 +343,10 @@ class ParameterOptimizer:
         if self.objective == "clicks_overlap":
             self.click_data.append(relevant_data["a"])
             self.reward_data.append(relevant_data["mer"])
+        if self.objective == "number_of_clicks_likelihood":
+            self.click_data.append(relevant_data["a"])
+            self.reward_data.append(relevant_data["mer"])
+            relevant_data['sigma'] = params['lik_sigma']
         if get_sim_data:
             return relevant_data, simulations_data
         else:

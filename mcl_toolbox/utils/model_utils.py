@@ -11,7 +11,8 @@ from mcl_toolbox.utils.learning_utils import (
     pickle_load,
     pickle_save,
     construct_repeated_pipeline,
-    construct_reward_function
+    construct_reward_function,
+    create_mcrl_reward_distribution
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
@@ -61,7 +62,8 @@ class ModelFitter:
             exp_attributes = {
                 "exclude_trials": None,
                 "block": None,
-                "experiment": None
+                "experiment": None,
+                "click_cost": 1
             }
         if 'experiment' not in exp_attributes:
             exp_attributes['experiment'] = None
@@ -79,22 +81,38 @@ class ModelFitter:
             self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
 
             # Check if experiment, already in global_vars for backwards compatibility
+            #check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
             if self.exp_name in structure.exp_pipelines.keys():
                 self.pipeline = structure.exp_pipelines[self.exp_name]
                 self.normalized_features = get_normalized_features(
                     structure.exp_reward_structures[self.exp_name]
                 )
-            else:
-                if ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
-                    raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
-                                     "num_trials")
-                else:
-                    reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
-                    branching = registry(pipeline_kwargs["exp_setting"]).branching
-                    self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
-                    self.normalized_features = get_normalized_features(exp_setting)
-            self.E.attach_pipeline(self.pipeline)
 
+            # if you want to add your experiment setting to global_vars.py instead of using the registry
+            elif self.exp_name in structure.branchings.keys():
+                reward_dist = "categorical"
+                reward_structure = structure.exp_reward_structures[self.exp_name]
+                reward_distributions = construct_reward_function(
+                    structure.reward_levels[reward_structure], reward_dist
+                )
+                repeated_pipeline = construct_repeated_pipeline(
+                    structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
+                )
+                self.pipeline = repeated_pipeline
+
+            elif ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
+                raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
+                                 "num_trials")
+            # if you want to use the registry to store experiment information
+            else:
+                reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                branching = registry(pipeline_kwargs["exp_setting"]).branching
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
+            self.E.attach_pipeline(self.pipeline)
+            self.normalized_features = get_normalized_features(
+                structure.exp_reward_structures[self.exp_name]
+            )
         self.branching = self.pipeline[0][0]
         self.num_actions = get_number_of_actions_from_branching(
             self.branching
@@ -103,6 +121,10 @@ class ModelFitter:
         self.participant = None
         self.env = None
         self.model_index = None
+        if 'click_cost' in exp_attributes and exp_attributes['click_cost'] is not None:
+            self.click_cost = exp_attributes['click_cost']
+        else:
+            self.click_cost = 1
 
     def update_attributes(self, env):
         self.pipeline = env.pipeline
@@ -116,6 +138,7 @@ class ModelFitter:
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
+            cost=self.click_cost,
             feedback=participant.condition,
             q_fn=q_fn,
         )

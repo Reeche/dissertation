@@ -126,7 +126,7 @@ class Experiment:
         self.exp_num = exp_num
         self.data = get_data(exp_num, data_path)
         self.cm = cm
-        self.block = None
+        # self.block = None
         if pids:
             self.pids = pids
         else:
@@ -143,10 +143,20 @@ class Experiment:
             # "participants" dataframe is assumed in init_participants function below
             self.data["participants"] = pd.DataFrame(self.pids, columns=["pid"])
         self.participants = {}
-        if block:
+        if "block" in kwargs:
+            self.block = kwargs["block"]
+        else:
             self.block = block
-        self.excluded_trials = exclude_trials
-        self.additional_constraints = kwargs
+        if "exclude_trials" in kwargs:
+            self.excluded_trials = kwargs["exclude_trials"]
+        else:
+            self.excluded_trials = exclude_trials
+        if "click_cost" in kwargs: #if exp_attributes contain the click cost
+            self.cost = kwargs["click_cost"]
+        if "additional_constraints" in kwargs:
+            self.additional_constraints = kwargs["additional_constraints"]
+        else:
+            self.additional_constraints = None
         self.participant_strategies = {}
         self.participant_temperatures = {}
         self.init_participants()
@@ -157,12 +167,13 @@ class Experiment:
     def init_participants(self):
         participants_data = self.data["participants"]
         self.conditions = set()
-        for constraint in self.additional_constraints.keys():
-            participants_data = participants_data[
-                participants_data[constraint] == self.additional_constraints[constraint]
-            ]
-            pids = participants_data["pid"].tolist()
-            self.pids = [p for p in pids if p in self.pids]
+        if self.additional_constraints:
+            for constraint in self.additional_constraints.keys():
+                participants_data = participants_data[
+                    participants_data[constraint] == self.additional_constraints[constraint]
+                    ]
+        pids = participants_data["pid"].tolist()
+        self.pids = [p for p in pids if p in self.pids]
         trial_nums = []
         for pid in self.pids:
             p_data = participants_data[participants_data.pid == pid]
