@@ -4,8 +4,8 @@ import ast
 from pathlib import Path
 import random
 
-from mcl_toolbox.utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.model_utils import ModelFitter
+from utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
+from utils.model_utils import ModelFitter
 
 """
 Run this using: 
@@ -81,25 +81,25 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # other_params = {}
-    # if len(sys.argv)>5:
-    #     other_params = ast.literal_eval(sys.argv[5])
-    #     # other_params = {"plotting": sys.argv[5],
-    #     #     "optimization_params": {"optimizer": sys.argv[6],
-    #     #                 "num_simulations": sys.argv[7],
-    #     #                 "max_evals": sys.argv[8]}}
-    # else:
-    #     other_params = {}
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    other_params = {}
+    if len(sys.argv)>5:
+        other_params = ast.literal_eval(sys.argv[5])
+        # other_params = {"plotting": sys.argv[5],
+        #     "optimization_params": {"optimizer": sys.argv[6],
+        #                 "num_simulations": sys.argv[7],
+        #                 "max_evals": sys.argv[8]}}
+    else:
+        other_params = {}
 
-    exp_name = "high_variance_high_cost"
-    model_index = 0
-    optimization_criterion = "number_of_clicks_likelihood"
-    pid = 1
-    other_params = {"plotting": True}
+    # exp_name = "high_variance_high_cost"
+    # model_index = 0
+    # optimization_criterion = "number_of_clicks_likelihood"
+    # pid = 1
+    # other_params = {"plotting": True}
 
     if "exp_attributes" not in other_params:
         exp_attributes = {

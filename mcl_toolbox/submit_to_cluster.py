@@ -4,12 +4,12 @@ import time
 import numpy as np
 from condor_utils import create_sub_file, submit_sub_file
 
-bid = 10
+bid = 1
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 # exp_num = ['high_variance_high_cost']
 # models = ['1823']
-# pid_dict = {'high_variance_high_cost': [18, 22, 25, 30, 32, 38]}
+# pid_dict = {'high_variance_high_cost': [18]}
 
 
 exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost']
@@ -22,9 +22,9 @@ exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_hi
 # models = list(range(0, 100)) # started 18.03.2022
 # models = list(range(100, 200)) # started 21.03.2022
 # models = list(range(200, 250)) # started 22.03.2022
-models = list(range(250, 300)) # started 22.03.2022
+# models = list(range(250, 300)) # started 22.03.2022
 
-
+models = ['1919']
 pid_dict = {
     'high_variance_high_cost': [0, 1, 10, 18, 22, 25, 30, 32, 38, 41, 46, 47, 49, 57, 60, 63, 65, 70, 74, 76, 81, 83,
                                 88, 89, 94, 103, 108, 109, 111, 114, 116, 118, 125, 129, 134, 139, 149, 150, 156, 161,

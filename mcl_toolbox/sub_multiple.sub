@@ -1,0 +1,9 @@
+executable = /usr/bin/python3
+arguments = fit_mcrl_models.py $(Arg1) $(Arg2) $(Arg3) $(Arg4)
+error = errs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).err
+output = outputs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).out
+getenv = True
+request_memory = 2000
+request_cpus = 1
+concurrency_limits=user.rhe:200
+queue Arg1,Arg2,Arg3,Arg4 from parameters.txt
