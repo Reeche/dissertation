@@ -732,7 +732,7 @@ class Experiment:
             else:
                 # label = f"{prefix} {S[i]}"
                 # load strategy names from the strategy_names.pkl file
-                strategy_name_mapping = pickle_load("mcl_toolbox/data/strategy_names.pkl")
+                strategy_name_mapping = pickle_load("data/strategy_names.pkl")
                 label = strategy_name_mapping.get(S[i])
             plt.plot(
                 range(1, S_proportions.shape[0] + 1),
@@ -1013,7 +1013,7 @@ class Experiment:
             plt.plot(
                 range(1, self.num_trials + 1),
                 df["rest"],
-                label="Other strategies",
+                label="Moderately adaptive strategies",
                 linewidth=3.0,
             )
 
@@ -1022,7 +1022,8 @@ class Experiment:
             # plt.title(title, fontsize=24)
             plt.ylim(top=1.0)
             plt.tick_params(labelsize=22)
-            plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
+            # plt.legend(prop={"size": 23}, ncol=3, loc="center")
+            plt.legend(prop={"size": 23})
             plt.savefig(
                 f"results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
                 dpi=400,
@@ -1554,6 +1555,58 @@ class Experiment:
         # print("Scores of adaptive strategies", list(strategies_with_scores.items())[-n:])
         return top_n_strategies, worst_n_strategies
 
+    def kmeans_classification(self):
+        """
+        Use k-means to classify strategies into adaptive, maladaptive and other strategies"
+        Args:
+
+        Returns: dict {"adaptive": a, "maladaptive": b, "other": c}
+
+        """
+        # optional filter
+        # strategy_dict = {key: val for key, val in strategy_dict.items() if val > 0.005}
+
+        # pickles strategy range from 0 - 88
+        if self.exp_num == "c2.1":
+            strategy_score_dict = pd.read_pickle(
+                f"results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+            )
+        else:
+            strategy_score_dict = pd.read_pickle(
+                f"results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+            )
+
+        # filter by only used strategies
+        used_strategies_list = list(self.strategy_proportions.keys())
+        # -1 because self.strategy_proportion start at 1
+        used_strategies_list = [x-1 for x in used_strategies_list]
+        strategy_score_dict_filtered = {your_key: strategy_score_dict[your_key] for your_key  in used_strategies_list}
+
+        strategy_df = pd.DataFrame(strategy_score_dict_filtered, index=[0])
+        strategy_df = strategy_df.T
+
+        strategy_values_list = strategy_df.iloc[:, 0].values.reshape(-1, 1)
+        kmeans = KMeans(n_clusters=3, random_state=0).fit(strategy_values_list)
+        strategy_df["label"] = kmeans.labels_
+        # strategy_df["strategy"] = strategy_scores.keys()
+
+        ## relabel the cluster centers
+        cluster_centers = pd.Series(kmeans.cluster_centers_.flatten())
+        cluster_centers = cluster_centers.sort_values()
+        strategy_df["label"] = strategy_df["label"].replace(int(cluster_centers.index[0]), "maladaptive_strategies")
+        strategy_df["label"] = strategy_df["label"].replace(int(cluster_centers.index[1]), "other_strategies")
+        strategy_df["label"] = strategy_df["label"].replace(int(cluster_centers.index[2]), "adaptive_strategies")
+
+        adaptive_strategies = list(strategy_df[strategy_df['label'] == "adaptive_strategies"].index)
+        maladaptive_strategies = list(strategy_df[strategy_df['label'] == "maladaptive_strategies"].index)
+        other_strategies = list(strategy_df[strategy_df['label'] == "other_strategies"].index)
+
+        # add list items + 1 because strategy start from 0 and participants fitted strategies start from 1
+        adaptive_strategies = [x+1 for x in adaptive_strategies]
+        maladaptive_strategies = [x+1 for x in maladaptive_strategies]
+        other_strategies = [x+1 for x in other_strategies]
+        return adaptive_strategies, maladaptive_strategies, other_strategies
+
     def summarize(
         self,
         features,
@@ -1615,7 +1668,7 @@ class Experiment:
         if show_strategies:
             print("\n", dict(self.participant_strategies), "\n")
         self.init_feature_properties(features, normalized_features, strategy_weights)
-        self.init_decision_system_properties(decision_systems, W_DS, DS_proportions)
+        # self.init_decision_system_properties(decision_systems, W_DS, DS_proportions)
         # clusters = self.get_proportion_clusters(mode=cluster_mode, show_clusters=True, plot=True,
         #                                         n_clusters=n_clusters, max_clusters=max_clusters)
         # print("Clusters:", clusters, "\n")
@@ -1626,9 +1679,9 @@ class Experiment:
         # print("ACL:", mean_acl, "ACL-Random:", mean_random_acl, "\n")
         # print(f"ACL factor: {mean_acl / mean_random_acl}", "\n")
 
-        self.strategy_transitions_chi2()
-        self.performance_transitions_chi2(strategy_scores=strategy_scores)
-        self.frequency_transitions_chi2()
+        # self.strategy_transitions_chi2()
+        # self.performance_transitions_chi2(strategy_scores=strategy_scores)
+        # self.frequency_transitions_chi2()
 
         self.init_strategy_clusters(cluster_map)
         self.strategy_transitions_chi2(clusters=True)
@@ -1637,12 +1690,13 @@ class Experiment:
 
         # find list of adaptive and maladaptive strategies
         self.get_strategy_proportions(trial_wise=False)
-        (
-            top_n_strategies,
-            worst_n_strategies,
-        ) = self.filter_used_strategy_adaptive_maladaptive(
-            n=number_of_top_worst_strategies
-        )  # requires self.strategy_proportions
+        adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
+        # (
+        #     top_n_strategies,
+        #     worst_n_strategies,
+        # ) = self.filter_used_strategy_adaptive_maladaptive(
+        #     n=number_of_top_worst_strategies
+        # )  # requires self.strategy_proportions
 
         # find out who used adaptive and who used maladaptive stratgies
         (
@@ -1651,7 +1705,7 @@ class Experiment:
             other_participants,
             improved_participants,
             deteriorated_participants,
-        ) = self.adaptive_maladaptive_participants(top_n_strategies, worst_n_strategies)
+        ) = self.adaptive_maladaptive_participants(adaptive_strategies, maladaptive_strategies)
         # print("These are the participants who used adaptive strategies: ", adaptive_participants)
         # print("These are the participants who used maladaptive strategies: ", maladaptive_participants)
         # print("These are the participants who used other strategies: ", other_participants)
@@ -1681,14 +1735,15 @@ class Experiment:
             self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
             # filter actually used strategies and select the top n adaptive and top n maladaptive strategies
-            (
-                top_n_strategies,
-                worst_n_strategies,
-            ) = self.filter_used_strategy_adaptive_maladaptive(
-                n=number_of_top_worst_strategies
-            )
+            # (
+            #     top_n_strategies,
+            #     worst_n_strategies,
+            # ) = self.filter_used_strategy_adaptive_maladaptive(
+            #     n=number_of_top_worst_strategies
+            # )
+            adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
             self.plot_adaptive_maladaptive_strategies_vs_rest(
-                top_n_strategies, worst_n_strategies, plot=True
+                adaptive_strategies, maladaptive_strategies, plot=True
             )
 
             # plot regarding the change between trials
@@ -1716,26 +1771,28 @@ class Experiment:
             )
 
             # decision systems
-            decision_system_proportions = (
-                self.plot_decision_systems_proportions_intotal(
-                    DS_proportions, plot=False
-                )
-            )
-            mean_dsw = self.plot_average_ds()
+            # decision_system_proportions = (
+            #     self.plot_decision_systems_proportions_intotal(
+            #         DS_proportions, plot=False
+            #     )
+            # )
+            # mean_dsw = self.plot_average_ds()
 
-            (
-                top_n_strategies,
-                worst_n_strategies,
-            ) = self.filter_used_strategy_adaptive_maladaptive(
-                n=number_of_top_worst_strategies
-            )
-            print("Best/adaptive strategies: ", top_n_strategies)
-            print("Worst/maladaptive strategies: ", worst_n_strategies)
+            # (
+            #     top_n_strategies,
+            #     worst_n_strategies,
+            # ) = self.filter_used_strategy_adaptive_maladaptive(
+            #     n=number_of_top_worst_strategies
+            # )
+            adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
+            print("Best/adaptive strategies: ", adaptive_strategies)
+            print("Moderatively adaptive strategies: ", other_strategies)
+            print("Worst/maladaptive strategies: ", maladaptive_strategies)
             (
                 adaptive_strategies_proportion,
                 maladaptive_strategies_proportion,
             ) = self.plot_adaptive_maladaptive_strategies_vs_rest(
-                top_n_strategies, worst_n_strategies, plot=False
+                adaptive_strategies, maladaptive_strategies, plot=False
             )
 
             # plot about click development
@@ -1746,8 +1803,8 @@ class Experiment:
                 strategy_proportions_trialwise,
                 cluster_proportions,
                 cluster_proportions_trialwise,
-                decision_system_proportions,
-                mean_dsw,
+                # decision_system_proportions,
+                # mean_dsw,
                 adaptive_strategies_proportion,
                 maladaptive_strategies_proportion,
                 number_of_clicks,

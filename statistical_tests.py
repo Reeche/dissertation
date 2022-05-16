@@ -67,7 +67,8 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
             _,
             cluster_proportions,
             _,
-            decision_system_proportions,
+            # decision_system_proportions,
+            # _,
             _,
             _,
             _,
@@ -84,10 +85,10 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
         cluster_df[strategy_name] = list(
             create_comparable_data(cluster_proportions, len=14).values()
         )
-        decision_system_df[strategy_name] = decision_system_proportions[
-            "Relative Influence (%)"
-        ].tolist()
-    return strategy_df, cluster_df, decision_system_df
+        # decision_system_df[strategy_name] = decision_system_proportions[
+        #     "Relative Influence (%)"
+        # ].tolist()
+    return strategy_df, cluster_df#, decision_system_df
 
 
 def create_data_for_trend_test(
@@ -100,7 +101,7 @@ def create_data_for_trend_test(
                "decreasing_variance": "c2.1",
                "constant_variance": "c1.1"}
         trend_test: do you want to do a trend test?
-        number_of_strategies: integer, 89
+        number_of_strategies: integer, 89, currently not used because classification is now done using k-means
         block:
 
     Returns: trend data as pandas dataframes
@@ -125,8 +126,8 @@ def create_data_for_trend_test(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             top_n_strategies,
             worst_n_strategies,
             number_of_clicks,
@@ -255,7 +256,6 @@ def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
 
     """
 
-    # todo: add decision systems
     print(
         f" ----------------- Fisher Exact test: Do all {analysis_type} in the FIRST trials and all {analysis_type} "
         f"in the LAST trials have the same proportions WITHIN the same environment? -----------------"
@@ -438,41 +438,34 @@ def equivalence_test(name_distribution_dict):
 if __name__ == "__main__":
     random.seed(123)
     number_of_trials = 35
-    number_of_participants = 14
-    # reward_exps = {
-    #     "increasing_variance": "v1.0",
-    #     "decreasing_variance": "c2.1_dec",
-    #     "constant_variance": "c1.1",
-    # }
-    reward_exps = {"high_variance_low_cost": "high_variance_low_cost",
-                   "high_variance_high_cost": "high_variance_high_cost",
-                   "low_variance_low_cost": "low_variance_low_cost",
-                   "low_variance_high_cost": "low_variance_high_cost"}  # cond 0  # cond 1
-    # print(" --------------------------------------------------------------------")
-    # print(" -------------------- Proportion Difference -------------------------")
-    # print(" --------------------------------------------------------------------")
-    # strategy_df, cluster_df, decision_system_df = create_data_for_distribution_test(reward_exps)
-    #
-    # print(
-    #     f" ----------- This tests whether the proportions of all 89 strategies across environments are equal  -----------")
-    # strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
-    #                             "decreasing": strategy_df["decreasing_variance"],
-    #                             "constant": strategy_df["constant_variance"]}
-    # test_for_equal_distribution(strategy_difference_dict, "Strategies")
-    # test_of_proportions(strategy_difference_dict, "Strategies", individual_strategies=False)
-    #
-    # print(
-    #     f" ----------- This tests whether the proportions of all 13 strategy clusters across environments are equal  -----------")
-    # cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
-    #                            "decreasing": cluster_df["decreasing_variance"],
-    #                            "constant": cluster_df["constant_variance"]}
-    # test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
-    # test_of_proportions(cluster_difference_dict, "Strategies", individual_strategies=False)
-    #
-    # decision_system_difference_dict = {"increasing": decision_system_df["increasing_variance"],
-    #                                    "decreasing": decision_system_df["decreasing_variance"],
-    #                                    "constant": decision_system_df["constant_variance"]}
-    # test_for_equal_distribution(decision_system_difference_dict, "Decision Systems")
+    number_of_participants = 58
+    reward_exps = {
+        "increasing_variance": "v1.0",
+        "decreasing_variance": "c2.1_dec",
+        "constant_variance": "c1.1",
+    }
+
+    print(" --------------------------------------------------------------------")
+    print(" -------------------- Proportion Difference -------------------------")
+    print(" --------------------------------------------------------------------")
+    strategy_df, cluster_df = create_data_for_distribution_test(reward_exps)
+
+    print(
+        f" ----------- This tests whether the proportions of all 89 strategies across environments are equal  -----------")
+    strategy_difference_dict = {"increasing": strategy_df["increasing_variance"],
+                                "decreasing": strategy_df["decreasing_variance"],
+                                "constant": strategy_df["constant_variance"]}
+    test_for_equal_distribution(strategy_difference_dict, "Strategies")
+    test_of_proportions(strategy_difference_dict, "Strategies", individual_strategies=False)
+
+    print(
+        f" ----------- This tests whether the proportions of all 13 strategy clusters across environments are equal  -----------")
+    cluster_difference_dict = {"increasing": cluster_df["increasing_variance"],
+                               "decreasing": cluster_df["decreasing_variance"],
+                               "constant": cluster_df["constant_variance"]}
+    test_for_equal_distribution(cluster_difference_dict, "Strategy Clusters")
+    test_of_proportions(cluster_difference_dict, "Strategies", individual_strategies=False)
+
 
     # print(" --------------------------------------------------------------------")
     # print(" ---------------------------- Trends --------------------------------")
@@ -486,109 +479,30 @@ if __name__ == "__main__":
     ) = create_data_for_trend_test(
         reward_exps, number_of_strategies=5, trend_test=True
     )  # n adaptive, mal adaptive stratiges
-    # test_for_trend(strategy_trend, "Strategy")
+    test_for_trend(strategy_trend, "Strategy")
     # test_for_trend(cluster_trend, "Strategy Cluster")
-    # test_for_trend(decision_trend, "Decision System")
 
-    # print(" --------------------------------------------------------------------")
-    # print(" ---------------------- First vs Last trial -------------------------")
-    # print(" --------------------------------------------------------------------")
-    # first_last_strategies, first_last_clusters, _, _, _ = create_data_for_trend_test(reward_exps, number_of_strategies=5,
-    #                                                                               trend_test=False)
-    # test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")  # last 5 trials
-    # test_first_trials_vs_last_trials(first_last_clusters, 5, "Strategy Cluster")
-    #
-    # test_last_n_across_environments(first_last_strategies, 5, "Strategy")
-    # test_last_n_across_environments(first_last_strategies, 5, "Strategy Cluster")
+    print(" --------------------------------------------------------------------")
+    print(" ---------------------- First vs Last trial -------------------------")
+    print(" --------------------------------------------------------------------")
+    first_last_strategies, first_last_clusters, _, _, _ = create_data_for_trend_test(reward_exps, number_of_strategies=5,
+                                                                                  trend_test=False)
+    test_first_trials_vs_last_trials(first_last_strategies, 5, "Strategy")  # last 5 trials
+    test_first_trials_vs_last_trials(first_last_clusters, 5, "Strategy Cluster")
 
-    # print(
-    #     " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
-    # test_for_trend(top_n_strategies, "Adaptive Strategies")
-    # test_for_trend(worst_n_strategies, "Maladaptive Strategies")
-    #
-    # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
-    # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
+    test_last_n_across_environments(first_last_strategies, 5, "Strategy")
+    test_last_n_across_environments(first_last_strategies, 5, "Strategy Cluster")
 
-    # print(
-    #     " ----------------- strategies proportions-----------------")
-    # test of proportions for only selected adaptive, maladaptive strategies
-    # Do the proportions of the strategies differ across environment?
+    print(
+        " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
+    test_for_trend(top_n_strategies, "Adaptive Strategies")
+    test_for_trend(worst_n_strategies, "Maladaptive Strategies")
+
+    test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
+    test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
+
+    # print(" ----------------- strategies proportions-----------------")
+    ## test of proportions for only selected adaptive, maladaptive strategies
+    ## Do the proportions of the strategies differ across environment?
     # test_of_proportions(strategy_trend, "Strategies", individual_strategies=True)
 
-    print(" -----------------Number of clicks-----------------")
-
-    #test_for_trend(number_of_clicks, "Clicks")
-
-    anova_test(number_of_clicks)
-    # print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
-    # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
-    print(
-        "High variance - Low cost condition - first 5 vs last 5",
-        ttest_ind(
-            number_of_clicks["high_variance_low_cost"].head(5),
-            number_of_clicks["high_variance_low_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "High variance - High cost condition - first 5 vs last 5",
-        ttest_ind(
-            number_of_clicks["high_variance_high_cost"].head(5),
-            number_of_clicks["high_variance_high_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "Low variance - High cost condition - first 5 vs last 5",
-        ttest_ind(
-            number_of_clicks["low_variance_high_cost"].head(5),
-            number_of_clicks["low_variance_high_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "Low variance - Low cost condition - first 5 vs last 5",
-        ttest_ind(
-            number_of_clicks["low_variance_low_cost"].head(5),
-            number_of_clicks["low_variance_low_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-
-    # print("# of clicks at the end of the trial in cond 0 vs cond 1")
-    # statistical tests: # of clicks at the end of the trial in cond 0 vs cond 1
-    print(
-        "High variance - last 5 trials",
-        ttest_ind(
-            number_of_clicks["high_variance_high_cost"].tail(5),
-            number_of_clicks["high_variance_low_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "Low variance - last 5 trials",
-        ttest_ind(
-            number_of_clicks["low_variance_low_cost"].tail(5),
-            number_of_clicks["low_variance_high_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "High cost - last 5 trials",
-        ttest_ind(
-            number_of_clicks["high_variance_high_cost"].tail(5),
-            number_of_clicks["low_variance_high_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-    print(
-        "Low cost - last 5 trials",
-        ttest_ind(
-            number_of_clicks["high_variance_low_cost"].tail(5),
-            number_of_clicks["low_variance_low_cost"].tail(5),
-            equal_var=False,
-        ),
-    )
-
-    #### Equivalence test ####
-    equivalence_test(number_of_clicks)

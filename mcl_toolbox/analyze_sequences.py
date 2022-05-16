@@ -107,7 +107,7 @@ def analyse_sequences(
         parent_directory, f"results/cm/inferred_strategies/{exp_num}"
     )
 
-    # dir_path = f"../results/cm/inferred_strategies/{exp_num}"
+    # dir_path = f"results/cm/inferred_strategies/{exp_num}_{block}"
 
     if block:
         dir_path += f"_{block}"
@@ -152,8 +152,8 @@ def analyse_sequences(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
             number_of_clicks,
@@ -182,8 +182,8 @@ def analyse_sequences(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
             number_of_clicks,
@@ -196,16 +196,16 @@ def analyse_sequences(
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    number_of_trials = int(sys.argv[2])
-    block = sys.argv[3]
-    create_plot = sys.argv[4]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # number_of_trials = int(sys.argv[2])
+    # block = sys.argv[3]
+    # create_plot = sys.argv[4]
 
-    # exp_name = "v1.0"
-    # block = "training"
-    # number_of_trials = 35
-    # create_plot = True
+    exp_name = "v1.0"
+    block = "training"
+    number_of_trials = 35
+    create_plot = True
 
     # create the plots
     analyse_sequences(
