@@ -67,7 +67,8 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
             _,
             cluster_proportions,
             _,
-            decision_system_proportions,
+            # decision_system_proportions,
+            # _,
             _,
             _,
             _,
@@ -84,14 +85,14 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
         cluster_df[strategy_name] = list(
             create_comparable_data(cluster_proportions, len=14).values()
         )
-        decision_system_df[strategy_name] = decision_system_proportions[
-            "Relative Influence (%)"
-        ].tolist()
-    return strategy_df, cluster_df, decision_system_df
+        # decision_system_df[strategy_name] = decision_system_proportions[
+        #     "Relative Influence (%)"
+        # ].tolist()
+    return strategy_df, cluster_df#, decision_system_df
 
 
 def create_data_for_trend_test(
-    reward_exps: dict, trend_test: True, number_of_strategies: int, block="training"
+        reward_exps: dict, trend_test: True, number_of_strategies: int, block="training"
 ):
     """
 
@@ -100,7 +101,7 @@ def create_data_for_trend_test(
                "decreasing_variance": "c2.1",
                "constant_variance": "c1.1"}
         trend_test: do you want to do a trend test?
-        number_of_strategies: integer, 89
+        number_of_strategies: integer, 89, currently not used because classification is now done using k-means
         block:
 
     Returns: trend data as pandas dataframes
@@ -125,8 +126,8 @@ def create_data_for_trend_test(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             top_n_strategies,
             worst_n_strategies,
             number_of_clicks,
@@ -183,6 +184,7 @@ def create_data_for_trend_test(
         # Clicks
         number_of_clicks = number_of_clicks - 1
         average_clicks[exp_num] = number_of_clicks.mean(axis=1)
+
     return (
         strategy_trend,
         cluster_trend,
@@ -255,20 +257,17 @@ def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
 
     """
 
-    # todo: add decision systems
     print(
         f" ----------------- Fisher Exact test: Do all {analysis_type} in the FIRST trials and all {analysis_type} "
         f"in the LAST trials have the same proportions WITHIN the same environment? -----------------"
     )
     average_first_n_trials = trend.iloc[0:number_of_trials].sum()  # add first n rows
-    average_last_n_trials = trend.iloc[
-        -(number_of_trials + 1) : -1, :
-    ].sum()  # add last n rows
+    average_last_n_trials = trend.iloc[-(number_of_trials + 1) : -1, :].sum()  # add last n rows
     for columns in trend:
         counts_first_n = (
-            np.array(average_first_n_trials[columns])
-            * number_of_participants
-            * number_of_trials
+                np.array(average_first_n_trials[columns])
+                * number_of_participants
+                * number_of_trials
         )
     counts_last_n = (
         np.array(average_last_n_trials[columns])
@@ -286,9 +285,7 @@ def test_last_n_across_environments(trend, number_of_trials, analysis_type):
         f" ----------------- Fisher Exact test: Do all {analysis_type} in the LAST N trials have the same proportion ACROSS environments? -----------------"
     )
 
-    average_last_10_trials = trend.iloc[
-        -(number_of_trials + 1) : -1, :
-    ].sum()  # add last n rows
+    average_last_10_trials = trend.iloc[-(number_of_trials + 1) : -1, :].sum()  # add last n rows
     for env_a in trend:
         for env_b in trend:
             counts_env_a = (

@@ -21,7 +21,7 @@ sys.modules["distributions"] = distributions
 """
 Run this file to analyse the inferred sequences of the participants. 
 Format: python3 analyze_sequences.py <reward_structure> <num_trials> <block> <create_plot>
-Example: python3 analyze_sequences.py c2.1_dec 35 training True
+Example: python3 mcl_toolbox/analyze_sequences.py c2.1_dec 35 training True
 
 Please remember to set a seed
 """
@@ -152,8 +152,8 @@ def analyse_sequences(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
             number_of_clicks,
@@ -182,8 +182,8 @@ def analyse_sequences(
             strategy_proportions_trialwise,
             cluster_proportions,
             cluster_proportions_trialwise,
-            decision_system_proportions,
-            mean_dsw,
+            # decision_system_proportions,
+            # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
             number_of_clicks,
@@ -217,6 +217,3 @@ if __name__ == "__main__":
     analyse_sequences(
         exp_name, number_of_trials, block, create_plot, number_of_top_worst_strategies=5
     )
-
-# for high reward ones, 20 top strategies
-# for low reward ones 8 top strategies
