@@ -156,6 +156,7 @@ def analyse_sequences(
             # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
+            other_strategies_proportion,
             number_of_clicks,
             adaptive_participants,
             maladaptive_participants,
@@ -186,6 +187,7 @@ def analyse_sequences(
             # mean_dsw,
             adaptive_strategies_proportion,
             maladaptive_strategies_proportion,
+            other_strategies_proportion,
             number_of_clicks,
             adaptive_participants,
             maladaptive_participants,
@@ -208,7 +210,7 @@ if __name__ == "__main__":
     # "low_variance_high_cost"
     # "low_variance_low_cost"
 
-    exp_name = "high_variance_high_cost" #check reward_level in global_vars.py
+    exp_name = "low_variance_low_cost" #check reward_level in global_vars.py
     block = "training"
     number_of_trials = 35
     create_plot = True

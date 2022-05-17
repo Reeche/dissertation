@@ -16,9 +16,9 @@ class RenameUnpickler(pickle.Unpickler):
         # we need these modules in order to load pickled files depending on them,
         # pickled with earlier versions of the code
         if module == "learning_utils":
-            renamed_module = "utils.learning_utils" #for runnigng on the server, remove mcl_toolbox part
+            renamed_module = "mcl_toolbox.utils.learning_utils" #for runnigng on the server, remove mcl_toolbox part
         elif module == "distributions":
-            renamed_module = "utils.distributions" #for runnigng on the server, remove mcl_toolbox part
+            renamed_module = "mcl_toolbox.utils.distributions" #for runnigng on the server, remove mcl_toolbox part
 
         return super(RenameUnpickler, self).find_class(renamed_module, name)
 

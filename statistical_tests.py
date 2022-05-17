@@ -114,6 +114,7 @@ def create_data_for_trend_test(
     # decision_trend = pd.DataFrame(columns=column_names)
     adaptive_trend = pd.DataFrame(columns=column_names)
     maladaptive_trend = pd.DataFrame(columns=column_names)
+    other_trend = pd.DataFrame(columns=column_names)
 
     average_clicks = pd.DataFrame(columns=column_names)
 
@@ -130,6 +131,7 @@ def create_data_for_trend_test(
             # mean_dsw,
             top_n_strategies,
             worst_n_strategies,
+            other_strategies,
             number_of_clicks,
             adaptive_participants,
             maladaptive_participants,
@@ -180,6 +182,7 @@ def create_data_for_trend_test(
 
         adaptive_trend[strategy_name] = top_n_strategies
         maladaptive_trend[strategy_name] = worst_n_strategies
+        other_trend[strategy_name] = other_strategies
 
         # Clicks
         number_of_clicks = number_of_clicks - 1
@@ -190,6 +193,7 @@ def create_data_for_trend_test(
         cluster_trend,
         adaptive_trend,
         maladaptive_trend,
+        other_trend,
         average_clicks,
     )
 
@@ -441,6 +445,7 @@ if __name__ == "__main__":
                    "high_variance_high_cost": "high_variance_high_cost",
                    "low_variance_low_cost": "low_variance_low_cost",
                    "low_variance_high_cost": "low_variance_high_cost"}  # cond 0  # cond 1
+
     # print(" --------------------------------------------------------------------")
     # print(" -------------------- Proportion Difference -------------------------")
     # print(" --------------------------------------------------------------------")
@@ -475,6 +480,7 @@ if __name__ == "__main__":
         cluster_trend,
         top_n_strategies,
         worst_n_strategies,
+        other_strategies,
         number_of_clicks,
     ) = create_data_for_trend_test(
         reward_exps, number_of_strategies=5, trend_test=True
@@ -496,9 +502,11 @@ if __name__ == "__main__":
 
     # print(
     #     " ----------------- Aggregated adaptive strategies vs. aggregated maladaptive strategies trends-----------------")
-    # test_for_trend(top_n_strategies, "Adaptive Strategies")
-    # test_for_trend(worst_n_strategies, "Maladaptive Strategies")
-    #
+    test_for_trend(top_n_strategies, "Adaptive Strategies")
+    test_for_trend(worst_n_strategies, "Maladaptive Strategies")
+    test_for_trend(other_strategies, "Other Strategies")
+
+
     # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
     # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
 
@@ -510,7 +518,7 @@ if __name__ == "__main__":
 
     print(" -----------------Number of clicks-----------------")
 
-    # test_for_trend(number_of_clicks, "Clicks")
+    test_for_trend(number_of_clicks, "Clicks")
 
     ### ANOVA and t-test require normality and equal variance. therefore now Kruskal-Willis test and Wilcoxon rank sum test
     # print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5),
