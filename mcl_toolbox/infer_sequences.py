@@ -103,14 +103,15 @@ def infer_experiment_sequences(
 
 if __name__ == "__main__":
     random.seed(123)
-    exp_name = sys.argv[1]  # e.g. c2.1_dec
-    block = None
-    number_of_trials = int(sys.argv[2])
-    if len(sys.argv) > 2:
-        block = sys.argv[3]
+    # exp_name = sys.argv[1]  # e.g. c2.1_dec
+    # block = None
+    # number_of_trials = int(sys.argv[2])
+    # if len(sys.argv) > 2:
+    #     block = sys.argv[3]
 
-    # exp_name = "c2.1_dec"
-    # block = "training"
+    exp_name = "high_variance_high_cost"
+    block = "training"
+    number_of_trials = 35
 
     infer_experiment_sequences(
         exp_name, number_of_trials, block, max_evals=2

@@ -1,23 +1,7 @@
+import json
 import pandas as pd
 import numpy as np
-import json
-
-pd.set_option("display.max_rows", 500)
-pd.set_option("display.max_columns", 500)
-pd.set_option("display.width", 1000)
-
-### Remember to change the number of trials!!!
-
-data = pd.read_csv("data/dataclips_threecond_full.csv", sep=",")
-
-# remove unfinished data entries
-data["endhit"].replace("", np.nan, inplace=False)
-data["hitid"].replace("HIT_ID", np.nan, inplace=False)
-data.dropna(subset=["endhit"], inplace=True)
-data = data.reset_index(drop=True)
-
-
-# data.drop(index=0, inplace=True) #drops first row
+from mcl_toolbox.utils.learning_utils import create_dir
 
 
 def split_participants_df_into_conditions(df):
@@ -29,124 +13,18 @@ def split_participants_df_into_conditions(df):
     Returns:
 
     """
-    df_increasing = df[df["condition"] == 0]  # low cost
-    df_decreasing = df[df["condition"] == 1]  # high cost
-    df_constant = df[df['condition'] == 2]
 
-    df_increasing.to_csv(
-        "../../data/human/v1.0/participants.csv", sep=",", index=False
-    )
-    df_decreasing.to_csv(
-        "../../data/human/c2.1/participants.csv", sep=",", index=False
-    )
-    df_constant.to_csv("../../data/human/c1.1/participants.csv", sep=",", index=False)
+    df_high_variance_low_click_cost = df[df["condition"] == 0]
+    df_low_variance_high_click_cost = df[df["condition"] == 1]
+    df_high_variance_high_click_cost = df[df["condition"] == 2]
+    df_low_variance_low_click_cost = df[df["condition"] == 3]
 
-    # df_high_variance_low_click_cost = df[df["condition"] == 0]
-    # df_low_variance_high_click_cost = df[df["condition"] == 1]
-    # df_high_variance_high_click_cost = df[df["condition"] == 2]
-    # df_low_variance_low_click_cost = df[df["condition"] == 3]
-
-    # df_high_variance_low_click_cost.to_csv(
-    #     "../../data/human/high_variance_low_cost/participants.csv", sep=",", index=False)
-    # df_low_variance_high_click_cost.to_csv(
-    #     "../../data/human/low_variance_high_cost/participants.csv", sep=",", index=False)
-    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
-    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
-
-
-def flatten(d, sep="_"):
-    """
-    This function flattens json strings. It checks whether there are concatenated dicts or lists and flattens them.
-    Args:
-        d: data
-        sep: separator to be added in between the flatted data. Example {a: {b: value}} will be flatted into {a_b: value}
-
-    Returns: flattened OrderedDict
-
-    """
-    import collections
-
-    obj = collections.OrderedDict()
-
-    def recurse(t, parent_key=""):
-        if isinstance(t, list):
-            for i in range(len(t)):
-                recurse(t[i], parent_key + sep + str(i) if parent_key else str(i))
-        elif isinstance(t, dict):
-            for k, v in t.items():
-                recurse(v, parent_key + sep + k if parent_key else k)
-        else:
-            obj[parent_key] = t
-
-    recurse(d)
-    return obj
-
-
-def get_queries(dict, keyword_trial, keyword_query):
-    """
-    Function to get information on column queries and save as dict
-    Args:
-        dict:
-
-    Returns: queries data as dict
-
-    """
-    data = dict.get("data")
-    queries_data = []
-    for row in data:
-        trialdata = row.get(keyword_trial)
-        if keyword_query in trialdata:
-            queries = trialdata.get(keyword_query)
-            queries_data.append(queries)
-    return queries_data
-
-
-def format_json(df, col_name, keyword_dict, no_trials):
-    """
-    Flattens the csv datastring
-    Args:
-        df:
-        col_name:
-        keyword_dict:
-        no_trials:
-
-    Returns:
-
-    """
-    mouselab_dict = {}
-    for index, row in df.iterrows():
-        data_dict_raw = json.loads(row[col_name])
-        data_dict = flatten(data_dict_raw)
-
-        trial_dict = {}
-        for trial_id in range(0, no_trials):
-
-            all_rewards_dict = {}
-            for keyword_name, keyword_len in keyword_dict.items():
-                reward_key_list = []
-                reward_value_list = []
-                if keyword_name == "queries":
-                    queries = get_queries(data_dict_raw, "trialdata", "queries")
-                    for row in queries:
-                        reward_value_list.append(row)
-                else:
-                    # create dict for all keywords
-                    for key_reward in data_dict.keys():
-                        if str(key_reward).find(keyword_name) != -1:
-                            reward_key_list.append(key_reward)
-                    for key_reward in reward_key_list:
-                        reward_value_list.append(data_dict.get(key_reward))
-
-                if keyword_name == "condition":
-                    all_rewards_dict[keyword_name] = reward_value_list
-                else:
-                    all_rewards_dict[keyword_name] = reward_value_list[
-                                                     (keyword_len * trial_id): (keyword_len * (trial_id + 1))
-                                                     ]
-
-            trial_dict[trial_id] = all_rewards_dict
-        mouselab_dict[index] = trial_dict
-    return mouselab_dict
+    df_high_variance_low_click_cost.to_csv(
+        "../../data/human/high_variance_low_cost/participants.csv", sep=",", index=False)
+    df_low_variance_high_click_cost.to_csv(
+        "../../data/human/low_variance_high_cost/participants.csv", sep=",", index=False)
+    df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
+    df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df):
@@ -158,140 +36,138 @@ def split_mouselab_df_into_conditions(df):
     Returns:
 
     """
-    df_increasing = df[df["condition"] == 0]
-    df_decreasing = df[df["condition"] == 1]
-    df_constant = df[df['condition'] == 2]
-    df_increasing.to_csv(
-        "../../data/human/v1.0/mouselab-mdp.csv", sep=",", index=False
-    )
-    df_decreasing.to_csv(
-        "../../data/human/c2.1/mouselab-mdp.csv", sep=",", index=False
-    )
-    df_constant.to_csv("../../data/human/c1.1/mouselab-mdp.csv", sep=",", index=False)
+    df_high_variance_low_click_cost = df[df["condition"] == 0]
+    df_low_variance_high_click_cost = df[df["condition"] == 1]
+    df_high_variance_high_click_cost = df[df["condition"] == 2]
+    df_low_variance_low_click_cost = df[df["condition"] == 3]
+
+    df_high_variance_low_click_cost.to_csv(
+        "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
+    df_low_variance_high_click_cost.to_csv(
+        "../../data/human/low_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-    # df_high_variance_low_click_cost = df[df["condition"] == 0]
-    # df_low_variance_high_click_cost = df[df["condition"] == 1]
-    # df_high_variance_high_click_cost = df[df["condition"] == 2]
-    # df_low_variance_low_click_cost = df[df["condition"] == 3]
-    #
-    # df_high_variance_low_click_cost.to_csv(
-    #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
-    # df_low_variance_high_click_cost.to_csv(
-    #     "../../data/human/low_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
-    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
-    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
+experiment = "planningamount"
 
-def save_to_df(participant_dict, name_mapping):
-    """
-    Saves the dictionary to a csv file
-    Args:
-        participant_dict:
-        name_mapping:
+data_full = pd.read_csv(f"data/dataclips_{experiment}_full.csv", sep=",")
 
-    Returns: saves a csv
-
-    """
-    dataframe_list = []
-    for participant_id, trial_data in participant_dict.items():
-        new_row = {}
-        for trial_index, value in trial_data.items():
-            new_row["pid"] = participant_id
-            new_row["trial_index"] = trial_index
-            for trial_type, trial_data in value.items():
-                if len(trial_data) == 1:
-                    new_row[trial_type] = trial_data[0]
-                else:
-                    new_row[trial_type] = trial_data
-            row_data = new_row.copy()
-            dataframe_list.append(row_data)
-            # mouselab_mdp.append(new_row, ignore_index=True)
-    df = pd.DataFrame(dataframe_list)
-
-    # change the name of the dataframe
-    df = df.rename(columns=name_mapping)
-
-    df = replace_trialtype_tomouselab(df)
-    split_mouselab_df_into_conditions(df)
-    df.to_csv("mouselab-mdp_all_threecond_full.csv", sep=",", index=False)
-    return df
+# remove unfinished data entries
+data_full["endhit"].replace("", np.nan, inplace=False)
+data_full["hitid"].replace("HIT_ID", np.nan, inplace=False)
+data_full.dropna(subset=["endhit"], inplace=True)
+data = data_full.reset_index(drop=True)
+# data.drop(index=0, inplace=True) #drops first row
 
 
-def replace_trialtype_tomouselab(data):
-    data["trial_type"] = "mouselab-mdp"
-    return data
+data = data[["datastring"]].to_dict()  # is a df
+data_value = data.get("datastring")
 
+data_value = list(data_value.values())
 
-def copy_same_condition_for_all_trials():
-    """
-    The raw csv returns the row condition only for the first trials. This needs to be copied to all trials
-    Returns:
+# how the participants dataframe should look like containing all information
+df_participants = pd.DataFrame(columns=["workerid", "condition", "bonus", "gender", "age"])
+df_mouselab = pd.DataFrame()
 
-    """
-    return
+### create temp lists to be filled to the df
+# for participant csv
+temp_worker_list = []
+temp_condition_list = []
+temp_bonus_list = []
+temp_gender_list = []
+temp_age_list = []
 
+# for mouselab csv
+temp_block = []
+temp_trial_type = []
+temp_path = []
+temp_queries = []
+temp_score = []
+temp_all_trials_index = []
+temp_state_rewards = []  # the values of ALL the nodes
+temp_end_nodes = []
+trial_index_list = []
+pid_list = []
+condition_list = []
 
-# load data
-data_mouselab = data[["datastring"]]
+pid_index = 1
+bad_pid_list = []  # pid list of participants who failed the attention check
+# for all conditions
+for rows in data_value:
+    row_dict = json.loads(rows)  # transform str into dict
+    temp_worker_list.append(row_dict["workerId"])
+    temp_condition_list.append(row_dict["condition"])
+    if 'final_bonus' in row_dict["questiondata"]:
+        temp_bonus_list.append(row_dict["questiondata"]["final_bonus"])
+    else:
+        temp_bonus_list.append(0)
 
-# here you can set how the columns of the csv will be named.
-# here are some discrepancies between the csv output from postgres and what is required for the Computational Microscope
-# left is from raw csv; right is how you want it to be
-name_mapping = {
-    "actionTimes": "action_time",
-    "actions": "actions",
-    "block": "block",
-    "path": "path",
-    "queries": "queries",
-    "rewards": "reward",
-    "rt": "rt",
-    "condition": "condition",
-    "bonus": "bonus",
-    "score": "score",
-    "simulationMode": "simulation_mode",
-    "stateRewards": "state_rewards",
-    "time_elapsed": "time_elapsed",
-    "trial_index": "trial_index",
-    "trial_time": "trialTime",
-    "trial_type": "trial_type",
-    "pid": "pid",
-}
+    # get second to last trial to extract age and gender
+    info = list(row_dict["data"])[-3]
+    try:
+        temp_age_list.append(info["trialdata"].get("response").get("age"))
+    except:
+        temp_age_list.append(None)
+    try:
+        temp_gender_list.append(info["trialdata"].get("response").get("gender"))
+    except:
+        temp_gender_list.append(None)
 
-# here you have to enter the information you want from the csv and the length of the information
-keyworddict = {
-    "actionTimes": 3,
-    "actions": 3,
-    "block": 1,
-    "path": 4,
-    "queries": 1,
-    "rewards": 3,
-    "rt": 3,
-    "condition": 1,
-    "bonus": 1,
-    "score": 1,
-    "simulationMode": 3,
-    "stateRewards": 13,
-    "time_elapsed": 1,
-    "trial_index": 1,
-    "trial_time": 1,
-    "trial_type": 1,
-}
+    # logic for trial_type: append all trials (also instructions, surveys etc, then remove them
+    # Otherwise it is difficult to count when the trials appear
+    temp_all_trials_index = list(range(0, len(row_dict["data"])))
+    trial_index = 0
 
-if __name__ == "__main__":
-    # don't forget to change trial index
-    mouselab_dict = format_json(
-        data_mouselab, "datastring", keyword_dict=keyworddict, no_trials=35
-    )
-    df = save_to_df(mouselab_dict, name_mapping)
+    # check if last trial is html-button-response, if yes, then the participant did not fail the attention check
+    if row_dict["data"][-1].get("trialdata").get("trial_type") in ["html-button-response"]:
+        # iterate through the trials
+        for trial_index in temp_all_trials_index:
+            # remove all none mouselab data, i.e. survey, instructions, etc
+            if row_dict["data"][trial_index].get("trialdata").get("trial_type") in ["mouselab-mdp"]:
+                condition_list.append(row_dict["condition"])
+                trial_index_list.append(trial_index)
+                pid_list.append(pid_index)
+                temp_block.append(row_dict["data"][trial_index].get("trialdata").get("block"))
+                temp_trial_type.append(row_dict["data"][trial_index].get("trialdata").get("trial_type"))
+                temp_path.append(row_dict["data"][trial_index].get("trialdata").get("path"))
+                temp_end_nodes.append(row_dict["data"][trial_index].get("trialdata").get("end_nodes"))
+                temp_queries.append(row_dict["data"][trial_index].get("trialdata").get("queries"))
+                temp_state_rewards.append(row_dict["data"][trial_index].get("trialdata").get("stateRewards"))
+                temp_score.append(row_dict["data"][trial_index].get("trialdata").get("score"))
+                trial_index += 1
+        # pid_index += 1
+    else:
+        bad_pid_list.append(pid_index)
+    pid_index += 1
 
-    # create participants csv
-    # get bonus information from mouselab df and add this to the participants csv
-    df["bonus"] = pd.to_numeric(df["bonus"])
-    bonus_temp = df.groupby(["pid"]).sum()
-    data_participants = data[["workerid", "status", "beginexp", "cond"]]
-    data_participants["pid"] = bonus_temp.index
-    data_participants["bonus"] = bonus_temp["bonus"]
-    data_participants = data_participants.rename(columns={"cond": "condition"})
+print("bad pid list", bad_pid_list)
 
-    split_participants_df_into_conditions(data_participants)
-    data_participants.to_csv("participants_all_threecond_full.csv", index=True, index_label="pid")
+### Create mouselab csv
+df_mouselab["pid"] = pid_list
+df_mouselab["trial_index"] = trial_index_list
+df_mouselab["condition"] = condition_list
+df_mouselab["block"] = temp_block
+df_mouselab["trial_type"] = temp_trial_type
+df_mouselab["path"] = temp_path
+df_mouselab["queries"] = temp_queries
+df_mouselab["state_rewards"] = temp_state_rewards
+df_mouselab["end_nodes"] = temp_end_nodes
+df_mouselab["score"] = temp_score
+split_mouselab_df_into_conditions(df_mouselab)
+df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
+
+### Create participant csv
+# save the information into the created df
+df_participants["workerid"] = temp_worker_list
+df_participants["condition"] = temp_condition_list
+df_participants["bonus"] = temp_bonus_list
+df_participants["gender"] = temp_gender_list
+df_participants["age"] = temp_age_list
+
+### save participant information as csv
+df_participants.index += 1
+# remove bad participants
+df_participants = df_participants[~df_participants.index.isin(bad_pid_list)]
+split_participants_df_into_conditions(df_participants)
+df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")

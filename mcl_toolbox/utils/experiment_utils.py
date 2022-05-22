@@ -814,7 +814,7 @@ class Experiment:
                 dpi=400,
                 bbox_inches="tight",
             )
-        plt.show()
+        # plt.show()
         plt.close(fig)
 
     def plot_strategy_proportions_pertrial(self, S, suffix="", labels=None):
@@ -1568,15 +1568,22 @@ class Experiment:
                              alpha=.1)
             plt.ylim(top=9)
             plt.xlabel("Trial Number", size=30)
+
             if self.exp_num == "high_variance_low_cost":
                 label = "HVLC"
+                plt.axhline(y=7.10, color='r', linestyle='-')
             elif self.exp_num == "high_variance_high_cost":
                 label = "HVHC"
+                plt.axhline(y=6.32, color='r', linestyle='-')
             elif self.exp_num == "low_variance_high_cost":
                 label = "LVHC"
+                plt.axhline(y=0.68, color='r', linestyle='-') #it is actually 0 but needs to show on plot, therefore 0.68
             else:
                 label = "LVLC"
+                plt.axhline(y=5.82, color='r', linestyle='-')
             plt.ylabel(f"Average number of clicks for {label}", fontsize=30)
+            plt.xticks(fontsize=22)
+            plt.yticks(fontsize=22)
             # plt.show()
             plt.savefig(
                 f"../results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
@@ -1781,7 +1788,8 @@ class Experiment:
 
         if create_plot:
             # plot regarding strategy clusters
-            self.plot_cluster_proportions(C=plot_clusters)
+            # self.plot_cluster_proportions(C=plot_clusters)
+
             # self.trial_cluster_change_rate(
             #     self.trial_cluster_proportions, C=plot_clusters
             # )
@@ -1792,11 +1800,12 @@ class Experiment:
             # # self.trial_decision_system_change_rate(mean_dsw)
             # # self.plot_decision_systems_proportions_intotal(DS_proportions, plot=True)
             #
+
             # # plot regarding the strategies
-            S = self.get_sorted_strategies()
-            self.plot_strategy_proportions_pertrial(S)
-            self.plot_strategies_proportions_intotal()
-            self.plot_strategy_scores(strategy_scores)  # not saved as plot
+            # S = self.get_sorted_strategies()
+            # self.plot_strategy_proportions_pertrial(S)
+            # self.plot_strategies_proportions_intotal()
+            # self.plot_strategy_scores(strategy_scores)  # not saved as plot
 
             # filter actually used strategies and select the top n adaptive and top n maladaptive strategies
             # (
@@ -1805,10 +1814,11 @@ class Experiment:
             # ) = self.filter_used_strategy_adaptive_maladaptive(
             #     n=number_of_top_worst_strategies
             # )
-            adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
-            self.plot_adaptive_maladaptive_strategies_vs_rest(
-                adaptive_strategies, maladaptive_strategies, plot=True
-            )
+
+            # adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
+            # self.plot_adaptive_maladaptive_strategies_vs_rest(
+            #     adaptive_strategies, maladaptive_strategies, plot=True
+            # )
 
             # plot regarding the change between trials
             # self.analysis_change_percentage(precomputed_strategies, cluster_map)

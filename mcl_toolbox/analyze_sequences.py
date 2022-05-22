@@ -107,7 +107,7 @@ def analyse_sequences(
         parent_directory, f"results/cm/inferred_strategies/{exp_num}"
     )
 
-    # dir_path = f"../results/cm/inferred_strategies/{exp_num}"
+    # dir_path = f"/results/cm/inferred_strategies/{exp_num}"
 
     if block:
         dir_path += f"_{block}"
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # "low_variance_high_cost"
     # "low_variance_low_cost"
 
-    exp_name = "low_variance_low_cost" #check reward_level in global_vars.py
+    exp_name = "low_variance_high_cost" #check reward_level in global_vars.py
     block = "training"
     number_of_trials = 35
     create_plot = True
