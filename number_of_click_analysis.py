@@ -24,7 +24,7 @@ def create_click_df(data):
 
     """
     click_temp_df = data["queries"]
-    click_df = pd.DataFrame(columns=["pid", "trial", "number_of_clicks", "clicks"])
+    click_df = pd.DataFrame(columns=["pid", "trial", "variance", "number_of_clicks", "clicks"])
 
     # create a list of all pid * number of trials and append their clicks
     click_df["pid"] = data["pid"]
@@ -45,12 +45,16 @@ def create_click_df(data):
 
     if experiment == "high_variance_low_cost":
         click_df["click_cost"] = [1] * len(click_temp_df)
+        click_df["variance"] = [1] * len(click_temp_df)
     elif experiment == "high_variance_high_cost":
         click_df["click_cost"] = [5] * len(click_temp_df)
+        click_df["variance"] = [1] * len(click_temp_df)
     elif experiment == "low_variance_low_cost":
         click_df["click_cost"] = [1] * len(click_temp_df)
+        click_df["variance"] = [0] * len(click_temp_df)
     elif experiment == "low_variance_high_cost":
         click_df["click_cost"] = [5] * len(click_temp_df)
+        click_df["variance"] = [0] * len(click_temp_df)
 
     return click_df
 
@@ -91,16 +95,16 @@ def normality_test(average_clicks):
     print(f"Normality test for clicks for {experiment}: p = {p}")
 
 def anova(click_data):
-    model = ols('number_of_clicks ~ C(trial) + C(click_cost) + C(pid)', data=click_data).fit()
+    model = ols('number_of_clicks ~ C(trial) + C(click_cost) + C(pid) + C(variance)', data=click_data).fit()
     table = sm.stats.anova_lm(model, typ=2)
     print(table)
     return None
 
 def glm(click_data):
     y = click_data["number_of_clicks"]
-    x = click_data.drop(columns=['number_of_clicks', 'clicks'])
+    x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
     # data = sm.datasets.scotland.load()
-    x = sm.add_constant(x)
+    x = sm.add_constant(x_temp)
     gamma_model = sm.GLM(y, x, family=sm.families.Gamma())
     gamma_results = gamma_model.fit()
     print(gamma_results.summary())
@@ -121,7 +125,7 @@ if __name__ == "__main__":
         # plot_clicks(average_clicks)
 
         # trend test
-        trend_test(average_clicks)
+        # trend_test(average_clicks)
 
         # normality test
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
@@ -129,5 +133,5 @@ if __name__ == "__main__":
         # append all 4 conditions into one df
         click_df_all_conditions = click_df_all_conditions.append(click_df)
 
-    # anova(click_df_all_conditions)
+    anova(click_df_all_conditions)
     glm(click_df_all_conditions)
