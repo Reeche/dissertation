@@ -96,19 +96,40 @@ def normality_test(average_clicks):
     print(f"Normality test for clicks for {experiment}: p = {p}")
 
 def anova(click_data):
-    model = ols('number_of_clicks ~ C(trial) + C(click_cost) + C(pid) + C(variance)', data=click_data).fit()
+    model = ols('number_of_clicks ~ C(trial) + click_cost + pid + C(variance) + trial:variance + trial:cost + trial:variance:cost', data=click_data).fit()
     table = sm.stats.anova_lm(model, typ=2)
     print(table)
     return None
 
 def glm(click_data):
-    y = click_data["number_of_clicks"]
-    x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
-    # data = sm.datasets.scotland.load()
-    x = sm.add_constant(x_temp)
-    gamma_model = sm.GLM(y, x, family=sm.families.Gamma())
+    click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
+    click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
+    click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
+    click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
+
+    cutoff = 35
+    # create df with first n trials
+    #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
+    x_learning = click_data[click_data["trial"].isin(range(0,cutoff))]
+    y_learning = x_learning["number_of_clicks"]
+    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks'])
+    x_learning = sm.add_constant(x_learning)
+
+    # create df with last n:35 trials
+    # x_nonlearning = click_data[click_data["trial"].isin(range(cutoff,35))]
+    # y_nonlearning = x_nonlearning["number_of_clicks"]
+    # x_nonlearning = x_nonlearning.drop(columns=['number_of_clicks', 'clicks'])
+    # x_nonlearning = sm.add_constant(x_nonlearning)
+
+    # learning phase
+    gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.Gamma())
     gamma_results = gamma_model.fit()
-    print(gamma_results.summary())
+    print("learning results", gamma_results.summary())
+
+    # non-learning phase
+    # gamma_model = sm.GLM(y_nonlearning, x_nonlearning, family=sm.families.Gamma())
+    # gamma_results = gamma_model.fit()
+    # print("nonlearning results", gamma_results.summary())
     return None
 
 if __name__ == "__main__":
@@ -124,7 +145,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         # plot the average clicks
-        plot_clicks(average_clicks)
+        # plot_clicks(average_clicks)
 
         # trend test
         # trend_test(average_clicks)
@@ -133,7 +154,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         # append all 4 conditions into one df
-        # click_df_all_conditions = click_df_all_conditions.append(click_df)
+        click_df_all_conditions = click_df_all_conditions.append(click_df)
 
     # anova(click_df_all_conditions)
-    # glm(click_df_all_conditions)
+    glm(click_df_all_conditions)
