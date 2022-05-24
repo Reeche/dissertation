@@ -63,10 +63,11 @@ def plot_clicks(average_clicks):
     plt.plot(average_clicks)
     plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
                      alpha=.1)
-    plt.ylim(top=9)
-    plt.xlabel("Trial Number", size=14)
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
+    plt.ylim(top=7.5)
+    plt.ylim(bottom=0)
+    plt.xlabel("Trial Number", size=15)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
     if experiment == "high_variance_low_cost":
         label = "HVLC"
         plt.axhline(y=7.10, color='r', linestyle='-')
@@ -79,7 +80,7 @@ def plot_clicks(average_clicks):
     else:
         label = "LVLC"
         plt.axhline(y=5.82, color='r', linestyle='-')
-    plt.ylabel(f"Average number of clicks for {label}", fontsize=14)
+    plt.ylabel(f"Average number of clicks for {label}", fontsize=15)
     plt.savefig(f"results/plots/{experiment}_average_clicks")
     # plt.show()
     plt.close()
@@ -113,6 +114,7 @@ def glm(click_data):
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost", "low_variance_high_cost"]
 
+    # experiments = ["low_variance_high_cost"]
     click_df_all_conditions = pd.DataFrame()
     for experiment in experiments:
         data = pd.read_csv(f"data/human/{experiment}/mouselab-mdp.csv")
@@ -122,7 +124,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         # plot the average clicks
-        # plot_clicks(average_clicks)
+        plot_clicks(average_clicks)
 
         # trend test
         # trend_test(average_clicks)
@@ -131,7 +133,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         # append all 4 conditions into one df
-        click_df_all_conditions = click_df_all_conditions.append(click_df)
+        # click_df_all_conditions = click_df_all_conditions.append(click_df)
 
-    anova(click_df_all_conditions)
-    glm(click_df_all_conditions)
+    # anova(click_df_all_conditions)
+    # glm(click_df_all_conditions)
