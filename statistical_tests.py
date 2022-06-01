@@ -1,5 +1,6 @@
 import sys
 import os
+
 os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
 import pandas as pd
 import numpy as np
@@ -9,7 +10,7 @@ import statsmodels
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 
-from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, shapiro, bartlett, kruskal, ranksums
+from scipy.stats import friedmanchisquare, mannwhitneyu, ks_2samp, shapiro, bartlett, kruskal, ranksums, normaltest, ttest_rel
 from mcl_toolbox.analyze_sequences import analyse_sequences
 from mcl_toolbox.utils.statistics_utils import create_comparable_data
 
@@ -57,10 +58,10 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
     decision_system_df = pd.DataFrame(columns=column_names)
 
     for (
-        strategy_name,
-        exp_num,
+            strategy_name,
+            exp_num,
     ) in (
-        strategy_name_dict.items()
+            strategy_name_dict.items()
     ):  # strategy_name: increasing/decreasing, exp_num: v1.0
         (
             strategy_proportions,
@@ -88,7 +89,7 @@ def create_data_for_distribution_test(strategy_name_dict: dict, block="training"
         # decision_system_df[strategy_name] = decision_system_proportions[
         #     "Relative Influence (%)"
         # ].tolist()
-    return strategy_df, cluster_df#, decision_system_df
+    return strategy_df, cluster_df  # , decision_system_df
 
 
 def create_data_for_trend_test(
@@ -266,7 +267,7 @@ def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
         f"in the LAST trials have the same proportions WITHIN the same environment? -----------------"
     )
     average_first_n_trials = trend.iloc[0:number_of_trials].sum()  # add first n rows
-    average_last_n_trials = trend.iloc[-(number_of_trials + 1) : -1, :].sum()  # add last n rows
+    average_last_n_trials = trend.iloc[-(number_of_trials + 1): -1, :].sum()  # add last n rows
     for columns in trend:
         counts_first_n = (
                 np.array(average_first_n_trials[columns])
@@ -274,9 +275,9 @@ def test_first_trials_vs_last_trials(trend, number_of_trials, analysis_type):
                 * number_of_trials
         )
     counts_last_n = (
-        np.array(average_last_n_trials[columns])
-        * number_of_participants
-        * number_of_trials
+            np.array(average_last_n_trials[columns])
+            * number_of_participants
+            * number_of_trials
     )
     res = stats.fisher_test(
         np.array([counts_first_n, counts_last_n]), simulate_p_value=True
@@ -289,18 +290,18 @@ def test_last_n_across_environments(trend, number_of_trials, analysis_type):
         f" ----------------- Fisher Exact test: Do all {analysis_type} in the LAST N trials have the same proportion ACROSS environments? -----------------"
     )
 
-    average_last_10_trials = trend.iloc[-(number_of_trials + 1) : -1, :].sum()  # add last n rows
+    average_last_10_trials = trend.iloc[-(number_of_trials + 1): -1, :].sum()  # add last n rows
     for env_a in trend:
         for env_b in trend:
             counts_env_a = (
-                np.array(average_last_10_trials[env_a])
-                * number_of_participants
-                * number_of_trials
+                    np.array(average_last_10_trials[env_a])
+                    * number_of_participants
+                    * number_of_trials
             )
             counts_env_b = (
-                np.array(average_last_10_trials[env_b])
-                * number_of_participants
-                * number_of_trials
+                    np.array(average_last_10_trials[env_b])
+                    * number_of_participants
+                    * number_of_trials
             )
             res = stats.fisher_test(
                 np.array([counts_env_a, counts_env_b]), simulate_p_value=True
@@ -309,7 +310,7 @@ def test_last_n_across_environments(trend, number_of_trials, analysis_type):
 
 
 def test_of_proportions(
-    env_distribution, analysis_type: str, individual_strategies=False
+        env_distribution, analysis_type: str, individual_strategies=False
 ):
     """
 
@@ -328,10 +329,10 @@ def test_of_proportions(
             for env_type_b, proportion_b in env_distribution.items():
                 # turn proportions into actual counts (times number of participants and number of trials)
                 strategy_counts_a = (
-                    np.array(proportion_a) * number_of_participants * number_of_trials
+                        np.array(proportion_a) * number_of_participants * number_of_trials
                 )
                 strategy_counts_b = (
-                    np.array(proportion_b) * number_of_participants * number_of_trials
+                        np.array(proportion_b) * number_of_participants * number_of_trials
                 )
                 res = stats.fisher_test(
                     np.array([strategy_counts_a, strategy_counts_b]),
@@ -349,19 +350,19 @@ def test_of_proportions(
             f" ----------- Fisher exact test: Do {analysis_type} proportions of SINGLE {analysis_type} differ ACROSS environments?  ----------- "
         )
         for (
-            index,
-            strategies,
+                index,
+                strategies,
         ) in env_distribution.iterrows():  # loop through rows, i.e. strategies
             for (
-                env_type_a
+                    env_type_a
             ) in (
-                env_distribution.columns
+                    env_distribution.columns
             ):  # loop through columns and get the column names
                 for env_type_b in env_distribution.columns:
                     # skip if strategy vector is all 0
                     if (
-                        np.count_nonzero(strategies[env_type_a]) < 2
-                        or np.count_nonzero(strategies[env_type_b]) < 2
+                            np.count_nonzero(strategies[env_type_a]) < 2
+                            or np.count_nonzero(strategies[env_type_b]) < 2
                     ):  # if 0 non-zero values are counted, i.e. all values are 0
                         print(
                             f"Strategy {index} has been skipped because of low frequency"
@@ -369,12 +370,12 @@ def test_of_proportions(
                         continue
                     else:
                         strategy_counts_a = (
-                            np.array(strategies[env_type_a]) * number_of_participants
-                            + 0.0
+                                np.array(strategies[env_type_a]) * number_of_participants
+                                + 0.0
                         )
                         strategy_counts_b = (
-                            np.array(strategies[env_type_b]) * number_of_participants
-                            + 0.0
+                                np.array(strategies[env_type_b]) * number_of_participants
+                                + 0.0
                         )
                         # print("COMBINED", np.array([strategy_counts_a, strategy_counts_b]))
                         res = stats.fisher_test(
@@ -386,15 +387,15 @@ def test_of_proportions(
                             f"Strategy {index}: {env_type_a} vs {env_type_b}: p={res[0][0]:.3f}"
                         )
 
+
 def anova_test(name_distribution_dict):
     # prepare the data
     # keys = name_distribution_dict.keys()
     df = pd.DataFrame.from_dict(name_distribution_dict)
     df_melt = pd.melt(df.reset_index(), id_vars=['index'])
     df_melt.columns = ['index', 'condition', 'clicks']
-    #df_melt['clicks'] = ""
-    #df_melt['reward_variance'] = ""
-
+    # df_melt['clicks'] = ""
+    # df_melt['reward_variance'] = ""
 
     # create new dfs for each condition
     for index, row in df_melt.iterrows():
@@ -411,8 +412,6 @@ def anova_test(name_distribution_dict):
             df_melt.at[index, 'click_cost'] = 'high'
             df_melt.at[index, 'reward_variance'] = 'low'
 
-
-
     model = ols('clicks ~ C(click_cost) + C(reward_variance) + C(click_cost)*C(reward_variance)', data=df_melt).fit()
     anova_table = sm.stats.anova_lm(model, typ=2)
     print(anova_table)
@@ -422,17 +421,20 @@ def anova_test(name_distribution_dict):
     print(f"Shapiro test for normal distirbution of residuals: test-statistic: {w}, p-value: {pvalue}")
 
     # test for homogeneity of variances; nullhypothesis: samples from populations have equal variances
-    w, pvalue = bartlett(df['high_variance_high_cost'], df['high_variance_low_cost'], df['low_variance_high_cost'], df['low_variance_low_cost'])
+    w, pvalue = bartlett(df['high_variance_high_cost'], df['high_variance_low_cost'], df['low_variance_high_cost'],
+                         df['low_variance_low_cost'])
     print(f"Bartlett's test for normal distirbution of residuals: test-statistic: {w}, p-value: {pvalue}")
 
     return None
+
 
 def equivalence_test(name_distribution_dict):
     for variance_type_a, distribution_a in name_distribution_dict.items():
         for variance_type_b, distribution_b in name_distribution_dict.items():
             p, v1, v2 = statsmodels.stats.weightstats.ttost_ind(distribution_a, distribution_b, -0.3, 0.3)
-            print(f"Equivalence test : {variance_type_a} vs {variance_type_b}:  p={p:.3f}, lower test statistic={v1[0]:.3f}"
-                  f", lower p-value={v1[1]:.3f}, upper test statistic={v2[0]:.3f}, lower p-value={v1[1]:.3f}")
+            print(
+                f"Equivalence test : {variance_type_a} vs {variance_type_b}:  p={p:.3f}, lower test statistic={v1[0]:.3f}"
+                f", lower p-value={v1[1]:.3f}, upper test statistic={v2[0]:.3f}, lower p-value={v1[1]:.3f}")
     return None
 
 
@@ -506,7 +508,6 @@ if __name__ == "__main__":
     test_for_trend(worst_n_strategies, "Maladaptive Strategies")
     test_for_trend(other_strategies, "Other Strategies")
 
-
     # test_of_proportions(top_n_strategies, "Adaptive Strategies", individual_strategies=False)
     # test_of_proportions(worst_n_strategies, "Maladaptive Strategies", individual_strategies=False)
 
@@ -521,39 +522,51 @@ if __name__ == "__main__":
     test_for_trend(number_of_clicks, "Clicks")
 
     ### ANOVA and t-test require normality and equal variance. therefore now Kruskal-Willis test and Wilcoxon rank sum test
-    print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5),
-                  number_of_clicks["low_variance_high_cost"].tail(5), number_of_clicks["high_variance_low_cost"].tail(5)))
+    print("Kruskal Wallis test", kruskal(number_of_clicks["high_variance_high_cost"].tail(5),
+                                         number_of_clicks["high_variance_low_cost"].tail(5),
+                                         number_of_clicks["low_variance_high_cost"].tail(5),
+                                         number_of_clicks["high_variance_low_cost"].tail(5)))
     # print("Wilcoxon ranksum - High variance ", ranksums(number_of_clicks["high_variance_high_cost"], number_of_clicks["high_variance_low_cost"]))
     # print("Wilcoxon ranksum - Low variance ", ranksums(number_of_clicks["low_variance_high_cost"], number_of_clicks["low_variance_low_cost"]))
     # print("Wilcoxon ranksum - High cost ", ranksums(number_of_clicks["high_variance_high_cost"], number_of_clicks["low_variance_high_cost"]))
     # print("Wilcoxon ranksum - Low cost ", ranksums(number_of_clicks["high_variance_low_cost"], number_of_clicks["low_variance_low_cost"]))
 
+    ### test for normality
+    k2, p = normaltest(number_of_clicks["high_variance_low_cost"])
+    print("normal test high_variance_low_cost", p)
+    k2, p = normaltest(number_of_clicks["high_variance_high_cost"])
+    print("normal test high_variance_high_cost", p)
+    k2, p = normaltest(number_of_clicks["low_variance_high_cost"])
+    print("normal test low_variance_high_cost", p)
+    k2, p = normaltest(number_of_clicks["low_variance_low_cost"])
+    print("normal test low_variance_low_cost", p)
+
     print("# of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond")
     # statistical tests: # of clicks at the beginning of the trial vs. # of clicks at the end of the trial for both cond
     print(
         "High variance - Low cost condition - first 5 vs last 5",
-        ranksums(
+        ttest_rel(
             number_of_clicks["high_variance_low_cost"].head(5),
             number_of_clicks["high_variance_low_cost"].tail(5)
         ),
     )
     print(
         "High variance - High cost condition - first 5 vs last 5",
-        ranksums(
+        ttest_rel(
             number_of_clicks["high_variance_high_cost"].head(5),
             number_of_clicks["high_variance_high_cost"].tail(5)
         ),
     )
     print(
         "Low variance - High cost condition - first 5 vs last 5",
-        ranksums(
+        ttest_rel(
             number_of_clicks["low_variance_high_cost"].head(5),
             number_of_clicks["low_variance_high_cost"].tail(5)
         ),
     )
     print(
         "Low variance - Low cost condition - first 5 vs last 5",
-        ranksums(
+        ttest_rel(
             number_of_clicks["low_variance_low_cost"].head(5),
             number_of_clicks["low_variance_low_cost"].tail(5)
         ),
@@ -564,29 +577,29 @@ if __name__ == "__main__":
     print(
         "High variance - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_high_cost"],
-            number_of_clicks["high_variance_low_cost"]
+            number_of_clicks["high_variance_high_cost"].tail(5),
+            number_of_clicks["high_variance_low_cost"].tail(5)
         ),
     )
     print(
         "Low variance - last 5 trials",
         ranksums(
-            number_of_clicks["low_variance_high_cost"],
-            number_of_clicks["low_variance_low_cost"]
+            number_of_clicks["low_variance_high_cost"].tail(5),
+            number_of_clicks["low_variance_low_cost"].tail(5)
         ),
     )
     print(
         "High cost - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_high_cost"],
-            number_of_clicks["low_variance_high_cost"]
+            number_of_clicks["high_variance_high_cost"].tail(5),
+            number_of_clicks["low_variance_high_cost"].tail(5)
         ),
     )
     print(
         "Low cost - last 5 trials",
         ranksums(
-            number_of_clicks["high_variance_low_cost"],
-            number_of_clicks["low_variance_low_cost"]
+            number_of_clicks["high_variance_low_cost"].tail(5),
+            number_of_clicks["low_variance_low_cost"].tail(5)
         ),
     )
 
