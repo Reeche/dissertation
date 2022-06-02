@@ -102,17 +102,20 @@ def anova(click_data):
     return None
 
 def glm(click_data):
-    click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
-    click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
-    click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
-    click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
+    # filter for high and low variance
+    click_data = click_data[click_data["variance"] == 0]
 
-    cutoff = 35
+    # click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
+    click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
+    # click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
+    # click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
+
+    cutoff = 10
     # create df with first n trials
     #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
     x_learning = click_data[click_data["trial"].isin(range(0,cutoff))]
     y_learning = x_learning["number_of_clicks"]
-    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks'])
+    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'variance'])
     x_learning = sm.add_constant(x_learning)
 
     # create df with last n:35 trials
