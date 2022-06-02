@@ -64,7 +64,7 @@ def plot_clicks(average_clicks):
     plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
                      alpha=.1)
     plt.ylim(top=7.5)
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=-1)
     plt.xlabel("Trial Number", size=15)
     plt.xticks(fontsize=13)
     plt.yticks(fontsize=13)
@@ -76,7 +76,7 @@ def plot_clicks(average_clicks):
         plt.axhline(y=6.32, color='r', linestyle='-')
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
-        plt.axhline(y=0.68, color='r', linestyle='-') #it is actually 0 but needs to show on plot, therefore 0.68
+        plt.axhline(y=0.01, color='r', linestyle='-') #it is actually 0 but needs to show on plot, therefore 0.68
     else:
         label = "LVLC"
         plt.axhline(y=5.82, color='r', linestyle='-')
@@ -103,19 +103,19 @@ def anova(click_data):
 
 def glm(click_data):
     # filter for high and low variance
-    click_data = click_data[click_data["variance"] == 0]
+    # click_data = click_data[click_data["variance"] == 0]
 
-    # click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
+    click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
     click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
-    # click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
-    # click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
+    click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
+    click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
 
     cutoff = 10
     # create df with first n trials
     #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
-    x_learning = click_data[click_data["trial"].isin(range(0,cutoff))]
+    x_learning = click_data[click_data["trial"].isin(range(1,cutoff))]
     y_learning = x_learning["number_of_clicks"]
-    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'variance'])
+    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks'])
     x_learning = sm.add_constant(x_learning)
 
     # create df with last n:35 trials
@@ -125,7 +125,7 @@ def glm(click_data):
     # x_nonlearning = sm.add_constant(x_nonlearning)
 
     # learning phase
-    gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.Gamma())
+    gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.NegativeBinomial())
     gamma_results = gamma_model.fit()
     print("learning results", gamma_results.summary())
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         # plot the average clicks
-        # plot_clicks(average_clicks)
+        plot_clicks(average_clicks)
 
         # trend test
         # trend_test(average_clicks)
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         # append all 4 conditions into one df
-        click_df_all_conditions = click_df_all_conditions.append(click_df)
+        # click_df_all_conditions = click_df_all_conditions.append(click_df)
 
     # anova(click_df_all_conditions)
-    glm(click_df_all_conditions)
+    # glm(click_df_all_conditions)
