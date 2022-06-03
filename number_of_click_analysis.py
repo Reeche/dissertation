@@ -6,6 +6,8 @@ import pymannkendall as mk
 from scipy import stats
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+import statsmodels.formula.api as smf
+# import gpboost as gpb
 
 """
 This file contains the new analysis for planning amount experiment for the journal paper submission
@@ -103,19 +105,24 @@ def anova(click_data):
 
 def glm(click_data):
     # filter for high and low variance
-    # click_data = click_data[click_data["variance"] == 0]
+    click_data = click_data[click_data["variance"] == 0]
+
+    # print(type(click_data["pid"]))
+    # print(type(click_data["pid"].values.tostring()))
+    # print(type(str(click_data["pid"].values)))
 
     click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
+    # click_data["trial:pid"] = click_data["trial"] * click_data["variance"]
     click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
     click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
     click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
 
-    cutoff = 10
+    cutoff = 35
     # create df with first n trials
     #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
     x_learning = click_data[click_data["trial"].isin(range(1,cutoff))]
     y_learning = x_learning["number_of_clicks"]
-    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks'])
+    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'pid'])
     x_learning = sm.add_constant(x_learning)
 
     # create df with last n:35 trials
@@ -124,10 +131,25 @@ def glm(click_data):
     # x_nonlearning = x_nonlearning.drop(columns=['number_of_clicks', 'clicks'])
     # x_nonlearning = sm.add_constant(x_nonlearning)
 
-    # learning phase
-    gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.NegativeBinomial())
-    gamma_results = gamma_model.fit()
-    print("learning results", gamma_results.summary())
+
+    # linear mixed effect models
+    formula = "number_of_clicks ~ trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
+    gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit() #makes sense
+
+    # glm
+    formula = "number_of_clicks ~ C(pid) + trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
+    # gamma_model = smf.glm(formula=formula, data=click_data, family=sm.families.NegativeBinomial()).fit() #does not make sense
+    # gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.Poisson()).fit() #poisson makes sense
+
+    # ols
+    # gamma_model = sm.OLS(y_learning, x_learning, data=click_data).fit() #makes half sense
+
+    # generalised linear mixed effect models
+    # gamma_model = sm.PoissonBayesMixedGLM(endog=y_learning, exog=x_learning, exog_vc=x_learning["pid"], ident=[0])
+    # gamma_model = gpb.GPModel(group_data=click_data, likelihood="binary")
+    # gamma_model.fit(y=y_learning, X=x_learning)
+
+    print("learning results", gamma_model.summary())
 
     # non-learning phase
     # gamma_model = sm.GLM(y_nonlearning, x_nonlearning, family=sm.families.Gamma())
@@ -151,13 +173,13 @@ if __name__ == "__main__":
         plot_clicks(average_clicks)
 
         # trend test
-        # trend_test(average_clicks)
+        trend_test(average_clicks)
 
         # normality test
-        # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
+        normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         # append all 4 conditions into one df
-        # click_df_all_conditions = click_df_all_conditions.append(click_df)
+        click_df_all_conditions = click_df_all_conditions.append(click_df)
 
     # anova(click_df_all_conditions)
-    # glm(click_df_all_conditions)
+    glm(click_df_all_conditions)
