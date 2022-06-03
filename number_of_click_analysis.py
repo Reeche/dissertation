@@ -7,7 +7,7 @@ from scipy import stats
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import statsmodels.formula.api as smf
-# import gpboost as gpb
+from scipy.stats import chisquare
 
 """
 This file contains the new analysis for planning amount experiment for the journal paper submission
@@ -170,16 +170,32 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         # plot the average clicks
-        plot_clicks(average_clicks)
+        # plot_clicks(average_clicks)
 
         # trend test
-        trend_test(average_clicks)
+        # trend_test(average_clicks)
 
         # normality test
-        normality_test(average_clicks) #high_variance_low_cost is not normally distributed
+        # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         # append all 4 conditions into one df
-        click_df_all_conditions = click_df_all_conditions.append(click_df)
+        # click_df_all_conditions = click_df_all_conditions.append(click_df)
 
-    # anova(click_df_all_conditions)
-    glm(click_df_all_conditions)
+        # optimal number of clicks vs. actual number of clicks
+        # get clicks of last trial
+        if experiment == "high_variance_low_cost":
+            chi2, p = chisquare([average_clicks.values[-1], 7.1])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
+        elif experiment == "high_variance_high_cost":
+            chi2, p  = chisquare([average_clicks.values[-1], 6.32])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        elif experiment == "low_variance_high_cost":
+            chi2, p  = chisquare([average_clicks.values[-1], 0])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        else:
+            chi2, p  = chisquare([average_clicks.values[-1], 5.82])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+
+
+            # anova(click_df_all_conditions)
+    # glm(click_df_all_conditions)
