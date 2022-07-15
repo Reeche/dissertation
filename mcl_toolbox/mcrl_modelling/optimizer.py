@@ -366,17 +366,18 @@ class ParameterOptimizer:
 
         Example: num_simulation: 30, max_evals: 400, model: reinforce
         The model is initated with a set of parameters and creates simulated data for 30 runs
-        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are optimised based on the 30 runs and participant data.
+        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are
+        optimised based on the 30 runs and participant data.
         Then the updated parameters are passed to the model and another 30 runs are created with the new parameters
         The loop continues 400 times.
 
         Args:
-            objective:
-            num_simulations:
-            optimizer:
-            db_path:
-            compute_likelihood:
-            max_evals:
+            objective: str e.g. "likelihood" or "pseudo-likelihood"
+            num_simulations: integer
+            optimizer: str, e.g. "hyperopt"
+            db_path: path to database
+            compute_likelihood: boolean
+            max_evals: integer
             rstate: random state for hyperopt
 
         Returns: res: results
@@ -387,9 +388,12 @@ class ParameterOptimizer:
         self.num_simulations = num_simulations
         self.optimizer = optimizer
         prior = self.get_prior()
+        # get participant data as dict
         p_data = construct_p_data(self.participant, self.pipeline)
         self.p_data = p_data
+        # returns a loss but is only "triggered" later in line 404
         distance_fn = construct_objective_fn(optimizer, objective, p_data, self.pipeline)
+        # filter participant data by only the relevant data depending on objective
         observation = get_relevant_data(p_data, self.objective)
         if objective == "likelihood":
             self.compute_likelihood = True
@@ -397,8 +401,8 @@ class ParameterOptimizer:
             res = estimate_pyabc_posterior(self.objective_fn, prior, distance_fn, observation,
                                            db_path, num_populations=5)
         else:
-            objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
-            res = optimize_hyperopt_params(objective_fn, prior, max_evals=max_evals,
+            lambda_objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
+            res = optimize_hyperopt_params(lambda_objective_fn, prior, max_evals=max_evals,
                                            show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 

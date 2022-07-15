@@ -204,14 +204,25 @@ class REINFORCE(Learner):
         return action, reward, done, taken_path, delay
 
     def act_and_learn(self, env, trial_info={}):
+        """
+
+        Args:
+            env:
+            trial_info:
+
+        Returns: action, reward, done, info
+
+        """
         end_episode = False
         if "end_episode" in trial_info:
             end_episode = trial_info["end_episode"]
         policy_loss = 0
         if not end_episode:
+            # get MER based on observed nodes, todo: where is this used?
             term_reward = self.get_term_reward(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
+            # reward is the click cost
             action, reward, done, taken_path, delay = self.take_action(env, trial_info)
             self.pseudo_rewards.append(self.get_pseudo_reward(env))
             self.policy.rewards.append(
@@ -220,15 +231,19 @@ class REINFORCE(Learner):
             if done:
                 delay = env.get_feedback({"action": 0, "taken_path": taken_path})
                 self.policy.rewards[-1] = reward - self.delay_scale * delay
-                self.learn_from_path(env, taken_path)
+                if self.learn_from_path_boolean:
+                    # updates policy.rewards with rewards of the take path
+                    self.learn_from_path(env, taken_path)
                 policy_loss = self.finish_episode()
+            # if done = True, then reward = value of best_expected_path
             return action, reward, done, {"taken_path": taken_path, "loss": policy_loss}
         else:  # Should this model learn from the termination action when it's hierarchical?
             reward = 0
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-            self.learn_from_path(env, trial_info["taken_path"])
+            if self.learn_from_path_boolean:
+                self.learn_from_path(env, trial_info["taken_path"])
             self.finish_episode()
             return 0, reward, True, taken_path
 

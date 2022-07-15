@@ -39,7 +39,7 @@ def fit_model(
     :param exp_name: experiment name, which is the folder name of the experiment in ../data/human/
     :param pid: participant id, as int
     :param model_index: model index, as displayed in rl_models.csv
-    :param optimization_criterion: as string, choose one of: ["pseudo_likelihood", "mer_performance_error", "performance_error"]
+    :param optimization_criterion: as string, choose one of: ["pseudo_likelihood", "mer_performance_error", "performance_error", "likelihood", "number_of_clicks"]
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
@@ -88,17 +88,18 @@ if __name__ == "__main__":
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
     number_of_trials = int(sys.argv[5])
-    other_params = {}
-    if len(sys.argv) > 6:
-        other_params = ast.literal_eval(sys.argv[6])
-    else:
-        other_params = {}
+    other_params = {"plotting": True}
+    # other_params = {}
+    # if len(sys.argv) > 6:
+    #     other_params = ast.literal_eval(sys.argv[6])
+    # else:
+    #     other_params = {}
 
-    # exp_name = "high_variance_high_cost"
-    # model_index = 0
-    # optimization_criterion = "number_of_clicks_likelihood"
+    # exp_name = "v1.0"
+    # model_index = 8225
+    # optimization_criterion = "likelihood"
     # # optimization_criterion = "pseudo_likelihood"
-    # pid = 1
+    # pid = 6  # 1, 5, 6, 10, 15
     # other_params = {"plotting": True}
     # number_of_trials = 35
 
@@ -106,7 +107,8 @@ if __name__ == "__main__":
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
-            "experiment": None,  # Experiment object can be passed directly with pipeline and normalized features attached
+            "experiment": None,
+            # Experiment object can be passed directly with pipeline and normalized features attached
             "click_cost": 1
         }
         other_params["exp_attributes"] = exp_attributes
@@ -114,8 +116,8 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 2,
-            "max_evals": 2
+            "num_simulations": 30,
+            "max_evals": 400
         }
         other_params["optimization_params"] = optimization_params
 

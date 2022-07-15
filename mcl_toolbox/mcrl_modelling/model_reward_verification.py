@@ -1,4 +1,4 @@
-from condor_utils import create_sub_file, submit_sub_file
+from mcl_toolbox.condor_utils import create_sub_file, submit_sub_file
 
 model_nums = [
     0,

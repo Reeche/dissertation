@@ -238,6 +238,22 @@ class Experiment:
         max_evals=30,
         show_pids=True,
     ):
+        """
+        If strategies are already precomputed using the computational microscope, then the strategies and temperatures
+        (which are stored in inferred_strategies/../strategies.pkl or ../../temperature.pkl) will be attached to the
+        individual participants
+
+        it loops through all participants that are in strategies.pkl / temperature.pkl
+
+        Args:
+            precomputed_strategies: inferred_strategies/../strategies.pkl
+            precomputed_temperatures: inferred_strategies/../temperature.pkl
+            max_evals: number of evaluations
+            show_pids: boolean
+
+        Returns:
+
+        """
         cm = self.cm
         pids = []
         if precomputed_strategies:
@@ -246,7 +262,8 @@ class Experiment:
                     print("SHOW PID", pid)
                 try:
                     S = precomputed_strategies[pid]
-                    self.participants[pid].attach_strategies(S)
+                    # self.participants[pid].attach_strategies(S)
+                    self.participants[pid].strategies = S
                     self.participant_strategies[pid] = S
                     if precomputed_temperatures:
                         T = precomputed_temperatures[pid]

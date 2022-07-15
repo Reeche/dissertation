@@ -64,3 +64,4 @@ Currently, pyabc is not able to optimise for these criteria: "reward", "strategy
 * `prior` - used by the optimizer to see which parameters to optimize for. Can be one of the three options: 
   bernoulli prior, gaussian prior, strategy weight. How does this connect to "is_gaussian"???
 * `habitual_features` - Is there a list which features are habitual and which ones are not? I can only see a pickle "implemented_features.pkl" containing all features. 
+* `learn_from_path` - whether the model should learn from the path taken at the end of trial. Only applicable to LVOC and REINFORCE

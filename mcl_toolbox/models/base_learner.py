@@ -31,6 +31,7 @@ class Learner(ABC):
             self.path_learn = attributes["path_learn"]
         self.previous_best_paths = []
         self.compute_likelihood = False
+        self.learn_from_path_boolean = attributes["learn_from_path"]
 
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
@@ -104,6 +105,18 @@ class Learner(ABC):
     def run_multiple_simulations(
         self, env, num_simulations, compute_likelihood=False, participant=None
     ):
+        """
+        Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
+        Args:
+            env: GenericMouselabEnv
+            num_simulations: integer
+            compute_likelihood: boolean
+            participant:
+
+        Returns:
+
+        """
+        # Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
         env.attach_features(self.features, self.normalized_features)
         env.reset()
         if compute_likelihood and not participant:
