@@ -189,8 +189,11 @@ class REINFORCE(Learner):
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
+            # m is a tensor consisting of action probabilities (e.g. for small mouselab, tensor of len 13)
             m = self.get_action_details(env)
             action_tensor = torch.tensor(action)
+            # likelihood of m (model action probabilities) and action_tensor (participant action)
+            # e.g. m is a tensor of len 13, action tensor, selects the e.g. 5th action
             self.policy.saved_log_probs.append(m.log_prob(action_tensor))
             self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:

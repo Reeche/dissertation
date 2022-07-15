@@ -88,15 +88,15 @@ if __name__ == "__main__":
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
     number_of_trials = int(sys.argv[5])
-    other_params = {"plotting": True}
-    # other_params = {}
-    # if len(sys.argv) > 6:
-    #     other_params = ast.literal_eval(sys.argv[6])
-    # else:
-    #     other_params = {}
+    # other_params = {"plotting": True}
+    other_params = {}
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
+    else:
+        other_params = {}
 
     # exp_name = "v1.0"
-    # model_index = 8225
+    # model_index = 6527
     # optimization_criterion = "likelihood"
     # # optimization_criterion = "pseudo_likelihood"
     # pid = 6  # 1, 5, 6, 10, 15
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 30,
-            "max_evals": 400
+            "num_simulations": 2,
+            "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
 
