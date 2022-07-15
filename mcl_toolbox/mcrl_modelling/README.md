@@ -51,17 +51,17 @@ Currently, pyabc is not able to optimise for these criteria: "reward", "strategy
 * `term` - ???
 * `selector` - only applicable for SDSS. The only option is: RSSL
 * `learner` - only applicable for SDSS. The options are: reinforce, baseline reinforce, LVOC
-* `strategy_space_type` - "microscope" uses all strategies, "participant" uses only the common ones. where is this differentiation found? In global_vars.py???
+* `strategy_space_type` - "microscope" uses all strategies, "participant" uses only the common ones. Need to check code for the difference (???)
 * `stochastic_updating` - only applicable for RSSL/SDSS models. If true, then learning is done stochastically, i.e. not necessarily after each trial (or click???)
-* `subjective_cost` - only applicable to LVOC
-* `vicarious_learning` - only applicable to LVOC. What would have been if I terminate now
-* `termination_value_known` - ???
-* `montecarlo_updates` - use return after acting not just to update current action but also proceeding actions (action = clicks or click sequences from previous trials???)
+* `subjective_cost` - only applicable to LVOC. Estimating value of click cost, adding some value to click cost, cost + c (c is free parameter to be fitted)
+* `vicarious_learning` - only applicable to LVOC. What would have been if I terminate now, learning about values of all actions taken until now
+* `termination_value_known` - is false model will learn to estimate value of termination action from same LVOC learning rule, is true will not learn the value but use MER 
+* `montecarlo_updates` - use return after acting not just to update current action but also proceeding actions (action = all clicks within this one trial)
 * `is_null` - if true, then the model is not updating the weights, i.e. not learning
-* `termination_value_known` - ???
 * `is_gaussian` - only applicable to RSSL/SDSS model. If false, the model uses a bernoulli prior. If true, it uses a Gaussian prior
-* `bandit_prior` - only applicable to SDSS. Always true for SDSS. What does this mean??? 
+* `bandit_prior` - only applicable to SDSS. Always true for SDSS. Make continuous things discrete, continuous return treated as probability of 1 of getting reward
 * `prior` - used by the optimizer to see which parameters to optimize for. Can be one of the three options: 
   bernoulli prior, gaussian prior, strategy weight. How does this connect to "is_gaussian"???
 * `habitual_features` - Is there a list which features are habitual and which ones are not? I can only see a pickle "implemented_features.pkl" containing all features. 
 * `learn_from_path` - whether the model should learn from the path taken at the end of trial. Only applicable to LVOC and REINFORCE
+
