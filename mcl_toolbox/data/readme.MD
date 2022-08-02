@@ -40,7 +40,7 @@ Overview of the pickles (todo: make it look nicer)
 
 * feature_systems.pkl maps a feature to its decision system
 
-* microscope_features.pkl contains the list of features used by the Computational Microscope
+* microscope_features.pkl contains the list of features used by the Computational Microscope. The computational microscope only uses the subset of features that are independent of what the participant did on the previous trials, i.e. the habitual features are left out
 
 * microscope_weights.pkl contains the weights of each strategy in terms of microscope_features
 
