@@ -108,7 +108,7 @@ class ModelFitter:
             else:
                 reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
                 branching = registry(pipeline_kwargs["exp_setting"]).branching
-                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["number_of_trials"])
                 self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(

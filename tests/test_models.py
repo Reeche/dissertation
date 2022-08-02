@@ -7,13 +7,13 @@ from parameterized import parameterized
 def test_models(
     exp_name, pid, model_list, criterion="reward", optimization_params={}
 ):
-    mf = ModelFitter(exp_name)
+    mf = ModelFitter(exp_name, number_of_trials=35)
     for model_index in model_list:
         optimizer = mf.construct_optimizer(model_index, pid, criterion)
         _, _, _ = optimizer.optimize(criterion, **optimization_params)
     return None
 
-random_models = np.random.choice(range(6432), 300)
+random_models = np.random.choice(range(10463), 50)
 
 class TestModels(unittest.TestCase):
     @parameterized.expand([[model_index, {
@@ -26,5 +26,5 @@ class TestModels(unittest.TestCase):
         Tests models to make sure we didn't break anything for MCRL Project
         Takes around 15 minutes
         """
-        test_models("v1.0", 0, [model_index], optimization_params=optimization_params)
+        test_models("v1.0", 1, [model_index], optimization_params=optimization_params)
         self.assertTrue(True)

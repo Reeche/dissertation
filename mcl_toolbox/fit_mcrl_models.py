@@ -1,5 +1,6 @@
 import sys
 import ast
+import time
 
 from pathlib import Path
 import random
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         other_params = {}
 
     # exp_name = "v1.0"
-    # model_index = 6527
+    # model_index = 1919 #6527
     # optimization_criterion = "likelihood"
     # # optimization_criterion = "pseudo_likelihood"
     # pid = 6  # 1, 5, 6, 10, 15
@@ -116,11 +117,11 @@ if __name__ == "__main__":
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 2,
+            "num_simulations": 1,
             "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
-
+    tic = time.perf_counter()
     fit_model(
         exp_name=exp_name,
         pid=pid,
@@ -129,3 +130,5 @@ if __name__ == "__main__":
         optimization_criterion=optimization_criterion,
         **other_params,
     )
+    toc = time.perf_counter()
+    print(f"Took {toc - tic:0.4f} seconds")

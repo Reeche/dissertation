@@ -23,7 +23,7 @@ class Policy(nn.Module):
         self.weighted_preference = nn.Conv1d(
             in_channels=1, out_channels=1, kernel_size=num_features, bias=False
         )
-        self.beta = Variable(torch.tensor(beta), requires_grad=False)
+        self.beta = Variable(torch.tensor(beta), requires_grad=False) #inverse temperature
         self.saved_log_probs = []
         self.term_log_probs = []
         self.rewards = []
@@ -35,8 +35,12 @@ class Policy(nn.Module):
         if not termination:
             x[0][0] = torch.Tensor([-np.inf])
         action_scores = self.beta * x
+
+        # todo: why is log_softmax done twice? Here and in the return?
         softmax_vals = F.log_softmax(action_scores, dim=0)
         softmax_vals = torch.exp(softmax_vals)
+
+        # softmax = e(softmax_vals) / sum(softmax_vals)
         return softmax_vals / softmax_vals.sum()
 
 
@@ -94,11 +98,12 @@ class REINFORCE(Learner):
             X[action] = feature_state[action]
         X = torch.DoubleTensor(X).view(self.num_actions, 1, self.policy.num_features)
         available_actions = torch.LongTensor(available_actions)
-        X_new = X[available_actions]
+        X_new = X[available_actions] # 13 x 56; num_action x num_features
         if self.termination_value_known:
             term_reward = self.get_term_reward(env)
             probs = self.policy(X_new, term_reward, termination=not self.no_term)
         else:
+            # calls the forward method in Policy class
             probs = self.policy(X_new, termination=not self.no_term)
         complete_probs = torch.zeros(self.num_actions)
         for index, action in enumerate(available_actions):

@@ -63,5 +63,7 @@ Currently, pyabc is not able to optimise for these criteria: "reward", "strategy
 * `bandit_prior` - only applicable to SDSS. Always true for SDSS. What does this mean??? 
 * `prior` - used by the optimizer to see which parameters to optimize for. Can be one of the three options: 
   bernoulli prior, gaussian prior, strategy weight. How does this connect to "is_gaussian"???
-* `habitual_features` - Is there a list which features are habitual and which ones are not? I can only see a pickle "implemented_features.pkl" containing all features. 
+* `habitual_features` - If habitual, then full set of features will be used (implemented_features.pkl). Ff not habitual,
+  then microscope_features.pkl will be used because the CM only uses the subset of features that are independent of what the
+  participant did on the previous trials, i.e. it lacks the 5 habitual features
 * `learn_from_path` - whether the model should learn from the path taken at the end of trial. Only applicable to LVOC and REINFORCE
