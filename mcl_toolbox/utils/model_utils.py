@@ -56,6 +56,9 @@ class ModelFitter:
         :param pipeline_kwargs: keyword arguments when necessary, two possible inputs:
                                    - exp_setting in MouseLab registry as string, e.g. 'high_increasing'
                                    - num_trials as integer, e.g. 30
+
+        Note: check if pipeline.pkl already exist for your experiment, you can uncomment line 89 - 93
+        (mainly applicable for v1.0, c1.1, c1.0 and T1.1)
         """
         self.exp_name = exp_name
         if exp_attributes is None:

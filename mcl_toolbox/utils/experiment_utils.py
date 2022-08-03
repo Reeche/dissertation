@@ -261,6 +261,8 @@ class Experiment:
                 if show_pids:
                     print("SHOW PID", pid)
                 try:
+                    # todo: check why attach_strategies(S) is implemented (self.participants[pid].attach_strategies(S))
+                    # todo: It seems to do the same as S = precomputed_strategies[pid]
                     S = precomputed_strategies[pid]
                     # self.participants[pid].attach_strategies(S)
                     self.participants[pid].strategies = S
