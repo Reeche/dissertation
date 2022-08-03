@@ -184,6 +184,7 @@ class HierarchicalLearner(Learner):
     """ Two stage model of decision making"""
 
     def __init__(self, params, attributes):
+        super().__init__(params, attributes)
         self.decision_rule = attributes["decision_rule"]
         self.actor = attributes["actor"]
         self.params = params

@@ -33,6 +33,7 @@ class Learner(ABC):
         self.previous_best_paths = []
         self.compute_likelihood = False
         # for backwards compatibility
+        self.learn_from_path_boolean = None
         if "learn_from_path" in attributes:
             self.learn_from_path_boolean = attributes["learn_from_path"]
 

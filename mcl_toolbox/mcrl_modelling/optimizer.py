@@ -291,6 +291,7 @@ class ParameterOptimizer:
             self.model = models[self.learner_attributes["actor"]]
         self.reward_data = []
         self.click_data = []
+        self.agent = None
 
     def objective_fn(self, params, get_sim_data=False):
         """
@@ -320,11 +321,11 @@ class ParameterOptimizer:
             self.learner_attributes['actor'] = self.model
 
         # the agent is the selected model with corresponding priors to be fitted
-        agent = models[self.learner](params, self.learner_attributes)
+        self.agent = models[self.learner](params, self.learner_attributes)
         del params['priors']
         if self.learner == "sdss":
             del params["bandit_params"]
-        simulations_data = agent.run_multiple_simulations(
+        simulations_data = self.agent.run_multiple_simulations(
             self.env,
             self.num_simulations,
             participant=ParticipantIterator(self.participant),
