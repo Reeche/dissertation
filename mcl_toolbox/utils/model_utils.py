@@ -56,6 +56,9 @@ class ModelFitter:
         :param pipeline_kwargs: keyword arguments when necessary, two possible inputs:
                                    - exp_setting in MouseLab registry as string, e.g. 'high_increasing'
                                    - num_trials as integer, e.g. 30
+
+        Note: check if pipeline.pkl already exist for your experiment, you can uncomment line 89 - 93
+        (mainly applicable for v1.0, c1.1, c1.0 and T1.1)
         """
         self.exp_name = exp_name
         if exp_attributes is None:
@@ -63,7 +66,8 @@ class ModelFitter:
                 "exclude_trials": None,
                 "block": None,
                 "experiment": None,
-                "click_cost": 1
+                "click_cost": 1,
+                "learn_from_path": True,
             }
         if 'experiment' not in exp_attributes:
             exp_attributes['experiment'] = None
@@ -82,14 +86,14 @@ class ModelFitter:
 
             # Check if experiment, already in global_vars for backwards compatibility
             #check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
-            if self.exp_name in structure.exp_pipelines.keys():
-                self.pipeline = structure.exp_pipelines[self.exp_name]
-                self.normalized_features = get_normalized_features(
-                    structure.exp_reward_structures[self.exp_name]
-                )
+            # if self.exp_name in structure.exp_pipelines.keys():
+            #     self.pipeline = structure.exp_pipelines[self.exp_name]
+            #     self.normalized_features = get_normalized_features(
+            #         structure.exp_reward_structures[self.exp_name]
+            #     )
 
             # if you want to add your experiment setting to global_vars.py instead of using the registry
-            elif self.exp_name in structure.branchings.keys():
+            if self.exp_name in structure.branchings.keys():
                 reward_dist = "categorical"
                 reward_structure = structure.exp_reward_structures[self.exp_name]
                 reward_distributions = construct_reward_function(
@@ -107,7 +111,7 @@ class ModelFitter:
             else:
                 reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
                 branching = registry(pipeline_kwargs["exp_setting"]).branching
-                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["num_trials"])
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["number_of_trials"])
                 self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
@@ -165,6 +169,22 @@ class ModelFitter:
         return participant, env
 
     def construct_model(self, model_index):
+        """
+        1. Get model attributes from the rl_models.csv
+        2. Attach selected features (if habitual, then full set of features (implemented_features.pkl; if not habitual,
+        then microscope_features because the CM only uses the subset of features that are independent of what the
+        participant did on the previous trials, i.e. no 5 habitual features)
+
+        Args:
+            model_index: integer
+
+        Returns:
+            learner: str, e.g. "reinforce"
+            learner_attributes: dict containing model features (list), normalized_features (list), num_priors (int),
+            strategy_space (list of len 79), attributes that are from the rl_models.csv list
+
+        """
+        # get model attributes from global_vars.py, which gets it from models/rl_models.csv
         learner_attributes = model_attributes.iloc[model_index].to_dict()
         learner = learner_attributes["model"]
         strategy_space_type = learner_attributes["strategy_space_type"]

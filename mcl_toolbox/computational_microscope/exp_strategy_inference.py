@@ -1,4 +1,4 @@
-from condor_utils import create_sub_file, submit_sub_file
+from mcl_toolbox.condor_utils import create_sub_file, submit_sub_file
 
 num_p = 200  # Number of participants in the experiment (max pid + 1)
 exps = ["v1.0"]  # Experiment number according to the data directory

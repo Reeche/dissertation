@@ -227,7 +227,8 @@ class LVOC(Learner):
                 )
             else:
                 self.update_features.append(features)
-                self.learn_from_path(env, taken_path)
+                if self.learn_from_path_boolean:
+                    self.learn_from_path(env, taken_path)
                 self.perform_end_episode_updates(env, features, reward, taken_path)
             return action, reward, done, taken_path
         else:  # Should this model learn from the termination action?
@@ -235,7 +236,8 @@ class LVOC(Learner):
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-            self.learn_from_path(env, trial_info["taken_path"])
+            if self.learn_from_path_boolean:
+                self.learn_from_path(env, trial_info["taken_path"])
             return 0, reward, True, taken_path
 
     def simulate(self, env, compute_likelihood=False, participant=None):

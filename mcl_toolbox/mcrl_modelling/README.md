@@ -62,5 +62,7 @@ Currently, pyabc is not able to optimise for these criteria: "reward", "strategy
 * `bandit_prior` - only applicable to SDSS. Always true for SDSS. Make continuous things discrete, continuous return treated as probability of 1 of getting reward
 * `prior` - used by the optimizer to see which parameters to optimize for. Can be one of the three options: 
   bernoulli prior, gaussian prior, strategy weight. How does this connect to "is_gaussian"???
-* `habitual_features` - habitual features LVOC estimate values of click based on how often it has been clicked, does not affect tractability. CM do not used these habitual features (check code???)
-
+* `habitual_features` - If habitual, then full set of features will be used (implemented_features.pkl). If not habitual,
+  then microscope_features.pkl will be used because the CM only uses the subset of features that are independent of what the
+  participant did on the previous trials, i.e. it lacks the 5 habitual features
+* `learn_from_path` - whether the model should learn from the path taken at the end of trial. Only applicable to LVOC and REINFORCE

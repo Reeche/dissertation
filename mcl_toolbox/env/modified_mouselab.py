@@ -501,19 +501,30 @@ class Trial:
         return max_path_values
 
     def get_path_expected_values(self):
+        """
+        Loops through all branches and get expected value of each branch /path
+        Returns: a dict that contains the path and its expected value
+
+        """
+        # self.branch_map is a dict containing the branches and indeces,
+        # e.g. for 3 step task {1: (0, 1, 2, 3), 2: (0, 1, 2, 4), 3: (0, 5, 6, 7), 4: (0, 5, 6, 8), 5: (0, 9, 10, 11), 6: (0, 9, 10, 12)}
         num_branches = len(self.branch_map)
         expected_path_values = {}
         for i in range(1, num_branches + 1):
             path = self.branch_map[i]
             ev = 0
             for node_num in path:
-                node = self.node_map[node_num]
+                node = self.node_map[node_num] #node object
                 if node.observed:
                     ev += node.value
                 else:
+                    # if not the starting node
                     if node_num != 0:
                         # Verify this
                         ev += node.expected_value
+                        # given our symmetric setup, expectation is always 0
+                        # expected value is calculated by taking the depths and selecting the reward function e.g.
+                        # depth 1 = (-4, -2, 2, 4) with probs [0.25, 0.25, 0.25, 0.25]
             expected_path_values[i] = ev
         return expected_path_values
 
@@ -777,6 +788,7 @@ class Node:
             "value": self.get_value,
             "is_observed": self.is_observed,
             "return_if_terminating": self.max_expected_if_terminal,
+            "is_traversed": self.is_traversed,
         }
 
         self.termination_map = {
@@ -794,6 +806,9 @@ class Node:
             "soft_satisficing": self.trial.soft_satisficing,
             "constant": self.constant_feature,
         }
+
+    def is_traversed(self):
+        return None #todo: how to label as traversed?
 
     def observe(self):
         self.observed = True

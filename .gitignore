@@ -157,3 +157,6 @@ data/human/*
 # q-fns
 mcl_toolbox/mcl_toolbox/data/F1_q.pkl
 mcl_toolbox/mcl_toolbox/data/v1.0_q.pkl
+
+# remove replication
+helpers/readpickle.py
