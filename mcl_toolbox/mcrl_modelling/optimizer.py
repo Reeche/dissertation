@@ -3,7 +3,7 @@ import os
 import logging
 from pathlib import Path
 
-# os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 
 from functools import partial
 
@@ -15,15 +15,15 @@ import seaborn as sns
 from hyperopt import Trials, fmin, hp, tpe
 from pyabc.transition import MultivariateNormalTransition
 
-from mcl_toolbox.env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.models.hierarchical_models import HierarchicalLearner #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.models.sdss_models import SDSS #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.learning_utils import (compute_objective, #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.modified_mouselab import get_termination_mers
+from mcl_toolbox.models.hierarchical_models import HierarchicalLearner
+from mcl_toolbox.models.lvoc_models import LVOC
+from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE
+from mcl_toolbox.models.rssl_models import RSSL
+from mcl_toolbox.models.sdss_models import SDSS
+from mcl_toolbox.utils.learning_utils import (compute_objective,
                                               get_relevant_data)
-from mcl_toolbox.utils.participant_utils import ParticipantIterator #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.participant_utils import ParticipantIterator
 
 loggers_to_shut_up = [
     "hyperopt.tpe",
@@ -221,12 +221,9 @@ def construct_p_data(participant, pipeline):
 
 def construct_objective_fn(optimizer, objective, p_data, pipeline):
     # construct objective function based on the selected optimizer and objective
-    if objective in ["number_of_clicks"]: #todo: added this as number of clicks seems to work better with negatives. Why?
-        objective_fn = lambda x, y: -compute_objective(objective, x, p_data, pipeline)
-    else: #but likelihood does not need negative though
-        objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
+    objective_fn = lambda x, y: compute_objective(objective, x, p_data, pipeline)
     if optimizer == "pyabc":
-        if objective in ["reward", "strategy_accuracy", "clicks_overlap", "number_of_clicks"]: #todo: why negative?
+        if objective in ["reward", "strategy_accuracy", "clicks_overlap"]:
             objective_fn = lambda x, y: -compute_objective(objective, x, y, pipeline)
         else:
             objective_fn = lambda x, y: compute_objective(objective, x, y, pipeline)
@@ -241,6 +238,7 @@ def optimize_hyperopt_params(
     method=tpe.suggest,
     init_evals=30,
     show_progressbar=False,
+    rstate=None
 ):
     estimator = partial(method, n_startup_jobs=init_evals)
     trials = Trials() if trials else None
@@ -251,6 +249,7 @@ def optimize_hyperopt_params(
         max_evals=max_evals,
         trials=trials,
         show_progressbar=show_progressbar,
+        rstate=rstate,
     )
     return best_params, trials
 
@@ -291,6 +290,7 @@ class ParameterOptimizer:
             self.model = models[self.learner_attributes["actor"]]
         self.reward_data = []
         self.click_data = []
+        self.agent = None
 
     def objective_fn(self, params, get_sim_data=False):
         """
@@ -320,11 +320,11 @@ class ParameterOptimizer:
             self.learner_attributes['actor'] = self.model
 
         # the agent is the selected model with corresponding priors to be fitted
-        agent = models[self.learner](params, self.learner_attributes)
+        self.agent = models[self.learner](params, self.learner_attributes)
         del params['priors']
         if self.learner == "sdss":
             del params["bandit_params"]
-        simulations_data = agent.run_multiple_simulations(
+        simulations_data = self.agent.run_multiple_simulations(
             self.env,
             self.num_simulations,
             participant=ParticipantIterator(self.participant),
@@ -343,9 +343,6 @@ class ParameterOptimizer:
         if self.objective == "clicks_overlap":
             self.click_data.append(relevant_data["a"])
             self.reward_data.append(relevant_data["mer"])
-        if self.objective == "number_of_clicks":
-            self.click_data.append(relevant_data["a"])
-            self.reward_data.append(relevant_data["mer"])
         if self.objective == "number_of_clicks_likelihood":
             self.click_data.append(relevant_data["a"])
             self.reward_data.append(relevant_data["mer"])
@@ -360,7 +357,7 @@ class ParameterOptimizer:
 
     def optimize(self, objective, num_simulations=1, optimizer="pyabc",
                  db_path="sqlite:///test.db", compute_likelihood=False,
-                 max_evals=100):
+                 max_evals=100, rstate=None):
         """
         This function first gets the relevant participant data,
         creates a lambda function as required by fmin function
@@ -369,17 +366,19 @@ class ParameterOptimizer:
 
         Example: num_simulation: 30, max_evals: 400, model: reinforce
         The model is initated with a set of parameters and creates simulated data for 30 runs
-        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are optimised based on the 30 runs and participant data.
+        The data for the 30 runs is passed on to the optimizer (optimize_hyperopt_params -> fmin) and parameters are
+        optimised based on the 30 runs and participant data.
         Then the updated parameters are passed to the model and another 30 runs are created with the new parameters
         The loop continues 400 times.
 
         Args:
-            objective:
-            num_simulations:
-            optimizer:
-            db_path:
-            compute_likelihood:
-            max_evals:
+            objective: str e.g. "likelihood" or "pseudo-likelihood"
+            num_simulations: integer
+            optimizer: str, e.g. "hyperopt"
+            db_path: path to database
+            compute_likelihood: boolean
+            max_evals: integer
+            rstate: random state for hyperopt
 
         Returns: res: results
 
@@ -389,9 +388,12 @@ class ParameterOptimizer:
         self.num_simulations = num_simulations
         self.optimizer = optimizer
         prior = self.get_prior()
+        # get participant data as dict
         p_data = construct_p_data(self.participant, self.pipeline)
         self.p_data = p_data
+        # returns a loss but is only "triggered" later in line 404
         distance_fn = construct_objective_fn(optimizer, objective, p_data, self.pipeline)
+        # filter participant data by only the relevant data depending on objective
         observation = get_relevant_data(p_data, self.objective)
         if objective == "likelihood":
             self.compute_likelihood = True
@@ -399,9 +401,9 @@ class ParameterOptimizer:
             res = estimate_pyabc_posterior(self.objective_fn, prior, distance_fn, observation,
                                            db_path, num_populations=5)
         else:
-            objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
-            res = optimize_hyperopt_params(objective_fn, prior, max_evals=max_evals,
-                                           show_progressbar=True)  # returns best parameters (res) and trials
+            lambda_objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
+            res = optimize_hyperopt_params(lambda_objective_fn, prior, max_evals=max_evals,
+                                           show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
     def run_model(self, params, objective, num_simulations=1, optimizer="pyabc",
@@ -439,7 +441,7 @@ class ParameterOptimizer:
         if plot:
             ax = sns.lineplot(x="Number of trials", y="Reward", hue="Type", data=reward_data)
             plt.savefig(path, bbox_inches='tight')
-            # plt.show()
+            #plt.show()
             plt.close()
         return reward_data
 

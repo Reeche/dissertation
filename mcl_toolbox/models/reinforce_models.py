@@ -23,7 +23,7 @@ class Policy(nn.Module):
         self.weighted_preference = nn.Conv1d(
             in_channels=1, out_channels=1, kernel_size=num_features, bias=False
         )
-        self.beta = Variable(torch.tensor(beta), requires_grad=False)
+        self.beta = Variable(torch.tensor(beta), requires_grad=False) #inverse temperature
         self.saved_log_probs = []
         self.term_log_probs = []
         self.rewards = []
@@ -35,8 +35,12 @@ class Policy(nn.Module):
         if not termination:
             x[0][0] = torch.Tensor([-np.inf])
         action_scores = self.beta * x
+
+        # todo: why is log_softmax done twice? Here and in the return?
         softmax_vals = F.log_softmax(action_scores, dim=0)
         softmax_vals = torch.exp(softmax_vals)
+
+        # softmax = e(softmax_vals) / sum(softmax_vals)
         return softmax_vals / softmax_vals.sum()
 
 
@@ -94,11 +98,12 @@ class REINFORCE(Learner):
             X[action] = feature_state[action]
         X = torch.DoubleTensor(X).view(self.num_actions, 1, self.policy.num_features)
         available_actions = torch.LongTensor(available_actions)
-        X_new = X[available_actions]
+        X_new = X[available_actions] # 13 x 56; num_action x num_features
         if self.termination_value_known:
             term_reward = self.get_term_reward(env)
             probs = self.policy(X_new, term_reward, termination=not self.no_term)
         else:
+            # calls the forward method in Policy class
             probs = self.policy(X_new, termination=not self.no_term)
         complete_probs = torch.zeros(self.num_actions)
         for index, action in enumerate(available_actions):
@@ -189,8 +194,11 @@ class REINFORCE(Learner):
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
+            # m is a tensor consisting of action probabilities (e.g. for small mouselab, tensor of len 13)
             m = self.get_action_details(env)
             action_tensor = torch.tensor(action)
+            # likelihood of m (model action probabilities) and action_tensor (participant action)
+            # e.g. m is a tensor of len 13, action tensor, selects the e.g. 5th action
             self.policy.saved_log_probs.append(m.log_prob(action_tensor))
             self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
@@ -204,14 +212,25 @@ class REINFORCE(Learner):
         return action, reward, done, taken_path, delay
 
     def act_and_learn(self, env, trial_info={}):
+        """
+
+        Args:
+            env:
+            trial_info:
+
+        Returns: action, reward, done, info
+
+        """
         end_episode = False
         if "end_episode" in trial_info:
             end_episode = trial_info["end_episode"]
         policy_loss = 0
         if not end_episode:
+            # get MER based on observed nodes, todo: where is this used?
             term_reward = self.get_term_reward(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
+            # reward is the click cost
             action, reward, done, taken_path, delay = self.take_action(env, trial_info)
             self.pseudo_rewards.append(self.get_pseudo_reward(env))
             self.policy.rewards.append(
@@ -220,15 +239,19 @@ class REINFORCE(Learner):
             if done:
                 delay = env.get_feedback({"action": 0, "taken_path": taken_path})
                 self.policy.rewards[-1] = reward - self.delay_scale * delay
-                self.learn_from_path(env, taken_path)
+                if self.learn_from_path_boolean:
+                    # updates policy.rewards with rewards of the take path
+                    self.learn_from_path(env, taken_path)
                 policy_loss = self.finish_episode()
+            # if done = True, then reward = value of best_expected_path
             return action, reward, done, {"taken_path": taken_path, "loss": policy_loss}
         else:  # Should this model learn from the termination action when it's hierarchical?
             reward = 0
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-            self.learn_from_path(env, trial_info["taken_path"])
+            if self.learn_from_path_boolean:
+                self.learn_from_path(env, trial_info["taken_path"])
             self.finish_episode()
             return 0, reward, True, taken_path
 
@@ -262,7 +285,7 @@ class REINFORCE(Learner):
             trials_data["a"].append(actions)
             trials_data["costs"].append(rewards)
             env.get_next_trial()
-
+        # add trial ground truths
         trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
             trials_data["loss"] = -sum(self.action_log_probs)
@@ -353,7 +376,7 @@ class BaselineREINFORCE(REINFORCE):
             m, baseline = self.get_action_details(env)
             self.policy.saved_log_probs.append(m.log_prob(action_tensor))
             self.value_policy.baselines.append(baseline)
-            self.action_log_probs.append(m.log_prob(action_tensor))
+            self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
             action = self.get_action(env)
         delay = env.get_feedback({"action": action})

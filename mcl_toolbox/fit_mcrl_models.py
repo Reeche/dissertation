@@ -1,17 +1,18 @@
 import sys
 import ast
+import time
 
 from pathlib import Path
 import random
 
-from utils.learning_utils import create_dir #for runnigng on the server, remove mcl_toolbox part
-from utils.model_utils import ModelFitter
+from mcl_toolbox.utils.learning_utils import create_dir
+from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
 Run this using: 
-python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <string of other parameters>
+python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <number_of_trials> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
-Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":True, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
+Example: python3 mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 35 "{\"plotting\":True, \"optimization_params\" :{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
 """
 
 
@@ -24,13 +25,14 @@ Example: python3 fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 "{\"plotting\":Tr
 def fit_model(
         exp_name,
         pid,
+        number_of_trials,
         model_index,
         optimization_criterion,
         optimization_params=None,
         exp_attributes=None,
         sim_params=None,
         simulate=True,
-        plotting=True,
+        plotting=False,
         data_path=None
 ):
     """
@@ -38,7 +40,7 @@ def fit_model(
     :param exp_name: experiment name, which is the folder name of the experiment in ../data/human/
     :param pid: participant id, as int
     :param model_index: model index, as displayed in rl_models.csv
-    :param optimization_criterion: as string, choose one of: ["pseudo_likelihood", "mer_performance_error", "performance_error"]
+    :param optimization_criterion: as string, choose one of: ["pseudo_likelihood", "mer_performance_error", "performance_error", "likelihood", "number_of_clicks"]
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
@@ -61,7 +63,7 @@ def fit_model(
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path)
+    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path, number_of_trials=number_of_trials)
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -76,7 +78,8 @@ def fit_model(
             pid=pid,
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
-            sim_params=sim_params,
+            # sim_params=sim_params,
+            sim_params=optimization_params
         )
 
 
@@ -85,47 +88,46 @@ if __name__ == "__main__":
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
+    # other_params = {"plotting": True}
     other_params = {}
-    if len(sys.argv)>5:
-        other_params = ast.literal_eval(sys.argv[5])
-        # other_params = {"plotting": sys.argv[5],
-        #     "optimization_params": {"optimizer": sys.argv[6],
-        #                 "num_simulations": sys.argv[7],
-        #                 "max_evals": sys.argv[8]}}
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
 
     # exp_name = "high_variance_high_cost"
-    # model_index = 0
-    # optimization_criterion = "number_of_clicks_likelihood"
-    # pid = 1
+    # model_index = 1919 #6527
+    # optimization_criterion = "likelihood"
+    # pid = 6  # 1, 5, 6, 10, 15
     # other_params = {"plotting": True}
+    # number_of_trials = 35
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
             "experiment": None,  # Experiment object can be passed directly with
-            "cost": 10
-            # pipeline and normalized features attached
+            # Experiment object can be passed directly with pipeline and normalized features attached
+            "click_cost": 1
         }
         other_params["exp_attributes"] = exp_attributes
 
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 2, #50
-            "max_evals": 2 #500
+            "num_simulations": 1,
+            "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
-
+    tic = time.perf_counter()
     fit_model(
         exp_name=exp_name,
         pid=pid,
+        number_of_trials=number_of_trials,
         model_index=model_index,
         optimization_criterion=optimization_criterion,
         **other_params,
     )
-
-# python3 fit_mcrl_models.py high_variance_high_cost 0 number_of_clicks_likelihood 1 "{\"plotting\":False, \"optimization_params\" : {\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
-# python3 fit_mcrl_models.py high_variance_high_cost 0 number_of_clicks_likelihood 1 True hyperopt 2 2
+    toc = time.perf_counter()
+    print(f"Took {toc - tic:0.4f} seconds")

@@ -1,19 +1,20 @@
 import os
 from pathlib import Path
 
-from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.global_vars import features, model, strategies, structure  #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.experiment_utils import Experiment #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.learning_utils import ( #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.global_vars import features, model, strategies, structure
+from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
+from mcl_toolbox.utils.experiment_utils import Experiment
+from mcl_toolbox.utils.learning_utils import (
     get_normalized_features,
     get_number_of_actions_from_branching,
     pickle_load,
     pickle_save,
     construct_repeated_pipeline,
-    construct_reward_function
+    construct_reward_function,
+    create_mcrl_reward_distribution
 )
-from mcl_toolbox.utils.sequence_utils import compute_log_likelihood #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
 implemented_features = features.implemented
 microscope_features = features.microscope
@@ -59,7 +60,8 @@ class ModelFitter:
                 "exclude_trials": None,
                 "block": None,
                 "experiment": None,
-                "cost": 1,
+                "click_cost": 1,
+                "learn_from_path": True,
             }
         if exp_attributes['experiment'] is not None:
             self.E = exp_attributes["experiment"]
@@ -71,41 +73,37 @@ class ModelFitter:
             self.normalized_features = self.E.normalized_features
         else:
             del exp_attributes['experiment']
-            self.E = Experiment(self.exp_name, data_path = data_path, **exp_attributes)
-            # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
-            if self.exp_name not in ["c1.1", "c2.1_dec", "F1", "IRL1", "T1.1"]:
+            self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
+
+            # Check if experiment, already in global_vars for backwards compatibility
+            #check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
+            # if self.exp_name in structure.exp_pipelines.keys():
+            #     self.pipeline = structure.exp_pipelines[self.exp_name]
+            #     self.normalized_features = get_normalized_features(
+            #         structure.exp_reward_structures[self.exp_name]
+            #     )
+
+            # if you want to add your experiment setting to global_vars.py instead of using the registry
+            if self.exp_name in structure.branchings.keys():
                 reward_dist = "categorical"
                 reward_structure = structure.exp_reward_structures[self.exp_name]
                 reward_distributions = construct_reward_function(
                     structure.reward_levels[reward_structure], reward_dist
                 )
                 repeated_pipeline = construct_repeated_pipeline(
-                    structure.branchings[self.exp_name], reward_distributions, 35
+                    structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
                 )
-                # self.pipeline = {self.exp_name: repeated_pipeline}
                 self.pipeline = repeated_pipeline
-            elif self.exp_name == "exp_mouselab":
-                reward_dist = "categorical"
-                reward_structure_training = structure.exp_reward_structures["v1.0"]
-                reward_structure_test = structure.exp_reward_structures["T1.1"]
 
-                reward_distributions_training = construct_reward_function(
-                    structure.reward_levels[reward_structure_training], reward_dist
-                )
-                reward_distributions_test = construct_reward_function(
-                    structure.reward_levels[reward_structure_test], reward_dist
-                )
-
-                repeated_pipeline_training = construct_repeated_pipeline(
-                    structure.branchings["v1.0"], reward_distributions_training, 35
-                )
-                repeated_pipeline_test = construct_repeated_pipeline(
-                    structure.branchings["T1.1"], reward_distributions_test, 35
-                )
-                repeated_pipeline = repeated_pipeline_training + repeated_pipeline_test
-                self.pipeline = repeated_pipeline
+            elif ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
+                raise ValueError("Not enough information inputted to attach pipeline -- need exp_setting and "
+                                 "num_trials")
+            # if you want to use the registry to store experiment information
             else:
-                self.pipeline = structure.exp_pipelines[self.exp_name]
+                reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                branching = registry(pipeline_kwargs["exp_setting"]).branching
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["number_of_trials"])
+                self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
                 structure.exp_reward_structures[self.exp_name]
@@ -118,10 +116,10 @@ class ModelFitter:
         self.participant = None
         self.env = None
         self.model_index = None
-        if exp_attributes['cost'] is not None:
-            self.cost = exp_attributes['cost']
+        if 'click_cost' in exp_attributes and exp_attributes['click_cost'] is not None:
+            self.click_cost = exp_attributes['click_cost']
         else:
-            self.cost = 1
+            self.click_cost = 1
 
     def update_attributes(self, env):
         self.pipeline = env.pipeline
@@ -135,7 +133,7 @@ class ModelFitter:
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
-            cost=self.cost,
+            cost=self.click_cost,
             feedback=participant.condition,
             q_fn=q_fn,
         )
@@ -162,6 +160,22 @@ class ModelFitter:
         return participant, env
 
     def construct_model(self, model_index):
+        """
+        1. Get model attributes from the rl_models.csv
+        2. Attach selected features (if habitual, then full set of features (implemented_features.pkl; if not habitual,
+        then microscope_features because the CM only uses the subset of features that are independent of what the
+        participant did on the previous trials, i.e. no 5 habitual features)
+
+        Args:
+            model_index: integer
+
+        Returns:
+            learner: str, e.g. "reinforce"
+            learner_attributes: dict containing model features (list), normalized_features (list), num_priors (int),
+            strategy_space (list of len 79), attributes that are from the rl_models.csv list
+
+        """
+        # get model attributes from global_vars.py, which gets it from models/rl_models.csv
         learner_attributes = model_attributes.iloc[model_index].to_dict()
         learner = learner_attributes["model"]
         strategy_space_type = learner_attributes["strategy_space_type"]
@@ -248,7 +262,7 @@ class ModelFitter:
             plot_dir=None,
     ):
         if sim_params is None:
-            sim_params = {"num_simulations": 10}
+            sim_params = {"num_simulations": 30}
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
         num_simulations = sim_params["num_simulations"]

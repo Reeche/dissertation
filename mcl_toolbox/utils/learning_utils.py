@@ -24,7 +24,7 @@ from mcl_toolbox.utils.distributions import Categorical, Normal
 
 from mouselab.envs.registry import registry
 
-num_strategies = 89 #TODO move to global_vars after separating out analysis utils and learning utils
+num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
 
@@ -85,11 +85,11 @@ def get_log_beta_pdf(x, a, b):
     log_x = mp.log(x)
     log_ox = mp.log(1 - x)
     res = (
-        (a - 1) * log_x
-        + (b - 1) * log_ox
-        + mp.loggamma(a + b)
-        - mp.loggamma(a)
-        - mp.loggamma(b)
+            (a - 1) * log_x
+            + (b - 1) * log_ox
+            + mp.loggamma(a + b)
+            - mp.loggamma(a)
+            - mp.loggamma(b)
     )
     return res
 
@@ -109,11 +109,10 @@ def norm_integrate(y, index, ms, sigmas):
 
 def beta_integrate(x, index, alphas, betas):
     log_pdf = get_log_beta_pdf(x, alphas[index], betas[index])
-    log_cdf = 0
     shape = alphas.shape[0]
-    for i in range(shape):
-        if i != index:
-            log_cdf += get_log_beta_cdf(x, alphas[i], betas[i])
+    log_cdf = sum(
+        [get_log_beta_cdf(x, alphas[i], betas[i]) for i in range(shape) if i != index]
+    )
     return mp.exp(log_pdf + log_cdf)
 
 def plot_norm_dists(self, means, sigmas, available_actions):
@@ -132,8 +131,8 @@ def softmax(x):
 
 
 def get_mu_v(mu, variances, index):
-    m = mu[index] - np.concatenate((mu[:index], mu[index + 1 :]))
-    v = np.concatenate((variances[:index], variances[index + 1 :]))
+    m = mu[index] - np.concatenate((mu[:index], mu[index + 1:]))
+    v = np.concatenate((variances[:index], variances[index + 1:]))
     cv = np.diag(v) + variances[index]
     return m, cv
 
@@ -181,10 +180,10 @@ def create_dir(file_path):
 
 def pickle_save(obj, file_path):
     """
-        Pickle the object
-        Params:
-            obj: The object to be pickled
-            file_path: The path the object has to be pickled to
+    Pickle the object
+    Params:
+        obj: The object to be pickled
+        file_path: The path the object has to be pickled to
     """
     pickle.dump(obj, open(file_path, "wb"))
 
@@ -201,12 +200,12 @@ def bool_to_string(truth):
 
 def get_clicks(exp_num="v1.0"):
     """
-        Get clicks made by a particular participant
-        Params:
-            exp_num : Experiment number according to the experiment folder
-            participant_num : The id of the participants to get the environments for
-        Returns:
-            clicks_data: The clicks made by the participant in all trials.
+    Get clicks made by a particular participant
+    Params:
+        exp_num : Experiment number according to the experiment folder
+        participant_num : The id of the participants to get the environments for
+    Returns:
+        clicks_data: The clicks made by the participant in all trials.
     """
     data = get_data(exp_num)
     mdf = data['mouselab-mdp']
@@ -223,31 +222,33 @@ def get_clicks(exp_num="v1.0"):
 
 def get_participant_scores(exp_num="v1.0", num_participants=166):
     """
-        Get scores of participants
-        Params:
-            exp_num : Experiment number according to the experiment folder.
-            num_participants: Max pid+1 to consider
-        Returns:
-            A dictionary of scores of participants with pid as key and rewards as values.
+    Get scores of participants
+    Params:
+        exp_num : Experiment number according to the experiment folder.
+        num_participants: Max pid+1 to consider
+    Returns:
+        A dictionary of scores of participants with pid as key and rewards as values.
     """
     data = get_data(exp_num)
     mdf = data['mouselab-mdp']
     participant_scores = {}
     # for participant_num in range(num_participants):
-    for participant_num in num_participants:  # changed this to output score for a set list of pid's
-        score_list = list(mdf[mdf.pid == participant_num]['score'])
+    for (
+            participant_num
+    ) in num_participants:  # changed this to output score for a set list of pid's
+        score_list = list(mdf[mdf.pid == participant_num]["score"])
         participant_scores[participant_num] = score_list
     return participant_scores
 
 
 def get_environments(participant_num, exp_num="v1.0"):
     """
-        Get environments of a particular participant
-        Params:
-            exp_num : Experiment number according to the experiment folder
-            participant_num : The id of the participants to get the environments for
-        Returns:
-            envs: The trial values that the participant observed
+    Get environments of a particular participant
+    Params:
+        exp_num : Experiment number according to the experiment folder
+        participant_num : The id of the participants to get the environments for
+    Returns:
+        envs: The trial values that the participant observed
     """
     data = get_data(exp_num)
     mdf = data['mouselab-mdp']
@@ -303,8 +304,10 @@ def get_number_of_actions_from_branching(branching):
     :param branching: branching info as list, e.g. [3,1,2]
     :return: number of actions a participant could take, e.g. 13 for the example (3+3*1+3*1*2=12 nodes to inspect, 1 termination action)
     '''
-    number_of_nodes = np.sum([np.product(branching[:idx]) for idx in range(1,len(branching)+1)]) #same as sum of products until each level
-    number_of_actions = number_of_nodes+1 #include ending planning phase action
+    number_of_nodes = np.sum(
+        [np.product(branching[:idx]) for idx in range(1, len(branching) + 1)]
+    )  # same as sum of products until each level
+    number_of_actions = number_of_nodes + 1  # include ending planning phase action
     return number_of_actions
 
 def reward_function(depth, level_distributions):
@@ -327,19 +330,16 @@ def construct_reward_function(params_list, dist_type = 'categorical'):
     return combine_level_dists(level_distributions)
 
 def get_participant_details(
-        pid,
-        exp_num,
-        get_envs=True,
-        get_scores=True,
-        get_clicks=True,
-        get_taken_paths=True,
-        data_path=None,
+    pid,
+    exp_num,
+    get_envs=True,
+    get_scores=True,
+    get_clicks=True,
+    get_taken_paths=True,
+    data_path=None,
 ):
-    if exp_num == "c2.1_dec":
-        data = get_data("c2.1")
-    else:
-        data = get_data(exp_num)
-    mdf = data['mouselab-mdp']
+    data = get_data(exp_num, data_path)
+    mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == pid]
     scores = []
     envs = []
@@ -368,13 +368,20 @@ def get_participant_weights(participant_num, exp_num="F1", criterion="all_featur
     try:
         if criterion == "all_features":
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}.pkl")
+                parent_folder.joinpath(f"data/starting_weights_{exp_num}.pkl")
+            )
         elif type(criterion) == int:
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_{criterion}.pkl")
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_{criterion}.pkl"
+                )
+            )
         elif criterion == "normalize":
             participant_weights = pickle_load(
-                f"../data/starting_weights_{exp_num}_normalized.pkl")
+                parent_folder.joinpath(
+                    f"/data/starting_weights_{exp_num}_normalized.pkl"
+                )
+            )
     except FileNotFoundError:
         print("Unable to load prior weights")
         return []
@@ -387,37 +394,39 @@ def sidak_value(significance_threshold, num_tests):
 
 def sigmoid(x):
     """
-        Return the value of the sigmoid function
+    Return the value of the sigmoid function
     """
     return 1/(1+np.exp(-x))
 
 
 def temp_sigmoid(x, t):
     """
-        Return sigmoid with the temperature parameter 
+    Return sigmoid with the temperature parameter
     """
-    return sigmoid((1/t)*x)
+    return sigmoid((1 / t) * x)
 
 
 def convert_zeros_to_none(total_trial_actions):
     """
-        Make actions amenable to the Computational Microscope by replacing action 0 to None
+    Make actions amenable to the Computational Microscope by replacing action 0 to None
     """
     modified_actions = []
     for trial_actions in total_trial_actions:
         modified_actions.append(
-            [action if action != 0 else None for action in trial_actions])
+            [action if action != 0 else None for action in trial_actions]
+        )
     return modified_actions
 
 
 def convert_none_to_zeros(total_trial_actions):
     """
-        Make actions amenable to the Computational Microscope by replacing action 0 to None
+    Make actions amenable to the Computational Microscope by replacing action 0 to None
     """
     modified_actions = []
     for trial_actions in total_trial_actions:
         modified_actions.append(
-            [action if action != None else 0 for action in trial_actions])
+            [action if action is not None else 0 for action in trial_actions]
+        )
     return modified_actions
 
 
@@ -427,21 +436,21 @@ def get_zero_params(params):
 
 def compute_error_aic(num_parameters, error):
     """
-        Compute AIC using the value of negative log likelihood
+    Compute AIC using the value of negative log likelihood
     """
-    error_aic = 2*num_parameters + 2*error
+    error_aic = 2 * num_parameters + 2 * error
     return error_aic
 
 
 def compute_likelihood_aic(num_parameters, likelihood):
     """
-        Compute AIC using the value of the likelihood
+    Compute AIC using the value of the likelihood
     """
-    likelihood_aic = 2*num_parameters - 2*np.log(likelihood)
+    likelihood_aic = 2 * num_parameters - 2 * np.log(likelihood)
     return likelihood_aic
 
 
-def get_excluded_participants(exp_num="F1", exclude_condition="MCFB"):
+def get_excluded_participants(exp_num="F1", exclude_condition="MCFB", data_path=None):
     conditions = {"NOFB": 0, "MCFB": 1, "ActionFB": 2}
     data = get_data(exp_num)
     pdf = data['participants']
@@ -451,7 +460,7 @@ def get_excluded_participants(exp_num="F1", exclude_condition="MCFB"):
 
 def get_normalized_feature_values(feature_values, features_list, max_min_values):
     """
-        Get the normalized feature values
+    Get the normalized feature values
     """
     normalized_features = np.array(feature_values)
     if max_min_values:
@@ -459,19 +468,27 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
         for i, (feature, fv) in enumerate(zip(features_list, feature_values)):
             max_min_diff = max_feature_values[feature] - min_feature_values[feature]
             f_min_diff = fv - min_feature_values[feature]
-            #print(feature, f_min_diff, max_min_diff, max_min_diff - f_min_diff)
+            # print(feature, f_min_diff, max_min_diff, max_min_diff - f_min_diff)
             if max_min_diff == 0:
                 normalized_features[i] = 0
             else:
-                normalized_features[i] = f_min_diff/max_min_diff
+                normalized_features[i] = f_min_diff / max_min_diff
     return normalized_features
-    
+
+
 def get_normalized_features(exp_num):
-    max_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/max.pkl")
-    min_feature_values = pickle_load(f"../data/normalized_values/{exp_num}/min.pkl")
+    max_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl")
+    )
+    min_feature_values = pickle_load(
+        parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl")
+    )
     return max_feature_values, min_feature_values
 
-def get_transformed_weights(participant_num, trial_weights, trial_features, features_list):
+
+def get_transformed_weights(
+        participant_num, trial_weights, trial_features, features_list
+):
     """
     Get transformed weights according the feature list across all trials by zeroing all features in a trial
     that are not inferred
@@ -486,13 +503,13 @@ def get_transformed_weights(participant_num, trial_weights, trial_features, feat
     t_f = features_list
     tw_f = trial_features[participant_num]
     t_w = trial_weights[participant_num]
-    feature_index = {f: i+1 for i, f in enumerate(t_f)}
-    weights = np.zeros((len(tw_f), len(t_f)+4))
+    feature_index = {f: i + 1 for i, f in enumerate(t_f)}
+    weights = np.zeros((len(tw_f), len(t_f) + 4))
     for i, W in enumerate(t_w):
         weights[i][0] = W[0]
     for i, F in enumerate(tw_f):
         for j, f in enumerate(F):
-            weights[i][feature_index[f]] = t_w[i][j+1]
+            weights[i][feature_index[f]] = t_w[i][j + 1]
     for i, w in enumerate(t_w):
         weights[i][-3:] = w[-3:]
     return weights
@@ -500,11 +517,11 @@ def get_transformed_weights(participant_num, trial_weights, trial_features, feat
 
 def break_ties_random(a):
     """
-        Get the max element by breaking ties randomly
-        Params: 
-            a : 1D list or ndarray
-        Returns:
-            random_max : Index of max element with ties broken randomly
+    Get the max element by breaking ties randomly
+    Params:
+        a : 1D list or ndarray
+    Returns:
+        random_max : Index of max element with ties broken randomly
     """
     # Takes a 1-D list and returns the index of a max element with tie broken randomly
     max_value = np.max(a)
@@ -542,21 +559,22 @@ def break_ties_random(a):
 
 def get_proportion_dict(data):
     """
-        Normalize values by total sum of values
-        Params:
-            data: dictionary with integer or float value
-        Returns:
-            proportions_data : normalized data dictionary
+    Normalize values by total sum of values
+    Params:
+        data: dictionary with integer or float value
+    Returns:
+        proportions_data : normalized data dictionary
     """
     values_sum = sum(list(data.values()))
-    proportions_data = {pid: value/values_sum for pid, value in data.items()}
+    proportions_data = {pid: value / values_sum for pid, value in data.items()}
     return proportions_data
 
 
 def smoothen(freq_list, ratio=0.18):
     lis_size = len(freq_list)
-    smoothed_freq_list = lowess(freq_list, range(
-        lis_size), is_sorted=True, frac=ratio, it=0)
+    smoothed_freq_list = lowess(
+        freq_list, range(lis_size), is_sorted=True, frac=ratio, it=0
+    )
     return smoothed_freq_list[:, -1]
 
 
@@ -585,12 +603,12 @@ def cint(a):
 
 def get_squared_performance_error(participant_performance, algorithm_performance):
     """
-        Compute the squared performance error between the participant and the algorithm
-        Params:
-            participant_performance: Rewards over n trials of the participant (1D list)
-            algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
-        Returns:
-            performance_error: Peformance error between the participant and the algorithm
+    Compute the squared performance error between the participant and the algorithm
+    Params:
+        participant_performance: Rewards over n trials of the participant (1D list)
+        algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
+    Returns:
+        performance_error: Peformance error between the participant and the algorithm
     """
     algorithm_performance = np.asarray(algorithm_performance)
     num_dims = algorithm_performance.ndim
@@ -606,12 +624,12 @@ def get_squared_performance_error(participant_performance, algorithm_performance
 
 def get_squared_pe(participant_performance, algorithm_performance):
     """
-        Compute the squared performance error between the participant and the algorithm
-        Params:
-            participant_performance: Rewards over n trials of the participant (1D list)
-            algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
-        Returns:
-            performance_error: Peformance error between the participant and the algorithm
+    Compute the squared performance error between the participant and the algorithm
+    Params:
+        participant_performance: Rewards over n trials of the participant (1D list)
+        algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
+    Returns:
+        performance_error: Peformance error between the participant and the algorithm
     """
     algorithm_performance = np.asarray(algorithm_performance)
     num_dims = algorithm_performance.ndim
@@ -626,32 +644,12 @@ def get_squared_pe(participant_performance, algorithm_performance):
 
 def get_absolute_performance_error(participant_performance, algorithm_performance):
     """
-        Compute the absolute performance error between the participant and the algorithm
-        Params:
-            participant_performance: Rewards over n trials of the participant (1D list)
-            algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
-        Returns:
-            performance_error: Peformance error between the participant and the algorithm
-    """
-    algorithm_performance = np.asarray(algorithm_performance)
-    num_dims = algorithm_performance.ndim
-    if num_dims == 1:
-        algorithm_performance = [algorithm_performance]
-    participant_performance = np.asarray(participant_performance)
-    mean_algorithm_performance = np.mean(algorithm_performance, axis=0)
-    performance_error = np.mean(np.absolute(
-        participant_performance - mean_algorithm_performance), axis=0)
-    return performance_error
-
-
-def get_performance_error(participant_performance, algorithm_performance):
-    """
-        Compute the performance error between the participant and the algorithm (non squared)
-        Params:
-            participant_performance: Rewards over n trials of the participant (1D list)
-            algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
-        Returns:
-            performance_error: Peformance error between the participant and the algorithm
+    Compute the absolute performance error between the participant and the algorithm
+    Params:
+        participant_performance: Rewards over n trials of the participant (1D list)
+        algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
+    Returns:
+        performance_error: Peformance error between the participant and the algorithm
     """
     algorithm_performance = np.asarray(algorithm_performance)
     num_dims = algorithm_performance.ndim
@@ -660,19 +658,41 @@ def get_performance_error(participant_performance, algorithm_performance):
     participant_performance = np.asarray(participant_performance)
     mean_algorithm_performance = np.mean(algorithm_performance, axis=0)
     performance_error = np.mean(
-        (participant_performance - mean_algorithm_performance), axis=0)
+        np.absolute(participant_performance - mean_algorithm_performance), axis=0
+    )
+    return performance_error
+
+
+def get_performance_error(participant_performance, algorithm_performance):
+    """
+    Compute the performance error between the participant and the algorithm (non squared)
+    Params:
+        participant_performance: Rewards over n trials of the participant (1D list)
+        algorithm_performance: Rewards over num_runs*n trials of the algorithm (2D list)
+    Returns:
+        performance_error: Peformance error between the participant and the algorithm
+    """
+    algorithm_performance = np.asarray(algorithm_performance)
+    num_dims = algorithm_performance.ndim
+    if num_dims == 1:
+        algorithm_performance = [algorithm_performance]
+    participant_performance = np.asarray(participant_performance)
+    mean_algorithm_performance = np.mean(algorithm_performance, axis=0)
+    performance_error = np.mean(
+        (participant_performance - mean_algorithm_performance), axis=0
+    )
     return performance_error
 
 
 def get_weight_distance(participant_weights, algorithm_weights):
     """
-        Compute the distance in the weight space between the participant and the algorithm
-        Params:
-            participant_weights: 2D list or 2D numpy array with weights of a given feature set over n trials
-            algorithm_weights: 3D list or 3D numpy array with weights of a given feature set over runs and trials
-            The second and third dimension of both these should match.
-        Returns:
-            average_euclidean_distance: Average Euclidean distance between the algorithm and the participants' weights
+    Compute the distance in the weight space between the participant and the algorithm
+    Params:
+        participant_weights: 2D list or 2D numpy array with weights of a given feature set over n trials
+        algorithm_weights: 3D list or 3D numpy array with weights of a given feature set over runs and trials
+        The second and third dimension of both these should match.
+    Returns:
+        average_euclidean_distance: Average Euclidean distance between the algorithm and the participants' weights
     """
     participant_weights = np.array(participant_weights)
     algorithm_weights = np.array(algorithm_weights)
@@ -680,7 +700,8 @@ def get_weight_distance(participant_weights, algorithm_weights):
     algorithm_dims = algorithm_weights.ndim
     if algorithm_dims != 3:
         raise ValueError(
-            f"The number of dimensions in algorithm_weights should be 3. Input dimensions are {algorithm_dims}")
+            f"The number of dimensions in algorithm_weights should be 3. Input dimensions are {algorithm_dims}"
+        )
     elif participant_dims != 2:
         raise ValueError(
             f"The number of dimensions in participant_weights should be 2. Input dimensions are {algorithm_dims}")
@@ -688,12 +709,12 @@ def get_weight_distance(participant_weights, algorithm_weights):
     algorithm_weights_shape = algorithm_weights.shape
     if algorithm_weights_shape[1:] != participant_weight_shape:
         raise ValueError(
-            f"The second and third dimensions of the input weights do not match. {algorithm_weights_shape[1:]} and {participant_weight_shape}")
+            f"The second and third dimensions of the input weights do not match. {algorithm_weights_shape[1:]} and {participant_weight_shape}"
+        )
     a_beta = np.expand_dims(algorithm_weights[:, :, -3], axis=2)
     a_w = np.mean(np.multiply(algorithm_weights[:, :, :-3], a_beta), axis=0)
     p_beta = np.expand_dims(participant_weights[:, -3], axis=1)
     p_w = np.multiply(participant_weights[:, :-3], p_beta)
-    num_runs = a_w.shape[0]
     num_trials = a_w.shape[1]
     average_euclidean_distance = (
         np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
@@ -717,13 +738,13 @@ def normalize_weights(weights):
 
 def get_normalized_weight_distance(participant_weights, algorithm_weights):
     """
-        Compute the normalized distance in the weight space between the participant and the algorithm
-        Params:
-            participant_weights: 2D list or 2D numpy array with weights of a given feature set over n trials
-            algorithm_weights: 3D list or 3D numpy array with weights of a given feature set over runs and trials
-            The second and third dimension of both these should match.
-        Returns:
-            average_euclidean_distance: Average Euclidean distance between the algorithm and the participants' weights
+    Compute the normalized distance in the weight space between the participant and the algorithm
+    Params:
+        participant_weights: 2D list or 2D numpy array with weights of a given feature set over n trials
+        algorithm_weights: 3D list or 3D numpy array with weights of a given feature set over runs and trials
+        The second and third dimension of both these should match.
+    Returns:
+        average_euclidean_distance: Average Euclidean distance between the algorithm and the participants' weights
     """
     participant_weights = np.array(participant_weights)
     algorithm_weights = np.array(algorithm_weights)
@@ -731,38 +752,38 @@ def get_normalized_weight_distance(participant_weights, algorithm_weights):
     algorithm_dims = algorithm_weights.ndim
     if algorithm_dims != 3:
         raise ValueError(
-            f"The number of dimensions in algorithm_weights should be 3. Input dimensions are {algorithm_dims}")
+            f"The number of dimensions in algorithm_weights should be 3. Input dimensions are {algorithm_dims}"
+        )
     elif participant_dims != 2:
         raise ValueError(
-            f"The number of dimensions in participant_weights should be 2. Input dimensions are {algorithm_dims}")
+            f"The number of dimensions in participant_weights should be 2. Input dimensions are {participant_dims}"
+        )
     participant_weight_shape = participant_weights.shape
     algorithm_weights_shape = algorithm_weights.shape
     if algorithm_weights_shape[1:] != participant_weight_shape:
         raise ValueError(
-            f"The second and third dimensions of the input weights do not match. {algorithm_weights_shape[1:]} and {participant_weight_shape}")
-    a_beta = np.expand_dims(algorithm_weights[:, :, -3], axis=2)
-    a_w = np.mean(np.multiply(algorithm_weights[:, :, :-3], a_beta), axis=0)
-    p_beta = np.expand_dims(participant_weights[:, -3], axis=1)
-    p_w = np.multiply(participant_weights[:, :-3], p_beta)
-    num_runs = a_w.shape[0]
+            f"The second and third dimensions of the input weights do not match. {algorithm_weights_shape[1:]} and {participant_weight_shape}"
+        )
+    a_w = np.mean(algorithm_weights, axis=0)
+    p_w = participant_weights
     num_trials = a_w.shape[1]
     a_w = normalize_weights(a_w)
     p_w = normalize_weights(p_w)
     average_euclidean_distance = (
-        np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
-        / num_trials
+            np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
+            / num_trials
     )
     return average_euclidean_distance
 
 
 def compute_rpe(r, init_pe=0):
     """
-        Compute the reward prediction error of a given sequence of rewards
-        Params:
-            r: Rewards across trials (1D list or ndarray)
-            init_prediction: The initial prediction error
-        Returns:
-            rpe: Reward prediction Error
+    Compute the reward prediction error of a given sequence of rewards
+    Params:
+        r: Rewards across trials (1D list or ndarray)
+        init_prediction: The initial prediction error
+    Returns:
+        rpe: Reward prediction Error
     """
     r = np.asarray(r)
     num_trials = r.shape[0]
@@ -771,24 +792,24 @@ def compute_rpe(r, init_pe=0):
     for i in range(1, num_trials):
         cumulative_average_score_list.append(cumulative_score_list[i - 1] / i)
     rpe = [
-        np.absolute(r[i] - cumulative_average_score_list[i]) for i in range(num_trials)
-    ][: num_trials - 1]
+              np.absolute(r[i] - cumulative_average_score_list[i]) for i in range(num_trials)
+          ][: num_trials - 1]
     return rpe
 
 
 def compute_weight_changes(W):
     """
-        Compute the norm of weight difference across trials
-        Params:
-            W: The weight matrix of shape (num_trials, num_features)
-        Returns:
-            norms: Euclidean norm of weight changes across trials. (Size is (num_trials - 1))
+    Compute the norm of weight difference across trials
+    Params:
+        W: The weight matrix of shape (num_trials, num_features)
+    Returns:
+        norms: Euclidean norm of weight changes across trials. (Size is (num_trials - 1))
     """
     W = np.asarray(W)
     norms = []
     num_trials = W.shape[0]
     for i in range(1, num_trials):
-        w_diff = W[i] - W[i-1]
+        w_diff = W[i] - W[i - 1]
         norm = LA.norm(w_diff, 2)
         norms.append(norm)
     norms = np.asarray(norms)
@@ -797,17 +818,16 @@ def compute_weight_changes(W):
 
 def compute_average_transition_matrix(S):
     """
-        Compute the average transition for all participants combined
-        Params:
-            S: Inferred strategy sequences for num_participants * num_runs * n_trials. (Should be a 3D list or 3D array)
-        Returns:
-            average_transition_matrix: The computed average transition matrix
+    Compute the average transition for all participants combined
+    Params:
+        S: Inferred strategy sequences for num_participants * num_runs * n_trials. (Should be a 3D list or 3D array)
+    Returns:
+        average_transition_matrix: The computed average transition matrix
     """
     S = np.asarray(S)
     S_dims = S.ndim
     if S_dims != 3:
-        raise ValueError(
-            f"Number of dimensions of 'S' should be 3 given {S_dims}")
+        raise ValueError(f"Number of dimensions of 'S' should be 3 given {S_dims}")
 
     num_participants = S.shape[0]
     num_runs = S.shape[1]
@@ -815,28 +835,28 @@ def compute_average_transition_matrix(S):
     transition_matrix = np.zeros((38, 38))
     for i in range(num_participants):
         for j in range(num_runs):
-            for k in range(num_trials-1):
-                transition_matrix[S[i][j][k]][S[i][j][k+1]] += 1
+            for k in range(num_trials - 1):
+                transition_matrix[S[i][j][k]][S[i][j][k + 1]] += 1
     out = np.zeros_like(transition_matrix)
     row_sum = transition_matrix.sum(axis=1, keepdims=True)
     average_transition_matrix = np.divide(
-        transition_matrix, row_sum, out=out, where=row_sum != 0)
+        transition_matrix, row_sum, out=out, where=row_sum != 0
+    )
     return average_transition_matrix
 
 
 def get_strategy_counts(S):
     """
-        Get the strategy count at each time step
-        Params:
-            S: Inferred strategy sequences for n_participants * num_runs * n_trials. (Should be a 3D list or 3D array)
-        Returns:
-            strategy_count : ndarray of dimension n_strategies * n_trials
+    Get the strategy count at each time step
+    Params:
+        S: Inferred strategy sequences for n_participants * num_runs * n_trials. (Should be a 3D list or 3D array)
+    Returns:
+        strategy_count : ndarray of dimension n_strategies * n_trials
     """
     S = np.asarray(S)
     S_dims = S.ndim
     if S_dims != 3:
-        raise ValueError(
-            f"Number of dimensions of 'S' should be 3 given {S_dims}")
+        raise ValueError(f"Number of dimensions of 'S' should be 3 given {S_dims}")
 
     num_participants = S.shape[0]
     num_runs = S.shape[1]
@@ -846,26 +866,25 @@ def get_strategy_counts(S):
         for j in range(num_runs):
             for k in range(num_trials):
                 strategy_count[k][S[i][j][k]] += 1
-    strategy_count = strategy_count / (num_runs*num_participants)
+    strategy_count = strategy_count / (num_runs * num_participants)
     return strategy_count
 
 
 def get_delay_penalty(q_data, env, action_sequence):
     """
-        Get delay penalty of an environment
-        Params:
-            q_data: Pickle file present in the results folder
-            env: Environment represented as node values from 0 to 12
-            action_seqnece: List of actions to get delays for (ends with 0)
-        Returns:
-            delays: Delay penalties for all actions
+    Get delay penalty of an environment
+    Params:
+        q_data: Pickle file present in the results folder
+        env: Environment represented as node values from 0 to 12
+        action_seqnece: List of actions to get delays for (ends with 0)
+    Returns:
+        delays: Delay penalties for all actions
 
     """
     env_q = q_data[tuple(env)]
     delays = []
-    #env_copy = env.copy()
-    env_copy = ['_']*13
-    env_copy[0] = '0'
+    env_copy = ["_"] * 13
+    env_copy[0] = "0"
     for action in action_sequence:
         if action == 0:
             action = 13
@@ -878,7 +897,7 @@ def get_delay_penalty(q_data, env, action_sequence):
         else:
             delay = 2 + max_action_q - present_action_q
         delays.append(delay)
-        if action is not 13:
+        if action != 13:
             env_copy[action] = str(env[action])
     return delays
 
@@ -907,27 +926,27 @@ def estimate_bayes_glm(X, y, prior_mean, prior_precision, a, b):
     H = X_new.T.dot(X_new) + prior_precision
     prior_mean = np.expand_dims(prior_mean, axis=1)
     res = prior_precision.dot(prior_mean)
-    res2 = X.T*y
+    res2 = X.T * y
     res2 = np.expand_dims(res2, axis=1)
     mu = np.linalg.solve(H, res2 + res).reshape(-1)
     n = 1
-    a = a + n/2
+    a = a + n / 2
     m_old = prior_mean.T.dot(prior_precision).dot(prior_mean)
     m_new = mu.T.dot(H).dot(mu)
-    b = b + 0.5*(y**2 + m_old - m_new)
+    b = b + 0.5 * (y ** 2 + m_old - m_new)
     return mu, H, a, b
 
 
 def sample_coeffs(prior_mean, prior_precision, a, b, n_samples=1):
     """
-        TODO:
+    TODO:
     """
-    gamma_rvs = gamma.rvs(a*np.ones(n_samples), scale=(1/b)*np.ones(n_samples))
+    gamma_rvs = gamma.rvs(a * np.ones(n_samples), scale=(1 / b) * np.ones(n_samples))
     k = np.maximum(gamma_rvs, machine_eps)
     k = np.reshape(k, (-1, 1))
     samples = []
     for i in range(n_samples):
-        new_p = k[i]*prior_precision
+        new_p = k[i] * prior_precision
         sample = sample_mvnrnd_precision(prior_mean, new_p)
         samples.append(sample)
     samples = np.array(samples)
@@ -936,40 +955,44 @@ def sample_coeffs(prior_mean, prior_precision, a, b, n_samples=1):
 
 def mse(participant_learning_curve, model_learning_curve):
     """
-        Compute MSE for the arguments
-        Returns:
-            Sum of MSE between the arguments
+    Compute MSE for the arguments
+    Returns:
+        Sum of MSE between the arguments
     """
     model_learning_curve = np.array(model_learning_curve)
     participant_learning_curve = np.array(participant_learning_curve)
-    return np.sum((model_learning_curve - participant_learning_curve)**2)
+    return np.sum((model_learning_curve - participant_learning_curve) ** 2)
 
 
 def total_participant_mse(participants_learning_curves, model_participants_curves):
     """
-        Compute sum of MSEs for individual participants
-        The arguments should only contain pids for which the sum is to be calculated as keys
+    Compute sum of MSEs for individual participants
+    The arguments should only contain pids for which the sum is to be calculated as keys
     """
     total_mse = 0.0
     for pid in participants_learning_curves.keys():
         model_participant_curve = rows_mean(model_participants_curves[pid])
-        total_mse += mse(participants_learning_curves[pid],
-                         model_participant_curve)
+        total_mse += mse(participants_learning_curves[pid], model_participant_curve)
     return total_mse
 
 
 def clicks_overlap(participant_clicks, algorithm_clicks):
     """
-        Get the average value of Ratio of A ^ B / A U B for the participant and algorithm clicks
-        Params:
-            Participant_clicks, algorithm_clicks : Dictionary of clicks made by participants, algorithm respectively.(Pids are keys)
-            Assumes that algorithm_clicks consist of multiple simulations.
-        Returns:
-            Average value of the ratio across trials and across simulations for each participant.
+    Get the average value of Ratio of A ^ B / A U B for the participant and algorithm clicks
+    Params:
+        Participant_clicks, algorithm_clicks : Dictionary of clicks made by participants, algorithm respectively.(Pids are keys)
+        Assumes that algorithm_clicks consist of multiple simulations.
+    Returns:
+        Average value of the ratio across trials and across simulations for each participant.
     """
-    def compute_average_trial_proportion(participant_click_sequence, algorithm_click_sequence):
+
+    def compute_average_trial_proportion(
+        participant_click_sequence, algorithm_click_sequence
+    ):
         ratios = []
-        for p_clicks, a_clicks in zip(participant_click_sequence, algorithm_click_sequence):
+        for p_clicks, a_clicks in zip(
+            participant_click_sequence, algorithm_click_sequence
+        ):
             p_clicks = [click for click in p_clicks if click not in [0, None]]
             a_clicks = [click for click in a_clicks if click not in [0, None]]
             p_set = set(p_clicks)
@@ -979,7 +1002,7 @@ def clicks_overlap(participant_clicks, algorithm_clicks):
             if len(union) == 0:
                 ratios.append(1)
             else:
-                ratios.append(len(intersection)/len(union))
+                ratios.append(len(intersection) / len(union))
         return np.mean(ratios)
 
     participant_clicks_overlap = {}
@@ -988,23 +1011,32 @@ def clicks_overlap(participant_clicks, algorithm_clicks):
         algo_simulation_clicks = algorithm_clicks[pid]
         mean_ratios = []
         for algo_click_sequence in algo_simulation_clicks:
-            mean_ratios.append(compute_average_trial_proportion(
-                participant_click_sequence, algo_click_sequence))
+            mean_ratios.append(
+                compute_average_trial_proportion(
+                    participant_click_sequence, algo_click_sequence
+                )
+            )
         participant_clicks_overlap[pid] = np.mean(mean_ratios)
     return participant_clicks_overlap
 
 
 def absolute_chosen_path_agreement(participants_chosen_paths, algorithm_chosen_paths):
     """
-        Returns the agreement between the paths taken without considering the other paths that were 
-        equally likely
-        Params:
-            participants_chosen_paths, algorithm_chosen_paths: Dictionary of paths taken by the participant and the algorithm
-        Returns:
-            The average agreement score between the participants and the algorithms
+    Returns the agreement between the paths taken without considering the other paths that were
+    equally likely
+    Params:
+        participants_chosen_paths, algorithm_chosen_paths: Dictionary of paths taken by the participant and the algorithm
+    Returns:
+        The average agreement score between the participants and the algorithms
     """
-    path_nums = {(0, 1, 2, 3): 0, (0, 1, 2, 4): 1, (0, 5, 6, 7): 2,
-                 (0, 5, 6, 8): 3, (0, 9, 10, 11): 4, (0, 9, 10, 12): 5}
+    path_nums = {
+        (0, 1, 2, 3): 0,
+        (0, 1, 2, 4): 1,
+        (0, 5, 6, 7): 2,
+        (0, 5, 6, 8): 3,
+        (0, 9, 10, 11): 4,
+        (0, 9, 10, 12): 5,
+    }
 
     def get_path_num(taken_path):
         path = tuple(taken_path)
@@ -1012,11 +1044,13 @@ def absolute_chosen_path_agreement(participants_chosen_paths, algorithm_chosen_p
 
     def compute_average_match(participant_chosen_paths, algorithm_chosen_paths):
         participant_paths = np.array(
-            [get_path_num(trial_path) for trial_path in participant_chosen_paths])
-        algorithm_paths = np.array([get_path_num(trial_path)
-                                    for trial_path in algorithm_chosen_paths])
+            [get_path_num(trial_path) for trial_path in participant_chosen_paths]
+        )
+        algorithm_paths = np.array(
+            [get_path_num(trial_path) for trial_path in algorithm_chosen_paths]
+        )
         matches = np.count_nonzero(participant_paths == algorithm_paths)
-        return matches/len(participant_paths)
+        return matches / len(participant_paths)
 
     participant_path_agreement = {}
     for pid in participants_chosen_paths.keys():
@@ -1024,21 +1058,25 @@ def absolute_chosen_path_agreement(participants_chosen_paths, algorithm_chosen_p
         algo_chosen_paths = algorithm_chosen_paths[pid]
         averages = []
         for algorithm_chosen_path in algo_chosen_paths:
-            averages.append(compute_average_match(
-                participant_chosen_paths, algorithm_chosen_path))
+            averages.append(
+                compute_average_match(participant_chosen_paths, algorithm_chosen_path)
+            )
         participant_path_agreement[pid] = np.mean(averages)
     return participant_path_agreement
 
 
 def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequences):
     """
-        Returns the accuracy between the strategy's sequences and the algorithm's sequences
-        Params:
-            participants_strategy_sequences, algorithm_strategy_sequences: dictionary with pid as keys
-        Returns:
-            Participant_wise_accuracy
+    Returns the accuracy between the strategy's sequences and the algorithm's sequences
+    Params:
+        participants_strategy_sequences, algorithm_strategy_sequences: dictionary with pid as keys
+    Returns:
+        Participant_wise_accuracy
     """
-    def compute_participant_strategy_accuracy(participant_strategy_sequence, algorithm_strategy_sequence):
+
+    def compute_participant_strategy_accuracy(
+            participant_strategy_sequence, algorithm_strategy_sequence
+    ):
         num_trials = len(participant_strategy_sequence)
         participant_strategy_sequence = np.array(participant_strategy_sequence)
         algorithm_strategy_sequence = np.array(algorithm_strategy_sequence)
@@ -1060,8 +1098,8 @@ def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequen
 
 def compute_transition_distance(participants_strategies, algorithm_strategies):
     """
-        Get the MSE between algorithm transition matrix and participant transition matrix
-        participants_strategies and algorithm_strategies should be a 3D list or ndarray
+    Get the MSE between algorithm transition matrix and participant transition matrix
+    participants_strategies and algorithm_strategies should be a 3D list or ndarray
     """
     participant_transition_matrix = compute_average_transition_matrix(
         participants_strategies)
@@ -1076,36 +1114,36 @@ def compute_transition_distance(participants_strategies, algorithm_strategies):
 
 
 def make_bar_plot(
-    x,
-    y,
-    figure_size=(15, 7),
-    title="",
-    xlabel="",
-    ylabel="",
-    line_label="",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    tick_options={},
-    dir_path=None,
-    show=True,
+        x,
+        y,
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        line_label="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
 ):
     """
-        Makes bar plot with given inputs
-        Params:
-            x: X-axis of the points
-            y: Y-axis of the points
-            participant_num: Participant number
-            algo: Name of the algorithm
-            linewidth : Width of the plotting line
-            title_size : Size of the title
-            axes_font_size : Size of labels of the axes
-            ticks_font_size : Size of labels of ticks
-            legend_size : Size of the legend
-            tick_options: Additional tick options
-            dir_path: Path where the file should be saved
+    Makes bar plot with given inputs
+    Params:
+        x: X-axis of the points
+        y: Y-axis of the points
+        participant_num: Participant number
+        algo: Name of the algorithm
+        linewidth : Width of the plotting line
+        title_size : Size of the title
+        axes_font_size : Size of labels of the axes
+        ticks_font_size : Size of labels of ticks
+        legend_size : Size of the legend
+        tick_options: Additional tick options
+        dir_path: Path where the file should be saved
     """
     mpl.rc("savefig", dpi=150)
     x = np.asarray(x)
@@ -1115,11 +1153,11 @@ def make_bar_plot(
     plt.xlabel(xlabel, fontsize=axes_font_size)
     plt.ylabel(ylabel, fontsize=axes_font_size)
     plt.bar(x, y, width=width)
-    plt.tick_params(axis='both', labelsize=ticks_font_size)
-    if 'x' in tick_options:
-        plt.xticks(**tick_options['x'])
-    elif 'y' in tick_options:
-        plt.yticks(**tick_options['y'])
+    plt.tick_params(axis="both", labelsize=ticks_font_size)
+    if "x" in tick_options:
+        plt.xticks(**tick_options["x"])
+    elif "y" in tick_options:
+        plt.yticks(**tick_options["y"])
     if len(line_label) != 0:
         plt.legend(fontsize=legend_size)
     if dir_path is not None:
@@ -1148,19 +1186,19 @@ def make_plot(
     show=True,
 ):
     """
-        Makes plot with given inputs
-        Params:
-            x: X-axis of the points
-            y: Y-axis of the points
-            participant_num: Participant number
-            algo: Name of the algorithm
-            linewidth : Width of the plotting line
-            title_size : Size of the title
-            axes_font_size : Size of labels of the axes
-            ticks_font_size : Size of labels of ticks
-            legend_size : Size of the legend
-            tick_options: additional tick_options
-            dir_path: Path where the file should be saved
+    Makes plot with given inputs
+    Params:
+        x: X-axis of the points
+        y: Y-axis of the points
+        participant_num: Participant number
+        algo: Name of the algorithm
+        linewidth : Width of the plotting line
+        title_size : Size of the title
+        axes_font_size : Size of labels of the axes
+        ticks_font_size : Size of labels of ticks
+        legend_size : Size of the legend
+        tick_options: additional tick_options
+        dir_path: Path where the file should be saved
     """
     mpl.rc("savefig", dpi=150)
     x = np.asarray(x)
@@ -1169,11 +1207,11 @@ def make_plot(
     plt.title(title, fontsize=title_size)
     plt.xlabel(xlabel, fontsize=axes_font_size)
     plt.ylabel(ylabel, fontsize=axes_font_size)
-    plt.tick_params(axis='both', labelsize=ticks_font_size)
-    if 'x' in tick_options:
-        plt.xticks(**tick_options['x'])
-    elif 'y' in tick_options:
-        plt.yticks(**tick_options['y'])
+    plt.tick_params(axis="both", labelsize=ticks_font_size)
+    if "x" in tick_options:
+        plt.xticks(**tick_options["x"])
+    elif "y" in tick_options:
+        plt.yticks(**tick_options["y"])
     plt.plot(x, y, linewidth=width)
     if len(line_label) != 0:
         plt.legend(fontsize=legend_size)
@@ -1185,39 +1223,51 @@ def make_plot(
         plt.close()
 
 
-def plot_multiple(data={}, figure_size=(15, 7), title='',
-                  xlabel='', ylabel='', width=1.5, title_size=26,
-                  axes_font_size=24, ticks_font_size=20, legend_size=20, tick_options={}, dir_path=None, show=True):
+def plot_multiple(
+        data={},
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
+):
     """
-        Makes plot with multiple lines
-        Params:
-            data : dictionary of data points (x,y) with keys as labels of lines
-            participant_num: Participant number
-            algo: Name of the algorithm
-            linewidth : Width of the plotting line
-            title_size : Size of the title
-            axes_font_size : Size of labels of the axes
-            ticks_font_size : Size of labels of ticks
-            legend_size : Size of the legend
-            tick_options: additional tick_options
-            dir_path: Path where the file should be saved
+    Makes plot with multiple lines
+    Params:
+        data : dictionary of data points (x,y) with keys as labels of lines
+        participant_num: Participant number
+        algo: Name of the algorithm
+        linewidth : Width of the plotting line
+        title_size : Size of the title
+        axes_font_size : Size of labels of the axes
+        ticks_font_size : Size of labels of ticks
+        legend_size : Size of the legend
+        tick_options: additional tick_options
+        dir_path: Path where the file should be saved
     """
     mpl.rc("savefig", dpi=150)
     lines = data.keys()
     for line in lines:
-        data[line]['x'] = np.asarray(data[line]['x'])
-        data[line]['y'] = np.asarray(data[line]['y'])
+        data[line]["x"] = np.asarray(data[line]["x"])
+        data[line]["y"] = np.asarray(data[line]["y"])
     plt.figure(figsize=figure_size)
     plt.title(title, fontsize=title_size)
     plt.xlabel(xlabel, fontsize=axes_font_size)
     plt.ylabel(ylabel, fontsize=axes_font_size)
-    plt.tick_params(axis='both', labelsize=ticks_font_size)
-    if 'x' in tick_options:
-        plt.xticks(**tick_options['x'])
-    elif 'y' in tick_options:
-        plt.yticks(**tick_options['y'])
+    plt.tick_params(axis="both", labelsize=ticks_font_size)
+    if "x" in tick_options:
+        plt.xticks(**tick_options["x"])
+    elif "y" in tick_options:
+        plt.yticks(**tick_options["y"])
     for line in lines:
-        plt.plot(data[line]['x'], data[line]['y'], label=line, linewidth=width)
+        plt.plot(data[line]["x"], data[line]["y"], label=line, linewidth=width)
     plt.legend(fontsize=legend_size)
     if dir_path is not None:
         plt.savefig(dir_path)
@@ -1241,18 +1291,18 @@ def plot_performance(
     show=True,
 ):
     """
-        Plot the performance of algorithm and participant
-        Params:
-            participant_performance: 1D or 2D list or ndarray. If 1D, it is interpreted as a single participant's performance and there should be participant number.
-                                    If 2D, it is interpreted as performance of all participants.
-            algorithm_performance: 1D or 2D list or ndarray. If 1D, intepreted as mean of algorithm's performance. Else interpreted as performance over multiple runs.
-            participant_num: Participant number
-            algo: Name of the algorithm
-            linewidth : Width of the plotting line
-            title_size : Size of the title
-            axes_font_size : Size of labels of the axes
-            ticks_font_size : Size of labels of ticks
-            legend_size : Size of the legend
+    Plot the performance of algorithm and participant
+    Params:
+        participant_performance: 1D or 2D list or ndarray. If 1D, it is interpreted as a single participant's performance and there should be participant number.
+                                If 2D, it is interpreted as performance of all participants.
+        algorithm_performance: 1D or 2D list or ndarray. If 1D, intepreted as mean of algorithm's performance. Else interpreted as performance over multiple runs.
+        participant_num: Participant number
+        algo: Name of the algorithm
+        linewidth : Width of the plotting line
+        title_size : Size of the title
+        axes_font_size : Size of labels of the axes
+        ticks_font_size : Size of labels of ticks
+        legend_size : Size of the legend
     """
     participant_performance = np.asarray(participant_performance)
     algorithm_performance = np.asarray(algorithm_performance)
@@ -1262,14 +1312,14 @@ def plot_performance(
         algorithm_performance = np.mean(algorithm_performance, axis=0)
     if participant_dims == 2:
         participant_performance = np.mean(participant_performance, axis=0)
-    elif participant_num == None:
+    elif participant_num is None:
         raise ValueError("Missing participant number")
     num_participant_trials = participant_performance.shape[0]
     num_algorithm_trials = algorithm_performance.shape[0]
     if participant_dims == 1:
-        par_label = f'Participant {participant_num}'
+        par_label = f"Participant {participant_num}"
     else:
-        par_label = 'Participants'
+        par_label = "Participants"
 
     mpl.rc("savefig", dpi=150)
     plt.figure(figsize=(15, 7))
@@ -1297,17 +1347,18 @@ def plot_performance(
     else:
         plt.close()
 
+
 def annotated_scatter_plot(x, y, names, color=None, s=100, fs=10):
     c_size = len(x)
     if color:
-        c = np.random.randint(1,5,size=c_size)
+        c = np.random.randint(1, 5, size=c_size)
     else:
-        c = [1]*c_size
-    norm = plt.Normalize(1,4)
+        c = [1] * c_size
+    norm = plt.Normalize(1, 4)
     cmap = plt.cm.RdYlGn
 
-    fig,ax = plt.subplots()
-    sc = plt.scatter(x,y,c=c, s=s, cmap=cmap, norm=norm)
+    fig, ax = plt.subplots()
+    sc = plt.scatter(x, y, c=c, s=s, cmap=cmap, norm=norm)
 
     annot = ax.annotate(
         "",
@@ -1329,7 +1380,6 @@ def annotated_scatter_plot(x, y, names, color=None, s=100, fs=10):
         annot.get_bbox_patch().set_facecolor(cmap(norm(c[ind["ind"][0]])))
         annot.get_bbox_patch().set_alpha(0.4)
 
-
     def hover(event):
         vis = annot.get_visible()
         if event.inaxes == ax:
@@ -1346,13 +1396,14 @@ def annotated_scatter_plot(x, y, names, color=None, s=100, fs=10):
     fig.canvas.mpl_connect("motion_notify_event", hover)
     return fig
 
+
 def columns_mean(a):
     """
-        Find mean by collapsing second dimension
-        Params:
-            a : nD numpy array where n > 1
-        Returns:
-            mean: Mean by collapsing second dimension
+    Find mean by collapsing second dimension
+    Params:
+        a : nD numpy array where n > 1
+    Returns:
+        mean: Mean by collapsing second dimension
     """
     mean = np.mean(a, axis=1)
     return mean
@@ -1360,11 +1411,11 @@ def columns_mean(a):
 
 def rows_mean(a):
     """
-        Find mean by collapsing first dimension
-        Params:
-            a : nD numpy array or list where n > 1
-        Returns:
-            mean: Mean by collapsing first dimension
+    Find mean by collapsing first dimension
+    Params:
+        a : nD numpy array or list where n > 1
+    Returns:
+        mean: Mean by collapsing first dimension
     """
     mean = np.mean(a, axis=0)
     return mean
@@ -1372,7 +1423,7 @@ def rows_mean(a):
 
 def remove_elements_at_indices(lis, exclude_indices):
     """
-        Remove elements at indices
+    Remove elements at indices
     """
     if exclude_indices:
         if type(lis) != list:
@@ -1386,33 +1437,15 @@ def remove_elements_at_indices(lis, exclude_indices):
     return lis
 
 
-def get_strategy_sequences(env, trials_data):
-    """Get the strategy sequences of clicks made by an algorithm.
-
-    Arguments:
-        env {Gym env} -- Mouselab Gym Environment
-        trials_data {dict} -- Contains details about simulated trials of
-                              an algorithm (e.g actions)
-
-    Returns:
-        dict -- trials_data dict with the inferred strategy sequences added.
-    """
-    modified_actions = convert_zeros_to_none(trials_data['a'])
-    cm = ComputationalMicroscope(
-        38, weight_MAP, "small", distances_path=None,
-        prior_path="../data/gradual_transitions.pkl")  # TODO what is weight_MAP?
-    strategy_info = cm.infer_sequences(
-        modified_actions, env.get_ground_truth())
-    trials_data['s'] = strategy_info[0]
-    return trials_data
-
-
 def get_normalized_strategy_weights():
     num_strategies = 38
     s_weights = np.zeros((38, 59))
     for s in range(num_strategies):
-        s_weights[s] = pickle_load(f"../data/strategy_weights/{s}.pkl")
+        s_weights[s] = pickle_load(
+            parent_folder.joinpath(f"data/strategy_weights/{s}.pkl")
+        )
     return s_weights
+
 
 def get_counts(strategies, num_trials):
     new_strategies_list = list(strategies.values())
@@ -1421,31 +1454,35 @@ def get_counts(strategies, num_trials):
     strategies_data = strategies_data.flatten()
     counts = Counter(strategies_data)
     ns = strategies_data.shape[0]
-    counts = {k: v/ns for k,v in counts.items()}
+    counts = {k: v / ns for k, v in counts.items()}
     return counts
+
 
 def get_modified_weights(strategy_space, weights):
     num_strategies = len(strategy_space)
     W = np.zeros((num_strategies, weights.shape[1]))
     for i, s in enumerate(strategy_space):
-        W[i] = weights[s-1]
+        W[i] = weights[s - 1]
     return W
 
-def make_clusters(D, method ='ward', cutoff=None, max_clusters = None):
+
+def make_clusters(D, method="ward", cutoff=None, max_clusters=None):
     condensed_vals = squareform(D)
     Z = linkage(condensed_vals, method)
     if max_clusters:
-        hierarchical_clusters = fcluster(Z, max_clusters, 'maxclust')
+        hierarchical_clusters = fcluster(Z, max_clusters, "maxclust")
     else:
-        hierarchical_clusters = fcluster(Z, cutoff, criterion='distance')
+        hierarchical_clusters = fcluster(Z, cutoff, criterion="distance")
     return Z, hierarchical_clusters
 
-def plot_clusters(Z, labels, scale = 'log'):
-    fig = plt.figure(figsize=(15,9))
+
+def plot_clusters(Z, labels, scale="log"):
+    fig = plt.figure(figsize=(15, 9))
     ax = fig.add_subplot(111)
     if scale:
         plt.yscale(scale)
     _ = dendrogram(Z, labels=labels, ax=ax)
+
 
 def get_cluster_dict(clusters, strategy_space):
     cluster_dict = defaultdict(list)
@@ -1494,46 +1531,44 @@ def get_clicks_per_trial(participant_clicks, algorithm_clicks):
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     """Compute the objective value to be minimized based on the optimization
            criterion and the data obtained by running the model with a given set
-           of parameters
+           of parameters.
+           reward, strategy accuracy, clicks_overlap, likelihood, pseudo-likelihood
+           are naturally objectives we want to maximize,
+           but to be compatible with hyperopt which only minimizes, we negate them.
 
-    Arguments:
-        criterion {str} -- The objective to evaluate
-        sim_data {dict} -- Data from runs of models with a particular
-                                   parameter configuration
-        p_data {dict} -- Data of a participant
-        pipeline -- Defines the reward function for each trial
-        sigma -- Used to compute the pseudo-likelihood
-    """
+        Arguments:
+            criterion {str} -- The objective to evaluate
+            sim_data {dict} -- Data from runs of models with a particular
+                                       parameter configuration
+            p_data {dict} -- Data of a participant
+            pipeline -- Defines the reward function for each trial
+            sigma -- Used to compute the pseudo-likelihood
+        """
+    # print(sim_data, p_data)
     if criterion == "reward":
-        objective_value = -np.mean(sim_data['r'])
+        objective_value = -np.mean(sim_data["r"])
     elif criterion == "performance_error":
-        objective_value = get_squared_performance_error(
-            p_data['r'], sim_data['r'])
+        objective_value = get_squared_performance_error(p_data["r"], sim_data["r"])
     elif criterion == "distance":
-        objective_value = get_normalized_weight_distance(
-            p_data['w'], sim_data['w'])
+        objective_value = get_normalized_weight_distance(p_data["w"], sim_data["w"])
     elif criterion == "strategy_accuracy":
-        p_s = {0: p_data['s']}
-        a_s = {0: sim_data['s']}
+        p_s = {0: p_data["s"]}
+        a_s = {0: sim_data["s"]}
         objective_value = -strategy_accuracy(p_s, a_s)[0]
     elif criterion == "strategy_transition":
-        p_s = [[p_data['s']]]
-        a_s = [sim_data['s']]
+        p_s = [[p_data["s"]]]
+        a_s = [sim_data["s"]]
         objective_value = compute_transition_distance(p_s, a_s)
     elif criterion == "clicks_overlap":
-        p_a = {0: p_data['a']}
-        a_a = {0: sim_data['a']}
+        p_a = {0: p_data["a"]}
+        a_a = {0: sim_data["a"]}
         objective_value = -clicks_overlap(p_a, a_a)[0]
-    # elif criterion == "number_of_clicks":
-    #     p_a = {0: p_data['a']}
-    #     a_a = {0: sim_data['a']}
-    #     objective_value = -number_of_clicks(p_a, a_a)[0]
     elif criterion == "likelihood":
-        objective_value = np.mean(sim_data['loss'])
+        objective_value = np.mean(sim_data["loss"])
     elif criterion == "mer_performance_error":
-        objective_value = get_squared_performance_error(p_data['mer'], sim_data['mer'])
+        objective_value = get_squared_performance_error(p_data["mer"], sim_data["mer"])
     elif criterion == "pseudo_likelihood":
-        mean_mer = np.mean(sim_data['mer'], axis=0)
+        mean_mer = np.mean(sim_data["mer"], axis=0)
         sigma = np.exp(sim_data["sigma"])
         normal_objective = -np.sum(
             [
@@ -1546,9 +1581,11 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     elif criterion == "number_of_clicks_likelihood":
         # get the number of clicks of the participant and of the algorithm
         p_number_of_clicks_per_trial, a_number_of_clicks_per_trial = get_clicks_per_trial(p_data['a'], sim_data['a'])
-        objective_value = -np.sum([norm.logpdf(y, x, np.exp(sim_data['sigma'])) for x, y in
-                                   zip(p_number_of_clicks_per_trial, a_number_of_clicks_per_trial)])
-    print("Criterion: ", criterion, objective_value)
+        objective_value = -np.sum([norm.logpdf(x, loc=y, scale=np.exp(sim_data["sigma"])) for x, y in
+                                   zip(a_number_of_clicks_per_trial, p_number_of_clicks_per_trial)])
+    # print("Criterion: ", criterion, objective_value)
+    else:
+        raise ("Objective value not supported or misspelled.")
     return objective_value
 
 
@@ -1579,21 +1616,26 @@ class Participant:
         self.get_weights = get_weights
         self.excluded_trials = excluded_trials
         self.envs, self.scores, self.clicks, self.taken_paths = get_participant_details(
-            pid=self.pid, exp_num=self.exp_num)
+            pid=self.pid, exp_num=self.exp_num, data_path=data_path
+        )
         num_excluded = len(excluded_trials) if excluded_trials else 0
         self.num_trials = len(self.clicks) - num_excluded
         self.get_strategies = get_strategies
         if self.get_strategies:
             try:
-                self.strategies = pickle_load(f"results/final_strategy_inferences/{self.exp_num}_strategies.pkl")
+                self.strategies = pickle_load(
+                    f"results/final_strategy_inferences/{self.exp_num}_strategies.pkl"
+                )
                 self.strategies = np.array(self.strategies[self.pid])
-                self.temperature = pickle_load(f"results/final_strategy_inferences/{self.exp_num}_temperatures.pkl")[self.pid]
+                self.temperature = pickle_load(
+                    f"results/final_strategy_inferences/{self.exp_num}_temperatures.pkl"
+                )[self.pid]
             except FileNotFoundError:
                 print("Inferred strategy sequence not found")
-                self.strategies = np.array([1]) # Fix this
-                self.temperature=1
+                self.strategies = np.array([1])  # Fix this
+                self.temperature = 1
         else:
-            self.strategies = [None]*len(self.envs)
+            self.strategies = [None] * len(self.envs)
             self.temperature = 1
         if self.get_weights:
             self.weights = convert_strategy_weights(
@@ -1608,20 +1650,21 @@ class Participant:
 
     def modify_included_data(self):
         self.envs = remove_elements_at_indices(self.envs, self.excluded_trials)
-        self.scores = remove_elements_at_indices(
-            self.scores, self.excluded_trials)
-        self.clicks = remove_elements_at_indices(
-            self.clicks, self.excluded_trials)
+        self.scores = remove_elements_at_indices(self.scores, self.excluded_trials)
+        self.clicks = remove_elements_at_indices(self.clicks, self.excluded_trials)
         if self.get_weights:
             if np.array(self.weights).any():
                 self.weights = remove_elements_at_indices(
-                    self.weights, self.excluded_trials)
+                    self.weights, self.excluded_trials
+                )
         if self.get_strategies:
             if self.strategies.any():
                 self.strategies = remove_elements_at_indices(
-                    self.strategies, self.excluded_trials)
+                    self.strategies, self.excluded_trials
+                )
         self.taken_paths = remove_elements_at_indices(
-            self.taken_paths, self.excluded_trials)
+            self.taken_paths, self.excluded_trials
+        )
 
     def get_first_trial_data(self):
         first_trial_actions = self.clicks[0]

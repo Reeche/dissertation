@@ -27,10 +27,15 @@ class Learner(ABC):
         self.use_pseudo_rewards = attributes["use_pseudo_rewards"]
         self.is_null = attributes["is_null"]
         self.path_learn = False
+        # todo: what is "path_learn"?
         if "path_learn" in attributes:
             self.path_learn = attributes["path_learn"]
         self.previous_best_paths = []
         self.compute_likelihood = False
+        # for backwards compatibility
+        self.learn_from_path_boolean = None
+        if "learn_from_path" in attributes:
+            self.learn_from_path_boolean = attributes["learn_from_path"]
 
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
@@ -104,6 +109,18 @@ class Learner(ABC):
     def run_multiple_simulations(
         self, env, num_simulations, compute_likelihood=False, participant=None
     ):
+        """
+        Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
+        Args:
+            env: GenericMouselabEnv
+            num_simulations: integer
+            compute_likelihood: boolean
+            participant:
+
+        Returns:
+
+        """
+        # Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
         env.attach_features(self.features, self.normalized_features)
         env.reset()
         if compute_likelihood and not participant:
@@ -118,6 +135,8 @@ class Learner(ABC):
             for param in ["r", "w", "a", "loss", "decision_params", "s", "info"]:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
+            # reset participant, needed for likelihood object fxn
+            participant.reset()
         total_m_mers = []
         for i in range(len(simulations_data["a"])):
             m_mers = get_termination_mers(

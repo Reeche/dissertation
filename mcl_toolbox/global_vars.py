@@ -16,9 +16,9 @@ class RenameUnpickler(pickle.Unpickler):
         # we need these modules in order to load pickled files depending on them,
         # pickled with earlier versions of the code
         if module == "learning_utils":
-            renamed_module = "mcl_toolbox.utils.learning_utils" #for runnigng on the server, remove mcl_toolbox part
+            renamed_module = "mcl_toolbox.utils.learning_utils"
         elif module == "distributions":
-            renamed_module = "mcl_toolbox.utils.distributions" #for runnigng on the server, remove mcl_toolbox part
+            renamed_module = "mcl_toolbox.utils.distributions"
 
         return super(RenameUnpickler, self).find_class(renamed_module, name)
 
@@ -53,7 +53,6 @@ class structure:
         "T1.1": list(range(11)),
         "c1.1": list(range(30)),
         "c2.1": None,
-        "IRL1": list(range(30, 66)),
         "low_variance_high_cost": None,
         "low_variance_low_cost": None,
         "high_variance_high_cost": None,
@@ -88,10 +87,8 @@ class structure:
         "high_decreasing": level_values_decreasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
-        "low_variance_high_cost": low_variance_values * 3,
-        "low_variance_low_cost": low_variance_values * 3,
-        "high_variance_high_cost": high_variance_values * 3,
-        "high_variance_low_cost": high_variance_values * 3,
+        "low_variance": low_variance_values * 3,
+        "high_variance": high_variance_values * 3,
     }
 
     reward_exps = {

@@ -184,6 +184,7 @@ class HierarchicalLearner(Learner):
     """ Two stage model of decision making"""
 
     def __init__(self, params, attributes):
+        super().__init__(params, attributes)
         self.decision_rule = attributes["decision_rule"]
         self.actor = attributes["actor"]
         self.params = params
@@ -254,6 +255,8 @@ class HierarchicalLearner(Learner):
             trials_data["a"].append(actions)
             trials_data["r"].append(np.sum(rewards))
             trials_data["costs"].append(rewards)
+        # add trial ground truths
+        trials_data["envs"] = env.ground_truth
         if self.decision_agent.action_log_probs and self.actor_agent.action_log_probs:
             trials_data["loss"] = -(
                 np.sum(self.decision_agent.action_log_probs)

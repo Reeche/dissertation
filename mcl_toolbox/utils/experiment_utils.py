@@ -11,14 +11,14 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from statsmodels.stats.proportion import proportions_chisquare
 
-from mcl_toolbox.utils.analysis_utils import get_data  # for running on the server, remove mcl_toolbox. part
-from mcl_toolbox.utils.learning_utils import (  # for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.analysis_utils import get_data
+from mcl_toolbox.utils.learning_utils import (
     get_clicks,
     get_participant_scores,
     pickle_load,
     sidak_value,
 )
-from mcl_toolbox.utils.sequence_utils import get_acls  # for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.sequence_utils import get_acls
 
 # Matplotlib no grid
 plt.rcParams["axes.grid"] = False
@@ -75,7 +75,7 @@ class Participant:
         self.temperature = temperature
 
     def attach_feature_properties(
-            self, features, normalized_features, strategy_weights
+        self, features, normalized_features, strategy_weights
     ):
         self.features = features
         self.normalized_features = normalized_features
@@ -84,7 +84,7 @@ class Participant:
         )
 
     def attach_decision_system_properties(
-            self, decision_systems, decision_system_weights, decision_system_proportions
+        self, decision_systems, decision_system_weights, decision_system_proportions
     ):
         self.decision_systems = decision_systems
         self.decision_system_weights = np.array(
@@ -104,14 +104,14 @@ class Experiment:
     """
 
     def __init__(
-            self,
-            exp_num,
-            cm=None,
-            pids=None,
-            # block=None,
-            data_path=None,
-            # exclude_trials=None,
-            **kwargs,
+        self,
+        exp_num,
+        cm=None,
+        pids=None,
+        block=None,
+        data_path=None,
+        exclude_trials=None,
+        **kwargs,
     ):
         """
 
@@ -126,7 +126,7 @@ class Experiment:
         self.exp_num = exp_num
         self.data = get_data(exp_num, data_path)
         self.cm = cm
-        # self.block = kwargs["block"]
+        # self.block = None
         if pids:
             self.pids = pids
         else:
@@ -145,10 +145,14 @@ class Experiment:
         self.participants = {}
         if "block" in kwargs:
             self.block = kwargs["block"]
+        else:
+            self.block = block
         if "exclude_trials" in kwargs:
             self.excluded_trials = kwargs["exclude_trials"]
-        if "cost" in kwargs:  # if exp_attributes contain the click cost
-            self.cost = kwargs["cost"]
+        else:
+            self.excluded_trials = exclude_trials
+        if "click_cost" in kwargs: #if exp_attributes contain the click cost
+            self.cost = kwargs["click_cost"]
         if "additional_constraints" in kwargs:
             self.additional_constraints = kwargs["additional_constraints"]
         else:
@@ -168,11 +172,8 @@ class Experiment:
                 participants_data = participants_data[
                     participants_data[constraint] == self.additional_constraints[constraint]
                     ]
-                pids = participants_data["pid"].tolist()
-                self.pids = [p for p in pids if p in self.pids]
-        else:
-            pids = participants_data["pid"].tolist()
-            self.pids = [p for p in pids if p in self.pids]
+        pids = participants_data["pid"].tolist()
+        self.pids = [p for p in pids if p in self.pids]
         trial_nums = []
         for pid in self.pids:
             p_data = participants_data[participants_data.pid == pid]
@@ -191,12 +192,11 @@ class Experiment:
             else:
                 p_trials_data = p_trials_data[
                     (p_trials_data.pid == pid) & (p_trials_data.block == self.block)
-                    ]
+                ]
 
             p = Participant(pid, condition)
             trial_nums.append(len(p_trials_data))
-
-            p.attach_trial_data(p_trials_data)
+            p.attach_trial_data(p_trials_data, exclude_trials=self.excluded_trials)
             p.condition = condition
             self.participants[pid] = p
 
@@ -238,6 +238,22 @@ class Experiment:
             max_evals=30,
             show_pids=True,
     ):
+        """
+        If strategies are already precomputed using the computational microscope, then the strategies and temperatures
+        (which are stored in inferred_strategies/../strategies.pkl or ../../temperature.pkl) will be attached to the
+        individual participants
+
+        it loops through all participants that are in strategies.pkl / temperature.pkl
+
+        Args:
+            precomputed_strategies: inferred_strategies/../strategies.pkl
+            precomputed_temperatures: inferred_strategies/../temperature.pkl
+            max_evals: number of evaluations
+            show_pids: boolean
+
+        Returns:
+
+        """
         cm = self.cm
         pids = []
         if precomputed_strategies:
@@ -245,8 +261,11 @@ class Experiment:
                 if show_pids:
                     print("SHOW PID", pid)
                 try:
+                    # todo: check why attach_strategies(S) is implemented (self.participants[pid].attach_strategies(S))
+                    # todo: It seems to do the same as S = precomputed_strategies[pid]
                     S = precomputed_strategies[pid]
-                    self.participants[pid].attach_strategies(S)
+                    # self.participants[pid].attach_strategies(S)
+                    self.participants[pid].strategies = S
                     self.participant_strategies[pid] = S
                     if precomputed_temperatures:
                         T = precomputed_temperatures[pid]
@@ -341,7 +360,7 @@ class Experiment:
         return significant_transitions, insignificant_transitions, alpha_sidak
 
     def strategy_transitions_chi2(
-            self, trial_wise=False, clusters=False, print_results=True
+        self, trial_wise=False, clusters=False, print_results=True
     ):
         condition_wise_pids = defaultdict(list)
         for pid in self.pids:
@@ -387,7 +406,7 @@ class Experiment:
     # The strategy scores should vary with reward structure
     # Catch error when there is no significant transition
     def performance_transitions_chi2(
-            self, strategy_scores=None, cluster_scores=None, trial_wise=False
+        self, strategy_scores=None, cluster_scores=None, trial_wise=False
     ):
         performance_results = defaultdict(lambda: defaultdict())
         if strategy_scores:
@@ -547,7 +566,7 @@ class Experiment:
             )
 
     def init_decision_system_properties(
-            self, decision_systems, decision_weights, decision_proportions
+        self, decision_systems, decision_weights, decision_proportions
     ):
         if not hasattr(self, "participant_strategies"):
             raise ValueError(
@@ -703,14 +722,14 @@ class Experiment:
         return adjusted_proportions
 
     def plot_proportions(
-            self,
-            trial_prop,
-            S,
-            title="",
-            suffix="",
-            labels=[],
-            cluster=False,
-            combine_other=False,
+        self,
+        trial_prop,
+        S,
+        title="",
+        suffix="",
+        labels=[],
+        cluster=False,
+        combine_other=False,
     ):
         S_proportions = []
         # the lines below are from original CM repo
@@ -932,12 +951,12 @@ class Experiment:
         return acls, random_acls
 
     def get_proportion_clusters(
-            self,
-            mode="participant",
-            plot=True,
-            show_clusters=False,
-            n_clusters=2,
-            max_clusters=10,
+        self,
+        mode="participant",
+        plot=True,
+        show_clusters=False,
+        n_clusters=2,
+        max_clusters=10,
     ):
         decision_proportions = []
         considered_pids = []
@@ -993,7 +1012,7 @@ class Experiment:
             cluster_dict = dict(cluster_dict)
             return cluster_dict
 
-    def get_sorted_strategies(self):
+    def get_top_k_strategies(self, k=70):
         """
         Get the top k strategies from each trial.
         Example: 35 trials, look at each trial and get the top k strategies in each trial and put them together in a set
@@ -1021,7 +1040,7 @@ class Experiment:
 
     ### About the top n adaptive strategies and maladaptive strategies
     def plot_adaptive_maladaptive_strategies_vs_rest(
-            self, adaptive_strategy_list, maladaptive_strategy_list, plot=True
+        self, adaptive_strategy_list, maladaptive_strategy_list, plot=True
     ):
         """
         This function sums up the proportion of the top n adaptive strategies and worst n maladaptive strategies and
@@ -1443,7 +1462,7 @@ class Experiment:
         return sorted_cluster_trajectory, sorted_strategy_trajectory
 
     def plot_difference_between_trials(
-            self, cluster_map, strategies: defaultdict, number_participants, cluster=False
+        self, cluster_map, strategies: defaultdict, number_participants, cluster=False
     ):
         """
         It creates a plot which shows the percentage of participants who changed their strategy across trial
@@ -1679,28 +1698,28 @@ class Experiment:
         return adaptive_strategies, maladaptive_strategies, other_strategies
 
     def summarize(
-            self,
-            features,
-            normalized_features,
-            strategy_weights,
-            decision_systems,
-            W_DS,
-            DS_proportions,
-            strategy_scores,
-            cluster_scores,
-            cluster_map,
-            max_evals=20,
-            number_of_top_worst_strategies=5,
-            plot_strategies=[21, 30],
-            plot_clusters=list(range(1, 14)),
-            n_clusters=None,
-            max_clusters=10,
-            cluster_mode="participant",  # Can also take time,
-            create_plot=True,
-            show_pids=True,
-            show_strategies=False,
-            precomputed_strategies=None,
-            precomputed_temperatures=None,
+        self,
+        features,
+        normalized_features,
+        strategy_weights,
+        decision_systems,
+        W_DS,
+        DS_proportions,
+        strategy_scores,
+        cluster_scores,
+        cluster_map,
+        max_evals=20,
+        number_of_top_worst_strategies=5,
+        plot_strategies=[21, 30],
+        plot_clusters=list(range(1, 14)),
+        n_clusters=None,
+        max_clusters=10,
+        cluster_mode="participant",  # Can also take time,
+        create_plot=True,
+        show_pids=True,
+        show_strategies=False,
+        precomputed_strategies=None,
+        precomputed_temperatures=None,
     ):
         """
         Creates plots about 1. strategy development over trials and overall frequency, 2. strategy cluster development over trials and overall frequency,
@@ -1761,13 +1780,12 @@ class Experiment:
 
         # find list of adaptive and maladaptive strategies
         self.get_strategy_proportions(trial_wise=False)
-        adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
-        # (
-        #     top_n_strategies,
-        #     worst_n_strategies,
-        # ) = self.filter_used_strategy_adaptive_maladaptive(
-        #     n=number_of_top_worst_strategies
-        # )  # requires self.strategy_proportions
+        (
+            top_n_strategies,
+            worst_n_strategies,
+        ) = self.filter_used_strategy_adaptive_maladaptive(
+            n=number_of_top_worst_strategies
+        )  # requires self.strategy_proportions
 
         # find out who used adaptive and who used maladaptive stratgies
         (
