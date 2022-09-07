@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from mcl_toolbox.env.mouselab import MouselabEnv
+from mouselab.mouselab import MouselabEnv
+
 from mcl_toolbox.utils.distributions import Categorical
 from mcl_toolbox.utils.exact_utils import timed_solve_env
 from mcl_toolbox.utils.experiment_utils import Experiment
