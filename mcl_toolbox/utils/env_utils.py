@@ -5,8 +5,8 @@ from itertools import product
 import dill as pickle
 import numpy as np
 from more_itertools import powerset
+from mouselab.mouselab import MouselabEnv
 
-from mcl_toolbox.env.mouselab import MouselabEnv
 from mcl_toolbox.utils.distributions import Categorical
 
 
