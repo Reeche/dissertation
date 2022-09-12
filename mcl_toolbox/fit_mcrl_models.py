@@ -1,15 +1,13 @@
-import sys
 import ast
+import sys
 import time
-
 from pathlib import Path
-import random
 
 from mcl_toolbox.utils.learning_utils import create_dir
 from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
-Run this using: 
+Run this using:
 python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <number_of_trials> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 Example: python3 mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 35 "{\"plotting\":True, \"optimization_params\" :{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
@@ -23,17 +21,18 @@ Example: python3 mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 35 "{
 
 
 def fit_model(
-        exp_name,
-        pid,
-        number_of_trials,
-        model_index,
-        optimization_criterion,
-        optimization_params=None,
-        exp_attributes=None,
-        sim_params=None,
-        simulate=True,
-        plotting=False,
-        data_path=None
+    exp_name,
+    pid,
+    number_of_trials,
+    model_index,
+    optimization_criterion,
+    optimization_params=None,
+    exp_attributes=None,
+    sim_params=None,
+    simulate=True,
+    plotting=False,
+    data_path=None,
+    save_path=None,
 ):
     """
 
@@ -46,24 +45,31 @@ def fit_model(
     """
 
     # create directory to save priors in
-    parent_directory = Path(__file__).resolve().parents[1]
-    prior_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
+    if save_path is None:
+        save_path = Path(__file__).resolve().parents[1]
+    else:
+        save_path.mkdir(parents=True, exist_ok=True)
+
+    prior_directory = save_path.joinpath(f"results/mcrl/{exp_name}_priors")
     create_dir(prior_directory)
 
     model_info_directory = None
     plot_directory = None
     if simulate:
         # and directory to save fit model info in
-        model_info_directory = parent_directory.joinpath(
-            f"results/mcrl/{exp_name}_data"
-        )
+        model_info_directory = save_path.joinpath(f"results/mcrl/{exp_name}_data")
         create_dir(model_info_directory)
         if plotting:
             # add directory for reward plots, if plotting
-            plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
+            plot_directory = save_path.joinpath(f"results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path, number_of_trials=number_of_trials)
+    mf = ModelFitter(
+        exp_name,
+        exp_attributes=exp_attributes,
+        data_path=data_path,
+        number_of_trials=number_of_trials,
+    )
     res, prior, obj_fn = mf.fit_model(
         model_index,
         pid,
@@ -79,7 +85,7 @@ def fit_model(
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
             # sim_params=sim_params,
-            sim_params=optimization_params
+            sim_params=optimization_params,
         )
 
 
@@ -110,7 +116,7 @@ if __name__ == "__main__":
             "block": None,  # Block of the experiment
             "experiment": None,
             # Experiment object can be passed directly with pipeline and normalized features attached
-            "click_cost": 1
+            "click_cost": 1,
         }
         other_params["exp_attributes"] = exp_attributes
 
@@ -118,7 +124,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 2
+            "max_evals": 2,
         }
         other_params["optimization_params"] = optimization_params
     tic = time.perf_counter()
