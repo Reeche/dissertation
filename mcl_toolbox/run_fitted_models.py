@@ -1,22 +1,24 @@
-from mcl_toolbox.global_vars import *
+# from mcl_toolbox.global_vars import *
+from pathlib import Path
+
 from mcl_toolbox.utils.learning_utils import create_dir, pickle_load
 from mcl_toolbox.utils.model_utils import ModelFitter
 
 if __name__ == "__main__":
-    exp_name = "v1.0"
+    exp_name = "F1"
     exp_attributes = {
         "exclude_trials": None,  # Trials to be excluded
         "block": None,  # Block of the experiment
         "experiment": None  # Experiment object can be passed directly with
         # pipeline and normalized features attached
     }
-    model_index = 1825
-    pid = 4
-    num_simulations = 30
+    model_index = 1729
+    pid = 0
+    num_simulations = 31
     plotting = True
 
     sim_params = {"num_simulations": num_simulations}
-    fit_criterion = "pseudo_likelihood"
+    fit_criterion = "likelihood"
 
     parent_directory = Path(__file__).parents[1]
     param_dir = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
@@ -31,7 +33,9 @@ if __name__ == "__main__":
         plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
         create_dir(plot_directory)
 
-    mf = ModelFitter(exp_name, exp_attributes=exp_attributes)
+    mf = ModelFitter(
+        exp_name, exp_attributes=exp_attributes, number_of_trials=num_simulations
+    )
     (res, prior) = pickle_load(
         param_dir.joinpath(f"{pid}_{fit_criterion}_{model_index}.pkl")
     )
