@@ -46,22 +46,22 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[1]
+        save_path = Path(__file__).resolve().parents[1].joinpath("results/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
-    prior_directory = save_path.joinpath(f"results/mcrl/{exp_name}_priors")
+    prior_directory = save_path.joinpath(f"{exp_name}_priors")
     create_dir(prior_directory)
 
     model_info_directory = None
     plot_directory = None
     if simulate:
         # and directory to save fit model info in
-        model_info_directory = save_path.joinpath(f"results/mcrl/{exp_name}_data")
+        model_info_directory = save_path.joinpath(f"{exp_name}_data")
         create_dir(model_info_directory)
         if plotting:
             # add directory for reward plots, if plotting
-            plot_directory = save_path.joinpath(f"results/mcrl/{exp_name}_plots")
+            plot_directory = save_path.joinpath(f"{exp_name}_plots")
             create_dir(plot_directory)
 
     mf = ModelFitter(
