@@ -4,7 +4,7 @@ import time
 import numpy as np
 from condor_utils import create_sub_file, submit_sub_file
 
-bid = 10
+bid = 1
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 exp_num = ['low_variance_high_cost']
@@ -15,9 +15,10 @@ exp_num = ['low_variance_high_cost']
 
 # models = list(range(0, 500))
 # models = list(range(500, 1000))
-# models = list(range(1510, 1550)) #1550 was not submitted yet
-# models = list(range(1510, 1512)) #1550 was not submitted yet
-# models = list(range(1500, 2016))# 2015 is the last model index
+models = list(range(1510, 1600)) #1550 was not submitted yet
+# models = list(range(1600, 2016))# 2015 is the last model index
+
+
 
 # pid_dict = {
 #     'low_variance_high_cost': [2, 13, 14, 16, 21, 24, 28, 31, 36, 37, 43, 45, 54, 61, 62, 68, 69, 73, 79, 80, 84, 86,
@@ -40,13 +41,13 @@ exp_num = ['low_variance_high_cost']
 
 with open("parameters.txt", "w") as parameters:
     for exp_num_ in exp_num:
-        # for models_ in models:
-        pids = pid_dict.get(exp_num_)
-        if pids:
-            for pid in pids:
-                args = [exp_num_, 'likelihood', pid, 35]
-                # args = [exp_num_, models_, 'likelihood', pid, 35]
-                args_str = " ".join(str(x) for x in args) + "\n"
-                parameters.write(args_str)
+        for models_ in models:
+        # pids = pid_dict.get(exp_num_)
+        # if pids:
+        #     for pid in pids:
+        #     args = [exp_num_, models_, 'likelihood', pid, 35]
+            args = [exp_num_, models_, 'likelihood', 35]
+            args_str = " ".join(str(x) for x in args) + "\n"
+            parameters.write(args_str)
 
 submit_sub_file("sub_multiple.sub", bid)
