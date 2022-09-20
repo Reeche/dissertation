@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
-from env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.modified_mouselab import get_termination_mers #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
 
 
 class Learner(ABC):
@@ -101,7 +101,9 @@ class Learner(ABC):
     def get_pseudo_reward(self, env):
         pr = 0
         if self.use_pseudo_rewards:
+            # maximum expected reward from previous belief state
             comp_value = self.get_best_paths_expectation(env)
+            # maximum expected reward from current belief state (if terminate now)
             mer = self.get_term_reward(env)
             pr = self.pr_weight * (mer - comp_value)
         return pr

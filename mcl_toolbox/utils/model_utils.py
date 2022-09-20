@@ -41,7 +41,7 @@ def get_strategy_probs(env, participant, features, normalized_features, w):
 
 
 class ModelFitter:
-    def __init__(self, exp_name, exp_attributes=None, data_path=None):
+    def __init__(self, exp_name, exp_attributes=None, data_path=None, **pipeline_kwargs):
         """
         
         :param exp_name: name, or folder, where experiment data is saved
@@ -63,6 +63,9 @@ class ModelFitter:
                 "click_cost": 1,
                 "learn_from_path": True,
             }
+        if 'experiment' not in exp_attributes:
+            exp_attributes['experiment'] = None
+
         if exp_attributes['experiment'] is not None:
             self.E = exp_attributes["experiment"]
             if self.E.pipeline is None:
@@ -71,7 +74,7 @@ class ModelFitter:
                 raise ValueError("Please attach normalized features to the experiment")
             self.pipeline = self.E.pipeline
             self.normalized_features = self.E.normalized_features
-        else:
+        else: #if exp_attributes['experiment'] is None
             del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
 

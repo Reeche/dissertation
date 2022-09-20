@@ -44,10 +44,10 @@ def fit_model(
     :param optimization_params: parameters for ParameterOptimizer.optimize, passed in as a dict
     :return:
     """
-
     # create directory to save priors in
     parent_directory = Path(__file__).resolve().parents[1]
     prior_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
+    # prior_directory = parent_directory.joinpath(f"../../../../work/rhe/mcl_toolbox/results/mcrl/{exp_name}_priors")
     create_dir(prior_directory)
 
     model_info_directory = None
@@ -56,13 +56,14 @@ def fit_model(
         # and directory to save fit model info in
         model_info_directory = parent_directory.joinpath(
             f"results/mcrl/{exp_name}_data"
+            # f"../../../../work/rhe/mcl_toolbox/results/mcrl/{exp_name}_data"
         )
         create_dir(model_info_directory)
         if plotting:
             # add directory for reward plots, if plotting
             plot_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_plots")
+            # plot_directory = parent_directory.joinpath(f"../../../../work/rhe/mcl_toolbox/results/mcrl/{exp_name}_plots")
             create_dir(plot_directory)
-
     mf = ModelFitter(exp_name, exp_attributes=exp_attributes, data_path=data_path, number_of_trials=number_of_trials)
     res, prior, obj_fn = mf.fit_model(
         model_index,
@@ -87,21 +88,26 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
-    number_of_trials = int(sys.argv[5])
-    # other_params = {"plotting": True}
-    other_params = {}
-    if len(sys.argv) > 6:
-        other_params = ast.literal_eval(sys.argv[6])
+    # pid = int(sys.argv[3])
+    number_of_trials = int(sys.argv[4])
+    other_params = {"plotting": False}
+    # other_params = {}
+    if len(sys.argv) > 5:
+        other_params = ast.literal_eval(sys.argv[5])
     else:
         other_params = {}
 
-    # exp_name = "high_variance_high_cost"
-    # model_index = 1919 #6527
+    # exp_name = "low_variance_high_cost"
+    # model_index = 1511 #1792 #6527
     # optimization_criterion = "likelihood"
-    # pid = 6  # 1, 5, 6, 10, 15
+    # pid = 2
     # other_params = {"plotting": True}
     # number_of_trials = 35
+
+    if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
+        click_cost = 5
+    else:
+        click_cost = 1
 
     if "exp_attributes" not in other_params:
         exp_attributes = {
@@ -109,7 +115,7 @@ if __name__ == "__main__":
             "block": None,  # Block of the experiment
             "experiment": None,  # Experiment object can be passed directly with
             # Experiment object can be passed directly with pipeline and normalized features attached
-            "click_cost": 1
+            "click_cost": click_cost
         }
         other_params["exp_attributes"] = exp_attributes
 
@@ -120,14 +126,18 @@ if __name__ == "__main__":
             "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
-    tic = time.perf_counter()
-    fit_model(
-        exp_name=exp_name,
-        pid=pid,
-        number_of_trials=number_of_trials,
-        model_index=model_index,
-        optimization_criterion=optimization_criterion,
-        **other_params,
-    )
-    toc = time.perf_counter()
-    print(f"Took {toc - tic:0.4f} seconds")
+    # tic = time.perf_counter()
+
+    pid_list = [2, 13, 14]
+
+    for pid in pid_list:
+        fit_model(
+            exp_name=exp_name,
+            pid=pid,
+            number_of_trials=number_of_trials,
+            model_index=model_index,
+            optimization_criterion=optimization_criterion,
+            **other_params,
+        )
+    # toc = time.perf_counter()
+    # print(f"Took {toc - tic:0.4f} seconds")

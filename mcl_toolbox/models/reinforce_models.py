@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
 
 
 class Policy(nn.Module):
@@ -139,6 +139,7 @@ class REINFORCE(Learner):
         offset = 0
         if self.path_learn:
             offset = 3
+        # self.policy.rewards is a list consisting of click cost and the final reward after walking e.g. [-1, -1, ..., 200]
         for i, r in enumerate(self.policy.rewards[:: -1 - offset]):
             pr = 0
             if self.use_pseudo_rewards:

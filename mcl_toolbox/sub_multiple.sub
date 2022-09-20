@@ -3,7 +3,10 @@ arguments = fit_mcrl_models.py $(Arg1) $(Arg2) $(Arg3) $(Arg4)
 error = errs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).err
 output = outputs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).out
 getenv = True
-request_memory = 2000
+request_memory = 20000
 request_cpus = 1
-concurrency_limits=user.rhe:200
+concurrency_limits=user.rhe:3
+MaxTime = 432000
+periodic_hold = (JobStatus =?= 2) && ((CurrentTime - JobCurrentStartDate) >= $(MaxTime))
+periodic_hold_reason = "Job runtime exceeded"
 queue Arg1,Arg2,Arg3,Arg4 from parameters.txt

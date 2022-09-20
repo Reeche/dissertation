@@ -11,8 +11,8 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-# TODO: change/add your R_HOME path
-os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Resources'
+
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform

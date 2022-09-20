@@ -1,7 +1,7 @@
 import numpy as np
 
-from models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
-from models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.lvoc_models import LVOC #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.models.rssl_models import RSSL #for runnigng on the server, remove mcl_toolbox part
 
 
 # currently none of these work as expected. Since

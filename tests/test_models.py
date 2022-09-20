@@ -26,5 +26,5 @@ class TestModels(unittest.TestCase):
         Tests models to make sure we didn't break anything for MCRL Project
         Takes around 15 minutes
         """
-        test_models("v1.0", 1, [model_index], optimization_params=optimization_params)
+        test_models("high_variance_high_cost", 0, [model_index], optimization_params=optimization_params)
         self.assertTrue(True)

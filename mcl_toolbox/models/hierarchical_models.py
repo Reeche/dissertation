@@ -3,9 +3,9 @@ from collections import defaultdict
 import numpy as np
 import scipy as sp
 
-from global_vars import hierarchical_params #for runnigng on the server, remove mcl_toolbox part
-from models.base_learner import Learner #for runnigng on the server, remove mcl_toolbox part
-from utils.learning_utils import (get_log_norm_cdf, #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.global_vars import hierarchical_params
+from mcl_toolbox.models.base_learner import Learner
+from mcl_toolbox.utils.learning_utils import (get_log_norm_cdf,
                                               get_log_norm_pdf, rows_mean,
                                               temp_sigmoid)
 
@@ -222,7 +222,7 @@ class HierarchicalLearner(Learner):
                 continue_planning, _ = self.decision_agent.get_action(
                     env, trial_info={"participant": participant}
                 )
-                if continue_planning == 0:
+                if continue_planning == 0: #stop planning
                     previous_path = participant.get_trial_path()
                     _, reward, done, taken_path = env.step(0)
                     if compute_likelihood:
