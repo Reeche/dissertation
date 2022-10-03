@@ -2,12 +2,13 @@ import os
 import sys
 import time
 import numpy as np
+
 from condor_utils import create_sub_file, submit_sub_file
 
 bid = 1
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
-exp_num = ['low_variance_high_cost']
+exp_num = ['low_variance_low_cost']
 # models = ['1919']
 # pid_dict = {'low_variance_low_cost': [3]}
 
@@ -15,15 +16,16 @@ exp_num = ['low_variance_high_cost']
 
 # models = list(range(0, 500))
 # models = list(range(500, 1000))
-models = list(range(1510, 1600)) #1550 was not submitted yet
+# models = list(range(1510, 1530))
+# models = list(range(1535, 1600))
 # models = list(range(1600, 2016))# 2015 is the last model index
+models = list(range(0, 2016))
 
+pid_dict = {
+    'low_variance_low_cost': [3, 5, 6, 9, 11, 12, 15, 19, 27, 34, 39, 42, 44, 52, 55, 59, 66, 67, 72, 75, 77, 85, 91,
+                              99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
+                              165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207]}
 
-
-# pid_dict = {
-#     'low_variance_high_cost': [2, 13, 14, 16, 21, 24, 28, 31, 36, 37, 43, 45, 54, 61, 62, 68, 69, 73, 79, 80, 84, 86,
-#                                90, 97, 98, 100, 102, 107, 120, 124, 128, 132, 135, 138, 140, 144, 147, 153, 157, 160,
-#                                163, 166, 171, 174, 181, 183, 192, 194, 201, 203, 206]}
 # pid_dict = {
 #     'high_variance_high_cost': [0, 1, 10, 18, 22, 25, 30, 32, 38, 41, 46, 47, 49, 57, 60, 63, 65, 70, 74, 76, 81, 83,
 #                                 88, 89, 94, 103, 108, 109, 111, 114, 116, 118, 125, 129, 134, 139, 149, 150, 156, 161,
@@ -42,12 +44,11 @@ models = list(range(1510, 1600)) #1550 was not submitted yet
 with open("parameters.txt", "w") as parameters:
     for exp_num_ in exp_num:
         for models_ in models:
-        # pids = pid_dict.get(exp_num_)
-        # if pids:
-        #     for pid in pids:
-        #     args = [exp_num_, models_, 'likelihood', pid, 35]
-            args = [exp_num_, models_, 'likelihood', 35]
-            args_str = " ".join(str(x) for x in args) + "\n"
-            parameters.write(args_str)
+            pids = pid_dict.get(exp_num_)
+            if pids:
+                for pid in pids:
+                    args = [exp_num_, models_, 'likelihood', pid, 35]
+                    args_str = " ".join(str(x) for x in args) + "\n"
+                    parameters.write(args_str)
 
 submit_sub_file("sub_multiple.sub", bid)

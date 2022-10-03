@@ -88,12 +88,12 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[3])
-    number_of_trials = int(sys.argv[4])
+    pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
     other_params = {"plotting": True}
     # other_params = {}
-    if len(sys.argv) > 5:
-        other_params = ast.literal_eval(sys.argv[5])
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 2
+            "max_evals": 400
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()
@@ -132,16 +132,14 @@ if __name__ == "__main__":
     #             90, 97, 98, 100, 102, 107, 120, 124, 128, 132, 135, 138, 140, 144, 147, 153, 157, 160,
     #             163, 166, 171, 174, 181, 183, 192, 194, 201, 203, 206]
 
-    pid_list = [2, 13, 14]
-
-    for pid in pid_list:
-        fit_model(
-            exp_name=exp_name,
-            pid=pid,
-            number_of_trials=number_of_trials,
-            model_index=model_index,
-            optimization_criterion=optimization_criterion,
-            **other_params,
-        )
+    # for pid in pid_list:
+    fit_model(
+        exp_name=exp_name,
+        pid=pid,
+        number_of_trials=number_of_trials,
+        model_index=model_index,
+        optimization_criterion=optimization_criterion,
+        **other_params,
+    )
     # toc = time.perf_counter()
     # print(f"Took {toc - tic:0.4f} seconds")

@@ -1,9 +1,11 @@
 executable = /usr/bin/python3
 arguments = fit_mcrl_models.py $(Arg1) $(Arg2) $(Arg3) $(Arg4)
-error = errs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).err
-output = outputs/$(Arg1)_$(Arg2)_$(Arg3)_$(Arg4).out
 getenv = True
-request_memory = 20000
+request_memory = 8192
 request_cpus = 1
-concurrency_limits=user.rhe:3
+#concurrency_limits=user.rhe:5
+#WARNING: the line 'MaxTime = 432000' was unused by condor_submit. Is it a typo?
+#MaxTime = 432000
+# submit as a factory with an max concurent jobs limit
+max_materialize=1500
 queue Arg1,Arg2,Arg3,Arg4 from parameters.txt

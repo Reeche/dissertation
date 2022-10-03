@@ -70,7 +70,8 @@ def submit_sub_file(sub_file, bid=3, remove_on_submission=False):
         bid                  -- Bid for the condor system
         remove_on_submission -- Whether to remove the submit file after submission
     """
-    command = f"condor_submit_bid {bid} {sub_file}"
+#    command = f"condor_submit_bid {bid} {sub_file}"
+    command = f"condor_submit -file {sub_file} -factory"
     os.system(command)
     if remove_on_submission:
         os.remove(sub_file)
@@ -82,3 +83,6 @@ if __name__ == "__main__":
     """
     sub_file = create_sub_file("control_model_running.py", [1, "lvoc", "likelihood", "false", "false"], outputs=True)
     submit_sub_file(sub_file, bid=100)
+
+
+# condor_submit -file sub_multiple.sub -factory

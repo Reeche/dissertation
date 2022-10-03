@@ -14,17 +14,22 @@ def split_participants_df_into_conditions(df):
 
     """
 
-    df_high_variance_low_click_cost = df[df["condition"] == 0]
-    df_low_variance_high_click_cost = df[df["condition"] == 1]
-    df_high_variance_high_click_cost = df[df["condition"] == 2]
-    df_low_variance_low_click_cost = df[df["condition"] == 3]
+    # df_high_variance_low_click_cost = df[df["condition"] == 0]
+    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    # df_high_variance_high_click_cost = df[df["condition"] == 2]
+    # df_low_variance_low_click_cost = df[df["condition"] == 3]
+    #
+    # df_high_variance_low_click_cost.to_csv(
+    #     "../../data/human/high_variance_low_cost/participants.csv", sep=",", index=False)
+    # df_low_variance_high_click_cost.to_csv(
+    #     "../../data/human/low_variance_high_cost/participants.csv", sep=",", index=False)
+    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
+    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
 
-    df_high_variance_low_click_cost.to_csv(
-        "../../data/human/high_variance_low_cost/participants.csv", sep=",", index=False)
-    df_low_variance_high_click_cost.to_csv(
-        "../../data/human/low_variance_high_cost/participants.csv", sep=",", index=False)
-    df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
-    df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
+    condition = df[df["condition"] == 0]
+
+    condition.to_csv(
+        "../../data/human/strategy_discovery/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df):
@@ -36,22 +41,26 @@ def split_mouselab_df_into_conditions(df):
     Returns:
 
     """
-    df_high_variance_low_click_cost = df[df["condition"] == 0]
-    df_low_variance_high_click_cost = df[df["condition"] == 1]
-    df_high_variance_high_click_cost = df[df["condition"] == 2]
-    df_low_variance_low_click_cost = df[df["condition"] == 3]
+    # df_high_variance_low_click_cost = df[df["condition"] == 0]
+    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    # df_high_variance_high_click_cost = df[df["condition"] == 2]
+    # df_low_variance_low_click_cost = df[df["condition"] == 3]
 
-    df_high_variance_low_click_cost.to_csv(
-        "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
-    df_low_variance_high_click_cost.to_csv(
-        "../../data/human/low_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
-    df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
-    df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
+    condition = df[df["condition"] == 0]
+    condition.to_csv(
+        "../../data/human/strategy_discovery/mouselab-mdp.csv", sep=",", index=False)
+
+    # df_high_variance_low_click_cost.to_csv(
+    #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_low_variance_high_click_cost.to_csv(
+    #     "../../data/human/low_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/mouselab-mdp.csv", sep=",", index=False)
+    # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "planningamount"
+experiment = "strategy_discovery_pilot_v1.3"
 
-data_full = pd.read_csv(f"data/dataclips_{experiment}_full.csv", sep=",")
+data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 
 # remove unfinished data entries
 data_full["endhit"].replace("", np.nan, inplace=False)
