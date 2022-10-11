@@ -12,6 +12,7 @@ import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
 
+from rpy2.robjects import NULL
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
@@ -32,7 +33,8 @@ try:
     mvprpb = importr("mvprpb")
 except:
     utils = importr("utils")
-    utils.install_packages("mvprpb")
+    utils.chooseCRANmirror(ind=1)
+    utils.install_packages('https://cran.r-project.org/src/contrib/Archive/mvprpb/mvprpb_1.0.4.tar.gz', repos=NULL, type="source")
     mvprpb = importr("mvprpb")
 
 parent_folder = Path(__file__).parents[1]
