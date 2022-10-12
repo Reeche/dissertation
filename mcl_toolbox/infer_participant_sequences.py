@@ -119,7 +119,7 @@ def infer_participant_sequences(pid, exp_num, block=None):
 
 
 if __name__ == "__main__":
-    pid = int(sys.argv[1])
+    pid = sys.argv[1]
     exp_num = sys.argv[2]
     block = None
     if len(sys.argv) > 3:
