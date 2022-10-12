@@ -68,7 +68,7 @@ def infer_experiment_sequences(
 
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    pipeline = [pipeline[0] for _ in range(100)]
+    # pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(
         reward_structure
@@ -111,7 +111,11 @@ if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
     number_of_trials = int(sys.argv[2])
-    block = sys.argv[3]
+
+    try:
+        block = sys.argv[3]
+    except:
+        block = None
 
     # exp_name = "c2.1_dec"
     # block = "training"
