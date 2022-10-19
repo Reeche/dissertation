@@ -1,6 +1,6 @@
 executable = env/bin/python
 filename = mcl_toolbox/calculate_strategy_score.py
-arguments = $(filename) $(exp_num:scarcity_scarce) $(num_simulations:100000) $(click_cost:0.25)
+arguments = $(filename) $(exp_num:scarcity_scarce) $(num_simulations:250000) $(click_cost:0.25)
 output = log/strategy_scores/scarcity_scarce/output.stdout
 error  = log/strategy_scores/scarcity_scarce/output.stderr
 log   = log/strategy_scores/scarcity_scarce/output.log
@@ -11,7 +11,7 @@ queue
 
 executable = env/bin/python
 filename = mcl_toolbox/calculate_strategy_score.py
-arguments = $(filename) $(exp_num:scarcity_control) $(num_simulations:100000) $(click_cost:1)
+arguments = $(filename) $(exp_num:scarcity_control) $(num_simulations:250000) $(click_cost:1)
 output = log/strategy_scores/scarcity_control/output.stdout
 error  = log/strategy_scores/scarcity_control/output.stderr
 log   = log/strategy_scores/scarcity_control/output.log
