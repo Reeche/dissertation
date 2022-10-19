@@ -15,7 +15,7 @@ arguments = $(filename) $(exp_num:scarcity_control) $(num_simulations:100000) $(
 output = log/strategy_scores/scarcity_control/output.stdout
 error  = log/strategy_scores/scarcity_control/output.stderr
 log   = log/strategy_scores/scarcity_control/output.log
-request_memory = 20 000
+request_memory = 20000
 request_cpus = 1
 
 queue
