@@ -23,7 +23,7 @@ Example: python3 mcl_toolbox/calculate_strategy_score.py c2.1_dec 1000 1
 
 exp_num = sys.argv[1]
 num_simulations = int(sys.argv[2])  # at least 200k is recommended
-click_cost = int(sys.argv[3])
+click_cost = float(sys.argv[3])
 if len(sys.argv) > 4:
     reward_level = sys.argv[4]
 
@@ -31,8 +31,8 @@ score_list = {}
 click_list = {}
 
 # if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
-exp_pipelines = learning_utils.pickle_load("mcl_toolbox/data/exp_pipelines.pkl")
-
+# exp_pipelines = learning_utils.pickle_load("mcl_toolbox/data/exp_pipelines.pkl")
+exp_pipelines = structure.exp_pipelines
 
 # Adjust the environment that you want to simulate in global_vars.py
 # reward_dist = "categorical"
@@ -60,15 +60,15 @@ for strategy in range(0, 89):
             env.present_trial
         )  # gets the click sequence
         number_of_clicks.append(len(clicks))
+        receive_reward = np.random.choice([0, 1], p=[1 - click_cost, click_cost])
         score = (
-            env.present_trial.node_map[0].calculate_max_expected_return()
+            env.present_trial.node_map[0].calculate_max_expected_return() * receive_reward
             - (len(clicks) - 1) * click_cost
         )  # len(clicks) is always 13
         scores.append(score)
 
     print("Score", np.mean(scores))
     print("Clicks", np.mean(number_of_clicks))
-
 
     score_list.update({strategy: np.mean(scores)})
     click_list.update({strategy: np.mean(number_of_clicks)})
@@ -77,9 +77,9 @@ score_results = dict(sorted(score_list.items(), key=lambda item: item[1], revers
 print("Score results", score_results)
 dir = "results/cm/strategy_scores/"
 learning_utils.create_dir(dir)
-# learning_utils.pickle_save(
-#     score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores.pkl"
-# )
+learning_utils.pickle_save(
+    score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores.pkl"
+)
 print("Number of clicks", click_list)
 learning_utils.pickle_save(
     click_list, f"{dir}/{exp_num}_strategy_scores.pkl"
