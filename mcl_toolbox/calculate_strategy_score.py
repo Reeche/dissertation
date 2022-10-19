@@ -82,5 +82,5 @@ learning_utils.pickle_save(
 )
 print("Number of clicks", click_list)
 learning_utils.pickle_save(
-    click_list, f"{dir}/{exp_num}_strategy_scores.pkl"
+    click_list, f"{dir}/{exp_num}_clicklist_strategy_scores.pkl"
 )
