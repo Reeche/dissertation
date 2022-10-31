@@ -91,27 +91,32 @@ def chi_square_test(count_prop):
 
 chi_square_test(count_prop)
 
-def plot_proportion(count_prop):
-    # plot proportion by trial
-    result_all = mk.original_test(count_prop)
-    print(result_all)
-
+def trend_test(count_prop):
     # increasing until when?
     # for i in range(2, 121):
     #     # print(count_prop[:i])
     #     result = mk.original_test(count_prop[-i:])
     #     if result[0] == "no trend":
     #         print(i)
+    result_all = mk.original_test(count_prop)
+    print(result_all)
+    return None
 
-    # result_last = mk.original_test(count_prop[-80:])
-    # print(result_last)
+trend_test(count_prop)
 
+def plot_proportion(count_prop):
     plt.ylabel("Proportion of optimal strategy")
     plt.xlabel("Trials")
+    # reindex count_prop
+    count_prop = count_prop.reset_index(drop=True)
+    ci = 0.1 * np.std(count_prop) / np.mean(count_prop)
     plt.plot(count_prop)
+    x = list(range(0, len(count_prop)))
+    plt.fill_between(x, (count_prop-ci), (count_prop+ci), color='blue', alpha=0.1)
     plt.savefig("strategy_discovery.png")
-    # plt.show()
-    plt.close()
+    plt.show()
+    # plt.close()
+    return None
 
-# plot_proportion(count_prop)
+plot_proportion(count_prop)
 
