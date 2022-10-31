@@ -13,13 +13,14 @@ import scipy.linalg
 import seaborn as sns
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+from rpy2.robjects import NULL
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma, norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from mcl_toolbox.utils.analysis_utils import get_data #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils.analysis_utils import get_data
 from mcl_toolbox.utils.distributions import Categorical, Normal
 
 from mouselab.envs.registry import registry
@@ -33,7 +34,8 @@ try:
     mvprpb = importr("mvprpb")
 except:
     utils = importr("utils")
-    utils.install_packages("mvprpb")
+    utils.chooseCRANmirror(ind=1)
+    utils.install_packages('https://cran.r-project.org/src/contrib/Archive/mvprpb/mvprpb_1.0.4.tar.gz', repos=NULL, type="source")
     mvprpb = importr("mvprpb")
 
 parent_folder = Path(__file__).parents[1]
@@ -76,9 +78,11 @@ reward_type = {
 def get_log_norm_pdf(y, m, v):
     return mp.log(mp.npdf(y, m, v))
 
+
 @lru_cache(maxsize=None)
 def get_log_norm_cdf(y, m, v):
     return mp.log(mp.ncdf(y, m, v))
+
 
 @lru_cache(maxsize=None)
 def get_log_beta_pdf(x, a, b):
@@ -93,19 +97,21 @@ def get_log_beta_pdf(x, a, b):
     )
     return res
 
+
 @lru_cache(maxsize=None)
 def get_log_beta_cdf(x, a, b):
-    res = mp.log(mp.betainc(a, b, x2=x, regularized = True))
+    res = mp.log(mp.betainc(a, b, x2=x, regularized=True))
     return res
+
 
 def norm_integrate(y, index, ms, sigmas):
     log_pdf = get_log_norm_pdf(y, ms[index], sigmas[index])
-    log_cdf = 0
     shape = ms.shape[0]
-    for i in range(shape):
-        if i != index:
-            log_cdf += get_log_norm_cdf(y, ms[i], sigmas[i])
+    log_cdf = sum(
+        [get_log_norm_cdf(y, ms[i], sigmas[i]) for i in range(shape) if i != index]
+    )
     return mp.exp(log_pdf + log_cdf)
+
 
 def beta_integrate(x, index, alphas, betas):
     log_pdf = get_log_beta_pdf(x, alphas[index], betas[index])
@@ -115,15 +121,17 @@ def beta_integrate(x, index, alphas, betas):
     )
     return mp.exp(log_pdf + log_cdf)
 
+
 def plot_norm_dists(self, means, sigmas, available_actions):
     plt.figure(figsize=(15, 9))
     num_actions = means.shape[0]
     for i in range(num_actions):
-        d = norm(means[i], sigmas[i]**0.5)
+        d = norm(means[i], sigmas[i] ** 0.5)
         rvs = d.rvs(size=10000)
-        sns.kdeplot(rvs, label=f'Action {available_actions[i]}')
+        sns.kdeplot(rvs, label=f"Action {available_actions[i]}")
     plt.legend()
     plt.show()
+
 
 def softmax(x):
     e_x = np.exp(x - np.max(x))
@@ -172,7 +180,7 @@ def pickle_load(file_path):
 
 def create_dir(file_path):
     """
-        Create directory if it does not exist
+    Create directory if it does not exist
     """
     if not os.path.exists(file_path):
         os.makedirs(file_path)
@@ -194,11 +202,12 @@ def string_to_bool(truth):
     else:
         return False
 
+
 def bool_to_string(truth):
     return "true" if truth else "false"
 
 
-def get_clicks(exp_num="v1.0"):
+def get_clicks(exp_num="v1.0", data_path=None):
     """
     Get clicks made by a particular participant
     Params:
@@ -207,12 +216,12 @@ def get_clicks(exp_num="v1.0"):
     Returns:
         clicks_data: The clicks made by the participant in all trials.
     """
-    data = get_data(exp_num)
-    mdf = data['mouselab-mdp']
+    data = get_data(exp_num, data_path)
+    mdf = data["mouselab-mdp"]
     clicks_data = defaultdict(list)
     for _, row in mdf.iterrows():
         pid = row.pid
-        queries = row.queries['click']['state']['target']
+        queries = row.queries["click"]["state"]["target"]
         queries = [int(query) for query in queries]
         queries.append(0)
         clicks_data[pid].append(queries)
@@ -220,7 +229,7 @@ def get_clicks(exp_num="v1.0"):
     return clicks_data
 
 
-def get_participant_scores(exp_num="v1.0", num_participants=166):
+def get_participant_scores(exp_num="v1.0", num_participants=166, data_path=None):
     """
     Get scores of participants
     Params:
@@ -229,8 +238,8 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     Returns:
         A dictionary of scores of participants with pid as key and rewards as values.
     """
-    data = get_data(exp_num)
-    mdf = data['mouselab-mdp']
+    data = get_data(exp_num, data_path)
+    mdf = data["mouselab-mdp"]
     participant_scores = {}
     # for participant_num in range(num_participants):
     for (
@@ -241,7 +250,7 @@ def get_participant_scores(exp_num="v1.0", num_participants=166):
     return participant_scores
 
 
-def get_environments(participant_num, exp_num="v1.0"):
+def get_environments(participant_num, exp_num="v1.0", data_path=None):
     """
     Get environments of a particular participant
     Params:
@@ -250,8 +259,8 @@ def get_environments(participant_num, exp_num="v1.0"):
     Returns:
         envs: The trial values that the participant observed
     """
-    data = get_data(exp_num)
-    mdf = data['mouselab-mdp']
+    data = get_data(exp_num, data_path)
+    mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     envs = []
     for _, row in mdf.iterrows():
@@ -261,9 +270,9 @@ def get_environments(participant_num, exp_num="v1.0"):
     return envs
 
 
-def get_taken_paths(participant_num, exp_num="F1"):
-    data = get_data(exp_num)
-    mdf = data['mouselab-mdp']
+def get_taken_paths(participant_num, exp_num="F1", data_path=None):
+    data = get_data(exp_num, data_path)
+    mdf = data["mouselab-mdp"]
     mdf = mdf[mdf.pid == participant_num]
     taken_paths = []
     for _, row in mdf.iterrows():
@@ -271,8 +280,10 @@ def get_taken_paths(participant_num, exp_num="F1"):
         taken_paths.append([int(p) for p in path])
     return taken_paths
 
+
 def construct_repeated_pipeline(branching, reward_function, num_trials):
-    return [(branching, reward_function)]*num_trials
+    return [(branching, reward_function)] * num_trials
+
 
 def construct_pipeline(branchings, reward_distributions):
     return list(zip(branchings, reward_distributions))
@@ -299,16 +310,17 @@ def create_mcrl_reward_distribution(experiment_setting, reward_dist="categorical
 
 
 def get_number_of_actions_from_branching(branching):
-    '''
+    """
     Get number of actions for a given experiment/environment's branching info
     :param branching: branching info as list, e.g. [3,1,2]
     :return: number of actions a participant could take, e.g. 13 for the example (3+3*1+3*1*2=12 nodes to inspect, 1 termination action)
-    '''
+    """
     number_of_nodes = np.sum(
         [np.product(branching[:idx]) for idx in range(1, len(branching) + 1)]
     )  # same as sum of products until each level
     number_of_actions = number_of_nodes + 1  # include ending planning phase action
     return number_of_actions
+
 
 def reward_function(depth, level_distributions):
     if depth > 0:
@@ -320,23 +332,25 @@ def combine_level_dists(level_distributions):
     func = partial(reward_function, level_distributions=level_distributions)
     return func
 
-def construct_reward_function(params_list, dist_type = 'categorical'):
-    if dist_type.lower() == 'categorical':
+
+def construct_reward_function(params_list, dist_type="categorical"):
+    if dist_type.lower() == "categorical":
         level_distributions = [Categorical(param) for param in params_list]
-    elif dist_type.lower() == 'normal':
+    elif dist_type.lower() == "normal":
         level_distributions = [Normal(param[0], param[1]) for param in params_list]
     else:
-        raise ValueError('Please select one of categorical or normal distibutions')
+        raise ValueError("Please select one of categorical or normal distibutions")
     return combine_level_dists(level_distributions)
 
+
 def get_participant_details(
-    pid,
-    exp_num,
-    get_envs=True,
-    get_scores=True,
-    get_clicks=True,
-    get_taken_paths=True,
-    data_path=None,
+        pid,
+        exp_num,
+        get_envs=True,
+        get_scores=True,
+        get_clicks=True,
+        get_taken_paths=True,
+        data_path=None,
 ):
     data = get_data(exp_num, data_path)
     mdf = data["mouselab-mdp"]
@@ -346,9 +360,9 @@ def get_participant_details(
     taken_paths = []
     clicks_data = []
     if get_scores:
-        scores = list(mdf['score'])
+        scores = list(mdf["score"])
     for _, row in mdf.iterrows():
-        if get_envs: #get the environment that the participant was facing, e.g. ['', 10, 5, 5, -10, -10, 10, 5, 5, 10, -5, -10, -10]
+        if get_envs:
             values = row.state_rewards
             values[0] = 0
             envs.append(values)
@@ -356,8 +370,7 @@ def get_participant_details(
             path = row.path
             taken_paths.append([int(p) for p in path])
         if get_clicks:
-            pid = row.pid
-            queries = row.queries['click']['state']['target']
+            queries = row.queries["click"]["state"]["target"]
             queries = [int(query) for query in queries]
             queries.append(0)
             clicks_data.append(queries)
@@ -389,14 +402,14 @@ def get_participant_weights(participant_num, exp_num="F1", criterion="all_featur
 
 
 def sidak_value(significance_threshold, num_tests):
-    return 1 - (1-significance_threshold)**(1/num_tests)
+    return 1 - (1 - significance_threshold) ** (1 / num_tests)
 
 
 def sigmoid(x):
     """
     Return the value of the sigmoid function
     """
-    return 1/(1+np.exp(-x))
+    return 1 / (1 + np.exp(-x))
 
 
 def temp_sigmoid(x, t):
@@ -452,8 +465,8 @@ def compute_likelihood_aic(num_parameters, likelihood):
 
 def get_excluded_participants(exp_num="F1", exclude_condition="MCFB", data_path=None):
     conditions = {"NOFB": 0, "MCFB": 1, "ActionFB": 2}
-    data = get_data(exp_num)
-    pdf = data['participants']
+    data = get_data(exp_num, data_path)
+    pdf = data["participants"]
     pdf = pdf[~(pdf.condition == conditions[exclude_condition])]
     return list(set(pdf.pid))
 
@@ -704,7 +717,8 @@ def get_weight_distance(participant_weights, algorithm_weights):
         )
     elif participant_dims != 2:
         raise ValueError(
-            f"The number of dimensions in participant_weights should be 2. Input dimensions are {algorithm_dims}")
+            f"The number of dimensions in participant_weights should be 2. Input dimensions are {algorithm_dims}"
+        )
     participant_weight_shape = participant_weights.shape
     algorithm_weights_shape = algorithm_weights.shape
     if algorithm_weights_shape[1:] != participant_weight_shape:
@@ -717,8 +731,8 @@ def get_weight_distance(participant_weights, algorithm_weights):
     p_w = np.multiply(participant_weights[:, :-3], p_beta)
     num_trials = a_w.shape[1]
     average_euclidean_distance = (
-        np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
-        / num_trials
+            np.squeeze(np.sum(np.sqrt(np.sum((a_w - p_w) ** 2, axis=1)), axis=None))
+            / num_trials
     )
     return average_euclidean_distance
 
@@ -987,11 +1001,11 @@ def clicks_overlap(participant_clicks, algorithm_clicks):
     """
 
     def compute_average_trial_proportion(
-        participant_click_sequence, algorithm_click_sequence
+            participant_click_sequence, algorithm_click_sequence
     ):
         ratios = []
         for p_clicks, a_clicks in zip(
-            participant_click_sequence, algorithm_click_sequence
+                participant_click_sequence, algorithm_click_sequence
         ):
             p_clicks = [click for click in p_clicks if click not in [0, None]]
             a_clicks = [click for click in a_clicks if click not in [0, None]]
@@ -1102,13 +1116,14 @@ def compute_transition_distance(participants_strategies, algorithm_strategies):
     participants_strategies and algorithm_strategies should be a 3D list or ndarray
     """
     participant_transition_matrix = compute_average_transition_matrix(
-        participants_strategies)
+        participants_strategies
+    )
     algorithm_transition_matrix = compute_average_transition_matrix(
         algorithm_strategies
     )
     transition_distance = (
-        participant_transition_matrix - algorithm_transition_matrix
-    ) ** 2
+                                  participant_transition_matrix - algorithm_transition_matrix
+                          ) ** 2
     mse_distance = np.sum(transition_distance)
     return mse_distance
 
@@ -1169,21 +1184,21 @@ def make_bar_plot(
 
 
 def make_plot(
-    x,
-    y,
-    figure_size=(15, 7),
-    title="",
-    xlabel="",
-    ylabel="",
-    line_label="",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    tick_options={},
-    dir_path=None,
-    show=True,
+        x,
+        y,
+        figure_size=(15, 7),
+        title="",
+        xlabel="",
+        ylabel="",
+        line_label="",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        tick_options={},
+        dir_path=None,
+        show=True,
 ):
     """
     Makes plot with given inputs
@@ -1278,17 +1293,17 @@ def plot_multiple(
 
 
 def plot_performance(
-    participant_performance,
-    algorithm_performance,
-    participant_num=None,
-    algo="Algorithm",
-    width=1.5,
-    title_size=26,
-    axes_font_size=24,
-    ticks_font_size=20,
-    legend_size=20,
-    dir_path=None,
-    show=True,
+        participant_performance,
+        algorithm_performance,
+        participant_num=None,
+        algo="Algorithm",
+        width=1.5,
+        title_size=26,
+        axes_font_size=24,
+        ticks_font_size=20,
+        legend_size=20,
+        dir_path=None,
+        show=True,
 ):
     """
     Plot the performance of algorithm and participant
@@ -1490,6 +1505,7 @@ def get_cluster_dict(clusters, strategy_space):
         cluster_dict[c].append(s)
     return dict(cluster_dict)
 
+
 def get_relevant_data(simulations_data, criterion):
     if criterion in ['reward', 'performance_error']:
         return {'r': simulations_data['r'], "mer": simulations_data["mer"]}
@@ -1512,9 +1528,16 @@ def get_relevant_data(simulations_data, criterion):
 
 
 def get_clicks_per_trial(participant_clicks, algorithm_clicks):
-    # get two nested lists
+    """
+    Get the clicks per trial of the participant and algorithm by looping through the different runs of the algorithm
 
-    # loop through the different runs of the algorithm
+    Args:
+        participant_clicks:
+        algorithm_clicks:
+
+    Returns: two nested lists
+
+    """
     for algorithm_click_sequence in algorithm_clicks:
         p_number_of_clicks_per_trial = []
         a_number_of_clicks_per_trial = []
@@ -1530,21 +1553,20 @@ def get_clicks_per_trial(participant_clicks, algorithm_clicks):
 
 def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
     """Compute the objective value to be minimized based on the optimization
-           criterion and the data obtained by running the model with a given set
-           of parameters.
-           reward, strategy accuracy, clicks_overlap, likelihood, pseudo-likelihood
-           are naturally objectives we want to maximize,
-           but to be compatible with hyperopt which only minimizes, we negate them.
+       criterion and the data obtained by running the model with a given set
+       of parameters.
+       reward, strategy accuracy, clicks_overlap, likelihood, pseudo-likelihood
+       are naturally objectives we want to maximize,
+       but to be compatible with hyperopt which only minimizes, we negate them.
 
-        Arguments:
-            criterion {str} -- The objective to evaluate
-            sim_data {dict} -- Data from runs of models with a particular
-                                       parameter configuration
-            p_data {dict} -- Data of a participant
-            pipeline -- Defines the reward function for each trial
-            sigma -- Used to compute the pseudo-likelihood
-        """
-    # print(sim_data, p_data)
+    Arguments:
+        criterion {str} -- The objective to evaluate
+        sim_data {dict} -- Data from runs of models with a particular
+                                   parameter configuration
+        p_data {dict} -- Data of a participant
+        pipeline -- Defines the reward function for each trial
+        sigma -- Used to compute the pseudo-likelihood
+    """
     if criterion == "reward":
         objective_value = -np.mean(sim_data["r"])
     elif criterion == "performance_error":
@@ -1602,14 +1624,14 @@ class Participant:
     """
 
     def __init__(
-        self,
-        exp_num,
-        pid,
-        strategy_weights=None,
-        excluded_trials=None,
-        get_strategies=True,
-        get_weights=True,
-        data_path=None,
+            self,
+            exp_num,
+            pid,
+            strategy_weights=None,
+            excluded_trials=None,
+            get_strategies=True,
+            get_weights=True,
+            data_path=None,
     ):
         self.exp_num = exp_num
         self.pid = pid

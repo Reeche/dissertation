@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import numpy as np
-from mcl_toolbox.costometer.utils import create_mcrl_reward_distribution
+from mcl_toolbox.utils.learning_utils import create_mcrl_reward_distribution
 from mouselab.envs.registry import registry
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence

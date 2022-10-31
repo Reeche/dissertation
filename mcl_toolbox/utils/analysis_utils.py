@@ -75,9 +75,9 @@ def parse_json(df):
 
 def get_data(version, data_path=None):
     if data_path is None:
-        data_path = Path(__file__).parents[2].joinpath("data")
+        data_path = Path(__file__).parents[2].joinpath("data/human")
     data = {}
-    for file in data_path.joinpath(f"human/{version}").glob("*"):
+    for file in data_path.glob(f"{version}/*"):
         name = file.stem
         if file.suffix == ".csv":
             df = pd.read_csv(file)
