@@ -7,5 +7,5 @@ request_cpus = 1
 # WARNING: the line 'MaxTime = 432000' was unused by condor_submit. Is it a typo?
 # MaxTime = 432000
 # submit as a factory with an max concurent jobs limit
-max_materialize=1800
+max_materialize=1700
 queue Arg1,Arg2,Arg3,Arg4 from parameters.txt

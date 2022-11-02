@@ -11,7 +11,6 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
-
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 from rpy2.robjects import NULL
 from rpy2.robjects.packages import importr
@@ -158,24 +157,15 @@ def get_gaussian_max_probs(mu, variances):
 
 def pickle_load(file_path):
     """
-        Load the pickle file located at 'filepath'
-        Params:
-            file_path  -- Location of the file to be loaded.
-        Returns:
-            Unpickled object
+    Load the pickle file located at 'filepath'
+    Params:
+        file_path  -- Location of the file to be loaded, as pathlib object.
+    Returns:
+        Unpickled object
     """
-    if not os.path.exists(file_path):
-        head, tail = os.path.split(__file__)
-        if file_path[0] == "/":
-            new_path = os.path.join(head, file_path[1:])
-        else:
-            new_path = os.path.join(head, file_path)
-        if os.path.exists(new_path):
-            file_path = new_path
-        else:
-            raise FileNotFoundError(f"{file_path} not found.")
-    obj = pickle.load(open(file_path, "rb"))
-    return obj
+    with open(str(file_path), "rb") as file_obj:
+        unpickled_obj = pickle.load(file_obj)
+    return unpickled_obj
 
 
 def create_dir(file_path):
@@ -283,6 +273,7 @@ def get_taken_paths(participant_num, exp_num="F1", data_path=None):
 
 def construct_repeated_pipeline(branching, reward_function, num_trials):
     return [(branching, reward_function)] * num_trials
+
 
 
 def construct_pipeline(branchings, reward_distributions):
@@ -1091,12 +1082,12 @@ def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequen
     def compute_participant_strategy_accuracy(
             participant_strategy_sequence, algorithm_strategy_sequence
     ):
-        num_trials = len(participant_strategy_sequence)
         participant_strategy_sequence = np.array(participant_strategy_sequence)
         algorithm_strategy_sequence = np.array(algorithm_strategy_sequence)
         match = np.count_nonzero(
-            participant_strategy_sequence == algorithm_strategy_sequence)
-        return match/participant_strategy_sequence.shape[0]
+            participant_strategy_sequence == algorithm_strategy_sequence
+        )
+        return match / participant_strategy_sequence.shape[0]
 
     participant_strategy_accuracy = {}
     for pid in participants_strategy_sequences.keys():
@@ -1104,8 +1095,11 @@ def strategy_accuracy(participants_strategy_sequences, algorithm_strategy_sequen
         algo_strategy_sequences = algorithm_strategy_sequences[pid]
         accuracies = []
         for algorithm_strategy_sequence in algo_strategy_sequences:
-            accuracies.append(compute_participant_strategy_accuracy(
-                participant_strategy_sequence, algorithm_strategy_sequence))
+            accuracies.append(
+                compute_participant_strategy_accuracy(
+                    participant_strategy_sequence, algorithm_strategy_sequence
+                )
+            )
         participant_strategy_accuracy[pid] = np.mean(accuracies)
     return participant_strategy_accuracy
 

@@ -137,7 +137,7 @@ class structure:
         "v1.0": "high_increasing",
         "F1": "high_increasing",
         "c1.1": "low_constant",
-        "c2.1_dec": "high_decreasing",
+        "c2.1": "high_decreasing",
         "T1.1": "large_increasing",
         "IRL1": "high_increasing",
         "low_variance_high_cost": "low_variance_high_cost",

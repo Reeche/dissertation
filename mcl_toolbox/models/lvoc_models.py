@@ -186,7 +186,7 @@ class LVOC(Learner):
         delay = env.get_feedback({"action": action})
         if self.compute_likelihood:
             pi = trial_info["participant"]
-            self.store_action_likelihood(env, action)
+            self.store_action_likelihood(env, action) #only click action and not the termination action
             s_next, r, done, _ = env.step(action)
             reward, taken_path, done = pi.make_click()
             # assert r == reward #doesn't make sense because the path is not the same
@@ -236,6 +236,7 @@ class LVOC(Learner):
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
+                self.store_action_likelihood(env, 0) # action = 0, termination action
             if self.learn_from_path_boolean:
                 self.learn_from_path(env, trial_info["taken_path"])
             return 0, reward, True, taken_path

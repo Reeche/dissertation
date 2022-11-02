@@ -5,7 +5,7 @@ from condor_utils import submit_sub_file
 bid = 1
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
-exp_num = 'v1.0'
+exp_num = 'c2.1'
 missing_df = pd.read_csv(f'../missing_{exp_num}.csv')
 for index, row in missing_df.iterrows():
     #todo: first time replace but then append, currently, need to delete the previous one manually
