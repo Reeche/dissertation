@@ -51,14 +51,14 @@ def analyse_sequences(
 
     """
     # Initializations
-    decision_systems = pickle_load("../data/decision_systems.pkl")
-    DS_proportions = pickle_load("../data/strategy_decision_proportions.pkl")
-    W_DS = pickle_load("../data/strategy_decision_weights.pkl")
-    cluster_map = pickle_load("../data/kl_cluster_map.pkl")
+    decision_systems = pickle_load("data/decision_systems.pkl")
+    DS_proportions = pickle_load("data/strategy_decision_proportions.pkl")
+    W_DS = pickle_load("data/strategy_decision_weights.pkl")
+    cluster_map = pickle_load("data/kl_cluster_map.pkl")
     strategy_scores = pickle_load(
-        "../data/strategy_scores.pkl"
+        "data/strategy_scores.pkl"
     )  # todo: update strategy scores to contain all environments, currently only increasing variance
-    cluster_scores = pickle_load("../data/cluster_scores.pkl")
+    cluster_scores = pickle_load("data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # "low_variance_high_cost"
     # "low_variance_low_cost"
 
-    exp_name = "low_variance_high_cost" #check reward_level in global_vars.py
+    exp_name = "c1.1" #check reward_level in global_vars.py
     block = "training"
     number_of_trials = 35
     create_plot = True
