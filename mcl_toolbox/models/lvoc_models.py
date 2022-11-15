@@ -236,7 +236,6 @@ class LVOC(Learner):
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-                self.store_action_likelihood(env, 0) # action = 0, termination action
             if self.learn_from_path_boolean:
                 self.learn_from_path(env, trial_info["taken_path"])
             return 0, reward, True, taken_path

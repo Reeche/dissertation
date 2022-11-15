@@ -8,7 +8,7 @@ from condor_utils import create_sub_file, submit_sub_file
 bid = 1
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
-exp_num = ['c2.1']
+exp_num = ['v1.0']
 # models = ['1919']
 # pid_dict = {'low_variance_low_cost': [3]}
 
@@ -20,9 +20,9 @@ exp_num = ['c2.1']
 # models = list(range(1535, 1600))
 # models = list(range(1600, 2016))# 2015 is the last model index
 # models = list(range(0, 2016))
-models = [1823]
+models = [0]
 pid_dict = {
-    'c2.1': [0]}
+    'v1.0': [121]}
 
 # pid_dict = {
 #     'high_variance_high_cost': [0, 1, 10, 18, 22, 25, 30, 32, 38, 41, 46, 47, 49, 57, 60, 63, 65, 70, 74, 76, 81, 83,

@@ -257,11 +257,15 @@ class HierarchicalLearner(Learner):
             trials_data["costs"].append(rewards)
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
+        #f decision agent continues, then action agent takes action, i.e. there are action log probs
         if self.decision_agent.action_log_probs and self.actor_agent.action_log_probs:
             trials_data["loss"] = -(
                 np.sum(self.decision_agent.action_log_probs)
                 + np.sum(self.actor_agent.action_log_probs)
             )
+        # if decision agent stops, then action agent does not take action, i.e. likelihood of termination = 1; loglikelihood = 0
+        elif self.decision_agent.action_log_probs and len(self.actor_agent.action_log_probs) == 0:
+            trials_data["loss"] = -(np.sum(self.decision_agent.action_log_probs))
         else:
             trials_data["loss"] = None
         return dict(trials_data)
