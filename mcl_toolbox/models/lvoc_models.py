@@ -430,7 +430,7 @@ class LVOC(Learner):
             if not done:
                 a_next, next_features = self.get_action_details(env, trial_info)
                 # 2 - Save action features to learn from them only if terminal reward present
-                #   Learn from all actions individually at once at the end of the episode
+                #   Learn from all actions individually at once at the end of the episode - Model 2.2
                 if self.learn_from_actions == 2:
                     learn_from_this_action = False
                     self.trial_action_learn_features.append(
@@ -444,9 +444,9 @@ class LVOC(Learner):
                         )
                     )
                 else:
-                    # 0 - don't learn from actions individually
-                    # 1 - learn from all actions individually after they are taken
-                    learn_from_this_action = random.random() < self.learn_from_actions
+                    # 0 - don't learn from actions individually - Model 2.1
+                    # 1 - learn from all actions individually after they are taken - Model 1
+                    learn_from_this_action = bool(self.learn_from_actions)
                 self.trial_costs += reward
                 if learn_from_this_action:
                     start = time.time()
