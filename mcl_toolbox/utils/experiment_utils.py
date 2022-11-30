@@ -53,11 +53,13 @@ class Participant:
 
     def attach_trial_data(self, data, exclude_trials=None):
         self.excluded_trials = exclude_trials
+        # print(data)
         self.clicks = [q["click"]["state"]["target"] for q in data.queries]
         self.modify_clicks()
         self.paths = [[int(p) for p in path] for path in data.path]
         self.envs = [[0] + sr[1:] for sr in data.state_rewards]
         self.scores = data.score
+        self.rewards_withheld = data.reward_withheld
         if exclude_trials is not None:
             self.exclude_trial_data()
         columns = list(data.columns).copy()
@@ -163,7 +165,6 @@ class Experiment:
         self.init_planning_data()
         self.participant_strategies = {}
         self.participant_temperatures = {}
-
     def init_participants(self):
         participants_data = self.data["participants"]
         self.conditions = set()

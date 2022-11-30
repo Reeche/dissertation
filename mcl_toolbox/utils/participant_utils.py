@@ -4,22 +4,26 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 class ParticipantIterator:
     def __init__(self, participant, click_cost=1):
         self.participant = participant
+        print(click_cost)
         self.click_cost = click_cost
         self.clicks = self.participant.clicks
         self.envs = self.participant.envs
-        self.rewards = self.modify_scores(participant.scores, participant.clicks)
+        self.rewards = self.modify_scores(participant.scores, participant.clicks, participant.rewards_withheld)
         self.taken_paths = self.participant.paths
         self.strategies = self.participant.strategies
         self.temperature = self.participant.temperature
         self.current_trial = 0
         self.current_click = 0
 
-    def modify_scores(self, scores, p_clicks):
+    def modify_scores(self, scores, p_clicks, rewards_withheld):
         p_rewards = []
-        for score, clicks in zip(scores, p_clicks):
+        for score, clicks, withheld in zip(scores, p_clicks, rewards_withheld):
             num_clicks = len(clicks) - 1
             total_click_cost = self.click_cost * num_clicks
-            rewards = [-self.click_cost] * num_clicks + [score + total_click_cost]
+            # Score includes subtracted click costs
+            # Add back click costs so that termination reward does not reflect click costs
+            adjusted_score = None if withheld else score + total_click_cost
+            rewards = [-self.click_cost] * num_clicks + [adjusted_score]
             p_rewards.append(rewards)
         return p_rewards
 

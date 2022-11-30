@@ -32,7 +32,7 @@ def fit_model(
     simulate=True,
     plotting=False,
     data_path=None,
-    save_path=None,
+    save_path=None
 ):
     """
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     model_index = int(sys.argv[2])
     optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
+    pid = sys.argv[4]
     number_of_trials = int(sys.argv[5])
     # other_params = {"plotting": True}
     other_params = {}
@@ -110,23 +110,38 @@ if __name__ == "__main__":
     # other_params = {"plotting": True}
     # number_of_trials = 35
 
+    click_cost = 0.25 if exp_name == "scarcity_scarce" else 1
+
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
             "block": None,  # Block of the experiment
             "experiment": None,
             # Experiment object can be passed directly with pipeline and normalized features attached
-            "click_cost": 1,
+            "click_cost": click_cost,
         }
         other_params["exp_attributes"] = exp_attributes
 
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 1,
-            "max_evals": 2,
+            "num_simulations": 1,  # likelihood doesn't need more than 1
+            "max_evals": 2,  # 400 - number of param updates
         }
+
         other_params["optimization_params"] = optimization_params
+
+    for attribute, default_val in zip(
+            ["optimizer", "num_simulations", "max_evals"],
+            ["hyperopt", 1, 2]
+    ):
+        if attribute not in other_params["optimization_params"]:
+            other_params["optimization_params"][attribute] = default_val
+    if "pct_rewarded" not in other_params:
+        other_params["optimization_params"]["pct_rewarded"] = 1.0
+    else:
+        other_params["optimization_params"]["pct_rewarded"] = other_params["pct_rewarded"]
+
     tic = time.perf_counter()
     fit_model(
         exp_name=exp_name,

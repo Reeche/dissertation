@@ -102,6 +102,7 @@ class ModelFitter:
                 repeated_pipeline = construct_repeated_pipeline(
                     structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
                 )
+
                 self.pipeline = repeated_pipeline
 
             elif ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
@@ -130,6 +131,7 @@ class ModelFitter:
         else:
             self.click_cost = 1
 
+
     def update_attributes(self, env):
         self.pipeline = env.pipeline
         self.branching = self.pipeline[0][0]
@@ -137,14 +139,15 @@ class ModelFitter:
         if env.normalized_features is not None:
             self.normalized_features = env.normalized_features
 
-    def construct_env(self, participant, q_fn=None):
+    def construct_env(self, participant, other_params, q_fn=None):
         env = GenericMouselabEnv(
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
             cost=self.click_cost,
+            rewards_withheld=participant.rewards_withheld,
             feedback=participant.condition,
-            q_fn=q_fn,
+            q_fn=q_fn
         )
         return env
 
@@ -162,10 +165,11 @@ class ModelFitter:
             participant.condition = "none"
         return q_fn, participant
 
-    def get_participant_context(self, pid):
+    def get_participant_context(self, pid, other_params):
         participant = self.E.participants[pid]
+
         q_fn, participant = self.get_q_fn(participant)
-        env = self.construct_env(participant, q_fn=q_fn)
+        env = self.construct_env(participant, q_fn=q_fn, other_params=other_params)
         return participant, env
 
     def construct_model(self, model_index):
@@ -215,10 +219,16 @@ class ModelFitter:
         del learner_attributes["term"]
         return learner, learner_attributes
 
-    def construct_optimizer(self, model_index, pid, optimization_criterion):
+    def construct_optimizer(self, model_index, pid, optimization_criterion, other_params):
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
-        self.participant, self.env = self.get_participant_context(pid)
+        if "learn_from_actions" in other_params:
+            print("Found LFA")
+            learner_attributes["learn_from_actions"] = other_params["learn_from_actions"]
+        if "compute_all_likelihoods" in other_params:
+            print("Found CAL")
+            learner_attributes["compute_all_likelihoods"] = other_params["compute_all_likelihoods"]
+        self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
             strategy_weights = strategies.strategy_weights
@@ -244,9 +254,17 @@ class ModelFitter:
             params_dir=None,
     ):
         self.model_index = model_index
-        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
+        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion, optimization_params)
+        copy_params = optimization_params.copy()
+        if "pct_rewarded" in copy_params:
+            del copy_params["pct_rewarded"]
+        if "learn_from_actions" in optimization_params:
+            del copy_params["learn_from_actions"]
+        if "compute_all_likelihoods" in optimization_params:
+            del copy_params["compute_all_likelihoods"]
+
         res, prior, obj_fn = optimizer.optimize(
-            optimization_criterion, **optimization_params
+            optimization_criterion, **copy_params
         )
         losses = [trial["result"]["loss"] for trial in res[1]]
         print(f"Loss: {min(losses)}")
@@ -279,7 +297,7 @@ class ModelFitter:
         if pid is not None:
             participant = self.E.participants[pid]
             q_fn, participant = self.get_q_fn(participant)
-            env = self.construct_env(participant, q_fn=q_fn)
+            env = self.construct_env(participant, q_fn=q_fn,other_params=sim_params)
         self.update_attributes(env)
         learner, learner_attributes = self.construct_model(model_index)
         optimizer = ParameterOptimizer(

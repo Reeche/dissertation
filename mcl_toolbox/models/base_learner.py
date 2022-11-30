@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 
 import numpy as np
+import time
 
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
 from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
-
+import matplotlib.pyplot as plt
 
 class Learner(ABC):
     """Base class of RL models implemented for the Mouselab-MDP paradigm."""
@@ -34,9 +35,17 @@ class Learner(ABC):
         self.compute_likelihood = False
         # for backwards compatibility
         self.learn_from_path_boolean = None
+        self.learn_from_actions = 1
+        self.compute_all_likelihoods_boolean = False
         if "learn_from_path" in attributes:
             self.learn_from_path_boolean = attributes["learn_from_path"]
 
+        if "learn_from_actions" in attributes:
+            self.learn_from_actions = attributes["learn_from_actions"]
+        if "compute_all_likelihoods" in attributes:
+            self.compute_all_likelihoods_boolean = attributes["compute_all_likelihoods"]
+        print("Learn from actions? {}".format(self.learn_from_actions))
+        print("Compute all likelihoods? {}".format(self.compute_all_likelihoods_boolean))
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
         pass
@@ -123,20 +132,26 @@ class Learner(ABC):
         # Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
         env.attach_features(self.features, self.normalized_features)
         env.reset()
+        # fig = plt.figure()
         if compute_likelihood and not participant:
             raise ValueError(
                 "Likelihood can only be computed for a participant's actions"
             )
         simulations_data = defaultdict(list)
-        for _ in range(num_simulations):
+        for sim_num in range(num_simulations):
+            start = time.time()
             trials_data = self.simulate(
                 env, compute_likelihood=compute_likelihood, participant=participant
             )
+            end = time.time()
+            # plt.plot(range(len(self.bounds)), self.bounds, label='Simulation {}'.format(sim_num))
+            # plt.title("Time: {0:0.3f} s".format(end - start))
             for param in ["r", "w", "a", "loss", "decision_params", "s", "info"]:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
             # reset participant, needed for likelihood object fxn
             participant.reset()
+        # plt.show()
         total_m_mers = []
         for i in range(len(simulations_data["a"])):
             m_mers = get_termination_mers(

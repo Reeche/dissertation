@@ -1,6 +1,8 @@
 import gym
 import numpy as np
 from gym import spaces
+from math import ceil
+from random import sample
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
 from mcl_toolbox.utils.distributions import Categorical
@@ -23,6 +25,8 @@ class GenericMouselabEnv(gym.Env):
         cost=1,
         render_path="mouselab_renders",
         feedback="none",
+        pct_rewarded=1.0,
+        rewards_withheld = None,
         q_fn=None,
     ):
         super(GenericMouselabEnv, self).__init__()
@@ -30,6 +34,10 @@ class GenericMouselabEnv(gym.Env):
         self.ground_truth = ground_truth
         self.num_trials = num_trials
         self.render_path = render_path
+        if rewards_withheld is not None:
+            self.rewards_withheld = rewards_withheld
+        else:
+            self.rewards_withheld = [False] * len(ground_truth)
         if isinstance(cost, list):
             cost_weight, depth_weight = cost
             self.cost = lambda depth: -(1 * cost_weight + depth * depth_weight)
@@ -139,6 +147,8 @@ class GenericMouselabEnv(gym.Env):
             for node in best_expected_path:
                 reward += self.present_trial.node_map[node].value
                 # self.present_trial.node_map[node].observe()
+            if self.rewards_withheld[self.present_trial_num]:
+                reward = None
         self._state[action] = node_map[action].value
         if self.features is not None:
             self.feature_state = self.construct_feature_state()

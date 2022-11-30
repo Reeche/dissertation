@@ -325,10 +325,13 @@ class ParameterOptimizer:
         del params['priors']
         if self.learner == "sdss":
             del params["bandit_params"]
+
+        print("objective function")
+        print(self.compute_likelihood)
         simulations_data = self.agent.run_multiple_simulations(
             self.env,
             self.num_simulations,
-            participant=ParticipantIterator(self.participant),
+            participant=ParticipantIterator(self.participant, click_cost=-self.env.cost(0)),
             compute_likelihood=self.compute_likelihood,
         )
         relevant_data = get_relevant_data(simulations_data, self.objective)
@@ -349,7 +352,7 @@ class ParameterOptimizer:
             self.reward_data.append(relevant_data["mer"])
             relevant_data['sigma'] = params['lik_sigma']
         if get_sim_data:
-            return relevant_data, simulations_data
+            return relevant_data, simulations_data, self.agent
         else:
             return relevant_data
 
@@ -407,6 +410,23 @@ class ParameterOptimizer:
                                            show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
+    def fit_with_params(self, objective, params, compute_likelihood=False):
+
+        self.objective = objective
+        self.compute_likelihood = compute_likelihood
+
+        # get participant data as dict
+        p_data = construct_p_data(self.participant, self.pipeline)
+        self.p_data = p_data
+
+        # filter participant data by only the relevant data depending on objective
+        observation = get_relevant_data(p_data, self.objective)
+        if objective == "likelihood":
+            self.compute_likelihood = True
+
+
+        return self.objective_fn(params, get_sim_data=True)
+
     def run_model(self, params, objective, num_simulations=1, optimizer="pyabc",
                   db_path="sqlite:///test.db"):
         self.objective = objective
@@ -419,6 +439,8 @@ class ParameterOptimizer:
         self.objective = objective
         self.num_simulations = num_simulations
         p_data = construct_p_data(self.participant, self.pipeline)
+        print("Running simulations: ")
+        print(self.compute_likelihood)
         data = self.objective_fn(params, get_sim_data=True)
         return data, p_data
 
