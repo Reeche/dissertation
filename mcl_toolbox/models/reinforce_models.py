@@ -289,6 +289,8 @@ class REINFORCE(Learner):
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
+            #todo: why is not the policy_loss used? Because likelihood optimises for action likelihood?
+            # so the name "loss" is actually not accurate but rather what we optimise for
             trials_data["loss"] = -sum(self.action_log_probs)
         else:
             trials_data["loss"] = None

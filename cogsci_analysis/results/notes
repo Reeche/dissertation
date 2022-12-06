@@ -1,0 +1,9 @@
+* filtered for models results contain the results with subset of models (no vicarious learning, no monte carlo, no subjective cost)
+* reason is that those are not implemented for REINFORCE models yet
+* wrong AIC BIC missing are results where some pkls are missing and AIC/BIC are wrong
+* AIC_wrong, BIC_wrong are values which are calculated using wrong equation
+
+06.12.2022
+Noticed that pr_weights are always added as parameter even if it is false. 
+Therefore, need to remove the pr_weights parameter as count if pr is false 
+If pr = False, then parameters -1 

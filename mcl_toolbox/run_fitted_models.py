@@ -5,7 +5,7 @@ from mcl_toolbox.utils.learning_utils import create_dir, pickle_load
 from mcl_toolbox.utils.model_utils import ModelFitter
 
 if __name__ == "__main__":
-    exp_name = "F1"
+    exp_name = "v1.0"
     exp_attributes = {
         "exclude_trials": None,  # Trials to be excluded
         "block": None,  # Block of the experiment

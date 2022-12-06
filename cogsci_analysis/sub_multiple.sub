@@ -1,0 +1,8 @@
+executable = /usr/bin/python3
+arguments = create_df.py $(Arg1) $(Arg2) $(Arg3)
+error = errs/$(Arg1)_$(Arg3).err
+output = outputs/$(Arg1)_$(Arg3).out
+getenv = True
+request_memory = 1024
+request_cpus = 1
+queue Arg1 Arg2 Arg3 from parameters.txt

@@ -195,7 +195,7 @@ class ModelFitter:
         else:
             num_priors = len(feature_space)
         pr_weight = learner_attributes["pr_weight"]
-        if not pr_weight:
+        if not pr_weight: #todo: why?
             learner_attributes["pr_weight"] = 1
         learner_attributes = dict(
             features=feature_space,

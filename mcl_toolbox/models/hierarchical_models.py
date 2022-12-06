@@ -258,6 +258,7 @@ class HierarchicalLearner(Learner):
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
         #f decision agent continues, then action agent takes action, i.e. there are action log probs
+        # action log probs are always negative or 0?
         if self.decision_agent.action_log_probs and self.actor_agent.action_log_probs:
             trials_data["loss"] = -(
                 np.sum(self.decision_agent.action_log_probs)

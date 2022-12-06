@@ -22,7 +22,7 @@ This file contains analysis based on fitted mcrl models.
 
 
 # create a dataframe of fitted models and pid
-def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimization_criterion: object, model_list) -> object:
+def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, number_of_trials: int, optimization_criterion: object, model_list) -> object:
     """
     This function loops through all pickles and creates a dataframe with corresponding loss of each model.
 
@@ -88,15 +88,17 @@ def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimizati
                     # todo: check why is this plus and not 2k - 2ln(L)
                     AIC = 2 * min_loss + number_of_parameters * 2
                     results_dict["AIC"].append(AIC)
-
-                    BIC = 2 * min_loss + number_of_parameters * np.log(35)
+                    BIC = 2 * min_loss + number_of_parameters * np.log(number_of_trials)
                     results_dict["BIC"].append(BIC)
+
+                    ### add reward
+                    results_dict["reward_model"].append(min_loss)
 
     # dict to pandas dataframe
     df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in results_dict.items()]))
 
     AIC = False
-    BIC = True
+    BIC = False
 
     if AIC:
         df = df.dropna(subset=["loss", "AIC"])
@@ -156,7 +158,9 @@ def create_dataframe_of_fitted_pid(exp_num: object, pid_list: object, optimizati
     # print(exp_num)
     # print("Grouped model and loss", grouped_df)
 
-
+    ### add reward
+    for model in model_list:
+        average_reward = average_performance_reward(exp_num, pid_list, "likelihood", model)
     return df
 
 
@@ -622,7 +626,7 @@ def statistical_test_between_envs(exp_num_list, model_index):
                 continue
 
 def create_bic_table(exp_num, pid_list, optimization_criterion, model_list):
-    df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion, model_list)
+    df = create_dataframe_of_fitted_pid(exp_num, pid_list, 35, optimization_criterion, model_list)
     df = df.drop(columns=['optimization_criterion', 'loss', 'AIC'])
 
     # drop not used models
@@ -694,7 +698,7 @@ if __name__ == "__main__":
     #     pid_dict = group_adaptive_maladaptive_participant_list(exp_num, model_index)
     #     for keys, values in pid_dict.items():
     #         print("Condition", exp_num_list, keys)
-    #         df = create_dataframe_of_fitted_pid(exp_num, values, optimization_criterion, model_list)
+    #         df = create_dataframe_of_fitted_pid(exp_num, values, 35, optimization_criterion, model_list)
 
 
     ## Create averaged plots for each group of participants
@@ -705,7 +709,7 @@ if __name__ == "__main__":
     ## create a dataframe of fitted models and pid; print out the averaged loss of all models for all participants
     # for exp_num in exp_num_list:
     #     pid_list = get_all_pid_for_env(exp_num)
-    #     df = create_dataframe_of_fitted_pid(exp_num, pid_list, optimization_criterion)
+    #     df = create_dataframe_of_fitted_pid(exp_num, pid_list, 35, optimization_criterion)
 
 
     ##group best model by performance of participants (adaptive, maladaptive) and creates overall plot

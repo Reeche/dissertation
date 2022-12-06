@@ -165,11 +165,14 @@ class LVOC(Learner):
             # samples = np.random.multivariate_normal(means, np.diag(variances), size=n_samples)
             # argmaxes = np.argmax(samples, axis=1)
             # counts = Counter(argmaxes)
+            # get the probability of this certain action
+            # integrate normal pdf(action, mean, sigma) using lb, ub as bounds
             selected_action_prob = mp.quad(
                 lambda x: norm_integrate(x, action_index, means, sigmas),
                 [lb, ub],
                 maxdegree=10,
             )
+            #integrate over predicted q-value of the action
         eps = self.eps
         log_prob = float(
             str(
