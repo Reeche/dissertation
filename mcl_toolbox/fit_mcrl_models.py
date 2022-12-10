@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     for attribute, default_val in zip(
             ["optimizer", "num_simulations", "max_evals"],
-            ["hyperopt", 1, 2]
+            ["hyperopt", 1, 400]
     ):
         if attribute not in other_params["optimization_params"]:
             other_params["optimization_params"][attribute] = default_val
