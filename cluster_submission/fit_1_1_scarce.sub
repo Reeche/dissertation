@@ -4,7 +4,7 @@ arguments = $(filename) $(exp_num:scarcity_scarce) $(model_index:6527) $(optimiz
 output = log/fit_models/1.1/scarce/$(pid).stdout
 error  = log/fit_models/1.1/scarce/$(pid).stderr
 log   = log/fit_models/1.1/scarce/$(pid).log
-request_memory = 5000
+request_memory = 500000
 request_cpus = 1
 
 queue pid from cluster_submission/scarce_pids.txt

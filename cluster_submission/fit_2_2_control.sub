@@ -4,7 +4,7 @@ arguments = $(filename) $(exp_num:scarcity_control) $(model_index:6527) $(optimi
 output = log/fit_models/2.2/control/$(pid).stdout
 error  = log/fit_models/2.2/control/$(pid).stderr
 log   = log/fit_models/2.2/control/$(pid).log
-request_memory = 5000
+request_memory = 500000
 request_cpus = 1
 
 queue pid from cluster_submission/control_pids.txt
