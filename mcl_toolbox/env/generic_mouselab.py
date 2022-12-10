@@ -35,7 +35,7 @@ class GenericMouselabEnv(gym.Env):
         self.num_trials = num_trials
         self.render_path = render_path
         if rewards_withheld is not None:
-            self.rewards_withheld = rewards_withheld
+            self.rewards_withheld = list(rewards_withheld)
         else:
             self.rewards_withheld = [False] * len(ground_truth)
         if isinstance(cost, list):
