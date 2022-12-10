@@ -126,7 +126,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,  # likelihood doesn't need more than 1
-            "max_evals": 2,  # 400 - number of param updates
+            "max_evals": 400,  # 400 - number of param updates
         }
 
         other_params["optimization_params"] = optimization_params

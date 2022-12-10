@@ -156,7 +156,7 @@ class LVOC(Learner):
     def perform_end_episode_updates(self, env, features, reward, taken_path):
         if reward is None:
             return
-        print("Performing end episode updates: {}".format(reward))
+        # print("Performing end episode updates: {}".format(reward))
         selected_action = 0
         delay = env.get_feedback({"taken_path": taken_path, "action": selected_action})
         pr = self.get_pseudo_reward(env)
