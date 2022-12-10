@@ -35,17 +35,25 @@ class Learner(ABC):
         self.compute_likelihood = False
         # for backwards compatibility
         self.learn_from_path_boolean = None
+        self.learn_from_unrewarded = False
         self.learn_from_actions = 1
         self.compute_all_likelihoods_boolean = False
+        self.max_integration_degree = 10
         if "learn_from_path" in attributes:
             self.learn_from_path_boolean = attributes["learn_from_path"]
 
         if "learn_from_actions" in attributes:
             self.learn_from_actions = attributes["learn_from_actions"]
+        if "learn_from_unrewarded" in attributes:
+            self.learn_from_unrewarded = attributes["learn_from_unrewarded"]
         if "compute_all_likelihoods" in attributes:
             self.compute_all_likelihoods_boolean = attributes["compute_all_likelihoods"]
+        if "max_integration_degree" in attributes:
+            self.max_integration_degree = attributes["max_integration_degree"]
         print("Learn from actions? {}".format(self.learn_from_actions))
+        print("Learn from unrewarded? {}".format(self.learn_from_unrewarded))
         print("Compute all likelihoods? {}".format(self.compute_all_likelihoods_boolean))
+        print("Max integration degree? {}".format(self.max_integration_degree))
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
         pass

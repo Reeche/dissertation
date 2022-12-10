@@ -352,7 +352,7 @@ class ParameterOptimizer:
             self.reward_data.append(relevant_data["mer"])
             relevant_data['sigma'] = params['lik_sigma']
         if get_sim_data:
-            return relevant_data, simulations_data, self.agent
+            return relevant_data, simulations_data#, self.agent
         else:
             return relevant_data
 

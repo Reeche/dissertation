@@ -225,9 +225,15 @@ class ModelFitter:
         if "learn_from_actions" in other_params:
             print("Found LFA")
             learner_attributes["learn_from_actions"] = other_params["learn_from_actions"]
+        if "learn_from_unrewarded" in other_params:
+            print("Found LFU")
+            learner_attributes["learn_from_unrewarded"] = other_params["learn_from_unrewarded"]
         if "compute_all_likelihoods" in other_params:
             print("Found CAL")
             learner_attributes["compute_all_likelihoods"] = other_params["compute_all_likelihoods"]
+        if "max_integration_degree" in other_params:
+            print("Found MID")
+            learner_attributes["max_integration_degree"] = other_params["max_integration_degree"]
         self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
@@ -256,12 +262,33 @@ class ModelFitter:
         self.model_index = model_index
         optimizer = self.construct_optimizer(model_index, pid, optimization_criterion, optimization_params)
         copy_params = optimization_params.copy()
+
+        # Extensions
+        # Model 1.1 - 10
+        # Model 1.2 - 11
+        # Model 2.1 - 00
+        # Model 2.2 - 20
+        file_extension = ""
+        if "learn_from_actions" in optimization_params:
+            file_extension += str(optimization_params["learn_from_actions"])
+        else:
+            file_extension += "1"
+
+        if "learn_from_unrewarded" in optimization_params:
+            file_extension += str(int(optimization_params["learn_from_unrewarded"]))
+        else:
+            file_extension += "0"
+
         if "pct_rewarded" in copy_params:
             del copy_params["pct_rewarded"]
         if "learn_from_actions" in optimization_params:
             del copy_params["learn_from_actions"]
+        if "learn_from_unrewarded" in optimization_params:
+            del copy_params["learn_from_unrewarded"]
         if "compute_all_likelihoods" in optimization_params:
             del copy_params["compute_all_likelihoods"]
+        if "max_integration_degree" in optimization_params:
+            del copy_params["max_integration_degree"]
 
         res, prior, obj_fn = optimizer.optimize(
             optimization_criterion, **copy_params
@@ -273,7 +300,7 @@ class ModelFitter:
             pickle_save(
                 (res, prior),
                 os.path.join(
-                    params_dir, f"{pid}_{optimization_criterion}_{model_index}.pkl"
+                    params_dir, f"{pid}_{optimization_criterion}_{model_index}_{file_extension}.pkl"
                 ),
             )
         return res, prior, obj_fn
@@ -293,35 +320,49 @@ class ModelFitter:
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
         num_simulations = sim_params["num_simulations"]
-        participant = None
-        if pid is not None:
-            participant = self.E.participants[pid]
-            q_fn, participant = self.get_q_fn(participant)
-            env = self.construct_env(participant, q_fn=q_fn,other_params=sim_params)
-        self.update_attributes(env)
-        learner, learner_attributes = self.construct_model(model_index)
-        optimizer = ParameterOptimizer(
-            learner, learner_attributes, participant=participant, env=env
-        )
+        # participant = None
+        # if pid is not None:
+        #     participant = self.E.participants[pid]
+        #     q_fn, participant = self.get_q_fn(participant)
+        #     env = self.construct_env(participant, q_fn=q_fn,other_params=sim_params)
+
+        optimizer = self.construct_optimizer(model_index, pid, "likelihood", sim_params)
+        self.update_attributes(self.env)
+        participant = self.participant
+        # learner, learner_attributes = self.construct_model(model_index)
+        # optimizer = ParameterOptimizer(
+        #     learner, learner_attributes, participant=participant, env=env
+        # )
+        file_extension = ""
+        if "learn_from_actions" in sim_params:
+            file_extension += str(sim_params["learn_from_actions"])
+        else:
+            file_extension += "1"
+
+        if "learn_from_unrewarded" in sim_params:
+            file_extension += str(int(sim_params["learn_from_unrewarded"]))
+        else:
+            file_extension += "0"
+
         if participant is None:
             (r_data, sim_data), p_data = optimizer.run_hp_model_nop(
                 params, "reward", num_simulations=num_simulations
             )
-            plot_file = f"{model_index}_{num_simulations}.png"
+            plot_file = f"{model_index}_{num_simulations}_{file_extension}.png"
         else:
             (r_data, sim_data), p_data = optimizer.run_hp_model(
                 params, "reward", num_simulations=num_simulations
             )
-            plot_file = f"{participant.pid}_{model_index}_{num_simulations}.png"
+            plot_file = f"{participant.pid}_{model_index}_{num_simulations}_{file_extension}.png"
         if plot_dir is not None:
             optimizer.reward_data = [r_data["mer"]]
             optimizer.p_data = p_data
             optimizer.plot_rewards(i=0, path=plot_dir.joinpath(plot_file))
 
         if sim_dir is not None:
-            save_path = f"{participant.pid}_{model_index}_{num_simulations}.pkl"
+            save_path = f"{participant.pid}_{model_index}_{num_simulations}_{file_extension}.pkl"
             if participant is None:
-                save_path = f"{model_index}_{num_simulations}.pkl"
+                save_path = f"{model_index}_{num_simulations}_{file_extension}.pkl"
             pickle_save(
                 sim_data,
                 sim_dir.joinpath(save_path),
