@@ -1,0 +1,10 @@
+executable = env/bin/python
+filename = mcl_toolbox/fit_mcrl_models.py
+arguments = $(filename) $(exp_num:scarcity_control) $(model_index:6527) $(optimization_criterion:likelihood) $(pid) $(num_trials:30) {\"optimization_params\":{\"learn_from_actions\":2,\"max_integration_degree\":7}}
+output = log/fit_models/2.2/control/$(pid).stdout
+error  = log/fit_models/2.2/control/$(pid).stderr
+log   = log/fit_models/2.2/control/$(pid).log
+request_memory = 5000
+request_cpus = 1
+
+queue pid from cluster_submission/control_pids.txt
