@@ -223,16 +223,16 @@ class ModelFitter:
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
         if "learn_from_actions" in other_params:
-            print("Found LFA")
+            print("Found LFA: {}".format(other_params["learn_from_actions"]))
             learner_attributes["learn_from_actions"] = other_params["learn_from_actions"]
         if "learn_from_unrewarded" in other_params:
-            print("Found LFU")
+            print("Found LFU: {}".format(other_params["learn_from_unrewarded"]))
             learner_attributes["learn_from_unrewarded"] = other_params["learn_from_unrewarded"]
         if "compute_all_likelihoods" in other_params:
-            print("Found CAL")
+            #print("Found CAL")
             learner_attributes["compute_all_likelihoods"] = other_params["compute_all_likelihoods"]
         if "max_integration_degree" in other_params:
-            print("Found MID")
+            print("Found MID: {}".format(other_params["max_integration_degree"]))
             learner_attributes["max_integration_degree"] = other_params["max_integration_degree"]
         self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models

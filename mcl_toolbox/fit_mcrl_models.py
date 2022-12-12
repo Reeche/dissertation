@@ -85,7 +85,7 @@ def fit_model(
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
             # sim_params=sim_params,
-            sim_params=optimization_params,
+            sim_params={"num_simulations": 30},
         )
 
 

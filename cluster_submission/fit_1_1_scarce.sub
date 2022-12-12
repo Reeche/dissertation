@@ -8,4 +8,4 @@ request_memory = 50000
 request_cpus = 1
 +MaxRunningPrice = 500
 +RunningPriceExceededAction = "kill"
-queue pid from cluster_submission/scarce_pids_truncated.txt
+queue pid from cluster_submission/scarce_pids.txt

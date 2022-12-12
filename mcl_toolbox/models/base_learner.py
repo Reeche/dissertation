@@ -50,10 +50,9 @@ class Learner(ABC):
             self.compute_all_likelihoods_boolean = attributes["compute_all_likelihoods"]
         if "max_integration_degree" in attributes:
             self.max_integration_degree = attributes["max_integration_degree"]
-        print("Learn from actions? {}".format(self.learn_from_actions))
-        print("Learn from unrewarded? {}".format(self.learn_from_unrewarded))
-        print("Compute all likelihoods? {}".format(self.compute_all_likelihoods_boolean))
-        print("Max integration degree? {}".format(self.max_integration_degree))
+        # print("Learn from actions? {}".format(self.learn_from_actions))
+        # print("Learn from unrewarded? {}".format(self.learn_from_unrewarded))
+        # print("Max integration degree? {}".format(self.max_integration_degree))
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
         pass

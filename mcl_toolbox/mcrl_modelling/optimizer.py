@@ -326,8 +326,8 @@ class ParameterOptimizer:
         if self.learner == "sdss":
             del params["bandit_params"]
 
-        print("objective function")
-        print(self.compute_likelihood)
+        #print("objective function")
+        #print(self.compute_likelihood)
         simulations_data = self.agent.run_multiple_simulations(
             self.env,
             self.num_simulations,
@@ -439,8 +439,8 @@ class ParameterOptimizer:
         self.objective = objective
         self.num_simulations = num_simulations
         p_data = construct_p_data(self.participant, self.pipeline)
-        print("Running simulations: ")
-        print(self.compute_likelihood)
+        #print("Running simulations: ")
+        #print(self.compute_likelihood)
         data = self.objective_fn(params, get_sim_data=True)
         return data, p_data
 
