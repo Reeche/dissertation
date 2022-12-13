@@ -2,6 +2,7 @@ import pandas as pd
 from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 from sklearn.cluster import KMeans
 import numpy as np
+import pymannkendall as mk
 
 
 def loss(exp_name, df, pid_list):
@@ -69,7 +70,7 @@ def bic(exp_name, df, pid_list):
 
     # create bic table for matlab
     df_pivot = pd.pivot_table(df, index=["pid"], columns=["model"], values=["BIC"], aggfunc=np.sum, fill_value=0)
-    df_pivot.to_csv(f"results/matlab_all_exp_bic_{exp_name}.csv")
+    df_pivot.to_csv(f"results/matlab_all_exp_bic_{exp_name}_176_learningonly.csv")
 
     best_model_count = {}
     for pid in pid_list:
@@ -94,8 +95,9 @@ def bic(exp_name, df, pid_list):
     print(sorted_df)
 
 
-def classify_participants(exp_name, pid_class, kind):
+def classify_participants_mean_score(exp_name, pid_class, kind):
     # classify pariticpants into adaptive, maladaptive, mod. adaptive
+    # if "single", then get classificaiton for a single condition
     # get score from mouselab mdp
     df = pd.read_csv(f"../data/human/{exp_name}/mouselab-mdp.csv")
 
@@ -130,27 +132,314 @@ def classify_participants(exp_name, pid_class, kind):
         return pid_dict
 
 
+def classify_participants_score_improvement(exp_name, pid_list, pid_class):
+    # creates a list of pid whose score significantly improved during the trials
+    df = pd.read_csv(f"../data/human/{exp_name}/mouselab-mdp.csv")
+
+    df_pivot = pd.pivot_table(df, index=["trial_index"], columns=["pid"], values=["score"], fill_value=0)
+    df_pivot.columns = pid_list
+
+    for column in df_pivot:
+        result = mk.original_test(df_pivot[column])
+        if result.trend == "increasing":
+            pid_class["adaptive"].append(column)
+        else:
+            pid_class["non-adaptive"].append(column)
+    return pid_class
+
 
 if __name__ == "__main__":
-    models_to_be_considered = [26, 27, 30, 31, 58, 59, 62, 63, 90, 91, 94, 95, 122, 123, 126, 127, 154,
-                               155, 158, 159, 186, 187, 190, 191, 218, 219, 222, 223, 250, 251, 254, 255,
-                               282, 283, 286, 287, 314, 315, 318, 319, 346, 347, 350, 351, 378, 379, 382,
-                               383, 410, 411, 414, 415, 442, 443, 446, 447, 474, 475, 478, 479, 506, 507,
-                               510, 511, 538, 539, 542, 543, 570, 571, 574, 575, 602, 603, 606, 607, 634,
-                               635, 638, 639, 666, 667, 670, 671, 698, 699, 702, 703, 730, 731, 734, 735,
-                               762, 763, 766, 767, 794, 795, 798, 799, 826, 827, 830, 831, 858, 859, 862,
-                               863, 890, 891, 894, 895, 922, 923, 926, 927, 954, 955, 958, 959, 986, 987,
-                               990, 991, 1018, 1019, 1022, 1023, 1050, 1051, 1054, 1055, 1082, 1083, 1086,
-                               1087, 1114, 1115, 1118, 1119, 1146, 1147, 1150, 1151, 1178, 1179, 1182, 1183,
-                               1210, 1211, 1214, 1215, 1242, 1243, 1246, 1247, 1274, 1275, 1278, 1279, 1306,
-                               1307, 1310, 1311, 1338, 1339, 1342, 1343, 1370, 1371, 1374, 1375, 1402, 1403,
-                               1406, 1407, 1434, 1435, 1438, 1439, 1466, 1467, 1470, 1471, 1498, 1499, 1502,
-                               1503, 1530, 1531, 1534, 1535, 1562, 1563, 1566, 1567, 1594, 1595, 1598, 1599,
-                               1626, 1627, 1630, 1631, 1658, 1659, 1662, 1663, 1690, 1691, 1694, 1695, 1722,
-                               1723, 1726, 1727, 1754, 1755, 1758, 1759, 1786, 1787, 1790, 1791, 1818, 1819,
-                               1822, 1823, 1850, 1851, 1854, 1855, 1882, 1883, 1886, 1887, 1914, 1915, 1918,
-                               1919, 1946, 1947, 1950, 1951, 1978, 1979, 1982, 1983, 2010, 2011, 2014, 2015]
+    # models_to_be_considered = [26, 27, 30, 31, 58, 59, 62, 63, 90, 91, 94, 95, 122, 123, 126, 127, 154,
+    #                            155, 158, 159, 186, 187, 190, 191, 218, 219, 222, 223, 250, 251, 254, 255,
+    #                            282, 283, 286, 287, 314, 315, 318, 319, 346, 347, 350, 351, 378, 379, 382,
+    #                            383, 410, 411, 414, 415, 442, 443, 446, 447, 474, 475, 478, 479, 506, 507,
+    #                            510, 511, 538, 539, 542, 543, 570, 571, 574, 575, 602, 603, 606, 607, 634,
+    #                            635, 638, 639, 666, 667, 670, 671, 698, 699, 702, 703, 730, 731, 734, 735,
+    #                            762, 763, 766, 767, 794, 795, 798, 799, 826, 827, 830, 831, 858, 859, 862,
+    #                            863, 890, 891, 894, 895, 922, 923, 926, 927, 954, 955, 958, 959, 986, 987,
+    #                            990, 991, 1018, 1019, 1022, 1023, 1050, 1051, 1054, 1055, 1082, 1083, 1086,
+    #                            1087, 1114, 1115, 1118, 1119, 1146, 1147, 1150, 1151, 1178, 1179, 1182, 1183,
+    #                            1210, 1211, 1214, 1215, 1242, 1243, 1246, 1247, 1274, 1275, 1278, 1279, 1306,
+    #                            1307, 1310, 1311, 1338, 1339, 1342, 1343, 1370, 1371, 1374, 1375, 1402, 1403,
+    #                            1406, 1407, 1434, 1435, 1438, 1439, 1466, 1467, 1470, 1471, 1498, 1499, 1502,
+    #                            1503, 1530, 1531, 1534, 1535, 1562, 1563, 1566, 1567, 1594, 1595, 1598, 1599,
+    #                            1626, 1627, 1630, 1631, 1658, 1659, 1662, 1663, 1690, 1691, 1694, 1695, 1722,
+    #                            1723, 1726, 1727, 1754, 1755, 1758, 1759, 1786, 1787, 1790, 1791, 1818, 1819,
+    #                            1822, 1823, 1850, 1851, 1854, 1855, 1882, 1883, 1886, 1887, 1914, 1915, 1918,
+    #                            1919, 1946, 1947, 1950, 1951, 1978, 1979, 1982, 1983, 2010, 2011, 2014, 2015]
+    # models_to_be_considered = [26, 27, 30, 31, 58, 59, 62, 63, 90, 91, 94, 95, 122, 123, 126, 127, 154, 155,
+    #                            158, 159, 186, 187, 190, 191, 602, 603, 606, 607, 634, 635, 638, 639, 666, 667,
+    #                            670, 671, 698, 699, 702, 703, 730, 731, 734, 735, 762, 763, 766, 767, 1178, 1179,
+    #                            1182, 1183, 1210, 1211, 1214, 1215, 1242, 1243, 1246, 1247, 1274, 1275, 1278, 1279,
+    #                            1306, 1307, 1310, 1311, 1338, 1339, 1342, 1343, 1754, 1755, 1758, 1759, 1850, 1851,
+    #                            1854, 1855, 1946, 1947, 1950, 1951]
 
+    # models_to_be_considered = [26,
+    #                            27,
+    #                            30,
+    #                            31,
+    #                            58,
+    #                            59,
+    #                            62,
+    #                            63,
+    #                            90,
+    #                            91,
+    #                            94,
+    #                            95,
+    #                            122,
+    #                            123,
+    #                            126,
+    #                            127,
+    #                            154,
+    #                            155,
+    #                            158,
+    #                            159,
+    #                            186,
+    #                            187,
+    #                            190,
+    #                            191,
+    #                            410,
+    #                            411,
+    #                            414,
+    #                            415,
+    #                            442,
+    #                            443,
+    #                            446,
+    #                            447,
+    #                            474,
+    #                            475,
+    #                            478,
+    #                            479,
+    #                            506,
+    #                            507,
+    #                            510,
+    #                            511,
+    #                            538,
+    #                            539,
+    #                            542,
+    #                            543,
+    #                            570,
+    #                            571,
+    #                            574,
+    #                            575,
+    #                            602,
+    #                            603,
+    #                            606,
+    #                            607,
+    #                            634,
+    #                            635,
+    #                            638,
+    #                            639,
+    #                            666,
+    #                            667,
+    #                            670,
+    #                            671,
+    #                            698,
+    #                            699,
+    #                            702,
+    #                            703,
+    #                            730,
+    #                            731,
+    #                            734,
+    #                            735,
+    #                            762,
+    #                            763,
+    #                            766,
+    #                            767,
+    #                            794,
+    #                            795,
+    #                            798,
+    #                            799,
+    #                            826,
+    #                            827,
+    #                            830,
+    #                            831,
+    #                            986,
+    #                            987,
+    #                            990,
+    #                            991,
+    #                            1018,
+    #                            1019,
+    #                            1022,
+    #                            1023,
+    #                            1050,
+    #                            1051,
+    #                            1054,
+    #                            1055,
+    #                            1082,
+    #                            1083,
+    #                            1086,
+    #                            1087,
+    #                            1114,
+    #                            1115,
+    #                            1118,
+    #                            1119,
+    #                            1146,
+    #                            1147,
+    #                            1150,
+    #                            1151,
+    #                            1178,
+    #                            1179,
+    #                            1182,
+    #                            1183,
+    #                            1210,
+    #                            1211,
+    #                            1214,
+    #                            1215,
+    #                            1242,
+    #                            1243,
+    #                            1246,
+    #                            1247,
+    #                            1274,
+    #                            1275,
+    #                            1278,
+    #                            1279,
+    #                            1306,
+    #                            1307,
+    #                            1310,
+    #                            1311,
+    #                            1338,
+    #                            1339,
+    #                            1342,
+    #                            1343,
+    #                            1562,
+    #                            1563,
+    #                            1566,
+    #                            1567,
+    #                            1594,
+    #                            1595,
+    #                            1598,
+    #                            1599,
+    #                            1626,
+    #                            1627,
+    #                            1630,
+    #                            1631,
+    #                            1658,
+    #                            1659,
+    #                            1662,
+    #                            1663,
+    #                            1690,
+    #                            1691,
+    #                            1694,
+    #                            1695,
+    #                            1722,
+    #                            1723,
+    #                            1726,
+    #                            1727,
+    #                            1754,
+    #                            1755,
+    #                            1758,
+    #                            1759,
+    #                            1818,
+    #                            1819,
+    #                            1822,
+    #                            1823,
+    #                            1850,
+    #                            1851,
+    #                            1854,
+    #                            1855,
+    #                            1914,
+    #                            1915,
+    #                            1918,
+    #                            1919,
+    #                            1946,
+    #                            1947,
+    #                            1950,
+    #                            1951,
+    #                            2010,
+    #                            2011,
+    #                            2014,
+    #                            2015]
+
+    # only learning models
+    models_to_be_considered = [27,
+                               31,
+                               59,
+                               63,
+                               91,
+                               95,
+                               123,
+                               127,
+                               155,
+                               159,
+                               187,
+                               191,
+                               411,
+                               415,
+                               443,
+                               447,
+                               475,
+                               479,
+                               507,
+                               511,
+                               539,
+                               543,
+                               571,
+                               575,
+                               603,
+                               607,
+                               635,
+                               639,
+                               667,
+                               671,
+                               699,
+                               703,
+                               731,
+                               735,
+                               763,
+                               767,
+                               795,
+                               799,
+                               827,
+                               831,
+                               987,
+                               991,
+                               1019,
+                               1023,
+                               1051,
+                               1055,
+                               1083,
+                               1087,
+                               1115,
+                               1119,
+                               1147,
+                               1151,
+                               1179,
+                               1183,
+                               1211,
+                               1215,
+                               1243,
+                               1247,
+                               1275,
+                               1279,
+                               1307,
+                               1311,
+                               1339,
+                               1343,
+                               1563,
+                               1567,
+                               1595,
+                               1599,
+                               1627,
+                               1631,
+                               1659,
+                               1663,
+                               1691,
+                               1695,
+                               1723,
+                               1727,
+                               1755,
+                               1759,
+                               1819,
+                               1823,
+                               1851,
+                               1855,
+                               1915,
+                               1919,
+                               1947,
+                               1951,
+                               2011,
+                               2015]
     exp_num_list = ["v1.0",
                     "c2.1",
                     "c1.1",
@@ -164,11 +453,10 @@ if __name__ == "__main__":
     df_all = pd.DataFrame()
     pid_all = []
     pid_class = {"adaptive": [],
-                 "maladaptive": [],
-                 "mod. adaptive": []}
+                 "non-adaptive": []}
     for exp_name in exp_num_list:
         # load csv with intermediate results
-        df = pd.read_csv(f"results/{exp_name}_intermediate_results.csv")
+        df = pd.read_csv(f"results/{exp_name}_intermediate_results_v3.csv")
         # drop first column
         del df[df.columns[0]]
         # filter df for models to be considered (no vicarious learning, no monte carlo, no subjective cost)
@@ -177,31 +465,29 @@ if __name__ == "__main__":
         # get pid
         pid_list = get_all_pid_for_env(exp_name)
 
-        loss(exp_name, df, pid_list)
+        # loss(exp_name, df, pid_list)
         # aic(exp_name, df, pid_list)
         # bic(exp_name, df, pid_list)
 
-        # df_all = df_all.append(df)
-        # pid_all.append(pid_list[0])
+        df_all = df_all.append(df)
+        pid_all.append(pid_list)
 
         # classify by adaptiveness
-        # pid_dict_single = classify_participants(exp_name, pid_class, "single")
-        # pid_dict_all = classify_participants(exp_name, pid_class, "all")
-
+        pid_dict_all = classify_participants_score_improvement(exp_name, pid_list, pid_class)
 
     # analysis for all
-    # bic("all", df_all, pid_all)
-    # aic("all", df_all, pid_all)
+    # flatten list
+    pid_all_flat = [item for sublist in pid_all for item in sublist]
+    # loss("all", df_all, pid_all_flat)
+    bic("all", df_all, pid_all_flat)
+    aic("all", df_all, pid_all_flat)
 
-    # BIC according to participant classification
+    ## BIC according to participant classification
     # adaptive_list = [item for sublist in pid_dict_all["adaptive"] for item in sublist]
-    # bic("adaptive", df_all, adaptive_list)
-    #
-    # maladaptive_list = [item for sublist in pid_dict_all["maladaptive"] for item in sublist]
-    # bic("maladaptive", df_all, maladaptive_list)
-    #
+    # bic("adaptive", df_all, pid_dict_all["adaptive"])
+
+    # maladaptive_list = [item for sublist in pid_dict_all["non-adaptive"] for item in sublist]
+    # bic("non-adaptive", df_all, pid_dict_all["non-adaptive"])
+
     # mod_adaptive_list = [item for sublist in pid_dict_all["mod. adaptive"] for item in sublist]
     # bic("mod. adaptive", df_all, mod_adaptive_list)
-
-
-

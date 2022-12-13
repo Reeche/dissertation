@@ -364,7 +364,7 @@ def group_adaptive_maladaptive_participant_list(exp_num, model_index):
     # Test the click sequence of each individual for trend
     parent_directory = Path(__file__).parents[1]
     click_info_directory = os.path.join(
-        parent_directory, f"mcl_toolbox/results/mcrl/{exp_num}/click_{exp_num}_data")
+        parent_directory, f"mcl_toolbox/results/mcrl_testing/{exp_num}/click_{exp_num}_data")
 
     pid_list = get_all_pid_for_env(exp_num)
     all_participant_clicks = pd.DataFrame(0, index=np.arange(35), columns=pid_list)
@@ -656,20 +656,20 @@ if __name__ == "__main__":
 
 
     ###Create the plots
-    for exp_num in exp_num_list:
-        models_temp = {}
-        pid_list = get_all_pid_for_env(exp_num)
-        for model_index in model_list:
-            all_participant_clicks, average_difference = average_performance_clicks(
-                exp_num,
-                pid_list,
-                optimization_criterion,
-                model_index=model_index,
-                plot_title="",
-                plotting=True,
-            )
-
-            models_temp.update(average_difference)
+    # for exp_num in exp_num_list:
+    #     models_temp = {}
+    #     pid_list = get_all_pid_for_env(exp_num)
+    #     for model_index in model_list:
+    #         all_participant_clicks, average_difference = average_performance_clicks(
+    #             exp_num,
+    #             pid_list,
+    #             optimization_criterion,
+    #             model_index=model_index,
+    #             plot_title="",
+    #             plotting=True,
+    #         )
+    #
+    #         models_temp.update(average_difference)
 
         #save multi-model plots with several models in one plot
         # plt.savefig(
@@ -692,14 +692,14 @@ if __name__ == "__main__":
 
 
     ## get AIC for each group of participants
-    # for exp_num in exp_num_list:
-    #     pid_list = get_all_pid_for_env(exp_num)
-    #     model_index = '1823'  # any is fine as we only want the participants clicks and not the models
-    #     pid_dict = group_adaptive_maladaptive_participant_list(exp_num, model_index)
-    #     for keys, values in pid_dict.items():
-    #         print("Condition", exp_num_list, keys)
-    #         df = create_dataframe_of_fitted_pid(exp_num, values, 35, optimization_criterion, model_list)
-
+    for exp_num in exp_num_list:
+        pid_list = get_all_pid_for_env(exp_num)
+        model_index = '1823'  # any is fine as we only want the participants clicks and not the models
+        pid_dict = group_adaptive_maladaptive_participant_list(exp_num, model_index)
+        # for keys, values in pid_dict.items():
+        #     print("Condition", exp_num_list, keys)
+        #     df = create_dataframe_of_fitted_pid(exp_num, values, 35, optimization_criterion, model_list)
+        print(pid_dict)
 
     ## Create averaged plots for each group of participants
     # for exp_num in exp_num_list:
