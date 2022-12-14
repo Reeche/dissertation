@@ -1,4 +1,5 @@
 import ast
+import copy
 import sys
 import time
 from pathlib import Path
@@ -78,6 +79,8 @@ def fit_model(
         params_dir=prior_directory,
     )
     if simulate:
+        sim_params = copy.deepcopy(optimization_params)
+        sim_params["num_simulations"] = 2
         mf.simulate_params(
             model_index,
             res[0],
@@ -85,7 +88,7 @@ def fit_model(
             sim_dir=model_info_directory,
             plot_dir=plot_directory,
             # sim_params=sim_params,
-            sim_params={"num_simulations": 30},
+            sim_params=sim_params,
         )
 
 
@@ -126,14 +129,14 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,  # likelihood doesn't need more than 1
-            "max_evals": 400,  # 400 - number of param updates
+            "max_evals": 2,  # 400 - number of param updates
         }
 
         other_params["optimization_params"] = optimization_params
 
     for attribute, default_val in zip(
             ["optimizer", "num_simulations", "max_evals"],
-            ["hyperopt", 1, 400]
+            ["hyperopt", 1, 2]
     ):
         if attribute not in other_params["optimization_params"]:
             other_params["optimization_params"][attribute] = default_val

@@ -407,7 +407,7 @@ class ParameterOptimizer:
         else:
             lambda_objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
             res = optimize_hyperopt_params(lambda_objective_fn, prior, max_evals=max_evals,
-                                           show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials
+                                           show_progressbar=False, rstate=rstate)  # returns best parameters (res) and trials
         return res, prior, self.objective_fn
 
     def fit_with_params(self, objective, params, compute_likelihood=False):
