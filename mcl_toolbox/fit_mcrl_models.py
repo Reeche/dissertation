@@ -80,7 +80,7 @@ def fit_model(
     )
     if simulate:
         sim_params = copy.deepcopy(optimization_params)
-        sim_params["num_simulations"] = 2
+        sim_params["num_simulations"] = 30
         mf.simulate_params(
             model_index,
             res[0],
@@ -129,14 +129,14 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,  # likelihood doesn't need more than 1
-            "max_evals": 2,  # 400 - number of param updates
+            "max_evals": 400,  # 400 - number of param updates
         }
 
         other_params["optimization_params"] = optimization_params
 
     for attribute, default_val in zip(
             ["optimizer", "num_simulations", "max_evals"],
-            ["hyperopt", 1, 2]
+            ["hyperopt", 1, 400]
     ):
         if attribute not in other_params["optimization_params"]:
             other_params["optimization_params"][attribute] = default_val
