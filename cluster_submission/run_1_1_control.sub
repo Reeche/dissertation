@@ -1,9 +1,9 @@
 executable = env/bin/python
 filename = mcl_toolbox/run_mcrl_simulations.py
 arguments = $(filename) $(exp_num:scarcity_control) $(model_index:6527) $(optimization_criterion:likelihood) $(pid) $(num_trials:30) {\"optimization_params\":{\"learn_from_actions\":1,\"max_integration_degree\":7}}
-output = log/fit_models/1.1/control/$(pid).stdout
-error  = log/fit_models/1.1/control/$(pid).stderr
-log   = log/fit_models/1.1/control/$(pid).log
+output = log/run_models/1.1/control/$(pid).stdout
+error  = log/run_models/1.1/control/$(pid).stderr
+log   = log/run_models/1.1/control/$(pid).log
 request_memory = 8000
 request_cpus = 1
 +MaxRunningPrice = 50
