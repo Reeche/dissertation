@@ -8,4 +8,4 @@ request_memory = 8000
 request_cpus = 1
 +MaxRunningPrice = 50
 +RunningPriceExceededAction = "kill"
-queue pid from cluster_submission/control_pids.txt
+queue pid from cluster_submission/pid_lists/control_pids.txt
