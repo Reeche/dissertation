@@ -25,7 +25,6 @@ class LVOC(Learner):
         self.init_weights = params["priors"]
         self.eps = max(0, min(params["eps"], 1))
         self.feedback_weight = float(params["feedback_weight"]) if "feedback_weight" in params else 1.0
-        print("Feedback we3ight: {}".format(self.feedback_weight))
         self.no_term = attributes["no_term"]
         self.vicarious_learning = attributes["vicarious_learning"]
         self.termination_value_known = attributes["termination_value_known"]
@@ -136,7 +135,7 @@ class LVOC(Learner):
     def perform_action_updates(
         self, env, next_features, reward, term_features, term_reward, features
     ):
-        print("Performing action update")
+        #print("Performing action update")
         self.num_actions_updated += 1
 
         # Q represents the expected reward based on the current model
@@ -406,14 +405,17 @@ class LVOC(Learner):
                     # Otherwise learn from object level reward
                     if reward_to_learn is None:
                         reward_to_learn = path_expected_reward
+                        print("PER: {}".format(path_expected_reward))
                 elif self.learn_from_PER == 2:
                     # Learn from expected reward of path only when object level reward absent
                     # Otherwise learn from weighted average of object-level reward and PER
                     if reward_to_learn is None:
                         reward_to_learn = path_expected_reward
+                        #print("PER: {}".format(reward_to_learn))
                     else:
                         reward_to_learn = self.feedback_weight * reward_to_learn \
                                           + (1 - self.feedback_weight) * path_expected_reward
+                        #print("Combined signal: {}".format(reward_to_learn))
 
                 # 2 - Learn from all individual actions at the end only if there is some end reward to learn from
                 #       (either maximum expected reward or object-level reward)
@@ -450,16 +452,16 @@ class LVOC(Learner):
 
                 # Learn from maximum expected reward on every trial
                 if self.learn_from_MER:
-                    print("Learning from term reward: {}".format(term_reward))
+                    #print("Learning from term reward: {}".format(term_reward))
                     self.update_features.append(features)
                     self.last_term_reward = term_reward
                     self.perform_end_episode_updates(env, features, term_reward, taken_path)
 
                 # Learn from signal if it is present
-                print("End of episode")
-                print(reward_to_learn)
+                #print("End of episode")
+                #print(reward_to_learn)
                 if reward_to_learn is not None:
-                    print("Performing end episode updates")
+                    #print("Performing end episode updates")
                     self.update_features.append(features)
                     if self.learn_from_path_boolean:
                         self.learn_from_path(env, taken_path)

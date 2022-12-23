@@ -25,7 +25,6 @@ class GenericMouselabEnv(gym.Env):
         cost=1,
         render_path="mouselab_renders",
         feedback="none",
-        pct_rewarded=1.0,
         rewards_withheld = None,
         q_fn=None,
     ):

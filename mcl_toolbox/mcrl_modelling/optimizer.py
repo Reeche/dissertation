@@ -201,7 +201,6 @@ def get_space(learner, learner_attributes, optimizer="pyabc"):
     if learner == "sdss":
         hybrid = True
     params_list = parse_config(learner, learner_attributes, hierarchical, hybrid, True)
-    print(params_list)
     if optimizer == "pyabc":
         return pyabc_prior(params_list)
     else:

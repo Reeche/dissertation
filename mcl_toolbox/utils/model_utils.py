@@ -222,7 +222,7 @@ class ModelFitter:
     def construct_optimizer(self, model_index, pid, optimization_criterion, other_params):
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
-        add_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
+        add_params = ["learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
                     "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
 
         # Add the additional attributes to the learner
@@ -248,7 +248,6 @@ class ModelFitter:
                 strategy_weights,
             )
             learner_attributes["strategy_probs"] = strategy_probs
-        print(learner_attributes)
         optimizer = ParameterOptimizer(
             learner, learner_attributes, self.participant, self.env
         )
@@ -281,7 +280,7 @@ class ModelFitter:
             else:
                 file_extension += "0" if param != "learn_from_actions" else "1"
         print(file_extension)
-        remove_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
+        remove_params = ["learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
                          "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER", "feedback_weight"]
         for param in remove_params:
             if param in copy_params:

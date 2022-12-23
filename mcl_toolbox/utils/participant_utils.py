@@ -4,7 +4,6 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 class ParticipantIterator:
     def __init__(self, participant, click_cost=1):
         self.participant = participant
-        print(click_cost)
         self.click_cost = click_cost
         self.clicks = self.participant.clicks
         self.envs = self.participant.envs
