@@ -25,6 +25,7 @@ class LVOC(Learner):
         self.init_weights = params["priors"]
         self.eps = max(0, min(params["eps"], 1))
         self.feedback_weight = float(params["feedback_weight"]) if "feedback_weight" in params else 1.0
+        print("Feedback we3ight: {}".format(self.feedback_weight))
         self.no_term = attributes["no_term"]
         self.vicarious_learning = attributes["vicarious_learning"]
         self.termination_value_known = attributes["termination_value_known"]

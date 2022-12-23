@@ -225,10 +225,16 @@ class ModelFitter:
         add_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
                     "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
 
+        # Add the additional attributes to the learner
         for param in add_params:
             if param in other_params:
                 print("Found {}: {}".format(param, other_params[param]))
                 learner_attributes[param] = other_params[param]
+
+                # If we want to learn from weighted average of signals, then optimize extra parameter
+                #   of weight of object-level feedback
+                if param == "learn_from_PER" and int(other_params[param]) == 2:
+                    learner_attributes["feedback_weight"] = True
 
         self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models
@@ -242,6 +248,7 @@ class ModelFitter:
                 strategy_weights,
             )
             learner_attributes["strategy_probs"] = strategy_probs
+        print(learner_attributes)
         optimizer = ParameterOptimizer(
             learner, learner_attributes, self.participant, self.env
         )
@@ -275,7 +282,7 @@ class ModelFitter:
                 file_extension += "0" if param != "learn_from_actions" else "1"
         print(file_extension)
         remove_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
-                         "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
+                         "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER", "feedback_weight"]
         for param in remove_params:
             if param in copy_params:
                 del copy_params[param]
