@@ -247,6 +247,30 @@ class GenericMouselabEnv(gym.Env):
         term_reward = pres_node_map[0].calculate_max_expected_return()
         return term_reward
 
+    def get_expected_value_for_path(self, path):
+        """Get the expected reward of a given path that was taken
+
+        Path expected reward is the sum of all of the nodes along the path. If the node is unobserved, then
+        add expected value of that node
+
+        Path is a sequence of numbers corresponding to the nodes
+        """
+        expected_reward = 0
+        pres_node_map = self.present_trial.node_map
+        for node_idx in path:
+            # Ignore starting node
+            if node_idx == 0:
+                continue
+
+            node = pres_node_map[node_idx]
+            if node.observed:
+                expected_reward += node.value
+            else:
+                expected_reward += node.expected_value
+
+        return expected_reward
+
+
     # How would you run say transfer task easily?
     def attach_features(self, features, normalized_features):
         self.features = features

@@ -222,18 +222,14 @@ class ModelFitter:
     def construct_optimizer(self, model_index, pid, optimization_criterion, other_params):
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
-        if "learn_from_actions" in other_params:
-            print("Found LFA: {}".format(other_params["learn_from_actions"]))
-            learner_attributes["learn_from_actions"] = other_params["learn_from_actions"]
-        if "learn_from_unrewarded" in other_params:
-            print("Found LFU: {}".format(other_params["learn_from_unrewarded"]))
-            learner_attributes["learn_from_unrewarded"] = other_params["learn_from_unrewarded"]
-        if "compute_all_likelihoods" in other_params:
-            #print("Found CAL")
-            learner_attributes["compute_all_likelihoods"] = other_params["compute_all_likelihoods"]
-        if "max_integration_degree" in other_params:
-            print("Found MID: {}".format(other_params["max_integration_degree"]))
-            learner_attributes["max_integration_degree"] = other_params["max_integration_degree"]
+        add_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
+                    "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
+
+        for param in add_params:
+            if param in other_params:
+                print("Found {}: {}".format(param, other_params[param]))
+                learner_attributes[param] = other_params[param]
+
         self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
@@ -268,27 +264,21 @@ class ModelFitter:
         # Model 1.2 - 11
         # Model 2.1 - 00
         # Model 2.2 - 20
+
+        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
+                            "learn_from_MER"]
         file_extension = ""
-        if "learn_from_actions" in optimization_params:
-            file_extension += str(optimization_params["learn_from_actions"])
-        else:
-            file_extension += "1"
-
-        if "learn_from_unrewarded" in optimization_params:
-            file_extension += str(int(optimization_params["learn_from_unrewarded"]))
-        else:
-            file_extension += "0"
-
-        if "pct_rewarded" in copy_params:
-            del copy_params["pct_rewarded"]
-        if "learn_from_actions" in optimization_params:
-            del copy_params["learn_from_actions"]
-        if "learn_from_unrewarded" in optimization_params:
-            del copy_params["learn_from_unrewarded"]
-        if "compute_all_likelihoods" in optimization_params:
-            del copy_params["compute_all_likelihoods"]
-        if "max_integration_degree" in optimization_params:
-            del copy_params["max_integration_degree"]
+        for param in extension_params:
+            if param in optimization_params:
+                file_extension += str(int(optimization_params[param]))
+            else:
+                file_extension += "0" if param != "learn_from_actions" else "1"
+        print(file_extension)
+        remove_params = ["pct_rewarded", "learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
+                         "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
+        for param in remove_params:
+            if param in copy_params:
+                del copy_params[param]
 
         res, prior, obj_fn = optimizer.optimize(
             optimization_criterion, **copy_params
@@ -333,16 +323,14 @@ class ModelFitter:
         # optimizer = ParameterOptimizer(
         #     learner, learner_attributes, participant=participant, env=env
         # )
+        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
+                            "learn_from_MER"]
         file_extension = ""
-        if "learn_from_actions" in sim_params:
-            file_extension += str(sim_params["learn_from_actions"])
-        else:
-            file_extension += "1"
-
-        if "learn_from_unrewarded" in sim_params:
-            file_extension += str(int(sim_params["learn_from_unrewarded"]))
-        else:
-            file_extension += "0"
+        for param in extension_params:
+            if param in sim_params:
+                file_extension += str(int(sim_params[param]))
+            else:
+                file_extension += "0" if param != "learn_from_actions" else "1"
 
         if participant is None:
             (r_data, sim_data), p_data = optimizer.run_hp_model_nop(

@@ -38,10 +38,12 @@ class Learner(ABC):
         self.learn_from_unrewarded = False
         self.learn_from_actions = 1
         self.compute_all_likelihoods_boolean = False
+        self.ignore_reward = False
+        self.learn_from_PER = 0
+        self.learn_from_MER = False
         self.max_integration_degree = 10
         if "learn_from_path" in attributes:
             self.learn_from_path_boolean = attributes["learn_from_path"]
-
         if "learn_from_actions" in attributes:
             self.learn_from_actions = attributes["learn_from_actions"]
         if "learn_from_unrewarded" in attributes:
@@ -50,9 +52,13 @@ class Learner(ABC):
             self.compute_all_likelihoods_boolean = attributes["compute_all_likelihoods"]
         if "max_integration_degree" in attributes:
             self.max_integration_degree = attributes["max_integration_degree"]
-        # print("Learn from actions? {}".format(self.learn_from_actions))
-        # print("Learn from unrewarded? {}".format(self.learn_from_unrewarded))
-        # print("Max integration degree? {}".format(self.max_integration_degree))
+        if "ignore_reward" in attributes:
+            self.ignore_reward = attributes["ignore_reward"]
+        if "learn_from_PER" in attributes:
+            self.learn_from_PER = attributes["learn_from_PER"]
+        if "learn_from_MER" in attributes:
+            self.learn_from_MER = attributes["learn_from_MER"]
+
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):
         pass

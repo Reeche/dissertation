@@ -24,6 +24,7 @@ class LVOC(Learner):
         self.num_samples = int(params["num_samples"])
         self.init_weights = params["priors"]
         self.eps = max(0, min(params["eps"], 1))
+        self.feedback_weight = float(params["feedback_weight"]) if "feedback_weight" in params else 1.0
         self.no_term = attributes["no_term"]
         self.vicarious_learning = attributes["vicarious_learning"]
         self.termination_value_known = attributes["termination_value_known"]
@@ -39,7 +40,6 @@ class LVOC(Learner):
         self.trial_costs = 0
         self.num_actions_updated = 0
         self.bounds = []
-        self.precisions = []
         self.precisions = []
         self.action_likelihood_times = []
         self.last_term_reward = None
@@ -135,8 +135,10 @@ class LVOC(Learner):
     def perform_action_updates(
         self, env, next_features, reward, term_features, term_reward, features
     ):
-        #print("Performing action update")
+        print("Performing action update")
         self.num_actions_updated += 1
+
+        # Q represents the expected reward based on the current model
         q = np.dot(self.mean, next_features)
         pr = self.get_pseudo_reward(env)
         self.update_rewards.append(reward + pr - self.subjective_cost)
@@ -308,7 +310,6 @@ class LVOC(Learner):
             term_features = self.get_term_features(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
-            start = time.time()
 
             # If maximizing likelihood, take action selects participant's action
             (
@@ -320,11 +321,7 @@ class LVOC(Learner):
                 delay,
                 features,
             ) = self.take_action(env, trial_info)
-            #print("Reward: {}".format(reward))
-            # if not self.compute_likelihood:
-            #     print("Stepping  through env with action: {}, reward: {}".format(action, reward))
-            end = time.time()
-            #print("Taking action: {0:0.3f}s".format(end - start))
+
 
             # If action taken is not termination action
             if not done:
@@ -392,49 +389,83 @@ class LVOC(Learner):
                     end = time.time()
                     # print("Learning from actions: {0:0.3f}s".format(end - start))
 
-            # If action is termination action and object level reward is present
-            elif reward is not None:
-                start = time.time()
-
-                # 2 - Learn from all individual actions at the end
-                #   Terminal reward does not include the click costs
-                if self.learn_from_actions == 2:
-                    reward_to_learn = reward
-                    for (
-                            new_features,
-                            new_env,
-                            next_features,
-                            new_reward,
-                            term_features,
-                            term_reward,
-                            new_action
-                    ) in self.trial_action_learn_features:
-                        self.update_features.append(new_features)
-                        self.perform_action_updates(
-                            new_env,
-                            next_features,
-                            new_reward,
-                            term_features,
-                            term_reward,
-                            new_features,
-                        )
-                else:
-                    # 0 - don't learn from individual actions, terminal reward includes click costs
-                    # 1 - learn from all actions regardless of presence of terminal reward,
-                    #       terminal reward does not include click costs
-                    reward_to_learn = reward + (1-self.learn_from_actions) * self.trial_costs
-                self.update_features.append(features)
-                if self.learn_from_path_boolean:
-                    self.learn_from_path(env, taken_path)
-                self.last_term_reward = reward_to_learn
-                self.perform_end_episode_updates(env, features, reward_to_learn, taken_path)
-                end = time.time()
+            # If action is planning termination
             else:
-                # Model 1.2 learn from unrewarded trials by taking them to be zero
-                if self.learn_from_unrewarded:
-                    self.update_features.append(features)
+                reward_to_learn = reward
+                if self.ignore_reward:
+                    # Ignore object level reward by setting it to None (no learning from it)
+                    reward_to_learn = None
+                elif self.learn_from_unrewarded and reward is None:
+                    # If no object level reward present, assume it to be zero
                     reward_to_learn = 0
+
+                path_expected_reward = env.get_expected_value_for_path(taken_path)
+                if self.learn_from_PER == 1:
+                    # Learn from expected reward of path only when object level reward absent
+                    # Otherwise learn from object level reward
+                    if reward_to_learn is None:
+                        reward_to_learn = path_expected_reward
+                elif self.learn_from_PER == 2:
+                    # Learn from expected reward of path only when object level reward absent
+                    # Otherwise learn from weighted average of object-level reward and PER
+                    if reward_to_learn is None:
+                        reward_to_learn = path_expected_reward
+                    else:
+                        reward_to_learn = self.feedback_weight * reward_to_learn \
+                                          + (1 - self.feedback_weight) * path_expected_reward
+
+                # 2 - Learn from all individual actions at the end only if there is some end reward to learn from
+                #       (either maximum expected reward or object-level reward)
+                #   Reward feedback does not include the click costs
+                if reward_to_learn is not None or self.learn_from_MER:
+                    if self.learn_from_actions == 2:
+                        for (
+                                new_features,
+                                new_env,
+                                next_features,
+                                new_reward,
+                                term_features,
+                                term_reward,
+                                new_action
+                        ) in self.trial_action_learn_features:
+                            self.update_features.append(new_features)
+                            self.perform_action_updates(
+                                new_env,
+                                next_features,
+                                new_reward,
+                                term_features,
+                                term_reward,
+                                new_features,
+                            )
+                    else:
+                        # 0 - don't learn from individual actions, terminal reward includes click costs
+                        # 1 - learn from all actions regardless of presence of terminal reward,
+                        #       terminal reward does not include click costs
+                        if reward_to_learn is not None:
+                            reward_to_learn += (1-self.learn_from_actions) * self.trial_costs
+                        else:
+                            # Subtract costs from maximum expected reward if there is no end-episode reward signal
+                            term_reward += (1 - self.learn_from_actions) * self.trial_costs
+
+                # Learn from maximum expected reward on every trial
+                if self.learn_from_MER:
+                    print("Learning from term reward: {}".format(term_reward))
+                    self.update_features.append(features)
+                    self.last_term_reward = term_reward
+                    self.perform_end_episode_updates(env, features, term_reward, taken_path)
+
+                # Learn from signal if it is present
+                print("End of episode")
+                print(reward_to_learn)
+                if reward_to_learn is not None:
+                    print("Performing end episode updates")
+                    self.update_features.append(features)
+                    if self.learn_from_path_boolean:
+                        self.learn_from_path(env, taken_path)
+                    self.last_term_reward = reward_to_learn
                     self.perform_end_episode_updates(env, features, reward_to_learn, taken_path)
+
+                reward = reward_to_learn
             return action, reward, done, taken_path
         else:  # Should this model learn from the termination action?
             reward = 0
