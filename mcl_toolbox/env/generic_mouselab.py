@@ -1,8 +1,6 @@
 import gym
 import numpy as np
 from gym import spaces
-from math import ceil
-from random import sample
 
 from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
 from mcl_toolbox.utils.distributions import Categorical
@@ -25,7 +23,6 @@ class GenericMouselabEnv(gym.Env):
         cost=1,
         render_path="mouselab_renders",
         feedback="none",
-        rewards_withheld = None,
         q_fn=None,
     ):
         super(GenericMouselabEnv, self).__init__()
@@ -33,10 +30,6 @@ class GenericMouselabEnv(gym.Env):
         self.ground_truth = ground_truth
         self.num_trials = num_trials
         self.render_path = render_path
-        if rewards_withheld is not None:
-            self.rewards_withheld = list(rewards_withheld)
-        else:
-            self.rewards_withheld = [False] * len(ground_truth)
         if isinstance(cost, list):
             cost_weight, depth_weight = cost
             self.cost = lambda depth: -(1 * cost_weight + depth * depth_weight)
@@ -146,8 +139,6 @@ class GenericMouselabEnv(gym.Env):
             for node in best_expected_path:
                 reward += self.present_trial.node_map[node].value
                 # self.present_trial.node_map[node].observe()
-            if self.rewards_withheld[self.present_trial_num]:
-                reward = None
         self._state[action] = node_map[action].value
         if self.features is not None:
             self.feature_state = self.construct_feature_state()
@@ -245,30 +236,6 @@ class GenericMouselabEnv(gym.Env):
         pres_node_map = self.present_trial.node_map
         term_reward = pres_node_map[0].calculate_max_expected_return()
         return term_reward
-
-    def get_expected_value_for_path(self, path):
-        """Get the expected reward of a given path that was taken
-
-        Path expected reward is the sum of all of the nodes along the path. If the node is unobserved, then
-        add expected value of that node
-
-        Path is a sequence of numbers corresponding to the nodes
-        """
-        expected_reward = 0
-        pres_node_map = self.present_trial.node_map
-        for node_idx in path:
-            # Ignore starting node
-            if node_idx == 0:
-                continue
-
-            node = pres_node_map[node_idx]
-            if node.observed:
-                expected_reward += node.value
-            else:
-                expected_reward += node.expected_value
-
-        return expected_reward
-
 
     # How would you run say transfer task easily?
     def attach_features(self, features, normalized_features):

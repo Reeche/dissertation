@@ -297,7 +297,7 @@ def main():
         best_params = res[0]
         if "pr_weight" not in best_params:
             best_params["pr_weight"] = 1
-        (r_data, sim_data, agent), p_data = optimizer.run_hp_model(
+        (r_data, sim_data), p_data = optimizer.run_hp_model(
             best_params, optimization_criterion, num_simulations=30
         )
         # print(sim_data['info'], len(sim_data['info']))

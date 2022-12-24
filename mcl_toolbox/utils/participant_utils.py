@@ -7,22 +7,19 @@ class ParticipantIterator:
         self.click_cost = click_cost
         self.clicks = self.participant.clicks
         self.envs = self.participant.envs
-        self.rewards = self.modify_scores(participant.scores, participant.clicks, participant.rewards_withheld)
+        self.rewards = self.modify_scores(participant.scores, participant.clicks)
         self.taken_paths = self.participant.paths
         self.strategies = self.participant.strategies
         self.temperature = self.participant.temperature
         self.current_trial = 0
         self.current_click = 0
 
-    def modify_scores(self, scores, p_clicks, rewards_withheld):
+    def modify_scores(self, scores, p_clicks):
         p_rewards = []
-        for score, clicks, withheld in zip(scores, p_clicks, rewards_withheld):
+        for score, clicks in zip(scores, p_clicks):
             num_clicks = len(clicks) - 1
             total_click_cost = self.click_cost * num_clicks
-            # Score includes subtracted click costs
-            # Add back click costs so that termination reward does not reflect click costs
-            adjusted_score = None if withheld else score + total_click_cost
-            rewards = [-self.click_cost] * num_clicks + [adjusted_score]
+            rewards = [-self.click_cost] * num_clicks + [score + total_click_cost]
             p_rewards.append(rewards)
         return p_rewards
 

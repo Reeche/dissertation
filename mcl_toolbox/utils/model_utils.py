@@ -102,7 +102,6 @@ class ModelFitter:
                 repeated_pipeline = construct_repeated_pipeline(
                     structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
                 )
-
                 self.pipeline = repeated_pipeline
 
             elif ("exp_setting" not in pipeline_kwargs) or ("num_trials" not in pipeline_kwargs):
@@ -131,7 +130,6 @@ class ModelFitter:
         else:
             self.click_cost = 1
 
-
     def update_attributes(self, env):
         self.pipeline = env.pipeline
         self.branching = self.pipeline[0][0]
@@ -139,15 +137,14 @@ class ModelFitter:
         if env.normalized_features is not None:
             self.normalized_features = env.normalized_features
 
-    def construct_env(self, participant, other_params, q_fn=None):
+    def construct_env(self, participant, q_fn=None):
         env = GenericMouselabEnv(
             len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
             cost=self.click_cost,
-            rewards_withheld=participant.rewards_withheld,
             feedback=participant.condition,
-            q_fn=q_fn
+            q_fn=q_fn,
         )
         return env
 
@@ -165,11 +162,10 @@ class ModelFitter:
             participant.condition = "none"
         return q_fn, participant
 
-    def get_participant_context(self, pid, other_params):
+    def get_participant_context(self, pid):
         participant = self.E.participants[pid]
-
         q_fn, participant = self.get_q_fn(participant)
-        env = self.construct_env(participant, q_fn=q_fn, other_params=other_params)
+        env = self.construct_env(participant, q_fn=q_fn)
         return participant, env
 
     def construct_model(self, model_index):
@@ -219,32 +215,10 @@ class ModelFitter:
         del learner_attributes["term"]
         return learner, learner_attributes
 
-    def construct_optimizer(self, model_index, pid, optimization_criterion, other_params):
+    def construct_optimizer(self, model_index, pid, optimization_criterion):
         # load experiment specific info
         learner, learner_attributes = self.construct_model(model_index)
-        add_params = ["learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
-                    "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER"]
-
-        # Add the additional attributes to the learner
-        for param in add_params:
-            if param in other_params:
-                print("Found {}: {}".format(param, other_params[param]))
-                learner_attributes[param] = other_params[param]
-
-                # If we want to learn from weighted average of signals, then optimize extra parameter
-                #   of weight of object-level feedback
-                if param == "learn_from_PER" and int(other_params[param]) == 2:
-                    learner_attributes["feedback_weight"] = True
-
-        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
-                            "learn_from_MER"]
-        file_extension = ""
-        for param in extension_params:
-            if param in other_params:
-                file_extension += str(int(other_params[param]))
-            else:
-                file_extension += "0" if param != "learn_from_actions" else "1"
-        self.participant, self.env = self.get_participant_context(pid, other_params)
+        self.participant, self.env = self.get_participant_context(pid)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
             strategy_weights = strategies.strategy_weights
@@ -270,31 +244,9 @@ class ModelFitter:
             params_dir=None,
     ):
         self.model_index = model_index
-        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion, optimization_params)
-        copy_params = optimization_params.copy()
-
-        # Extensions
-        # Model 1.1 - 10
-        # Model 1.2 - 11
-        # Model 2.1 - 00
-        # Model 2.2 - 20
-
-        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
-                            "learn_from_MER"]
-        file_extension = ""
-        for param in extension_params:
-            if param in optimization_params:
-                file_extension += str(int(optimization_params[param]))
-            else:
-                file_extension += "0" if param != "learn_from_actions" else "1"
-        remove_params = ["learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
-                         "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER", "feedback_weight"]
-        for param in remove_params:
-            if param in copy_params:
-                del copy_params[param]
-
+        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
         res, prior, obj_fn = optimizer.optimize(
-            optimization_criterion, **copy_params
+            optimization_criterion, **optimization_params
         )
         losses = [trial["result"]["loss"] for trial in res[1]]
         print(f"Loss: {min(losses)}")
@@ -303,7 +255,7 @@ class ModelFitter:
             pickle_save(
                 (res, prior),
                 os.path.join(
-                    params_dir, f"{pid}_{optimization_criterion}_{model_index}_{file_extension}.pkl"
+                    params_dir, f"{pid}_{optimization_criterion}_{model_index}.pkl"
                 ),
             )
         return res, prior, obj_fn
@@ -323,47 +275,35 @@ class ModelFitter:
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
         num_simulations = sim_params["num_simulations"]
-        # participant = None
-        # if pid is not None:
-        #     participant = self.E.participants[pid]
-        #     q_fn, participant = self.get_q_fn(participant)
-        #     env = self.construct_env(participant, q_fn=q_fn,other_params=sim_params)
-
-        optimizer = self.construct_optimizer(model_index, pid, "likelihood", sim_params)
-        self.update_attributes(self.env)
-        participant = self.participant
-        # learner, learner_attributes = self.construct_model(model_index)
-        # optimizer = ParameterOptimizer(
-        #     learner, learner_attributes, participant=participant, env=env
-        # )
-        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
-                            "learn_from_MER"]
-        file_extension = ""
-        for param in extension_params:
-            if param in sim_params:
-                file_extension += str(int(sim_params[param]))
-            else:
-                file_extension += "0" if param != "learn_from_actions" else "1"
-
+        participant = None
+        if pid is not None:
+            participant = self.E.participants[pid]
+            q_fn, participant = self.get_q_fn(participant)
+            env = self.construct_env(participant, q_fn=q_fn)
+        self.update_attributes(env)
+        learner, learner_attributes = self.construct_model(model_index)
+        optimizer = ParameterOptimizer(
+            learner, learner_attributes, participant=participant, env=env
+        )
         if participant is None:
-            (r_data, sim_data, agent), p_data = optimizer.run_hp_model_nop(
+            (r_data, sim_data), p_data = optimizer.run_hp_model_nop(
                 params, "reward", num_simulations=num_simulations
             )
-            plot_file = f"{model_index}_{num_simulations}_{file_extension}.png"
+            plot_file = f"{model_index}_{num_simulations}.png"
         else:
-            (r_data, sim_data, agent), p_data = optimizer.run_hp_model(
+            (r_data, sim_data), p_data = optimizer.run_hp_model(
                 params, "reward", num_simulations=num_simulations
             )
-            plot_file = f"{participant.pid}_{model_index}_{num_simulations}_{file_extension}.png"
+            plot_file = f"{participant.pid}_{model_index}_{num_simulations}.png"
         if plot_dir is not None:
             optimizer.reward_data = [r_data["mer"]]
             optimizer.p_data = p_data
             optimizer.plot_rewards(i=0, path=plot_dir.joinpath(plot_file))
 
         if sim_dir is not None:
-            save_path = f"{participant.pid}_{model_index}_{num_simulations}_{file_extension}.pkl"
+            save_path = f"{participant.pid}_{model_index}_{num_simulations}.pkl"
             if participant is None:
-                save_path = f"{model_index}_{num_simulations}_{file_extension}.pkl"
+                save_path = f"{model_index}_{num_simulations}.pkl"
             pickle_save(
                 sim_data,
                 sim_dir.joinpath(save_path),

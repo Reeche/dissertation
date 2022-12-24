@@ -134,6 +134,7 @@ python/results/*/*.pkl
 *.DS_Store
 *.pyc
 src/__pycache__/*.pyc
+data/human/IRL1/mouselab-mdp.csv
 src/results/*/*.pkl
 *pdf
 *png
@@ -148,6 +149,7 @@ results/*
 mcl_toolbox/import_data/data/*
 
 # the data folder
+data/human/*
 
 *csv
 !mcl_toolbox/models/rl_models.csv

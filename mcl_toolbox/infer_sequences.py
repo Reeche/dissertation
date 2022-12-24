@@ -40,35 +40,28 @@ def infer_experiment_sequences(
     strategy_weights = strategies.strategy_weights
 
     # For the new experiment that are not either v1.0, c1.1, c2.1_dec, F1 or IRL1
-    exp_pipelines = structure.exp_pipelines
-
-    # if exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
-    #     reward_dist = "categorical"
-    #     reward_structure = exp_num
-    #     reward_distributions = learning_utils.construct_reward_function(
-    #         structure.reward_levels[reward_structure], reward_dist
-    #     )
-    #     repeated_pipeline = learning_utils.construct_repeated_pipeline(
-    #         structure.branchings[exp_num], reward_distributions, num_trials
-    #     )
-    #     exp_pipelines = {exp_num: repeated_pipeline}
-    # else:
-    #     # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
-    #     exp_pipelines = structure.exp_pipelines
-    #     if exp_num not in structure.exp_reward_structures:
-    #         raise (ValueError, "Reward structure not found.")
-    #     reward_structure = structure.exp_reward_structures[exp_num]
-
-    if exp_num not in structure.exp_reward_structures:
-        raise (ValueError, "Reward structure not found.")
-    reward_structure = structure.exp_reward_structures[exp_num]
+    if exp_num not in ["v1.0", "c1.1", "c2.1_dec", "F1", "IRL1"]:
+        reward_dist = "categorical"
+        reward_structure = exp_num
+        reward_distributions = learning_utils.construct_reward_function(
+            structure.reward_levels[reward_structure], reward_dist
+        )
+        repeated_pipeline = learning_utils.construct_repeated_pipeline(
+            structure.branchings[exp_num], reward_distributions, num_trials
+        )
+        exp_pipelines = {exp_num: repeated_pipeline}
+    else:
+        # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
+        exp_pipelines = structure.exp_pipelines
+        if exp_num not in structure.exp_reward_structures:
+            raise (ValueError, "Reward structure not found.")
+        reward_structure = structure.exp_reward_structures[exp_num]
 
     if exp_num not in exp_pipelines:
         raise (ValueError, "Experiment pipeline not found.")
-
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    # pipeline = [pipeline[0] for _ in range(100)]
+    pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(
         reward_structure
@@ -107,19 +100,18 @@ def infer_experiment_sequences(
 
     return inferred_strategies, inferred_temperatures
 
+
 if __name__ == "__main__":
     random.seed(123)
     exp_name = sys.argv[1]  # e.g. c2.1_dec
+    block = None
     number_of_trials = int(sys.argv[2])
-
-    try:
+    if len(sys.argv) > 2:
         block = sys.argv[3]
-    except:
-        block = None
 
     # exp_name = "c2.1_dec"
     # block = "training"
 
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=50
+        exp_name, number_of_trials, block, max_evals=2
     )  # max_evals have to be at least 2 for testing
