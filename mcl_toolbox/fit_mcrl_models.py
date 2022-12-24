@@ -78,6 +78,7 @@ def fit_model(
         optimization_params,
         params_dir=prior_directory,
     )
+
     if simulate:
         sim_params = copy.deepcopy(optimization_params)
         sim_params["num_simulations"] = 30
@@ -140,10 +141,6 @@ if __name__ == "__main__":
     ):
         if attribute not in other_params["optimization_params"]:
             other_params["optimization_params"][attribute] = default_val
-    if "pct_rewarded" not in other_params:
-        other_params["optimization_params"]["pct_rewarded"] = 1.0
-    else:
-        other_params["optimization_params"]["pct_rewarded"] = other_params["pct_rewarded"]
 
     tic = time.perf_counter()
     fit_model(

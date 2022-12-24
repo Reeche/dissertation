@@ -352,7 +352,7 @@ class ParameterOptimizer:
             self.reward_data.append(relevant_data["mer"])
             relevant_data['sigma'] = params['lik_sigma']
         if get_sim_data:
-            return relevant_data, simulations_data#, self.agent
+            return relevant_data, simulations_data, self.agent
         else:
             return relevant_data
 
@@ -421,9 +421,10 @@ class ParameterOptimizer:
 
         # filter participant data by only the relevant data depending on objective
         observation = get_relevant_data(p_data, self.objective)
+
+
         if objective == "likelihood":
             self.compute_likelihood = True
-
 
         return self.objective_fn(params, get_sim_data=True)
 

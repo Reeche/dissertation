@@ -236,6 +236,14 @@ class ModelFitter:
                 if param == "learn_from_PER" and int(other_params[param]) == 2:
                     learner_attributes["feedback_weight"] = True
 
+        extension_params = ["learn_from_actions", "learn_from_unrewarded", "ignore_reward", "learn_from_PER",
+                            "learn_from_MER"]
+        file_extension = ""
+        for param in extension_params:
+            if param in other_params:
+                file_extension += str(int(other_params[param]))
+            else:
+                file_extension += "0" if param != "learn_from_actions" else "1"
         self.participant, self.env = self.get_participant_context(pid, other_params)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
@@ -279,7 +287,6 @@ class ModelFitter:
                 file_extension += str(int(optimization_params[param]))
             else:
                 file_extension += "0" if param != "learn_from_actions" else "1"
-        print(file_extension)
         remove_params = ["learn_from_actions", "learn_from_unrewarded", "compute_all_likelihoods",
                          "max_integration_degree", "ignore_reward", "learn_from_PER", "learn_from_MER", "feedback_weight"]
         for param in remove_params:
@@ -339,12 +346,12 @@ class ModelFitter:
                 file_extension += "0" if param != "learn_from_actions" else "1"
 
         if participant is None:
-            (r_data, sim_data), p_data = optimizer.run_hp_model_nop(
+            (r_data, sim_data, agent), p_data = optimizer.run_hp_model_nop(
                 params, "reward", num_simulations=num_simulations
             )
             plot_file = f"{model_index}_{num_simulations}_{file_extension}.png"
         else:
-            (r_data, sim_data), p_data = optimizer.run_hp_model(
+            (r_data, sim_data, agent), p_data = optimizer.run_hp_model(
                 params, "reward", num_simulations=num_simulations
             )
             plot_file = f"{participant.pid}_{model_index}_{num_simulations}_{file_extension}.png"

@@ -271,6 +271,7 @@ class LVOC(Learner):
                 )
             )
         )
+
         current_time_dict = {
             "time": end - start,
             "prob": float(selected_action_prob),
@@ -405,7 +406,7 @@ class LVOC(Learner):
                     # Otherwise learn from object level reward
                     if reward_to_learn is None:
                         reward_to_learn = path_expected_reward
-                        print("PER: {}".format(path_expected_reward))
+                        #print("PER: {}".format(path_expected_reward))
                 elif self.learn_from_PER == 2:
                     # Learn from expected reward of path only when object level reward absent
                     # Otherwise learn from weighted average of object-level reward and PER
