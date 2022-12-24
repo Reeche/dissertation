@@ -60,10 +60,6 @@
             "type": "normal",
             "range": [0, 1]
         },
-        "feedback_weight": {
-            "type": "uniform",
-            "range": [0,1]
-        },
         "gaussian_prior": {
             "type": "loguniform",
             "range": [1e-3, 1]

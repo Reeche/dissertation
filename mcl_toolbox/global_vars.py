@@ -8,6 +8,7 @@ import seaborn as sns
 
 file_location = Path(__file__).parents[0]
 
+
 # RenameUnpickler from https://stackoverflow.com/a/53327348
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
@@ -48,8 +49,6 @@ class structure:
     # excluded trials by Yash (and Val?)
     excluded_trials = {
         "v1.0": None,
-        "scarcity_control": None,
-        "scarcity_scarce": None,
         "F1": None,
         "T1.1": list(range(11)),
         "c1.1": list(range(30)),
@@ -73,8 +72,6 @@ class structure:
 
     branchings = {
         "v1.0": [3, 1, 2],
-        "scarcity_control": [3, 1, 2],
-        "scarcity_scarce": [3, 1, 2],
         "F1": [3, 1, 2],
         "T1.1": [3, 1, 1, 2, 3],
         "c1.1": [3, 1, 2],
@@ -113,8 +110,6 @@ class structure:
         "c2.1": "categorical",
         "T1.1": "normal",
         "v1.0": "categorical",
-        "scarcity_control": "categorical",
-        "scarcity_scarce": "categorical",
         "high_variance_high_cost": "categorical",
         "high_variance_low_cost": "categorical",
         "low_variance_high_cost": "categorical",
@@ -146,14 +141,10 @@ class structure:
     exp_pipelines = pickle_load("data/exp_pipelines.pkl")
     # for some reason F1 is missing one trial
     exp_pipelines["F1"].append(exp_pipelines["F1"][0])
-    exp_pipelines["scarcity_control"] = exp_pipelines["v1.0"]
-    exp_pipelines["scarcity_scarce"] = exp_pipelines["v1.0"] * 4
 
     # this maps experiment code to the text version of its reward level, e.g. 'low_constant' or 'large_increasing', before was pickle_load("data/exp_reward_structures.pkl")
     exp_reward_structures = {
         "v1.0": "high_increasing",
-        "scarcity_control": "high_increasing",
-        "scarcity_scarce": "high_increasing",
         "F1": "high_increasing",
         "c1.1": "low_constant",
         "c2.1_dec": "high_decreasing",

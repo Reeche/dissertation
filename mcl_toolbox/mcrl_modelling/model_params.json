@@ -7,8 +7,8 @@
     "lvoc": {
         "params": ["standard_dev", "num_samples", "eps"],
         "prior": ["strategy_weight"],
-        "extra_params": ["delay_scale", "subjective_cost", "feedback_weight"],
-        "extra_param_defaults": [0, 0, 1]
+        "extra_params": ["delay_scale", "subjective_cost"],
+        "extra_param_defaults": [0, 0]
     },
     "reinforce": {
         "params": ["lr", "inverse_temperature", "gamma"],

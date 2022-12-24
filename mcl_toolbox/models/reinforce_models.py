@@ -144,7 +144,7 @@ class REINFORCE(Learner):
             if self.use_pseudo_rewards:
                 pr = self.pseudo_rewards[::-1][i]
             R = (r + pr) + self.gamma * R
-            returns.insert(0, R) # [R_n, R_n-1... R_0] ; R_n = r + gamma * R_n-1
+            returns.insert(0, R)
         if self.path_learn:
             returns += self.policy.rewards[-3:]
         return returns
