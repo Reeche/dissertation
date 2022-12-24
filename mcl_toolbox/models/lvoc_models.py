@@ -1,7 +1,9 @@
 from collections import defaultdict
+import random
 
 import mpmath as mp
 import numpy as np
+import matplotlib.pyplot as plt
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import (break_ties_random,
@@ -10,6 +12,8 @@ from mcl_toolbox.utils.learning_utils import (break_ties_random,
                                               get_log_norm_pdf, norm_integrate,
                                               rows_mean, sample_coeffs)
 
+import time
+import copy
 
 class LVOC(Learner):
     """Base class of the LVOC model"""
@@ -20,20 +24,43 @@ class LVOC(Learner):
         self.num_samples = int(params["num_samples"])
         self.init_weights = params["priors"]
         self.eps = max(0, min(params["eps"], 1))
+        self.feedback_weight = float(params["feedback_weight"]) if "feedback_weight" in params else 1.0
         self.no_term = attributes["no_term"]
         self.vicarious_learning = attributes["vicarious_learning"]
         self.termination_value_known = attributes["termination_value_known"]
         self.monte_carlo_updates = attributes["montecarlo_updates"]
         self.init_model_params()
         self.term_rewards = []
+        self.last_mean = []
+        self.last_precision = []
+        self.trial_action_learn_features = []
+        self.all_update_features = []
+        self.features_over_time = []
+        self.covariance_over_time = []
+        self.trial_costs = 0
+        self.num_actions_updated = 0
+        self.bounds = []
+        self.precisions = []
+        self.action_likelihood_times = []
+        self.last_term_reward = None
 
     def init_model_params(self):
         """Initialize model parameters and initialize weights with participant priors"""
         self.mean = self.init_weights
         self.precision = np.diag([1 / self.standard_dev ** 2] * self.num_features)
+        self.last_mean = np.zeros_like(self.mean)
+        self.last_precision = np.zeros_like(self.precision)
+        self.bounds = []
+        self.precisions = []
         self.gamma_a = 1
         self.gamma_b = 1
+        self.trial_action_learn_features = []
+        self.trial_costs = 0
         self.action_log_probs = []
+        self.action_likelihood_times = []
+        self.all_update_features = []
+        self.features_over_time = []
+        self.last_term_reward = None
 
     def get_current_weights(self):
         return self.mean.tolist()
@@ -52,6 +79,7 @@ class LVOC(Learner):
             f {list} -- Features to be updated against.
             r {float} -- Reward signal against which the parameters are updated.
         """
+       # print("Performing param update")
         if self.is_null:
             return
         self.mean, self.precision, self.gamma_a, self.gamma_b = estimate_bayes_glm(
@@ -67,6 +95,9 @@ class LVOC(Learner):
     def get_action_details(self, env, trial_info):
         """Get the best action and its features in the given state"""
         feature_vals = self.get_action_features(env)
+
+        # if computing participant click likelihood, use participant actions
+        # instead of forward-simulating actions from model params
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
@@ -104,6 +135,10 @@ class LVOC(Learner):
     def perform_action_updates(
         self, env, next_features, reward, term_features, term_reward, features
     ):
+        #print("Performing action update")
+        self.num_actions_updated += 1
+
+        # Q represents the expected reward based on the current model
         q = np.dot(self.mean, next_features)
         pr = self.get_pseudo_reward(env)
         self.update_rewards.append(reward + pr - self.subjective_cost)
@@ -121,6 +156,9 @@ class LVOC(Learner):
                 )
 
     def perform_end_episode_updates(self, env, features, reward, taken_path):
+        if reward is None:
+            return
+        # print("Performing end episode updates: {}".format(reward))
         selected_action = 0
         delay = env.get_feedback({"taken_path": taken_path, "action": selected_action})
         pr = self.get_pseudo_reward(env)
@@ -138,39 +176,94 @@ class LVOC(Learner):
                 self.update_params(f, env.present_trial.node_map[node].value)
                 env.step(node)
 
+
     def store_action_likelihood(self, env, given_action):
         available_actions = env.get_available_actions()
         if self.no_term:
             available_actions.remove(0)
         action_index = available_actions.index(given_action)
         num_available_actions = len(available_actions)
+
+        # Seeing whether parameters changed since last action was taken
+        # Parameters shouldn't change when no updates are made
+        # if((self.mean == self.last_mean).all()):
+        #     print("Means Same")
+        #     pass
+        # else:
+        #     print("Means Different")
+        #     self.last_mean = self.mean
+        # if((self.precision == self.last_precision).all()):
+        #     print("Precisions Same")
+        #     pass
+        # else:
+        #     print("Precisions Different")
+        #     self.last_precision = self.precision
+
         feature_vals = self.get_action_features(env)
         dists = np.zeros((num_available_actions, 2))
+
+        # Should be diagonal if variance of posterior is diagonal
         cov = np.linalg.inv(self.precision*self.num_samples)
+
+
+        self.precisions.append(np.sum(self.precision))
+        self.covariance_over_time.append(np.sum(np.diagonal(cov)))
         for index, action in enumerate(available_actions):
             computed_features = feature_vals[action]
+            # E[Q_hat] for action in belief state
             dists[index][0] = np.dot(computed_features, self.mean)
+
+            # Var[Q_hat] for action in belief state
             dists[index][1] = np.dot(
                 np.dot(computed_features, cov), computed_features.T
             )
 
+        # What is driving Var[Q_hat] to systematically increase?
+        # Hypotheses:
+        #   Less frequent updates => fewer strategy changes => habitual feature that counts how often a click
+        #       is made goes up, driving up the product of the features
+
+        # Sanity check - change in uncertainty about the values of the feature weights - should go down rather than up
+        #       (self.precision should increase)
+        #   If there is increase in precision (normal):
+        #       Possible that increase in sigma comes from changing features
+        #       Plot values of features - does it make sense that this feature is going up?
+        #           If some feature values are going up even if they shouldn't:
+        #               Features might be implemented wrongly
+        #       Maybe it's acting more habitually
+        #   If there is decrease in precision (abnormal):
+        #       Something is wrong
+        #       Take a look at whether precision updating is correctly implemented
+
+        # self.precision = 1/sigma**2, where sigma is the standard deviation of the posterior on the weights
+        # self.mean = Mean vector of Gaussian posterior distribution over the weights
+        # Distributions from which the weights are drawn?
+        #
+        # means = E[Q_hat]
+        # sigmas = sqrt(Var[Q_hat])
         means = dists[:, 0]
         sigmas = np.sqrt(dists[:, 1])
+
         # Very important to select good bounds for proper sampling.
         ub = np.max(means + 5 * sigmas)
         lb = np.min(means - 5 * sigmas)
+
+        self.bounds.append(ub-lb)
+
+        start = time.time()
         if num_available_actions == 1:
             selected_action_prob = 1
         else:
-            # samples = np.random.multivariate_normal(means, np.diag(variances), size=n_samples)
-            # argmaxes = np.argmax(samples, axis=1)
-            # counts = Counter(argmaxes)
+
+            # Set limits to fine-grainedness
             selected_action_prob = mp.quad(
                 lambda x: norm_integrate(x, action_index, means, sigmas),
                 [lb, ub],
-                maxdegree=10,
+                maxdegree=self.max_integration_degree,
             )
+        end = time.time()
         eps = self.eps
+
         log_prob = float(
             str(
                 mp.log(
@@ -178,15 +271,28 @@ class LVOC(Learner):
                 )
             )
         )
+
+        current_time_dict = {
+            "time": end - start,
+            "prob": float(selected_action_prob),
+            "last_reward": self.last_term_reward
+        }
+        self.action_likelihood_times.append(current_time_dict)
         self.action_log_probs.append(log_prob)
-        return given_action, feature_vals[action_index]
+        return given_action, feature_vals[action_index], selected_action_prob
 
     def take_action(self, env, trial_info):
         action, features = self.get_action_details(env, trial_info)
         delay = env.get_feedback({"action": action})
+        prob = 0
         if self.compute_likelihood:
             pi = trial_info["participant"]
-            self.store_action_likelihood(env, action)
+            start = time.time()
+            if self.compute_all_likelihoods_boolean:
+                self.compute_all_likelihood_and_store(env, given_action=action)
+            else:
+                _, _, prob = self.store_action_likelihood(env, action)
+            end = time.time()
             s_next, r, done, _ = env.step(action)
             reward, taken_path, done = pi.make_click()
             # assert r == reward #doesn't make sense because the path is not the same
@@ -205,6 +311,8 @@ class LVOC(Learner):
             term_features = self.get_term_features(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
+
+            # If maximizing likelihood, take action selects participant's action
             (
                 s_next,
                 action,
@@ -214,22 +322,154 @@ class LVOC(Learner):
                 delay,
                 features,
             ) = self.take_action(env, trial_info)
+
+
+            # If action taken is not termination action
             if not done:
                 a_next, next_features = self.get_action_details(env, trial_info)
-                self.update_features.append(features)
-                self.perform_action_updates(
-                    env,
-                    next_features,
-                    reward - self.delay_scale * delay,
-                    term_features,
-                    term_reward,
-                    features,
-                )
+                # 2 - Save action features to learn from them only if terminal reward present
+                #   Learn from all actions individually at once at the end of the episode - Model 2.2
+                if self.learn_from_actions == 2:
+                    learn_from_this_action = False
+                    # Save trial features to learn from later
+                    self.trial_action_learn_features.append(
+                        (
+                            copy.deepcopy(features),
+                            copy.deepcopy(env),
+                            copy.deepcopy(next_features),
+                            reward - self.delay_scale * delay,
+                            copy.deepcopy(term_features),
+                            copy.deepcopy(term_reward),
+                            action
+                        )
+                    )
+                    self.all_update_features.append(
+                        (
+                            copy.deepcopy(features),
+                            copy.deepcopy(env),
+                            copy.deepcopy(next_features),
+                            reward - self.delay_scale * delay,
+                            copy.deepcopy(term_features),
+                            copy.deepcopy(term_reward),
+                            action
+                        )
+                    )
+                else:
+                    # 0 - don't learn from actions individually - Model 2.1
+                    # 1 - learn from all actions individually after they are taken - Model 1
+
+                    # Anything between 0 and 1: learn from action with that probability
+                    #   used to fit models that only learn from some actions (for testing purposes)
+                    learn_from_this_action = random.random() < self.learn_from_actions
+
+                self.trial_costs += reward
+                if learn_from_this_action:
+                    start = time.time()
+                    self.update_features.append(features)
+                    self.all_update_features.append(
+                        (
+                            copy.deepcopy(features),
+                            copy.deepcopy(env),
+                            copy.deepcopy(next_features),
+                            reward - self.delay_scale * delay,
+                            copy.deepcopy(term_features),
+                            copy.deepcopy(term_reward),
+                            action
+                        )
+                    )
+
+                    # Perform action update
+                    self.perform_action_updates(
+                        env,
+                        next_features,
+                        reward - self.delay_scale * delay,
+                        term_features,
+                        term_reward,
+                        features,
+                    )
+                    end = time.time()
+                    # print("Learning from actions: {0:0.3f}s".format(end - start))
+
+            # If action is planning termination
             else:
-                self.update_features.append(features)
-                if self.learn_from_path_boolean:
-                    self.learn_from_path(env, taken_path)
-                self.perform_end_episode_updates(env, features, reward, taken_path)
+                reward_to_learn = reward
+                if self.ignore_reward:
+                    # Ignore object level reward by setting it to None (no learning from it)
+                    reward_to_learn = None
+                elif self.learn_from_unrewarded and reward is None:
+                    # If no object level reward present, assume it to be zero
+                    reward_to_learn = 0
+
+                path_expected_reward = env.get_expected_value_for_path(taken_path)
+                if self.learn_from_PER == 1:
+                    # Learn from expected reward of path only when object level reward absent
+                    # Otherwise learn from object level reward
+                    if reward_to_learn is None:
+                        reward_to_learn = path_expected_reward
+                        #print("PER: {}".format(path_expected_reward))
+                elif self.learn_from_PER == 2:
+                    # Learn from expected reward of path only when object level reward absent
+                    # Otherwise learn from weighted average of object-level reward and PER
+                    if reward_to_learn is None:
+                        reward_to_learn = path_expected_reward
+                        #print("PER: {}".format(reward_to_learn))
+                    else:
+                        reward_to_learn = self.feedback_weight * reward_to_learn \
+                                          + (1 - self.feedback_weight) * path_expected_reward
+                        #print("Combined signal: {}".format(reward_to_learn))
+
+                # 2 - Learn from all individual actions at the end only if there is some end reward to learn from
+                #       (either maximum expected reward or object-level reward)
+                #   Reward feedback does not include the click costs
+                if reward_to_learn is not None or self.learn_from_MER:
+                    if self.learn_from_actions == 2:
+                        for (
+                                new_features,
+                                new_env,
+                                next_features,
+                                new_reward,
+                                term_features,
+                                term_reward,
+                                new_action
+                        ) in self.trial_action_learn_features:
+                            self.update_features.append(new_features)
+                            self.perform_action_updates(
+                                new_env,
+                                next_features,
+                                new_reward,
+                                term_features,
+                                term_reward,
+                                new_features,
+                            )
+                    else:
+                        # 0 - don't learn from individual actions, terminal reward includes click costs
+                        # 1 - learn from all actions regardless of presence of terminal reward,
+                        #       terminal reward does not include click costs
+                        if reward_to_learn is not None:
+                            reward_to_learn += (1-self.learn_from_actions) * self.trial_costs
+                        else:
+                            # Subtract costs from maximum expected reward if there is no end-episode reward signal
+                            term_reward += (1 - self.learn_from_actions) * self.trial_costs
+
+                # Learn from maximum expected reward on every trial
+                if self.learn_from_MER:
+                    #print("Learning from term reward: {}".format(term_reward))
+                    self.update_features.append(features)
+                    self.last_term_reward = term_reward
+                    self.perform_end_episode_updates(env, features, term_reward, taken_path)
+
+                # Learn from signal if it is present
+                #print("End of episode")
+                #print(reward_to_learn)
+                if reward_to_learn is not None:
+                    #print("Performing end episode updates")
+                    self.update_features.append(features)
+                    if self.learn_from_path_boolean:
+                        self.learn_from_path(env, taken_path)
+                    self.last_term_reward = reward_to_learn
+                    self.perform_end_episode_updates(env, features, reward_to_learn, taken_path)
+
+                reward = reward_to_learn
             return action, reward, done, taken_path
         else:  # Should this model learn from the termination action?
             reward = 0
@@ -241,6 +481,7 @@ class LVOC(Learner):
             return 0, reward, True, taken_path
 
     def simulate(self, env, compute_likelihood=False, participant=None):
+        # print("Running simulation")
         self.init_model_params()
         self.compute_likelihood = compute_likelihood
         env.reset()
@@ -250,17 +491,21 @@ class LVOC(Learner):
             get_log_norm_pdf.cache_clear()
             get_log_norm_cdf.cache_clear()
         for trial_num in range(num_trials):
+            #print(trial_num)
             self.previous_best_paths = []
             self.num_actions = len(env.get_available_actions())
             trials_data["w"].append(self.get_current_weights())
             self.update_rewards, self.update_features = [], []
+            self.trial_costs = 0
+            self.trial_action_learn_features = []
             actions, rewards, self.term_rewards = [], [], []
             done = False
+
             while not done:
                 action, reward, done, taken_path = self.act_and_learn(
                     env, trial_info={"participant": participant}
                 )
-                rewards.append(reward)
+                rewards.append(0 if reward is None else reward)
                 actions.append(action)
                 if done:
                     trials_data["taken_paths"].append(taken_path)

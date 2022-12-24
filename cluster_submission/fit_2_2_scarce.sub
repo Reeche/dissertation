@@ -1,0 +1,11 @@
+executable = env/bin/python
+filename = mcl_toolbox/fit_mcrl_models.py
+arguments = $(filename) $(exp_num:scarcity_scarce) $(model_index:6527) $(optimization_criterion:likelihood) $(pid) $(num_trials:120) {\"optimization_params\":{\"learn_from_actions\":2,\"max_integration_degree\":7}}
+output = log/fit_models/2.2/scarce/$(pid).stdout
+error  = log/fit_models/2.2/scarce/$(pid).stderr
+log   = log/fit_models/2.2/scarce/$(pid).log
+request_memory = 40000
+request_cpus = 1
++MaxRunningPrice = 20
++RunningPriceExceededAction = "kill"
+queue pid from cluster_submission/pid_lists/scarce_2_2_remaining.txt

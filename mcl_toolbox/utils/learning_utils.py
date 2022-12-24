@@ -24,6 +24,8 @@ from mcl_toolbox.utils.distributions import Categorical, Normal
 
 from mouselab.envs.registry import registry
 
+import time
+
 num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
 machine_eps = np.finfo(float).eps  # machine epsilon
 eps = np.finfo(float).eps
@@ -104,11 +106,17 @@ def get_log_beta_cdf(x, a, b):
 
 
 def norm_integrate(y, index, ms, sigmas):
+    #start = time.time()
     log_pdf = get_log_norm_pdf(y, ms[index], sigmas[index])
+    #end = time.time()
+    #print("Getting log norm pdf: {0:0.3f}".format(end - start))
     shape = ms.shape[0]
+    start = time.time()
     log_cdf = sum(
         [get_log_norm_cdf(y, ms[i], sigmas[i]) for i in range(shape) if i != index]
     )
+    #end = time.time()
+    #print("Getting log norm cdf: {0:0.3f}".format(end - start))
     return mp.exp(log_pdf + log_cdf)
 
 

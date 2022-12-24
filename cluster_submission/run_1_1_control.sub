@@ -1,0 +1,11 @@
+executable = env/bin/python
+filename = mcl_toolbox/run_mcrl_simulations.py
+arguments = $(filename) $(exp_num:scarcity_control) $(model_index:6527) $(optimization_criterion:likelihood) $(pid) $(num_trials:30) {\"sim_params\":{\"learn_from_actions\":1,\"max_integration_degree\":7}}
+output = log/run_models/1.1/control/$(pid).stdout
+error  = log/run_models/1.1/control/$(pid).stderr
+log   = log/run_models/1.1/control/$(pid).log
+request_memory = 8000
+request_cpus = 1
++MaxRunningPrice = 50
++RunningPriceExceededAction = "kill"
+queue pid from cluster_submission/pid_lists/control_pids_test.txt
