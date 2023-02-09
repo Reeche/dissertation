@@ -85,24 +85,24 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    exp_name = sys.argv[1]
-    model_index = int(sys.argv[2])
-    optimization_criterion = sys.argv[3]
-    pid = int(sys.argv[4])
-    number_of_trials = int(sys.argv[5])
-    other_params = {"plotting": True}
-    # other_params = {}
-    if len(sys.argv) > 6:
-        other_params = ast.literal_eval(sys.argv[6])
-    else:
-        other_params = {}
-
-    # exp_name = "v1.0"
-    # model_index = 300#1823#1241
-    # optimization_criterion = "likelihood"
-    # pid = 1#121
+    # exp_name = sys.argv[1]
+    # model_index = int(sys.argv[2])
+    # optimization_criterion = sys.argv[3]
+    # pid = int(sys.argv[4])
+    # number_of_trials = int(sys.argv[5])
     # other_params = {"plotting": True}
-    # number_of_trials = 35
+    # # other_params = {}
+    # if len(sys.argv) > 6:
+    #     other_params = ast.literal_eval(sys.argv[6])
+    # else:
+    #     other_params = {}
+
+    exp_name = "v1.0"
+    model_index = 1919#1823#1241
+    optimization_criterion = "likelihood"
+    pid = 1#121
+    other_params = {"plotting": True}
+    number_of_trials = 35
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 400
+            "max_evals": 2
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()

@@ -387,7 +387,7 @@ def group_adaptive_maladaptive_participant_list(exp_num, model_index):
     # print(exp_num)
     for pid in pid_list:  # iterate through the columns
         test_results = mk.original_test(all_participant_clicks[pid])
-        # print(f"Mann Kendall Test for trend for {pid}: {test_results}")
+        print(f"Mann Kendall Test for trend for {pid}: {test_results}")
 
         if exp_num == "high_variance_high_cost" and test_results[0] == "increasing":
             adaptive_pid.append(pid)

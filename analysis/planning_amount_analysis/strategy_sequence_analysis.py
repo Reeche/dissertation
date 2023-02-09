@@ -28,7 +28,7 @@ training = pd.read_pickle(f"results/cm/inferred_strategies/{experiment}_training
 training_cluster_df = pd.DataFrame.from_dict(training)
 
 # map strategy to cluster
-cluster_mapping = pd.read_pickle(f"mcl_toolbox/data/kl_cluster_map.pkl")
+cluster_mapping = pd.read_pickle(f"../../mcl_toolbox/data/kl_cluster_map.pkl")
 training_cluster_df = training_cluster_df.replace(cluster_mapping)
 training_cluster_df = training_cluster_df.replace(cluster_name_mapping)
 

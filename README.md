@@ -50,7 +50,13 @@ chmod +x test_analysis.sh
 ./test_analysis.sh
 ```
 
-#TODO unit tests
+CogSci analysis 
+-------
+The folder cogsci_analysis contains the analysis conducted for the CogSci submission 2023. 
+Please contact the author for the resulting pkl files of the model fitting results. 
+* create_df.py is used to create intermediate csv files that can be found in cogsci_analysis/results 
+* model_selection_analysis.py calculates BIC, AIC 
+* model_recovery_analysis.py performs model recovery
 
 Development
 -----------
