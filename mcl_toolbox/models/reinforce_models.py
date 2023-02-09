@@ -266,7 +266,6 @@ class REINFORCE(Learner):
         policy_loss = 0
         for trial_num in range(num_trials):
             trials_data["w"].append(self.get_current_weights())
-            test = self.get_current_weights()
             actions = []
             rewards = []
             self.previous_best_paths = []
