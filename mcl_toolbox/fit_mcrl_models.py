@@ -103,7 +103,7 @@ if __name__ == "__main__":
         other_params = {}
 
     # exp_name = "v1.0"
-    # model_index = 1919 #6527
+    # model_index = 1733 #6527
     # optimization_criterion = "likelihood"
     # # optimization_criterion = "pseudo_likelihood"
     # pid = 6  # 1, 5, 6, 10, 15
@@ -124,7 +124,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 2,
+            "max_evals": 400,
         }
         other_params["optimization_params"] = optimization_params
     tic = time.perf_counter()

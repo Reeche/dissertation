@@ -75,7 +75,6 @@ class REINFORCE(Learner):
         self.init_weights = np.array(params["priors"])
         self.num_actions = attributes["num_actions"]
         self.no_term = attributes["no_term"]
-        self.vicarious_learning = attributes["vicarious_learning"]
         self.termination_value_known = attributes["termination_value_known"]
         self.policy = Policy(self.beta, self.num_features).double()
         self.optimizer = optim.Adam(self.policy.parameters(), lr=self.lr)
