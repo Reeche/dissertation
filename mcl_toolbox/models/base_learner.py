@@ -28,11 +28,8 @@ class Learner(ABC):
         self.is_null = attributes["is_null"]
         self.previous_best_paths = []
         self.compute_likelihood = False
-        # for backwards compatibility
-        self.learn_from_path_boolean = None
         self.path_learn = False
         if "learn_from_path" in attributes:
-            self.learn_from_path_boolean = attributes["learn_from_path"]
             self.path_learn = attributes["learn_from_path"]
 
     @abstractmethod

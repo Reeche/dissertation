@@ -137,8 +137,8 @@ class REINFORCE(Learner):
         R = 0
         offset = 0
         if self.path_learn:
-            offset = 3
-        for i, r in enumerate(self.policy.rewards[:: -1 - offset]):
+            offset = 3 #todo: why?
+        for i, r in enumerate(self.policy.rewards[:: -1 - offset]): #get every n in reverse order
             pr = 0
             if self.use_pseudo_rewards:
                 pr = self.pseudo_rewards[::-1][i]
@@ -231,15 +231,16 @@ class REINFORCE(Learner):
             self.store_best_paths(env)
             # reward is the click cost
             action, reward, done, taken_path, delay = self.take_action(env, trial_info)
-            self.pseudo_rewards.append(self.get_pseudo_reward(env))
+            self.pseudo_rewards.append(self.get_pseudo_reward(env)) # always appended but only used if pr is true
             self.policy.rewards.append(
                 reward - self.subjective_cost - self.delay_scale * delay
             )
             if done:
                 delay = env.get_feedback({"action": 0, "taken_path": taken_path})
                 self.policy.rewards[-1] = reward - self.delay_scale * delay
-                if self.learn_from_path_boolean:
+                if self.path_learn:
                     # updates policy.rewards with rewards of the take path
+                    # this function is to attach the corresponding reward to be used in finish_episode
                     self.learn_from_path(env, taken_path)
                 policy_loss = self.finish_episode()
             # if done = True, then reward = value of best_expected_path
@@ -249,8 +250,10 @@ class REINFORCE(Learner):
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-            if self.learn_from_path_boolean:
+            if self.path_learn:
                 self.learn_from_path(env, trial_info["taken_path"])
+            # List of PR has to have same length as reward, todo: check if this is correct
+            self.pseudo_rewards.append(self.get_pseudo_reward(env))
             self.finish_episode()
             return 0, reward, True, taken_path
 

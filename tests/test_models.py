@@ -13,7 +13,7 @@ def test_models(
         _, _, _ = optimizer.optimize(criterion, **optimization_params)
     return None
 
-random_models = np.random.choice(range(10463), 50)
+random_models = np.random.choice(range(3266), 100)
 
 class TestModels(unittest.TestCase):
     @parameterized.expand([[model_index, {
@@ -26,5 +26,5 @@ class TestModels(unittest.TestCase):
         Tests models to make sure we didn't break anything for MCRL Project
         Takes around 15 minutes
         """
-        test_models("v1.0", 1, [model_index], optimization_params=optimization_params)
+        test_models("v1.0", 6, [model_index], optimization_params=optimization_params)
         self.assertTrue(True)

@@ -128,14 +128,16 @@ class LVOC(Learner):
         self.update_params(features, value_estimate)
         self.update_rewards.append(
             value_estimate
-        )  # This line has been changed. This only affects montecarlo models
+        )
+        self.learn_from_path(env, features, taken_path)
         self.perform_montecarlo_updates()
 
-    def learn_from_path(self, env, path):
-        if self.path_learn:
-            for node in path:
-                f = env.get_action_state(node)
-                self.update_params(f, env.present_trial.node_map[node].value)
+    def learn_from_path(self, env, features, taken_path):
+        if self.path_learn and taken_path: # during simulation if end_episode and not likelihood, taken_path is None
+            for node in taken_path:
+                # get features and reward given current node
+                # action, features = self.get_action_details(env, trial_info)
+                self.update_params(features, env.present_trial.node_map[node].value)
                 env.step(node)
 
     def store_action_likelihood(self, env, given_action):
@@ -225,19 +227,20 @@ class LVOC(Learner):
                     term_reward,
                     features,
                 )
-            else:
+            else: #if done; hierarchical models never enter here
                 self.update_features.append(features)
-                if self.learn_from_path_boolean:
-                    self.learn_from_path(env, taken_path)
                 self.perform_end_episode_updates(env, features, reward, taken_path)
             return action, reward, done, taken_path
-        else:  # Should this model learn from the termination action?
+        else:  # for hierarchial model, if it says to terminate
+            # Should this model learn from the termination action?
             reward = 0
             taken_path = None
             if self.compute_likelihood:
                 reward, taken_path, done = trial_info["participant"].make_click()
-            if self.learn_from_path_boolean:
-                self.learn_from_path(env, trial_info["taken_path"])
+
+            # todo: previously, there was no update here. does it make sense that there is no update here?
+            # todo: does it make sense to use the termination_features?
+            self.perform_end_episode_updates(env, self.get_term_features(env), reward, taken_path)
             return 0, reward, True, taken_path
 
     def simulate(self, env, compute_likelihood=False, participant=None):
