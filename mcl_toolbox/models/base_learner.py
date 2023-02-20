@@ -26,16 +26,11 @@ class Learner(ABC):
         self.normalized_features = attributes["normalized_features"]
         self.use_pseudo_rewards = attributes["use_pseudo_rewards"]
         self.is_null = attributes["is_null"]
-        self.path_learn = False
-        # todo: what is "path_learn"?
-        if "path_learn" in attributes:
-            self.path_learn = attributes["path_learn"]
         self.previous_best_paths = []
         self.compute_likelihood = False
-        # for backwards compatibility
-        self.learn_from_path_boolean = None
+        self.path_learn = False
         if "learn_from_path" in attributes:
-            self.learn_from_path_boolean = attributes["learn_from_path"]
+            self.path_learn = attributes["learn_from_path"]
 
     @abstractmethod
     def simulate(self, env, compute_likelihood=False, participant=False):

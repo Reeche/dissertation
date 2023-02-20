@@ -222,7 +222,7 @@ class HierarchicalLearner(Learner):
                 continue_planning, _ = self.decision_agent.get_action(
                     env, trial_info={"participant": participant}
                 )
-                if continue_planning == 0: #stop planning
+                if continue_planning == 0:
                     previous_path = participant.get_trial_path()
                     _, reward, done, taken_path = env.step(0)
                     if compute_likelihood:
@@ -258,7 +258,6 @@ class HierarchicalLearner(Learner):
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
         #f decision agent continues, then action agent takes action, i.e. there are action log probs
-        # action log probs are always negative or 0?
         if self.decision_agent.action_log_probs and self.actor_agent.action_log_probs:
             trials_data["loss"] = -(
                 np.sum(self.decision_agent.action_log_probs)
