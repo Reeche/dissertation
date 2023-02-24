@@ -3,16 +3,17 @@
 import os
 import sys
 
+
 def make_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def create_sub_file(script_name, args, process_arg = False, num_cpus = 1, num_gpus = 0,
-                    req_mem = 2000, num_runs = 1, py_version = 3, logs = True,
-                    errs = False, outputs = False):
+
+def create_sub_file(script_name, args, process_arg=False, num_cpus=1, num_gpus=0,
+                    req_mem=2000, num_runs=1, py_version=3, logs=True,
+                    errs=False, outputs=False):
     """
         Create condor sub file named temp_submission.sub with python as executable.
-
         Arguments:
             script_name  -- Name of the python script
             args         -- List of arguments (args will be converted to string)
@@ -60,7 +61,8 @@ def create_sub_file(script_name, args, process_arg = False, num_cpus = 1, num_gp
         sub_file.write(f"queue {num_runs}\n")
     return sub_file_name
 
-def submit_sub_file(sub_file, bid = 3, remove_on_submission = False):
+
+def submit_sub_file(sub_file, bid=3, remove_on_submission=False):
     """
     Submit jobs with the specified bid
     Arguments:
@@ -68,14 +70,19 @@ def submit_sub_file(sub_file, bid = 3, remove_on_submission = False):
         bid                  -- Bid for the condor system
         remove_on_submission -- Whether to remove the submit file after submission
     """
-    command = f"condor_submit_bid {bid} {sub_file}"
+    #    command = f"condor_submit_bid {bid} {sub_file}"
+    command = f"condor_submit -file {sub_file} -factory"
     os.system(command)
     if remove_on_submission:
         os.remove(sub_file)
+
 
 if __name__ == "__main__":
     """
         Example of a submission file creation
     """
-    sub_file = create_sub_file("control_model_running.py", [1,"lvoc", "likelihood", "false", "false"], outputs = True)
-    submit_sub_file(sub_file, bid = 100)
+    sub_file = create_sub_file("control_model_running.py", [1, "lvoc", "likelihood", "false", "false"], outputs=True)
+    submit_sub_file(sub_file, bid=100)
+
+
+# condor_submit -file sub_multiple.sub -factory

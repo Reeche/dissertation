@@ -1,23 +1,46 @@
-import os
-import sys
-import time
-from condor_utils import create_sub_file, submit_sub_file
+from condor_utils import submit_sub_file
 
-bid = 10
-script = 'mcl_toolbox/fit_mcrl_models.py'  # The file that you want to run on the cluster.
+bid = 1
+script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
-# exp_num = ['high_variance_high_cost']
-# models = ['1823', '1919']
-# pid_dict = {'high_variance_high_cost': [1]}
+## for testing
+# exp_num = ['v1.0']
+# models = [256]
+# pid_dict = {
+#     'v1.0': [121]}
 
-exp_num = ['high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost']
-#models = ['31', '63', '95', '127', '159', '191', '607', '639', '671', '703', '735', '767',
-#          '1183', '1215', '1247', '1279', '1311', '1343', '1759', '1855']
+models = ['256',
+          '272',
+          '276',
+          '280',
+          '284',
+          '288',
+          '2047',
+          '2064',
+          '2069',
+          '2074',
+          '2079',
+          '2084']
 
-models = ['1823', '1919', '415', '447', '479', '511', '991', '1023', '1055', '1087']
+# exp_num = [#'v1.0',
+#            #'c2.1',
+#            'c1.1']
+#            #'high_variance_high_cost',
+#            #'high_variance_low_cost',
+#            #'low_variance_high_cost',
+#            #'low_variance_low_cost']
 
-
+exp_num = ["v1.0"]
 pid_dict = {
+    'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
+             80, 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 121, 124, 126, 132, 137, 140, 141, 144, 146,
+             148, 150, 154, 155, 158, 160, 165, 169, 173],
+    'c2.1': [0, 3, 8, 11, 13, 16, 20, 22, 25, 26, 30, 31, 33, 39, 41, 47, 49, 52, 53, 58, 60, 61, 64, 67, 72, 78,
+                 79, 84, 86, 88, 93, 95, 96, 99, 103, 107, 108, 113, 115, 118, 122, 123, 128, 130, 133, 134, 136, 138,
+                 142, 145, 149, 152, 156, 162, 164, 166, 170, 172],
+    'c1.1': [2, 4, 7, 9, 12, 14, 19, 23, 27, 28, 32, 36, 37, 42, 44, 46, 48, 50, 54, 57, 63, 65, 70, 71, 74, 76, 81,
+             83, 87, 89, 91, 92, 97, 100, 102, 105, 109, 111, 114, 116, 120, 125, 127, 129, 131, 135, 139, 143, 147,
+             151, 153, 157, 159, 161, 163, 167, 168, 171],
     'high_variance_high_cost': [0, 1, 10, 18, 22, 25, 30, 32, 38, 41, 46, 47, 49, 57, 60, 63, 65, 70, 74, 76, 81, 83,
                                 88, 89, 94, 103, 108, 109, 111, 114, 116, 118, 125, 129, 134, 139, 149, 150, 156, 161,
                                 164, 167, 169, 173, 177, 182, 188, 191, 195, 198, 199, 204],
@@ -31,20 +54,14 @@ pid_dict = {
                               99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
                               165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207]}
 
+with open("parameters.txt", "w") as parameters:
+    for exp_num_ in exp_num:
+        for models_ in models:
+            pids = pid_dict.get(exp_num_)
+            if pids:
+                for pid in pids:
+                    args = [exp_num_, models_, 'likelihood', pid, 35]
+                    args_str = " ".join(str(x) for x in args) + "\n"
+                    parameters.write(args_str)
 
-num_simulation = 30
-max_eval = 400
-for exp_num_ in exp_num:
-    for models_ in models:
-        pids = pid_dict.get(exp_num_)
-        if pids:
-            for pid in pids:
-                args = [exp_num_, models_, 'pseudo_likelihood', pid, True, 'hyperopt', num_simulation, max_eval]
-                sub_file = create_sub_file(script, args, process_arg=False, num_runs=1, num_cpus=1, req_mem=2000,
-                                           logs=True,
-                                           errs=True, outputs=True)
-                submit_sub_file(sub_file, bid)
-                time.sleep(1)
-
-# python3 mcl_toolbox/fit_mcrl_models.py v1.0 861 pseudo_likelihood 1 hyperopt 2 2
-# python3 mcl_toolbox/fit_mcrl_models.py <exp_num> <model_index> <optimization criterion> <pid> hyperopt <num_simulation> <max_eval>
+submit_sub_file("sub_multiple.sub", bid)

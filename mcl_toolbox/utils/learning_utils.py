@@ -12,6 +12,7 @@ import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+# os.environ["R_HOME"] = "/usr/lib/R"
 from rpy2.robjects import NULL
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
