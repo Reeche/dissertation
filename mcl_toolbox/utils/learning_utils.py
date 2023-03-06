@@ -11,67 +11,16 @@ import numpy as np
 import numpy.linalg as LA
 import scipy.linalg
 import seaborn as sns
+from mouselab.analysis_utils import get_data
+from mouselab.distributions import Categorical, Normal
+from mouselab.envs.registry import registry
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 # os.environ["R_HOME"] = "/usr/lib/R"
-from rpy2.robjects import NULL
 from rpy2.robjects.packages import importr
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from scipy.spatial.distance import squareform
 from scipy.stats import gamma, norm
 from statsmodels.nonparametric.smoothers_lowess import lowess
-
-from mcl_toolbox.utils.analysis_utils import get_data
-from mcl_toolbox.utils.distributions import Categorical, Normal
-
-from mouselab.envs.registry import registry
-
-num_strategies = 89  # TODO move to global_vars after separating out analysis utils and learning utils
-machine_eps = np.finfo(float).eps  # machine epsilon
-eps = np.finfo(float).eps
-
-# import r package by first installing if not on user's machine
-try:
-    mvprpb = importr("mvprpb")
-except:
-    utils = importr("utils")
-    utils.chooseCRANmirror(ind=1)
-    utils.install_packages('https://cran.r-project.org/src/contrib/Archive/mvprpb/mvprpb_1.0.4.tar.gz', repos=NULL, type="source")
-    mvprpb = importr("mvprpb")
-
-parent_folder = Path(__file__).parents[1]
-
-small_level_map = {
-    0: 0,
-    1: 1,
-    2: 2,
-    3: 3,
-    4: 3,
-    5: 1,
-    6: 2,
-    7: 3,
-    8: 3,
-    9: 1,
-    10: 2,
-    11: 3,
-    12: 3,
-}
-level_values = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
-const_var_values = [[-10, -5, 5, 10]]
-
-reward_levels = {
-    "high_increasing": level_values[1:],
-    "high_decreasing": level_values[1:][::-1],
-    "low_constant": const_var_values * 3,
-    "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
-}
-
-reward_type = {
-    "F1": "categorical",
-    "c1.1_old": "categorical",
-    "c2.1": "categorical",
-    "T1.1": "normal",
-    "v1.0": "categorical",
-}
 
 
 @lru_cache(maxsize=None)
@@ -139,14 +88,19 @@ def softmax(x):
 
 
 def get_mu_v(mu, variances, index):
-    m = mu[index] - np.concatenate((mu[:index], mu[index + 1:]))
-    v = np.concatenate((variances[:index], variances[index + 1:]))
+    m = mu[index] - np.concatenate((mu[:index], mu[index + 1 :]))
+    v = np.concatenate((variances[:index], variances[index + 1 :]))
     cv = np.diag(v) + variances[index]
     return m, cv
 
 
 # Alternate way to verify that log likelihoods are right for LVOC
 def get_gaussian_max_probs(mu, variances):
+    try:
+        mvprpb = importr("mvprpb")
+    except Exception as e:
+        raise e
+
     probs = []
     n_actions = len(mu)
     for index in range(n_actions):
@@ -276,7 +230,6 @@ def construct_repeated_pipeline(branching, reward_function, num_trials):
     return [(branching, reward_function)] * num_trials
 
 
-
 def construct_pipeline(branchings, reward_distributions):
     return list(zip(branchings, reward_distributions))
 
@@ -369,23 +322,23 @@ def get_participant_details(
     return envs, scores, clicks_data, taken_paths
 
 
-def get_participant_weights(participant_num, exp_num="F1", criterion="all_features"):
+def get_participant_weights(
+        participant_num, exp_num="F1", criterion="all_features", data_path=None
+):
+    if data_path is None:
+        data_path = Path(__file__).parents[1].joinpath("data")
     try:
         if criterion == "all_features":
             participant_weights = pickle_load(
-                parent_folder.joinpath(f"data/starting_weights_{exp_num}.pkl")
+                data_path.joinpath(f"starting_weights_{exp_num}.pkl")
             )
         elif type(criterion) == int:
             participant_weights = pickle_load(
-                parent_folder.joinpath(
-                    f"/data/starting_weights_{exp_num}_{criterion}.pkl"
-                )
+                data_path.joinpath(f"starting_weights_{exp_num}_{criterion}.pkl")
             )
         elif criterion == "normalize":
             participant_weights = pickle_load(
-                parent_folder.joinpath(
-                    f"/data/starting_weights_{exp_num}_normalized.pkl"
-                )
+                data_path.joinpath(f"starting_weights_{exp_num}_normalized.pkl")
             )
     except FileNotFoundError:
         print("Unable to load prior weights")
@@ -474,19 +427,23 @@ def get_normalized_feature_values(feature_values, features_list, max_min_values)
             max_min_diff = max_feature_values[feature] - min_feature_values[feature]
             f_min_diff = fv - min_feature_values[feature]
             # print(feature, f_min_diff, max_min_diff, max_min_diff - f_min_diff)
-            if max_min_diff == 0:
+            if feature == "constant":
+                normalized_features[i] = 1
+            elif max_min_diff == 0:
                 normalized_features[i] = 0
             else:
                 normalized_features[i] = f_min_diff / max_min_diff
     return normalized_features
 
 
-def get_normalized_features(exp_num):
+def get_normalized_features(exp_num, data_path=None):
+    if data_path is None:
+        data_path = Path(__file__).parents[1].joinpath("data")
     max_feature_values = pickle_load(
-        parent_folder.joinpath(f"data/normalized_values/{exp_num}/max.pkl")
+        data_path.joinpath(f"normalized_values/{exp_num}/max.pkl")
     )
     min_feature_values = pickle_load(
-        parent_folder.joinpath(f"data/normalized_values/{exp_num}/min.pkl")
+        data_path.joinpath(f"normalized_values/{exp_num}/min.pkl")
     )
     return max_feature_values, min_feature_values
 
@@ -851,7 +808,7 @@ def compute_average_transition_matrix(S):
     return average_transition_matrix
 
 
-def get_strategy_counts(S):
+def get_strategy_counts(S, num_strategies=89):
     """
     Get the strategy count at each time step
     Params:
@@ -948,7 +905,7 @@ def sample_coeffs(prior_mean, prior_precision, a, b, n_samples=1):
     TODO:
     """
     gamma_rvs = gamma.rvs(a * np.ones(n_samples), scale=(1 / b) * np.ones(n_samples))
-    k = np.maximum(gamma_rvs, machine_eps)
+    k = np.maximum(gamma_rvs, np.finfo(float).eps)
     k = np.reshape(k, (-1, 1))
     samples = []
     for i in range(n_samples):
@@ -1300,7 +1257,7 @@ def plot_performance(
         dir_path=None,
         show=True,
 ):
-    """
+    """# noqa : E501
     Plot the performance of algorithm and participant
     Params:
         participant_performance: 1D or 2D list or ndarray. If 1D, it is interpreted as a single participant's performance and there should be participant number.
@@ -1447,13 +1404,12 @@ def remove_elements_at_indices(lis, exclude_indices):
     return lis
 
 
-def get_normalized_strategy_weights():
-    num_strategies = 38
+def get_normalized_strategy_weights(num_strategies=38, data_path=None):
+    if data_path is None:
+        data_path = Path(__file__).parents[1].joinpath("data")
     s_weights = np.zeros((38, 59))
     for s in range(num_strategies):
-        s_weights[s] = pickle_load(
-            parent_folder.joinpath(f"data/strategy_weights/{s}.pkl")
-        )
+        s_weights[s] = pickle_load(data_path.joinpath(f"data/strategy_weights/{s}.pkl"))
     return s_weights
 
 
@@ -1502,24 +1458,20 @@ def get_cluster_dict(clusters, strategy_space):
 
 
 def get_relevant_data(simulations_data, criterion):
-    if criterion in ['reward', 'performance_error']:
-        return {'r': simulations_data['r'], "mer": simulations_data["mer"]}
-    elif criterion in ['distance']:
-        return {'w': simulations_data['w']}
-    elif criterion in ['strategy_accuracy', 'strategy_transition']:
-        return {'s': simulations_data['s']}
-    elif criterion in ['clicks_overlap']:
-        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
-    elif criterion in ['number_of_clicks']:
-        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
-    elif criterion in ['number_of_clicks_likelihood']:
-        return {'a': simulations_data['a'], 'mer': simulations_data['mer']}
+    if criterion in ["reward", "performance_error"]:
+        return {"r": simulations_data["r"], "mer": simulations_data["mer"]}
+    elif criterion in ["distance"]:
+        return {"w": simulations_data["w"]}
+    elif criterion in ["strategy_accuracy", "strategy_transition"]:
+        return {"s": simulations_data["s"]}
+    elif criterion in ["clicks_overlap", "number_of_clicks_likelihood"]:
+        return {"a": simulations_data["a"], "mer": simulations_data["mer"]}
     elif criterion in ["likelihood"]:
         if "loss" in simulations_data:
             return {"loss": simulations_data["loss"], "mer": simulations_data["mer"]}
         return {"mer": simulations_data["mer"]}
     else:  # pseudo_likelihood
-        return {'mer': simulations_data['mer']}
+        return {"mer": simulations_data["mer"]}
 
 
 def get_clicks_per_trial(participant_clicks, algorithm_clicks):
@@ -1597,9 +1549,18 @@ def compute_objective(criterion, sim_data, p_data, pipeline, sigma=1):
         objective_value = normal_objective
     elif criterion == "number_of_clicks_likelihood":
         # get the number of clicks of the participant and of the algorithm
-        p_number_of_clicks_per_trial, a_number_of_clicks_per_trial = get_clicks_per_trial(p_data['a'], sim_data['a'])
-        objective_value = -np.sum([norm.logpdf(x, loc=y, scale=np.exp(sim_data["sigma"])) for x, y in
-                                   zip(a_number_of_clicks_per_trial, p_number_of_clicks_per_trial)])
+        (
+            p_number_of_clicks_per_trial,
+            a_number_of_clicks_per_trial,
+        ) = get_clicks_per_trial(p_data["a"], sim_data["a"])
+        objective_value = -np.sum(
+            [
+                norm.logpdf(x, loc=y, scale=np.exp(sim_data["sigma"]))
+                for x, y in zip(
+                a_number_of_clicks_per_trial, p_number_of_clicks_per_trial
+            )
+            ]
+        )
     # print("Criterion: ", criterion, objective_value)
     else:
         raise ("Objective value not supported or misspelled.")
@@ -1611,11 +1572,13 @@ def convert_strategy_weights(strategies, strategy_weights):
 
 
 class Participant:
-    """Creates a participant object which contains all details about the participant
+    """# noqa : E501
+    Creates a participant object which contains all details about the participant
 
     Returns:
         Participant -- Contains details such as envs, scores, clicks, taken paths,
                        strategies and weights at each trial.
+    TODO: Searching through the project 11.01.21, it seems this is not used compared to the Experiment/Participant classes in experiment_utils.py
     """
 
     def __init__(
@@ -1639,13 +1602,20 @@ class Participant:
         self.num_trials = len(self.clicks) - num_excluded
         self.get_strategies = get_strategies
         if self.get_strategies:
+            top_folder = data_path.parents[0]
             try:
                 self.strategies = pickle_load(
-                    f"results/final_strategy_inferences/{self.exp_num}_strategies.pkl"
+                    top_folder.joinpath(
+                        f"results/final_strategy_inferences/"
+                        f"{self.exp_num}_strategies.pkl"
+                    )
                 )
                 self.strategies = np.array(self.strategies[self.pid])
                 self.temperature = pickle_load(
-                    f"results/final_strategy_inferences/{self.exp_num}_temperatures.pkl"
+                    top_folder.joinpath(
+                        f"results/final_strategy_inferences/"
+                        f"{self.exp_num}_temperatures.pkl"
+                    )
                 )[self.pid]
             except FileNotFoundError:
                 print("Inferred strategy sequence not found")
@@ -1654,6 +1624,10 @@ class Participant:
         else:
             self.strategies = [None] * len(self.envs)
             self.temperature = 1
+        if not strategy_weights:
+            strategy_weights = pickle_load(
+                data_path.joinpath("data/microscope_weights.pkl")
+            )
         if self.get_weights:
             self.weights = convert_strategy_weights(
                 self.strategies, (1 / self.temperature) * strategy_weights

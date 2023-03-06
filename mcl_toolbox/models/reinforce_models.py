@@ -239,6 +239,7 @@ class REINFORCE(Learner):
             if done:
                 delay = env.get_feedback({"action": 0, "taken_path": taken_path})
                 self.policy.rewards[-1] = reward - self.delay_scale * delay
+                self.pseudo_rewards.append(self.get_pseudo_reward(env))
                 if self.path_learn:
                     # updates policy.rewards with rewards of the take path
                     # this function is to attach the corresponding reward to be used in finish_episode

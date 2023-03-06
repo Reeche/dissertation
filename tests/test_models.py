@@ -13,7 +13,7 @@ def test_models(
         _, _, _ = optimizer.optimize(criterion, **optimization_params)
     return None
 
-random_models = np.random.choice(range(3266), 100)
+random_models = np.random.choice(range(3266), 2000)
 
 class TestModels(unittest.TestCase):
     @parameterized.expand([[model_index, {

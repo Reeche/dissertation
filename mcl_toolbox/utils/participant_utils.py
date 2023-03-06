@@ -1,4 +1,4 @@
-from mcl_toolbox.utils.experiment_utils import Experiment #for running on the server, remove mcl_toolbox. part
+from mcl_toolbox.utils.experiment_utils import Experiment
 
 
 class ParticipantIterator:
