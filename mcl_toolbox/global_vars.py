@@ -57,7 +57,8 @@ class structure:
         "low_variance_high_cost": None,
         "low_variance_low_cost": None,
         "high_variance_high_cost": None,
-        "high_variance_low_cost": None
+        "high_variance_low_cost": None,
+        "strategy_discovery": None
     }
 
 
@@ -73,7 +74,9 @@ class structure:
         "low_variance_low_cost": [3, 1, 2],
         "high_variance_high_cost": [3, 1, 2],
         "high_variance_low_cost": [3, 1, 2],
+        "strategy_discovery": [3, 1, 2],
     }
+    strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     level_values_decreasing = [
         [0],
@@ -93,6 +96,7 @@ class structure:
         "low_variance_low_cost": low_variance_values * 3,
         "high_variance_high_cost": high_variance_values * 3,
         "high_variance_low_cost": high_variance_values * 3,
+        "strategy_discovery": strategy_discovery * 3,
     }
 
     reward_exps = {
@@ -107,6 +111,7 @@ class structure:
         "high_variance_low_cost": "categorical",
         "low_variance_high_cost": "categorical",
         "low_variance_low_cost": "categorical",
+        "strategy_discovery": "categorical",
     }
 
     small_level_map = {
@@ -148,6 +153,7 @@ class structure:
         "low_variance_low_cost": "low_variance_low_cost",
         "high_variance_high_cost": "high_variance_high_cost",
         "high_variance_low_cost": "high_variance_low_cost",
+        "strategy_discovery": "strategy_discovery",
     }
 
     normalized_value_directories = {
@@ -312,53 +318,7 @@ class features:
 
 
 class hierarchical_params:
-    # normalize = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 72.0, 2.0, 2.0] #unused, but was at top of file
     precision_epsilon = 1e-4
-    # quadrature_max_degree = 1e5 #unused, but was at top of file
-
-
-class misc:
-    control_pids = [
-        1,
-        2,
-        6,
-        9,
-        11,
-        14,
-        18,
-        21,
-        24,
-        27,
-        37,
-        38,
-        44,
-        50,
-        55,
-        56,
-        58,
-        66,
-        76,
-        79,
-        85,
-        89,
-        90,
-        98,
-        99,
-        100,
-        104,
-        111,
-        113,
-        118,
-        119,
-        123,
-        126,
-        129,
-        139,
-        142,
-        144,
-        153,
-        154,
-    ]
 
 
 class plotting:

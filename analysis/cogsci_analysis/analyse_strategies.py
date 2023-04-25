@@ -5,11 +5,9 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import pymannkendall as mk
 
-exp_num_list = ["v1.0",
-                "c2.1",
-                "c1.1"]
-
-selected_model = [1855, 1919]  # 1823#1855#1919
+# exp_num_list = ["v1.0", "c2.1", "c1.1"]
+exp_num_list = ["c2.1"]
+selected_model = [483, 491]
 
 learning_participants = {
     "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
@@ -49,7 +47,7 @@ for exp_name in exp_num_list:
         proportion_pid = 0
         proportion_model = 0
 
-        df = pd.read_csv(f"results/{exp_name}_intermediate_results_v4.csv")
+        df = pd.read_csv(f"results_2000_iterations/{exp_name}_intermediate_results_v4.csv")
         # filter for learners
         df = df[df["pid"].isin(learning_participants[exp_name])]
         # filter for model
@@ -147,7 +145,7 @@ for exp_name in exp_num_list:
         # plt.plot(proportion_pid, label="Participant")
 
         # get mean and sem of score_list
-        if model == 1919:
+        if model == 491:
             plt.plot(proportion_model, label="REINFORCE")
             test_results = mk.original_test(proportion_model)
             print(f"Mann Kendall Test for trend for {model} and {exp_name}: {test_results}")
@@ -168,7 +166,7 @@ for exp_name in exp_num_list:
     plt.ylabel("Proportion of adaptive strategies")
     # plt.title(exp_name)
     plt.legend()
-    # plt.savefig(f"results/plots/proportion_{exp_name}.png")
+    # plt.savefig(f"results_2000_iterations/plots/proportion_{exp_name}.png")
     # plt.show()
     plt.close()
 

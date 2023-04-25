@@ -26,10 +26,10 @@ def create_dataframe_of_fitted_model_pid(exp_num, pid_list, model_list, model_in
     temp_model_score = []
     for index, row in df.iterrows():
         try:  # load loss
-            # prior_data = pd.read_pickle(
-            #     f"results/mcrl/{exp_num}_priors/{row['pid']}_likelihood_{row['model']}.pkl")  # local
             prior_data = pd.read_pickle(
-                f"../results/mcrl/{exp_num}_priors/{row['pid']}_likelihood_{row['model']}.pkl")  # server
+                f"results_6000_iterations/mcrl/{exp_num}_priors/{row['pid']}_likelihood_{row['model']}.pkl")
+            # prior_data = pd.read_pickle(
+            #     f"../results/mcrl/{exp_num}_priors/{row['pid']}_likelihood_{row['model']}.pkl")  # server
             losses = [trial["result"]["loss"] for trial in prior_data[0][1]]
             min_loss = min(np.absolute(losses))
             temp_loss.append(min_loss)
@@ -56,8 +56,9 @@ def create_dataframe_of_fitted_model_pid(exp_num, pid_list, model_list, model_in
             print(f"PID {row['pid']} and model {row['model']} priors pickle did not work: Error: {e}")
 
         try:  # load click and score data of model
-            # reward_data = pd.read_pickle(f"results/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")  # local
-            reward_data = pd.read_pickle(f"../results/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")  # server
+            reward_data = pd.read_pickle(
+                f"results_6000_iterations/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")  # local
+            # reward_data = pd.read_pickle(f"../results/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")  # server
             temp_model_clicks.append(reward_data["a"][0])
             temp_model_score.append(reward_data["r"][0])
 
@@ -74,8 +75,7 @@ def create_dataframe_of_fitted_model_pid(exp_num, pid_list, model_list, model_in
 
     df["pid_clicks"] = "na"
     df["pid_score"] = "na"
-    # pid_info = pd.read_csv(f"data/human/{exp_num}/mouselab-mdp.csv")  # local
-    pid_info = pd.read_csv(f"../data/human/{exp_num}/mouselab-mdp.csv")  # server
+    pid_info = pd.read_csv(f"../../data/human/{exp_num}/mouselab-mdp.csv")
     for pid in df["pid"]:
         pid_info_temp = pid_info.loc[pid_info['pid'] == pid]
         temp_reward_list = []
@@ -92,8 +92,7 @@ def create_dataframe_of_fitted_model_pid(exp_num, pid_list, model_list, model_in
             df.at[idx_, 'pid_clicks'] = temp_click_list
             df.at[idx_, 'pid_score'] = temp_reward_list
 
-    # df.to_csv(f"cogsci_analysis/results/{exp_num}_intermediate_results.csv") #local
-    df.to_csv(f"results/{exp_num}_intermediate_results_v4.csv")  # server
+    df.to_csv(f"results/{exp_num}_intermediate_results_v4.csv")
 
     return df
 
@@ -104,19 +103,18 @@ def create_bic_table(df, exp_num):
     # df = df.reset_index()
     # aggfunc is needed, sum should not do anything since tehre is only one BIC value
     df_pivot = pd.pivot_table(df, index=["pid"], columns=["model"], values=["BIC"], aggfunc=np.sum, fill_value=0)
-    # df_pivot.to_csv(f"cogsci_analysis/results/matlab_{exp_num}_bic_filtered_for_models.csv")  # local
-    df_pivot.to_csv(f"results/matlab_{exp_num}_bic_v4.csv")  # server
+    df_pivot.to_csv(f"results/matlab_{exp_num}_bic_v4.csv")
 
     return df_pivot
 
 
 def create_one_bic_table():
-    exp_num_list = ["c2.1",
-                    "c1.1",
-                    "high_variance_high_cost",
-                    "high_variance_low_cost",
-                    "low_variance_high_cost",
-                    "low_variance_low_cost"]
+    exp_num_list = ["c2.1"]
+                    # "c1.1",
+                    # "high_variance_high_cost",
+                    # "high_variance_low_cost",
+                    # "low_variance_high_cost",
+                    # "low_variance_low_cost"]
     df = pd.read_csv(f"cogsci_analysis/results/matlab_v1.0_bic_v4.csv")
 
     for exp_name in exp_num_list:
@@ -129,26 +127,26 @@ def create_one_bic_table():
 
 if __name__ == "__main__":
     # create_one_bic_table()
-    exp_name = sys.argv[1]
-    # exp_name = "v1.0"
+    # exp_name = sys.argv[1]
+    exp_name = "c2.1"
 
-    model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
-                  415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
-                  607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
-                  991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
-                  1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
-                  1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
-                  1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
-                  1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
+    # model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
+    #               415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
+    #               607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
+    #               991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
+    #               1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
+    #               1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
+    #               1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
+    #               1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
+
 
     optimization_criterion = "likelihood"
     pid_list = get_all_pid_for_env(exp_name)
     # pid_list = [1, 5]
-    # model_list = [769, 796]
+    model_list = [483, 491]
     #
     # load model.csv
-    # model_information = pd.read_csv("mcl_toolbox/models/rl_models.csv") #local
-    model_information = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")  # server
+    model_information = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")
     # model_information = model_information[model_information[index].isin(model_list)]
     model_information_filtered = model_information.filter(items=model_list, axis=0)
     df = create_dataframe_of_fitted_model_pid(exp_name, pid_list, model_list, model_information_filtered)

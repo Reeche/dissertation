@@ -837,7 +837,7 @@ def get_delay_penalty(q_data, env, action_sequence):
     """
     Get delay penalty of an environment
     Params:
-        q_data: Pickle file present in the results folder
+        q_data: Pickle file present in the results_2000_iterations folder
         env: Environment represented as node values from 0 to 12
         action_seqnece: List of actions to get delays for (ends with 0)
     Returns:
@@ -1606,14 +1606,14 @@ class Participant:
             try:
                 self.strategies = pickle_load(
                     top_folder.joinpath(
-                        f"results/final_strategy_inferences/"
+                        f"results_2000_iterations/final_strategy_inferences/"
                         f"{self.exp_num}_strategies.pkl"
                     )
                 )
                 self.strategies = np.array(self.strategies[self.pid])
                 self.temperature = pickle_load(
                     top_folder.joinpath(
-                        f"results/final_strategy_inferences/"
+                        f"results_2000_iterations/final_strategy_inferences/"
                         f"{self.exp_num}_temperatures.pkl"
                     )
                 )[self.pid]

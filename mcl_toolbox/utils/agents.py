@@ -104,7 +104,7 @@ class Agent(ABC):
         return dict(trace)
 
     def run_many(self, n_episodes, pbar=True, track=(), **kwargs):
-        """Runs several episodes, returns a summary of results."""
+        """Runs several episodes, returns a summary of results_2000_iterations."""
         data = defaultdict(list)
         range_ = tnrange if pbar else range
         for _ in range_(n_episodes):
@@ -163,7 +163,7 @@ class Component(ABC):
         self.saved = defaultdict(list)
 
     def experience(self, state, action, new_state, reward, done):
-        """Learn from the results of taking action in state.
+        """Learn from the results_2000_iterations of taking action in state.
 
         state: state in which action was taken.
         action: action taken.

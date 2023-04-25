@@ -30,15 +30,15 @@ class MouselabEnv(gym.Env):
     term_state = "__term_state__"
 
     def __init__(
-        self,
-        tree,
-        init,
-        ground_truth=None,
-        cost=0,
-        term_belief=True,
-        sample_term_reward=False,
-        last_action=0,
-        mdp_graph_properties={},
+            self,
+            tree,
+            init,
+            ground_truth=None,
+            cost=0,
+            term_belief=True,
+            sample_term_reward=False,
+            last_action=0,
+            mdp_graph_properties={},
     ):
         """
         :param tree: adjacency list
@@ -163,7 +163,7 @@ class MouselabEnv(gym.Env):
         yield self.term_action
 
     def results(self, state, action):
-        """Returns a list of possible results of taking action in state.
+        """Returns a list of possible results_2000_iterations of taking action in state.
         Each outcome is (probability, next_state, reward).
         """
         if action == self.term_action:

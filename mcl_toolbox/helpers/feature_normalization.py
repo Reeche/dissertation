@@ -68,7 +68,7 @@ def normalize(pipeline, features_list, num_simulations=1000):
 
 
 if __name__ == "__main__":
-    exp_num = "high_variance_low_cost"
+    exp_num = "strategy_discovery"
     num_simulations = 1000
     features_list = pickle_load("../data/implemented_features.pkl")
     branching = [3, 1, 2]

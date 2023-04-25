@@ -206,7 +206,7 @@ class ModelFitter:
             num_actions=self.num_actions,
             **learner_attributes,
         )
-        del learner_attributes["term"]
+        del learner_attributes["term"] #todo: why is term deleted?
         return learner, learner_attributes
 
     def construct_optimizer(self, model_index, pid, optimization_criterion):

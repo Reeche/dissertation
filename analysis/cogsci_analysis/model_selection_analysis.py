@@ -227,8 +227,8 @@ if __name__ == "__main__":
             exp_num_list = exp_num_list_planning
         for exp_name in exp_num_list:
             # find_adaptive_particpants(exp_name)
-            # load csv with intermediate results
-            df = pd.read_csv(f"results/{exp_name}_intermediate_results_v4.csv")
+            # load csv with intermediate results_2000_iterations
+            df = pd.read_csv(f"results_2000_iterations/{exp_name}_intermediate_results_v4.csv")
             # drop first column
             del df[df.columns[0]]
             # filter df for models to be considered (no vicarious learning, no monte carlo, no subjective cost)

@@ -2,10 +2,10 @@ import gym
 import numpy as np
 from gym import spaces
 
-from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.distributions import Categorical #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.env_utils import get_num_actions #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.sequence_utils import compute_current_features #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
+from mcl_toolbox.utils.distributions import Categorical
+from mcl_toolbox.utils.env_utils import get_num_actions
+from mcl_toolbox.utils.sequence_utils import compute_current_features
 
 
 class GenericMouselabEnv(gym.Env):
@@ -34,6 +34,9 @@ class GenericMouselabEnv(gym.Env):
             cost_weight, depth_weight = cost
             self.cost = lambda depth: -(1 * cost_weight + depth * depth_weight)
             self.repeat_cost = -float("inf")
+        elif hasattr(cost, '__call__'): #if it is a function
+            self.cost = cost
+            self.repeat_cost = -float("inf")
         else:  # should be a scalar
             self.cost = lambda depth: -(1 * cost)
             self.repeat_cost = -cost * 10
@@ -45,6 +48,7 @@ class GenericMouselabEnv(gym.Env):
         if self.feedback == "meta" and self.q_fn is None:
             raise ValueError("Q-function is required to compute metacognitive feedback")
         self.construct_env()
+
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials

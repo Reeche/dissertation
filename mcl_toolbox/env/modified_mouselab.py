@@ -7,15 +7,15 @@ from typing import List
 import numpy as np
 from toolz import get
 
-from mcl_toolbox.utils import distributions #for runnigng on the server, remove mcl_toolbox part
-from mcl_toolbox.utils.learning_utils import get_normalized_feature_values #for runnigng on the server, remove mcl_toolbox part
+from mcl_toolbox.utils import distributions 
+from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 """ This file defines the node, trial and trial sequence class for the
     feature based representation of the Mouselab-MDP. This assumes that
     the environment structure is a tree symmetric in its branches
 """
-distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
-
+# distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
+distribution_by_level = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
 decreasing_dist_by_level = {1: [-48, -24, 24, 48], 2: [-8, -4, 4, 8], 3: [-4, -2, 2, 4]}
 
 constant_list = [-10, -5, 5, 10]

@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # df = pd.read_csv(f"../../../Desktop/CogSci analysis/matlab_bic_learning_86.csv")
-# df = pd.read_csv(f"results/matlab_bic_planning_87.csv")
-# df = pd.read_csv(f"results/matlab_bic_threecond_87.csv")
+# df = pd.read_csv(f"results_2000_iterations/matlab_bic_planning_87.csv")
+# df = pd.read_csv(f"results_2000_iterations/matlab_bic_threecond_87.csv")
 # del df[df.columns[0]]
 # df = df.drop(df.index[1]) # drop row with pid
 #
@@ -31,7 +31,7 @@ import pandas as pd
 # plt.close()
 
 
-### chi^2 test of frequencies based on BMS results
+### chi^2 test of frequencies based on BMS results_2000_iterations
 """
 three cond: 
         exp_r: [0.4358 0.5642]

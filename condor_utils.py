@@ -70,8 +70,8 @@ def submit_sub_file(sub_file, bid=3, remove_on_submission=False):
         bid                  -- Bid for the condor system
         remove_on_submission -- Whether to remove the submit file after submission
     """
-    #    command = f"condor_submit_bid {bid} {sub_file}"
-    command = f"condor_submit -file {sub_file} -factory"
+    command = f"condor_submit_bid {bid} {sub_file}"
+    # command = f"condor_submit -file {sub_file} -factory"
     os.system(command)
     if remove_on_submission:
         os.remove(sub_file)

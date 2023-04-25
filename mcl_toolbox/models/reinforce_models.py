@@ -29,18 +29,21 @@ class Policy(nn.Module):
         self.rewards = []
 
     def forward(self, x, term_reward=None, termination=True):
-        x = self.weighted_preference(x)
+        # x and y are action tensor each with length 13, each with values smaller or equal to 1
+        y = self.weighted_preference(x)
         if term_reward:
-            x[0][0] = torch.Tensor([term_reward])
+            y[0][0] = torch.Tensor([term_reward])
         if not termination:
-            x[0][0] = torch.Tensor([-np.inf])
-        action_scores = self.beta * x
+            y[0][0] = torch.Tensor([-np.inf])
+        action_scores = self.beta * y
 
         # todo: why is log_softmax done twice? Here and in the return?
         softmax_vals = F.log_softmax(action_scores, dim=0)
+        # softmax_vals is tensor with length 13
         softmax_vals = torch.exp(softmax_vals)
 
         # softmax = e(softmax_vals) / sum(softmax_vals)
+        # softmax_vals.sum() seems to be 1
         return softmax_vals / softmax_vals.sum()
 
 
