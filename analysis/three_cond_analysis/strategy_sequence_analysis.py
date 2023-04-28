@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import pymannkendall as mk
 
 experiment = "c1.1"
 # add cluster names
@@ -26,7 +28,6 @@ cluster_mapping = pd.read_pickle(f"../../mcl_toolbox/data/kl_cluster_map.pkl")
 strategy_cluster_df = strategy_cluster_df.replace(cluster_mapping)
 strategy_cluster_df = strategy_cluster_df.replace(cluster_name_mapping)
 
-
 clustering_the_cluster = {"Goal-setting with exhaustive backward planning": "Goal-setting",
                           "Forward planning strategies similar to Breadth First Search": "Forward planning",
                           "Middle-out planning": "Middle-out planning",
@@ -44,22 +45,81 @@ clustering_the_cluster = {"Goal-setting with exhaustive backward planning": "Goa
 # cluster the cluster
 strategy_cluster_cluster_df = strategy_cluster_df.replace(clustering_the_cluster)
 
-# magnitude of changes: for this we need the unclustered strategies.
-# How often are changes within one cluster and outside one cluster?
-def magnitude_of_change(strategy_cluster_df):
-    # count how many uniquue values within 35 trials
-    results = []
-    for columns in strategy_cluster_df:
-        results.append(strategy_cluster_df[columns].nunique())
 
-    plt.hist(results, bins='auto')
-    plt.xlabel("Number of strategy cluster changes")
-    plt.ylabel("Count of strategy cluster changes")
-    plt.savefig(f"{experiment}_magnitude_of_change.png")
+def magnitude_of_change_based_on_cluster(strategy_df, type):
+    # How often are changes within one cluster and outside one cluster?
+    # count how many unique values within 35 trials
+    results = []
+    for columns in strategy_df:
+        results.append(strategy_df[columns].nunique())
+
+    # count how many changes in total
+    print(experiment, sum(results))
+
+    # plt.hist(results, bins=13, range=(0, 13))
+    # plt.xlabel("Number of changes")
+    # plt.ylabel("Count of changes")
+    # plt.savefig(f"plots/{experiment}_magnitude_of_change_{type}.png")
+    # plt.show()
+    # plt.close()
+
+
+def magnitude_of_change_based_on_jeffrey(strategy_df):
+    jeffrey_table = pd.read_pickle(f"../../mcl_toolbox/data/jeffreys_divergences.pkl")
+    jeffrey_table = pd.DataFrame(jeffrey_table)
+
+    # get average of divergence for all strategies
+    average_divergence = jeffrey_table.mean().mean() / 2
+
+    # create df with jeff divergence
+    df = strategy_df.copy()
+    df = df - 1  # all strategy index values -1 because jeffrey table start at 0
+
+    for column in df:
+        for i in range(len(df[column]) - 2 + 1):
+            strategy_a, strategy_b = df[column][i: i + 2]
+            # look up jeff divergence from the table
+            df[column][i] = jeffrey_table.loc[strategy_a][strategy_b]
+
+    # drop the last row because there is nothing to compare against
+    df = df.drop(index=df.index[-1], axis=0)
+
+    # all values to a long list
+    all_values = df.values.tolist()
+
+    # plot histogram with mean as vertical line
+    # plt.hist(all_values, bins='auto')
+    # plt.axvline(x=average_divergence, color='b')
+    # plt.xlabel("Jeffrey divergence")
+    # plt.ylabel("Count")
+    # plt.savefig(f"plots/{experiment}_jeffrey_hist.png")
+    # # plt.show()
+    # plt.close()
+
+    # count how many before the line and how many after the line
+    print("Smaller than average: ", df[df < average_divergence].count().sum())
+    print("Larger than average: ", df[df > average_divergence].count().sum())
+
+    # plot jeffey development over time
+    plt.plot(df.mean(axis=1))
+    plt.ylim(0, 2400)
+    plt.xlabel("Trials")
+    plt.ylabel("Jeffrey divergence")
+    ci = 1.96 * np.std(df.T) / np.sqrt(len(df.T))
+    plt.fill_between(range(len(df.mean(axis=1))), df.mean(axis=1) - ci, df.mean(axis=1) + ci, color="b", alpha=.1)
+    plt.savefig(f"plots/{experiment}_jeffrey_development.png")
     # plt.show()
     plt.close()
 
-magnitude_of_change(strategy_cluster_df)
+    # jeffrey trend
+    result = mk.original_test(df.mean(axis=1))
+    print(f"Mann Kendall test for clicks for {experiment}: clicks are {result}")
+
+magnitude_of_change_based_on_jeffrey(strategy_unclustered)
+
+
+# magnitude_of_change_based_on_cluster(strategy_unclustered, "strategy")
+# magnitude_of_change_based_on_cluster(strategy_cluster_df, "cluster")
 
 # find out how often a trajectory has been used
 def trajectory_frequency(training_cluster_df):
@@ -85,4 +145,3 @@ def trajectory_frequency(training_cluster_df):
     # sort flipped to get the trajectories with highest probabilities
     sorted_results = {k: v for k, v in sorted(flipped.items(), key=lambda item: item[1], reverse=True)}
     print(sorted_results)
-
