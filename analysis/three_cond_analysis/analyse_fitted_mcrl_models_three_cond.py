@@ -173,15 +173,11 @@ def average_performance_reward(
             x="Number of trials", y="Reward", data=data_average[data_average["Type"]=="algo"], legend="full"
         )
         plt.ylim(12, 37)
-        # ax = sns.lineplot(
-        #     x="Number of trials", y="Reward", hue="Type", data=data_average[data_average["Type"]=="algo"], legend="full"
-        # )
-        # plt.savefig(
-        #     f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
-        #     bbox_inches="tight",
-        # )
+        ax = sns.lineplot(
+            x="Number of trials", y="Reward", hue="Type", data=data_average[data_average["Type"]=="algo"], legend="full"
+        )
         plt.savefig(
-            f"falk_LVOC.png",
+            f"{plot_directory}/{exp_num}_{optimization_criterion}_{model_index}_{plot_title}.png",
             bbox_inches="tight",
         )
         # plt.show()

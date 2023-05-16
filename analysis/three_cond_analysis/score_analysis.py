@@ -1,0 +1,46 @@
+import pandas as pd
+import numpy as np
+from random import sample
+import matplotlib.pyplot as plt
+
+exp = "c1.1"
+# plot score development for individuals
+df = pd.read_csv(f"../../data/human/{exp}/mouselab-mdp.csv")
+df = df[["pid", "trial_index", "score"]]
+
+# sample from the learning participants
+learning_participants = {
+    "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
+             82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 124, 132, 137, 144, 146, 150, 154, 155, 158,
+             160, 165, 169, 173],
+    "c2.1": [0, 8, 13, 16, 20, 25, 26, 30, 31, 33, 39, 41, 47, 49, 52, 53, 58, 60, 61, 64, 67, 84, 86, 93, 95, 96,
+             99, 103, 108, 113, 115, 118, 122, 123, 128, 130, 133, 134, 136, 138, 142, 145, 149, 156, 164, 166,
+             170],
+    "c1.1": [2, 4, 7, 9, 12, 19, 23, 27, 28, 32, 37, 42, 44, 50, 54, 57, 63, 65, 70, 71, 74, 76, 81, 89, 91, 92,
+             100, 102, 105, 109, 116, 120, 125, 127, 129, 131, 135, 139, 143, 151, 153, 157, 159, 161, 163, 167,
+             168, 171]}
+
+learning_pid_for_exp = learning_participants[exp]
+sampled_pid = sample(learning_pid_for_exp, 3)
+
+# plot for each individual individually and add them to the plot
+for pid in sampled_pid:
+    sampled_df = df[df["pid"] == pid]
+    plt.plot(range(0, 35), sampled_df["score"])
+
+if exp == "v1.0":
+    plt.axhline(y=39.99, color='b', label='Best strategy score')
+    # plt.axhline(y=6.38, color='r', label='Frugal strategy average score')
+    # plt.axhline(y=17.83, color='g', label='Myopic strategy average score')
+elif exp == "c2.1":
+    plt.axhline(y=28.55, color='b', label='Best strategy score')
+    # plt.axhline(y=6.38, color='r', label='Frugal strategy average score')
+    # plt.axhline(y=17.83, color='g', label='Best strategy (myopic) score')
+elif exp == "c1.1":
+    plt.axhline(y=6.58, color='b', label='Best strategy score')
+
+plt.legend()
+plt.title(exp)
+plt.savefig(f"plots/score/{exp}_individual_score_development_2.png")
+# plt.show()
+plt.close()

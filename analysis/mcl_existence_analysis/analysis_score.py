@@ -20,16 +20,31 @@ def plot_score(pretraining_exp, training, test_exp, pretraining_control, test_co
     """
     # making all into one array
     # x = np.hstack([pretraining, training, test])
-    ci = 1.96 * np.std(training) / np.sqrt(len(training))
-    plt.plot(range(1, len(training) + 1), training, label="Training (experimental only)")
-    # add the pre and posttraining exp
-    plt.plot(0, pretraining_exp, 'go', label="Average experimental score")
-    plt.plot(31, test_exp, 'go')
-    # add the pre and posttraining control
-    plt.plot(0, pretraining_control, 'ro', label="Average control score")
-    plt.plot(31, test_control, 'ro')
 
+    pretraining_exp_mean = np.mean(pretraining_exp)
+    test_exp_mean = np.mean(test_exp)
+    pretraining_control_mean = np.mean(pretraining_control)
+    test_control_mean = np.mean(test_control)
+
+    ci = 1.96 * np.std(training) / np.sqrt(len(training))
+
+    plt.plot(range(1, len(training) + 1), training, label="Training (experimental only)")
     plt.fill_between(range(1, len(training) + 1), training - ci, training + ci, color="b", alpha=.1)
+
+    # add the pre and posttraining exp
+    # plt.plot(0, pretraining_exp_mean, 'go', label="Average experimental score")
+    plt.errorbar(0, pretraining_exp_mean, yerr=1.96 * np.std(pretraining_exp) / np.sqrt(len(pretraining_exp)), fmt="go", alpha=0.5, label="Average experimental score")
+
+    # plt.plot(31, test_exp_mean, 'go')
+    plt.errorbar(31, test_exp_mean, yerr=1.96 * np.std(test_exp) / np.sqrt(len(test_exp)), fmt="go", alpha=0.5)
+
+    # add the pre and posttraining control
+    # plt.plot(0, pretraining_control_mean, 'ro', label="Average control score")
+    plt.errorbar(0, pretraining_control_mean, yerr=1.96 * np.std(pretraining_control) / np.sqrt(len(pretraining_control)), fmt="ro", alpha=0.5, label="Average control score")
+
+    # plt.plot(31, test_control_mean, 'ro')
+    plt.errorbar(31, test_control_mean, yerr=1.96 * np.std(test_control) / np.sqrt(len(test_control)), fmt="ro", alpha=0.5)
+
     plt.ylim(top=60)
     # plt.axvline(x=0.5)
     # plt.axvline(x=29.5)
@@ -39,9 +54,9 @@ def plot_score(pretraining_exp, training, test_exp, pretraining_control, test_co
     plt.yticks(fontsize=10)
     # plt.title(experiment)
     plt.legend(fontsize=10, loc="lower center")
-    plt.savefig(f"results/cm/plot/average_score_training_{experiment}_{condition}_journal")
+    plt.savefig(f"average_score_training_{experiment}_{condition}_journal")
     # plt.show()
-    # plt.close()
+    plt.close()
     return None
 
 
@@ -71,8 +86,8 @@ def mean_confidence_interval(data, confidence=0.95):
 experiment = "with_click"
 condition = "exp"
 
-data = pd.read_csv(f"data/human/existence_{experiment}_{condition}/mouselab-mdp.csv")
-pid = pd.read_csv(f"data/human/existence_{experiment}_{condition}/participants.csv")
+data = pd.read_csv(f"../../data/human/existence_{experiment}_{condition}/mouselab-mdp.csv")
+pid = pd.read_csv(f"../../data/human/existence_{experiment}_{condition}/participants.csv")
 number_of_participants = len(pid)
 print("number_of_participants", number_of_participants)
 number_of_training_trial = 30
@@ -193,11 +208,11 @@ else: # 37 is the maximum score, and -30 the click cost for clicking all final n
 
 ### Wilcoxon test for both experimnetal and control
 if condition == "exp":
-    data_other_condition = pd.read_csv(f"data/human/existence_{experiment}_control/mouselab-mdp.csv")
-    pid_other_condition = pd.read_csv(f"data/human/existence_{experiment}_control/participants.csv")
+    data_other_condition = pd.read_csv(f"../../data/human/existence_{experiment}_control/mouselab-mdp.csv")
+    pid_other_condition = pd.read_csv(f"../../data/human/existence_{experiment}_control/participants.csv")
 else:
-    data_other_condition = pd.read_csv(f"data/human/existence_{experiment}_exp/mouselab-mdp.csv")
-    pid_other_condition = pd.read_csv(f"data/human/existence_{experiment}_exp/participants.csv")
+    data_other_condition = pd.read_csv(f"../../data/human/existence_{experiment}_exp/mouselab-mdp.csv")
+    pid_other_condition = pd.read_csv(f"../../data/human/existence_{experiment}_exp/participants.csv")
 
 data_other_training = data_other_condition[data_other_condition["block"] == "training"]
 data_other_test = data_other_condition[data_other_condition["block"] == "test"]
@@ -243,8 +258,8 @@ else:
 
 # plot of training
 if condition == "exp":
-    plot_score(np.mean(data_pretraining["score"]), average_score, np.mean(data_test["score"]),
-               np.mean(data_other_pretraining["score"]), np.mean(data_other_test["score"]), experiment)
+    plot_score(data_pretraining["score"], average_score, data_test["score"],
+               data_other_pretraining["score"], data_other_test["score"], experiment)
 
 
 ### create csv for R (robust anova test)

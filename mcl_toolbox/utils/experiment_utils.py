@@ -124,7 +124,7 @@ class Experiment:
         :param kwargs: any odditional constraints to the participant data (#TODO)
         """
         self.exp_num = exp_num
-        self.data = get_data(exp_num, data_path)
+        self.data = get_data(exp_num)
         self.cm = cm
         # self.block = None
         if pids:
@@ -628,7 +628,7 @@ class Experiment:
         plt.ylim(top=np.max(mean_dsw) + 0.2)
         plt.legend(prop={"size": 22}, ncol=2, loc="upper center")
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_plots_{suffix}.png",
             bbox_inches="tight",
         )
         plt.close(fig)
@@ -683,7 +683,7 @@ class Experiment:
             strategy_counts = dict(strategy_counts)
         return strategy_counts, total
 
-    def get_strategy_proportions(self, trial_wise=False):
+    def get_strategy_proportions(self, trial_wise=True):
         if not trial_wise:
             if hasattr(self, "strategy_proportions"):
                 return self.strategy_proportions
@@ -823,13 +823,13 @@ class Experiment:
         plt.legend(prop={"size": 22})#, ncol=3, loc="upper center")
         if cluster:
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_proportions_{suffix}.png",
                 dpi=400,
                 bbox_inches="tight",
             )
         else:
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_strategy_proportions_{suffix}.png",
                 dpi=400,
                 bbox_inches="tight",
             )
@@ -1059,15 +1059,28 @@ class Experiment:
             index=number_of_trials,
             columns=["adaptive_strategy_sum", "maladaptive_strategy_sum", "rest"],
         )
+        strategy_by_trial = pd.DataFrame(float(0),index=number_of_trials,columns=range(1,90))
         for trial_key, strategy_dict in self.trial_strategy_proportions.items():
             for strategy_number, strategy_value in strategy_dict.items():
                 if strategy_number in adaptive_strategy_list:
                     df["adaptive_strategy_sum"][trial_key] += strategy_value
+                    strategy_by_trial[strategy_number][trial_key] = strategy_value
                 elif strategy_number in maladaptive_strategy_list:
                     df["maladaptive_strategy_sum"][trial_key] += strategy_value
+                    strategy_by_trial[strategy_number][trial_key] = strategy_value
                 else:
                     df["rest"][trial_key] += strategy_value
+                    strategy_by_trial[strategy_number][trial_key] = strategy_value
         if plot:
+            # for ci
+            adaptive_strategy_by_trial = strategy_by_trial[strategy_by_trial.columns.intersection(adaptive_strategy_list)]
+            maladaptive_strategy_by_trial = strategy_by_trial[strategy_by_trial.columns.intersection(adaptive_strategy_list)]
+            other_strategy_by_trial = strategy_by_trial[strategy_by_trial.columns.intersection(adaptive_strategy_list)]
+
+            adaptive_ci = 1.96 * np.std(adaptive_strategy_by_trial, axis=1) / np.sqrt(len(adaptive_strategy_by_trial))
+            maladaptive_ci = 1.96 * np.std(maladaptive_strategy_by_trial, axis=1) / np.sqrt(len(maladaptive_strategy_by_trial))
+            other_ci = 1.96 * np.std(other_strategy_by_trial, axis=1) / np.sqrt(len(other_strategy_by_trial))
+
             fig = plt.figure(figsize=(15, 10))
 
             plt.plot(
@@ -1076,18 +1089,24 @@ class Experiment:
                 label="Adaptive strategies",
                 linewidth=3.0,
             )
+            plt.fill_between(range(1, self.num_trials + 1), df["adaptive_strategy_sum"] - adaptive_ci, df["adaptive_strategy_sum"] + adaptive_ci,
+                             alpha=.2)
+
             plt.plot(
-                range(1, self.num_trials + 1),
-                df["maladaptive_strategy_sum"],
-                label="Maladaptive strategies",
-                linewidth=3.0,
-            )
+                    range(1, self.num_trials + 1),
+                    df["maladaptive_strategy_sum"],
+                    label="Maladaptive strategies",
+                    linewidth=3.0,
+                )
+            plt.fill_between(range(1, self.num_trials + 1), df["maladaptive_strategy_sum"] - maladaptive_ci, df["maladaptive_strategy_sum"] + maladaptive_ci,
+                             alpha=.2)
             plt.plot(
                 range(1, self.num_trials + 1),
                 df["rest"],
                 label="Moderately adaptive strategies",
                 linewidth=3.0,
             )
+            plt.fill_between(range(1, self.num_trials + 1), df["rest"] - other_ci, df["rest"] + other_ci,  alpha=.2)
 
             plt.xlabel("Trial Number", fontsize=24)
             plt.ylabel("Proportion", fontsize=24)
@@ -1097,7 +1116,7 @@ class Experiment:
             # plt.legend(prop={"size": 23}, ncol=3, loc="center")
             plt.legend(prop={"size": 23})
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_aggregated_adaptive_maladaptive_other_strategies.png",
                 dpi=400,
                 bbox_inches="tight",
             )
@@ -1122,7 +1141,7 @@ class Experiment:
         fig = plt.figure(figsize=(15, 8))
         # for the first n adaptive ones
         # for i in range(single_strategies_df.shape[0]):  # the strategies
-        strategy_name_mapping = pickle_load("../data/strategy_names.pkl")
+        strategy_name_mapping = pickle_load("data/strategy_names.pkl")
         # Falk wanted the "Random final outcome search for the best possible outcome" to be renamed to "Goal-setting"
         strategy_name_mapping[21] = "Goal-setting"
         # Falk wanted Goal-setting to be on the top
@@ -1165,7 +1184,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 18}, ncol=1, loc="upper center")
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_adaptive_maladaptive_strategy_proportions_.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1217,7 +1236,7 @@ class Experiment:
             )
             # plt.show()
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/decision_systen_proportion_total.png",
                 bbox_inches="tight",
             )
             plt.close(fig)
@@ -1261,7 +1280,7 @@ class Experiment:
         sns.barplot(x="Experiment", y="Proportion (%)", hue="Strategy", data=df)
         # plt.show()
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/strategy_proportion_total.png",
             bbox_inches="tight",
         )
 
@@ -1284,7 +1303,7 @@ class Experiment:
         plt.ylim(top=60)
         # plt.show()
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/cluster_proportion_total.png",
             bbox_inches="tight",
         )
 
@@ -1315,7 +1334,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_decision_system_change_rate.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1347,7 +1366,7 @@ class Experiment:
         plt.tick_params(labelsize=22)
         plt.legend(prop={"size": 23}, ncol=3, loc="upper center")
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/{self.exp_num}_cluster_change_rate.png",
             dpi=400,
             bbox_inches="tight",
         )
@@ -1501,7 +1520,7 @@ class Experiment:
             plt.xlabel("Trial Number", size=24)
             plt.ylabel("Percentage of people who changed strategy cluster", fontsize=24)
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_cluster.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_cluster.png",
                 bbox_inches="tight",
             )
         else:
@@ -1510,7 +1529,7 @@ class Experiment:
             plt.xlabel("Trial Number", size=24)
             plt.ylabel("Percentage of people who changed strategy", fontsize=24)
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_strategy.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/absolute_number_of_changes_strategy.png",
                 bbox_inches="tight",
             )
         plt.close(fig)
@@ -1546,9 +1565,8 @@ class Experiment:
     # About score development
     def average_score_development(self, participant_data):
         # plot the average score development
-        participant_score = get_participant_scores(
-            self.exp_num, participant_data["pid"].tolist()
-        )
+        # participant_score = get_participant_scores(self.exp_num, participant_data["pid"].tolist())
+        participant_score = get_participant_scores(self.exp_num)
         participant_score = pd.DataFrame.from_dict(
             participant_score
         )  # pid as column, trial as row
@@ -1579,7 +1597,7 @@ class Experiment:
             exp_name_plot = "constant variance environment"
         plt.ylabel(f"Average score for {exp_name_plot}", fontsize=24)
         plt.savefig(
-            f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/score_development.png",
+            f"../results/cm/plots/{self.exp_num}_{self.block}/score_development.png",
             bbox_inches="tight",
         )
         plt.close(fig)
@@ -1622,7 +1640,7 @@ class Experiment:
             plt.yticks(fontsize=22)
             # plt.show()
             plt.savefig(
-                f"../results_2000_iterations/cm/plots/{self.exp_num}_{self.block}/click_development.png",
+                f"../results/cm/plots/{self.exp_num}_{self.block}/click_development.png",
                 bbox_inches="tight",
             )
             plt.close(fig)
@@ -1640,11 +1658,11 @@ class Experiment:
         # pickles strategy range from 0 - 88
         if self.exp_num == "c2.1":
             strategy_score_dict = pd.read_pickle(
-                f"../results_2000_iterations/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+                f"../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
             )
         else:
             strategy_score_dict = pd.read_pickle(
-                f"../results_2000_iterations/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+                f"../results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
             )
 
         for strategy_number, _ in strategy_dict.items():
@@ -1676,11 +1694,11 @@ class Experiment:
         # pickles strategy range from 0 - 88
         if self.exp_num == "c2.1":
             strategy_score_dict = pd.read_pickle(
-                f"../results_2000_iterations/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
+                f"../results/cm/strategy_scores/c2.1_dec_strategy_scores.pkl"
             )
         else:
             strategy_score_dict = pd.read_pickle(
-                f"../results_2000_iterations/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
+                f"../results/cm/strategy_scores/{self.exp_num}_strategy_scores.pkl"
             )
 
         # filter by only used strategies
@@ -1741,7 +1759,7 @@ class Experiment:
         """
         Creates plots about 1. strategy development over trials and overall frequency, 2. strategy cluster development over trials and overall frequency,
         3. decision system development over trials and overall frequency (6 plots in total).
-        The plots can be found in the results_2000_iterations folder
+        The plots can be found in the results folder
         Args:
             features:
             normalized_features:
@@ -1796,13 +1814,14 @@ class Experiment:
         self.frequency_transitions_chi2(clusters=True)
 
         # find list of adaptive and maladaptive strategies
+        self.get_strategy_proportions(trial_wise=True)
         self.get_strategy_proportions(trial_wise=False)
-        (
-            top_n_strategies,
-            worst_n_strategies,
-        ) = self.filter_used_strategy_adaptive_maladaptive(
-            n=number_of_top_worst_strategies
-        )  # requires self.strategy_proportions
+        # (
+        #     top_n_strategies,
+        #     worst_n_strategies,
+        # ) = self.filter_used_strategy_adaptive_maladaptive(
+        #     n=number_of_top_worst_strategies
+        # )  # requires self.strategy_proportions
 
         # find out who used adaptive and who used maladaptive stratgies
         # (
@@ -1850,16 +1869,16 @@ class Experiment:
             #     n=number_of_top_worst_strategies
             # )
 
-            # adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
-            # self.plot_adaptive_maladaptive_strategies_vs_rest(
-            #     adaptive_strategies, maladaptive_strategies, plot=True
-            # )
+            adaptive_strategies, maladaptive_strategies, other_strategies = self.kmeans_classification()
+            self.plot_adaptive_maladaptive_strategies_vs_rest(
+                adaptive_strategies, maladaptive_strategies, plot=True
+            )
 
             # plot regarding the change between trials
             # self.analysis_change_percentage(precomputed_strategies, cluster_map)
             # # self.plot_parallel_coordinates(mode=cluster_mode)
             #
-            # # plots regarding the score development
+            # plots regarding the score development
             if self.exp_num == "c2.1_dec":
                 self.exp_num = "c2.1"
             data = get_data(self.exp_num)

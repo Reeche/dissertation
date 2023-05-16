@@ -42,16 +42,7 @@ learning_participants = {
 #                 "low_variance_low_cost"]
 # exp_num_list = ["v1.0", "c2.1", "c1.1"]
 # exp_num_list = ["v1.0"]
-# model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
-#               415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
-#               607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
-#               991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
-#               1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
-#               1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
-#               1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
-#               1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
-# model_list = ["_31_", "_59_", "_63_", "_91_", "_95_", "_123_", "_127_", "_155_", "_159_", "_187_", "_191_"]
-model_list = [1919, 1855]
+model_list = [491]
 
 # create df with selected models
 for model in model_list:
@@ -59,49 +50,47 @@ for model in model_list:
     score_list = []
     pid_score_df = pd.DataFrame()
     for exp_name in exp_num_list:
-        pid_df = pd.read_csv(f"../data/human/{exp_name}/mouselab-mdp.csv")
+        pid_df = pd.read_csv(f"../../data/human/{exp_name}/mouselab-mdp.csv")
         # pid_df = pid_df[pid_df["pid"].isin(learning_participants[exp_name])]
         pid_score_array = pd.pivot_table(pid_df, values="score", index="trial_index", columns="pid").T
         pid_score_df = pid_score_df.append(pid_score_array)
 
         # score_list is list in list, containing score of each model in a list (each n number of trials long)
-        for file in os.listdir(f"../results/mcrl/{exp_name}_data"): #server
+        for file in os.listdir(f"results_8000_iterations/mcrl/{exp_name}_data"):  # server
             if str(model) in file:
-                data = pd.read_pickle(f"../results/mcrl/{exp_name}_data/{file}") #server
+                data = pd.read_pickle(f"results_8000_iterations/mcrl/{exp_name}_data/{file}")  # server
                 score_list.append(data["r"][0])
-
-
 
     # get mean and sem of score_list
     model_mean_score = np.average(score_list, axis=0)
     model_sem_score = stats.sem(score_list)
-    if model == 1919:
-        plt.plot(model_mean_score, label="REINFORCE")
-    else:
-        plt.plot(model_mean_score, label="REINFORCE with pseudo-reward")
 
     # Mann kendall test
     test_results = mk.original_test(model_mean_score)
-    print(print(f"Mann Kendall Test for trend for {model}: {test_results}"))
+    print(f"Mann Kendall Test for trend for {model}: {test_results}")
     # ci = 1.96 * model_sem_score
     # plt.fill_between(list(range(0, 35)), model_mean_score - ci, model_mean_score + ci, alpha=0.1,
     #                  label='Model 95% CI')
 
+    if model == 491:
+        plt.plot(model_mean_score, label="REINFORCE")
+    else:
+        plt.plot(model_mean_score, label="REINFORCE with pseudo-reward")
+
 # pid_mean_score = pid_score_df.groupby("trial_index")["score"].mean().to_frame()["score"]  # output is series(pid; score)
 pid_mean_score = np.mean(pid_score_df, axis=0)
 test_results_pid = mk.original_test(pid_mean_score)
-print(print(f"Mann Kendall Test for trend for pid: {test_results_pid}"))
+print(f"Mann Kendall Test for trend for pid: {test_results_pid}")
 pid_sem_score = stats.sem(pid_score_df)
 plt.plot(pid_mean_score, label="Participant")
 ci = 1.96 * pid_sem_score
-plt.fill_between(list(range(0, 35)), pid_mean_score - ci, pid_mean_score + ci, alpha=0.3,
+plt.fill_between(list(range(0, 35)), pid_mean_score - ci, pid_mean_score + ci, alpha=0.1,
                  label='Participant 95% CI')
 
 # plt.ylim([-70, 40])
 plt.xlabel("Trial number")
 plt.ylabel("Score")
 plt.legend()
-plt.savefig(f"results/plots/all_score_both_models.png")
-
+plt.savefig(f"results_8000_iterations/plots/all_score_reinforce_only.png")
 # plt.show()
 plt.close()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pymannkendall as mk
 from scipy.stats import chisquare, sem, t
 
-data = pd.read_csv(f"data/human/strategy_discovery/mouselab-mdp.csv")
+data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
 
 
 ### create df
@@ -102,7 +102,7 @@ def trend_test(count_prop):
     print(result_all)
     return None
 
-trend_test(count_prop)
+# trend_test(count_prop)
 
 def plot_proportion(count_prop):
     plt.ylabel("Proportion of optimal strategy")
@@ -118,5 +118,5 @@ def plot_proportion(count_prop):
     # plt.close()
     return None
 
-plot_proportion(count_prop)
+# plot_proportion(count_prop)
 

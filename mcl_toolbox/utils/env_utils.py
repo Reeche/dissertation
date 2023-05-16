@@ -6,7 +6,7 @@ import dill as pickle
 import numpy as np
 from more_itertools import powerset
 
-from mcl_toolbox.env.mouselab_strategy_discovery import MouselabEnv
+from mcl_toolbox.env.mouselab import MouselabEnv
 from mcl_toolbox.utils.distributions import Categorical
 
 def get_possible_states_for_ground_truth(ground_truth, unrevealed_state):

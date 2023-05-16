@@ -68,10 +68,10 @@ def bic(exp_name, df_learning, pid_list):
     # filter by pid list
     df = df_learning[df_learning["pid"].isin(pid_list)]
 
-    # create bic table for matlab
+    ##create bic table for matlab
     df_pivot = pd.pivot_table(df_learning, index=["pid"], columns=["model"], values=["BIC"], aggfunc=np.sum,
                               fill_value=0)
-    df_pivot.to_csv(f"results/matlab_bic_{exp_name}_87.csv")
+    df_pivot.to_csv(f"results_400_second_fit/matlab_bic_{exp_name}_learners.csv")
 
     best_model_count = {}
     for pid in pid_list:
@@ -94,7 +94,7 @@ def bic(exp_name, df_learning, pid_list):
     print("Grouped model and BIC")
     sorted_df = grouped_df.sort_values(by=["BIC"])
     print(sorted_df)
-    return df_pivot
+    return None
 
 
 def classify_participants_mean_score(exp_name, pid_class, kind):
@@ -151,7 +151,7 @@ def classify_participants_score_improvement(exp_name, pid_list, pid_class):
 
 
 def find_adaptive_particpants(exp_name):
-    pid_dict = pd.read_pickle(f"../results/cm/inferred_strategies/{exp_name}_training/strategies.pkl")
+    pid_dict = pd.read_pickle(f"../../results/cm/inferred_strategies/{exp_name}_training/strategies.pkl")
     learning_pid = []
     for key, values in pid_dict.items():
         if len(set(values)) > 1:
@@ -160,14 +160,108 @@ def find_adaptive_particpants(exp_name):
 
 
 if __name__ == "__main__":
-    model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
-                  415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
-                  607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
-                  991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
-                  1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
-                  1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
-                  1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
-                  1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
+    # model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
+    #               415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
+    #               607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
+    #               991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
+    #               1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
+    #               1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
+    #               1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
+    #               1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
+
+    # model_list = [13, 15, 29, 31, 34, 35, 38, 39, 42, 43, 46, 47, 61, 63, 77, 79, 82, 83, 86, 87, 90, 91, 94, 95, 109, 111,
+    #               125, 127, 130, 131, 134, 135, 138, 139, 142, 143, 157, 159, 173, 175, 178, 179, 182, 183, 186, 187, 190, 191,
+    #               205, 207, 221, 223, 226, 227, 230, 231, 234, 235, 238, 239, 253, 255, 269, 271, 274, 275, 278, 279, 282, 283,
+    #               286, 287, 301, 303, 317, 319, 322, 323, 326, 327, 330, 331, 334, 335, 349, 351, 365, 367, 370, 371, 374, 375,
+    #               378, 379, 382, 383, 397, 399, 413, 415, 418, 419, 422, 423, 426, 427, 430, 431, 445, 447, 461, 463, 477, 479,
+    #               482, 483, 486, 487, 490, 491, 494, 495, 498, 499, 502, 503, 1308]
+
+    model_list = [13,
+                  15,
+                  29,
+                  31,
+                  34,
+                  35,
+                  38,
+                  39,
+                  42,
+                  43,
+                  46,
+                  47,
+                  109,
+                  111,
+                  125,
+                  127,
+                  130,
+                  131,
+                  134,
+                  135,
+                  138,
+                  139,
+                  142,
+                  143,
+                  157,
+                  159,
+                  173,
+                  175,
+                  178,
+                  179,
+                  182,
+                  183,
+                  186,
+                  187,
+                  190,
+                  191,
+                  253,
+                  255,
+                  269,
+                  271,
+                  274,
+                  275,
+                  278,
+                  279,
+                  282,
+                  283,
+                  286,
+                  287,
+                  301,
+                  303,
+                  317,
+                  319,
+                  322,
+                  323,
+                  326,
+                  327,
+                  330,
+                  331,
+                  334,
+                  335,
+                  397,
+                  399,
+                  413,
+                  415,
+                  418,
+                  419,
+                  422,
+                  423,
+                  426,
+                  427,
+                  430,
+                  431,
+                  445,
+                  447,
+                  477,
+                  479,
+                  482,
+                  483,
+                  490,
+                  1743,
+                  491,
+                  494,
+                  495,
+                  502,
+                  503,
+                  1756]
 
     learning_participants_planning_amount = {
         "high_variance_high_cost": [32, 49, 57, 60, 94, 108, 109, 111, 129, 134, 139, 149, 161, 164, 191, 195],
@@ -186,7 +280,7 @@ if __name__ == "__main__":
         "c1.1": [2, 4, 7, 9, 12, 19, 23, 27, 28, 32, 37, 42, 44, 50, 54, 57, 63, 65, 70, 71, 74, 76, 81, 89, 91, 92,
                  100, 102, 105, 109, 116, 120, 125, 127, 129, 131, 135, 139, 143, 151, 153, 157, 159, 161, 163, 167,
                  168, 171]}
-    learning_participants = {#"threecond": learning_participants_three_cond}
+    learning_participants = {"threecond": learning_participants_three_cond,
                              "planning": learning_participants_planning_amount}
 
     # learning_participants = { #here the planning amount exp are including maladpative participants, whose clicks changed
@@ -227,8 +321,8 @@ if __name__ == "__main__":
             exp_num_list = exp_num_list_planning
         for exp_name in exp_num_list:
             # find_adaptive_particpants(exp_name)
-            # load csv with intermediate results_2000_iterations
-            df = pd.read_csv(f"results_2000_iterations/{exp_name}_intermediate_results_v4.csv")
+            # load csv with intermediate results_400_second
+            df = pd.read_csv(f"results_400_second_fit/{exp_name}_intermediate_results.csv")
             # drop first column
             del df[df.columns[0]]
             # filter df for models to be considered (no vicarious learning, no monte carlo, no subjective cost)
@@ -237,6 +331,7 @@ if __name__ == "__main__":
             # get pid
             pid_list = get_all_pid_for_env(exp_name)
 
+            ## calculate the metrics
             # loss(exp_name, df, pid_list)
             # aic(exp_name, df, pid_list)
             # bic(exp_name, df, pid_list)

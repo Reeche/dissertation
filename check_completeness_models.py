@@ -45,11 +45,17 @@ exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cos
 exp_num = "low_variance_low_cost"
 for exp_num in exp:
     # priors_directory = (f"../../../work/rhe/mcl_toolbox/results/mcrl/{exp_num}_priors/{exp_num}_priors")
-    priors_directory = (f"results/mcrl/{exp_num}_priors")
+    priors_directory = (f"results_400_second_fit/mcrl/{exp_num}_priors")
     # data_directory = (f"results/mcrl/{exp_num}_data")
 
     # range of models
-    models = list(range(0, 2016))
+    # models = list(range(0, 2016))
+    models = [13, 15, 29, 31, 34, 35, 38, 39, 42, 43, 46, 47, 61, 63, 77, 79, 82, 83, 86, 87, 90, 91, 94, 95, 109, 111,
+                  125, 127, 130, 131, 134, 135, 138, 139, 142, 143, 157, 159, 173, 175, 178, 179, 182, 183, 186, 187, 190, 191,
+                  205, 207, 221, 223, 226, 227, 230, 231, 234, 235, 238, 239, 253, 255, 269, 271, 274, 275, 278, 279, 282, 283,
+                  286, 287, 301, 303, 317, 319, 322, 323, 326, 327, 330, 331, 334, 335, 349, 351, 365, 367, 370, 371, 374, 375,
+                  378, 379, 382, 383, 397, 399, 413, 415, 418, 419, 422, 423, 426, 427, 430, 431, 445, 447, 461, 463, 477, 479,
+                  482, 483, 486, 487, 490, 491, 494, 495, 498, 499, 502, 503, 1308]
 
     ### Create a list of all combinations and concatenate them as str with underscore
     combinations = list(itertools.product([*pid_dict[exp_num]], models))

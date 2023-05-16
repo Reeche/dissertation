@@ -1,9 +1,13 @@
 import pandas as pd
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import pymannkendall as mk
+from scipy import stats
+from sklearn.cluster import KMeans
+from mcl_toolbox.utils.learning_utils import get_participant_scores
 
-experiment = "c1.1"
+experiment = "c2.1"
 # add cluster names
 cluster_name_mapping = {1: "Goal-setting with exhaustive backward planning",
                         2: "Forward planning strategies similar to Breadth First Search",
@@ -64,14 +68,15 @@ def magnitude_of_change_based_on_cluster(strategy_df, type):
     # plt.close()
 
 
-def magnitude_of_change_based_on_jeffrey(strategy_df):
+def magnitude_of_change_based_on_jeffrey(strategy_df, between_cluster_average, within_cluster_average, ):
     jeffrey_table = pd.read_pickle(f"../../mcl_toolbox/data/jeffreys_divergences.pkl")
     jeffrey_table = pd.DataFrame(jeffrey_table)
 
     # get average of divergence for all strategies
-    average_divergence = jeffrey_table.mean().mean() / 2
+    # average_divergence = jeffrey_table.median().median() / 2
+    average_divergence = within_cluster_average
 
-    # create df with jeff divergence
+    ##create df with jeff divergence
     df = strategy_df.copy()
     df = df - 1  # all strategy index values -1 because jeffrey table start at 0
 
@@ -81,45 +86,95 @@ def magnitude_of_change_based_on_jeffrey(strategy_df):
             # look up jeff divergence from the table
             df[column][i] = jeffrey_table.loc[strategy_a][strategy_b]
 
-    # drop the last row because there is nothing to compare against
+    # # drop the last row because there is nothing to compare against
     df = df.drop(index=df.index[-1], axis=0)
 
     # all values to a long list
     all_values = df.values.tolist()
+    all_values = [item for sublist in all_values for item in sublist]
 
-    # plot histogram with mean as vertical line
-    # plt.hist(all_values, bins='auto')
-    # plt.axvline(x=average_divergence, color='b')
+    # drop all 0
+    non_zero_values = [i for i in all_values if i != 0]
+    print("Larger than within-cluster average: ", sum(i > average_divergence for i in non_zero_values))
+    print("Smaller than within-cluster average: ", sum(i < average_divergence for i in non_zero_values))
+
+    ##plot histogram with mean as vertical line
+    # plt.hist(all_values, bins='auto', range=[0, 1000])
+    # plt.axvline(x=average_divergence, color='b', label='Within cluster average')
     # plt.xlabel("Jeffrey divergence")
     # plt.ylabel("Count")
-    # plt.savefig(f"plots/{experiment}_jeffrey_hist.png")
+    # plt.legend()
+    # plt.savefig(f"plots/{experiment}_jeffrey_hist_absolute.png")
     # # plt.show()
     # plt.close()
 
     # count how many before the line and how many after the line
-    print("Smaller than average: ", df[df < average_divergence].count().sum())
-    print("Larger than average: ", df[df > average_divergence].count().sum())
+    # print("Smaller than average: ", df[df < average_divergence].count().sum())
+    # print("Larger than average: ", df[df > average_divergence].count().sum())
 
     # plot jeffey development over time
-    plt.plot(df.mean(axis=1))
-    plt.ylim(0, 2400)
-    plt.xlabel("Trials")
-    plt.ylabel("Jeffrey divergence")
-    ci = 1.96 * np.std(df.T) / np.sqrt(len(df.T))
-    plt.fill_between(range(len(df.mean(axis=1))), df.mean(axis=1) - ci, df.mean(axis=1) + ci, color="b", alpha=.1)
-    plt.savefig(f"plots/{experiment}_jeffrey_development.png")
-    # plt.show()
-    plt.close()
+    # trimmed_mean = stats.trim_mean(df, 0.1, axis=1)
+    # plt.plot(trimmed_mean)
+    # print(average_divergence)
+    # plt.axhline(y=average_divergence, color='r', linestyle='-', label='Average')
+    # plt.ylim(0, 2400)
+    # plt.xlabel("Trials")
+    # plt.ylabel("Jeffrey divergence")
+    # ci = 1.96 * np.std(df.T) / np.sqrt(len(df.T))
+    # plt.fill_between(range(len(trimmed_mean)), trimmed_mean - ci, trimmed_mean + ci, color="b", alpha=.1)
+    # plt.legend()
+    # plt.savefig(f"plots/{experiment}_jeffrey_development_trimmed_10.png")
+    # # plt.show()
+    # plt.close()
 
     # jeffrey trend
-    result = mk.original_test(df.mean(axis=1))
-    print(f"Mann Kendall test for clicks for {experiment}: clicks are {result}")
-
-magnitude_of_change_based_on_jeffrey(strategy_unclustered)
+    # result = mk.original_test(non_zero_values)
+    # print(f"Mann Kendall test for clicks for {experiment}: clicks are {result}")
 
 
-# magnitude_of_change_based_on_cluster(strategy_unclustered, "strategy")
-# magnitude_of_change_based_on_cluster(strategy_cluster_df, "cluster")
+
+
+def get_absolute_jeffrey_values(cluster_mapping):
+    # find the average jeffrey difference within one cluster and jeffrey difference between clusters
+    jeffrey_table = pd.read_pickle(f"../../mcl_toolbox/data/jeffreys_divergences.pkl")
+    jeffrey_table = pd.DataFrame(jeffrey_table)
+
+    # replace the jeffrey table column names (strategy) with corresponding cluster
+    # note jeffrey table start at 0, cluster_mapping start at 1
+    jeffrey_table.columns = range(1, 90) #columns
+    jeffrey_table.index += 1 #rows
+
+
+    # find the strategies that belong within one cluster and create a sub-df
+    res = defaultdict(list)
+    for key, val in sorted(cluster_mapping.items()):
+        res[val].append(key)
+
+    withtin_cluster_jeffrey = {}
+    for key, val in res.items():
+        # filter columns
+        jeffrey_sub_table_within = jeffrey_table[val]
+        # filter row
+        jeffrey_sub_sub_table_within = jeffrey_sub_table_within[jeffrey_sub_table_within.index.isin(val)]
+        withtin_cluster_jeffrey[key] = jeffrey_sub_sub_table_within.mean().mean() / 2
+
+    # calculate the jeffrey between the strategies from different clusters
+    between_cluster_jeffrey = {}
+    for key1, val1 in res.items():
+        jeffrey_sub_table_between = jeffrey_table[val1]
+        for key2, val2 in res.items():
+            if key2 != key1:
+                jeffrey_sub_sub_table_between = jeffrey_sub_table_between[jeffrey_sub_table_between.index.isin(val2)]
+                key_value = '-'.join(str(x) for x in [key1, key2])
+                between_cluster_jeffrey[key_value] = jeffrey_sub_sub_table_between.mean().mean() / 2
+
+    print("between cluster average", sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey))
+    print("within cluster average", sum(withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey))
+    return sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey), sum(withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey)
+
+between_cluster_average, within_cluster_average = get_absolute_jeffrey_values(cluster_mapping)
+magnitude_of_change_based_on_jeffrey(strategy_unclustered, between_cluster_average, within_cluster_average)
+
 
 # find out how often a trajectory has been used
 def trajectory_frequency(training_cluster_df):

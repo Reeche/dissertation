@@ -9,13 +9,13 @@ Does our model perform the same amount of clicks as the participants?
 """
 
 # import data
-exp_num_list = ["v1.0",
-                "c2.1",
-                "c1.1",
-                "high_variance_high_cost",
-                "high_variance_low_cost",
-                "low_variance_high_cost",
-                "low_variance_low_cost"]
+# exp_num_list = ["v1.0",
+#                 "c2.1",
+#                 "c1.1",
+#                 "high_variance_high_cost",
+#                 "high_variance_low_cost",
+#                 "low_variance_high_cost",
+#                 "low_variance_low_cost"]
 #
 # model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
 #               415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
@@ -30,7 +30,7 @@ exp_num_list = ["low_variance_high_cost", "low_variance_low_cost"]
 # exp_num_list = ["high_variance_high_cost", "high_variance_low_cost"]
 # exp_num_list = ["v1.0", "c2.1", "c1.1"]
 # exp_num_list = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-selected_model = [1823]#[1855, 1919]#1823#1855#1919
+selected_model = [491]
 
 learning_participants = {
     "high_variance_high_cost": [32, 49, 57, 60, 94, 108, 109, 111, 129, 134, 139, 149, 161, 164, 191, 195],
@@ -54,7 +54,7 @@ for model in selected_model:
     pid_df = pd.DataFrame()
     # create df with number of clicks of the participants
     for exp_name in exp_num_list:
-        df = pd.read_csv(f"results/{exp_name}_intermediate_results_v4.csv")
+        df = pd.read_csv(f"results_8000_iterations/{exp_name}_intermediate_results.csv")
         df_pid_clicks = df[['pid', 'pid_clicks']].copy()
         df_pid_clicks = df_pid_clicks.drop_duplicates()
 
@@ -109,7 +109,7 @@ for model in selected_model:
 
     # get mean and sem of score_list
     # model_sem_score = stats.sem(df_temp_model)
-    if model == 1855:
+    if model == 483:
         plt.plot(model_mean, label="REINFORCE with pseudo-reward")
         test_results = mk.original_test(model_mean)
         print(f"Mann Kendall Test for trend for {model}: {test_results}")
@@ -120,20 +120,22 @@ for model in selected_model:
 
 
 ### plot pid vs model
-pid_sem_score = stats.sem(df_temp_pid)
-plt.plot(participant_mean, label="Participant")
-ci = 1.96 * pid_sem_score
-plt.fill_between(list(range(0, 35)), participant_mean - ci, participant_mean + ci, alpha=0.2,
-                 label='Participant 95% CI')
-
-# plt.ylim([1, 8])
-plt.xticks(np.arange(0, 35, 3))
-plt.xlabel("Trial number")
-plt.ylabel("Number of clicks")
-plt.legend()
-plt.savefig(f"results/plots/planningamount_low_click_both_1823.png")
-
-# plt.show()
-plt.close()
+# pid_sem_score = stats.sem(df_temp_pid)
+# plt.plot(participant_mean, label="Participant")
+# ci = 1.96 * pid_sem_score
+# plt.fill_between(list(range(0, 35)), participant_mean - ci, participant_mean + ci, alpha=0.2,
+#                  label='Participant 95% CI')
+#
+# # plt.ylim([1, 8])
+# plt.xticks(np.arange(0, 35, 3))
+# plt.xlabel("Trial number")
+# plt.ylabel("Number of clicks")
+# # plt.axhline(y=6.71, color='r', linestyle='-', label='Optimal amount of clicks') #high
+# # plt.axhline(y=2.91, color='r', linestyle='-', label='Optimal amount of clicks') #low
+# plt.legend()
+# plt.savefig(f"results_8000_iterations/plots/planningamount_high_click_reinforce_only.png")
+#
+# # plt.show()
+# plt.close()
 
 # 7.10 (high variance, low cost), 6.32 (high variance, high cost), 5.82 (low variance, low cost), and 0 (low variance, high cost),

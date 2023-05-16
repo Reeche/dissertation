@@ -83,12 +83,6 @@ def get_data(version, data_path=None):
             df = pd.read_csv(file)
             parse_json(df)
             data[name] = drop_nan_cols(df)
-
-    # n_trials = df.pid.value_counts().max()
-    # complete = df.pid.value_counts(sort=False).where(lambda x: x==n_trials).dropna().index
-    # df = df.set_index('pid').ix[complete].reset_index()
-    # pdf = pdf.ix[complete]
-
     return data
 
 def get_all_pid_for_env(exp_num):
@@ -159,7 +153,7 @@ def pval(x):
         return float("nan")
 
 
-# ---------- Saving results_2000_iterations ---------- #
+# ---------- Saving results ---------- #
 
 
 class Tex:

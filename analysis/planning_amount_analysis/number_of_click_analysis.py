@@ -103,13 +103,11 @@ def anova(click_data):
     print(table)
     return None
 
+
 def glm(click_data):
     # filter for high and low variance
     click_data = click_data[click_data["variance"] == 0]
 
-    # print(type(click_data["pid"]))
-    # print(type(click_data["pid"].values.tostring()))
-    # print(type(str(click_data["pid"].values)))
 
     click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
     # click_data["trial:pid"] = click_data["trial"] * click_data["variance"]
@@ -137,7 +135,8 @@ def glm(click_data):
     gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit() #makes sense
 
     # glm
-    formula = "number_of_clicks ~ C(pid) + trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
+    # formula = "number_of_clicks ~ C(pid) + trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
+    # formula = "number_of_clicks ~ trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
     # gamma_model = smf.glm(formula=formula, data=click_data, family=sm.families.NegativeBinomial()).fit() #does not make sense
     # gamma_model = sm.GLM(y_learning, x_learning, family=sm.families.Poisson()).fit() #poisson makes sense
 
@@ -163,39 +162,39 @@ if __name__ == "__main__":
     # experiments = ["low_variance_high_cost"]
     click_df_all_conditions = pd.DataFrame()
     for experiment in experiments:
-        data = pd.read_csv(f"data/human/{experiment}/mouselab-mdp.csv")
+        data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data)
 
         # group click_df by trial and get the average clicks
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
-        # plot the average clicks
+        ##plot the average clicks
         # plot_clicks(average_clicks)
 
-        # trend test
+        ##trend test
         # trend_test(average_clicks)
 
-        # normality test
+        ##normality test
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
-        # append all 4 conditions into one df
-        # click_df_all_conditions = click_df_all_conditions.append(click_df)
+        ##append all 4 conditions into one df
+        click_df_all_conditions = click_df_all_conditions.append(click_df)
 
         # optimal number of clicks vs. actual number of clicks
         # get clicks of last trial
-        if experiment == "high_variance_low_cost":
-            chi2, p = chisquare([average_clicks.values[-1], 7.1])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
-        elif experiment == "high_variance_high_cost":
-            chi2, p  = chisquare([average_clicks.values[-1], 6.32])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        elif experiment == "low_variance_high_cost":
-            chi2, p  = chisquare([average_clicks.values[-1], 0])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        else:
-            chi2, p  = chisquare([average_clicks.values[-1], 5.82])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # if experiment == "high_variance_low_cost":
+        #     chi2, p = chisquare([average_clicks.values[-1], 7.1])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
+        # elif experiment == "high_variance_high_cost":
+        #     chi2, p  = chisquare([average_clicks.values[-1], 6.32])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # elif experiment == "low_variance_high_cost":
+        #     chi2, p  = chisquare([average_clicks.values[-1], 0])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # else:
+        #     chi2, p  = chisquare([average_clicks.values[-1], 5.82])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
 
-            # anova(click_df_all_conditions)
-    # glm(click_df_all_conditions)
+        # anova(click_df_all_conditions)
+    glm(click_df_all_conditions)

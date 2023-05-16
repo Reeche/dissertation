@@ -51,14 +51,14 @@ def analyse_sequences(
 
     """
     # Initializations
-    decision_systems = pickle_load("data/decision_systems.pkl")
-    DS_proportions = pickle_load("data/strategy_decision_proportions.pkl")
-    W_DS = pickle_load("data/strategy_decision_weights.pkl")
-    cluster_map = pickle_load("data/kl_cluster_map.pkl")
+    decision_systems = pickle_load("../mcl_toolbox/data/decision_systems.pkl")
+    DS_proportions = pickle_load("../mcl_toolbox/data/strategy_decision_proportions.pkl")
+    W_DS = pickle_load("../mcl_toolbox/data/strategy_decision_weights.pkl")
+    cluster_map = pickle_load("../mcl_toolbox/data/kl_cluster_map.pkl")
     strategy_scores = pickle_load(
-        "data/strategy_scores.pkl"
+        "../mcl_toolbox/data/strategy_scores.pkl"
     )  # todo: update strategy scores to contain all environments, currently only increasing variance
-    cluster_scores = pickle_load("data/cluster_scores.pkl")
+    cluster_scores = pickle_load("../mcl_toolbox/data/cluster_scores.pkl")
 
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
@@ -112,12 +112,12 @@ def analyse_sequences(
     if block:
         dir_path += f"_{block}"
 
-    try:
+    if exp_num == "c2.1_dec":
+        strategies_ = pickle_load(f"../results/cm/inferred_strategies/c2.1_training/strategies.pkl")
+        temperatures = pickle_load(f"../results/cm/inferred_strategies/c2.1_training/temperatures.pkl")
+    else:
         strategies_ = pickle_load(f"{dir_path}/strategies.pkl")
         temperatures = pickle_load(f"{dir_path}/temperatures.pkl")
-    except Exception as e:
-        print("Exception", e)
-        # exit()
 
     if exp_num == "c2.1_dec":
         save_path = f"../results/cm/plots/c2.1"
@@ -210,10 +210,10 @@ if __name__ == "__main__":
     # "low_variance_high_cost"
     # "low_variance_low_cost"
 
-    exp_name = "c1.1" #check reward_level in global_vars.py
+    exp_name = "c1.1" #c2.1_dec
     block = "training"
     number_of_trials = 35
-    create_plot = True
+    create_plot = False
 
     # create the plots
     analyse_sequences(

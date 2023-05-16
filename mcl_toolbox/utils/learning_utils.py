@@ -183,13 +183,12 @@ def get_participant_scores(exp_num="v1.0", num_participants=166, data_path=None)
     Returns:
         A dictionary of scores of participants with pid as key and rewards as values.
     """
-    data = get_data(exp_num, data_path)
+    data = get_data(exp_num)
     mdf = data["mouselab-mdp"]
+    participants = data["participants"]
     participant_scores = {}
     # for participant_num in range(num_participants):
-    for (
-            participant_num
-    ) in num_participants:  # changed this to output score for a set list of pid's
+    for participant_num in participants["pid"]:  # changed this to output score for a set list of pid's
         score_list = list(mdf[mdf.pid == participant_num]["score"])
         participant_scores[participant_num] = score_list
     return participant_scores
@@ -837,7 +836,7 @@ def get_delay_penalty(q_data, env, action_sequence):
     """
     Get delay penalty of an environment
     Params:
-        q_data: Pickle file present in the results_2000_iterations folder
+        q_data: Pickle file present in the results folder
         env: Environment represented as node values from 0 to 12
         action_seqnece: List of actions to get delays for (ends with 0)
     Returns:
@@ -1606,14 +1605,14 @@ class Participant:
             try:
                 self.strategies = pickle_load(
                     top_folder.joinpath(
-                        f"results_2000_iterations/final_strategy_inferences/"
+                        f"results/final_strategy_inferences/"
                         f"{self.exp_num}_strategies.pkl"
                     )
                 )
                 self.strategies = np.array(self.strategies[self.pid])
                 self.temperature = pickle_load(
                     top_folder.joinpath(
-                        f"results_2000_iterations/final_strategy_inferences/"
+                        f"results/final_strategy_inferences/"
                         f"{self.exp_num}_temperatures.pkl"
                     )
                 )[self.pid]

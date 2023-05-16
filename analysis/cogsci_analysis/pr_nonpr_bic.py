@@ -5,17 +5,96 @@ import pandas as pd
 # df = pd.read_csv(f"results_2000_iterations/matlab_bic_planning_87.csv")
 # df = pd.read_csv(f"results_2000_iterations/matlab_bic_threecond_87.csv")
 # del df[df.columns[0]]
-# df = df.drop(df.index[1]) # drop row with pid
+# df = df.drop(df.index[1])  # drop row with pid
 #
-# model_list = [27, 31, 59, 63, 91, 95, 123, 127, 155, 159, 187, 191, 411,
-#               415, 443, 447, 475, 479, 507, 511, 539, 543, 571, 575, 603,
-#               607, 635, 639, 667, 671, 699, 703, 731, 735, 763, 767, 987,
-#               991, 1019, 1023, 1051, 1055, 1083, 1087, 1115, 1119, 1147,
-#               1151, 1179, 1183, 1211, 1215, 1243, 1247, 1275, 1279, 1307,
-#               1311, 1339, 1343, 1563, 1567, 1595, 1599, 1627, 1631, 1659,
-#               1663, 1691, 1695, 1723, 1727, 1755, 1759, 1819, 1823, 1851,
-#               1855, 1915, 1918, 1919, 1947, 1951, 2011, 2015, 5134]
-# df.columns= model_list
+# model_list = [13,
+#               15,
+#               29,
+#               31,
+#               34,
+#               35,
+#               38,
+#               39,
+#               42,
+#               43,
+#               46,
+#               47,
+#               109,
+#               111,
+#               125,
+#               127,
+#               130,
+#               131,
+#               134,
+#               135,
+#               138,
+#               139,
+#               142,
+#               143,
+#               157,
+#               159,
+#               173,
+#               175,
+#               178,
+#               179,
+#               182,
+#               183,
+#               186,
+#               187,
+#               190,
+#               191,
+#               253,
+#               255,
+#               269,
+#               271,
+#               274,
+#               275,
+#               278,
+#               279,
+#               282,
+#               283,
+#               286,
+#               287,
+#               301,
+#               303,
+#               317,
+#               319,
+#               322,
+#               323,
+#               326,
+#               327,
+#               330,
+#               331,
+#               334,
+#               335,
+#               397,
+#               399,
+#               413,
+#               415,
+#               418,
+#               419,
+#               422,
+#               423,
+#               426,
+#               427,
+#               430,
+#               431,
+#               445,
+#               447,
+#               477,
+#               479,
+#               482,
+#               483,
+#               490,
+#               1743,
+#               491,
+#               494,
+#               495,
+#               502,
+#               503,
+#               1756]
+#
+# df.columns = model_list
 #
 # bic_diff = df[[1855, 1919]].copy()
 # bic_diff["diff"] = bic_diff[1855] - bic_diff[1919]
@@ -24,29 +103,36 @@ import pandas as pd
 # print("larger than 3: ", sum(i > 3.2 for i in bic_diff["diff"]))
 # print("less than -3: ", sum(i < -3.2 for i in bic_diff["diff"]))
 
-# plot histogram of difference
+##plot histogram of difference
 # n, bins, patches = plt.hist(bic_diff["diff"], 50, density=True, facecolor='g', alpha=0.75)
 # plt.savefig("bichistogram.png")
 # plt.show()
 # plt.close()
 
 
-### chi^2 test of frequencies based on BMS results_2000_iterations
-"""
-three cond: 
-        exp_r: [0.4358 0.5642]
-           xp: [0.0715 0.9285]
-
-planning amount: 
-        exp_r: [0.3775 0.6225]
-           xp: [0.0232 0.9768]
-
-"""
-
+### chi^2 test of frequencies based on BMS
+# """
+# three cond:
+#         exp_r: [0.4358 0.5642]
+#            xp: [0.0715 0.9285]
+#
+# planning amount:
+#         exp_r: [0.3775 0.6225]
+#            xp: [0.0232 0.9768]
+#
+# """
+#
 from scipy.stats import chisquare
+## pr
 n_exp1 = 146
 n_exp2 = 78
-p_avg = 0.42
-chi_results = chisquare([0.4358*n_exp1, 0.5642*n_exp1, 0.3775*n_exp2, 0.6225*n_exp2],
+# p_avg = 0.39 #propotion explained by PR for both experiments
+# chi_results = chisquare([0.42153*n_exp1, 0.57847*n_exp1, 0.37029*n_exp2, 0.62971*n_exp2],
+#                         f_exp=[p_avg*n_exp1, (1-p_avg)*n_exp1, p_avg*n_exp2, (1-p_avg)*n_exp2])
+# print(chi_results)
+
+## td
+p_avg = 0.39 #propotion explained by PR for both experiments
+chi_results = chisquare([0.35145*n_exp1, 0.64855*n_exp1, 0.30981*n_exp2, 0.69019*n_exp2],
                         f_exp=[p_avg*n_exp1, (1-p_avg)*n_exp1, p_avg*n_exp2, (1-p_avg)*n_exp2])
 print(chi_results)

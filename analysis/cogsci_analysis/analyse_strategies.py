@@ -5,9 +5,9 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import pymannkendall as mk
 
-# exp_num_list = ["v1.0", "c2.1", "c1.1"]
-exp_num_list = ["c2.1"]
-selected_model = [483, 491]
+exp_num_list = ["v1.0", "c2.1", "c1.1"]
+# exp_num_list = ["c1.1"]
+selected_model = [491]
 
 learning_participants = {
     "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
@@ -47,7 +47,7 @@ for exp_name in exp_num_list:
         proportion_pid = 0
         proportion_model = 0
 
-        df = pd.read_csv(f"results_2000_iterations/{exp_name}_intermediate_results_v4.csv")
+        df = pd.read_csv(f"results_8000_iterations/{exp_name}_intermediate_results.csv")
         # filter for learners
         df = df[df["pid"].isin(learning_participants[exp_name])]
         # filter for model
@@ -145,7 +145,7 @@ for exp_name in exp_num_list:
         # plt.plot(proportion_pid, label="Participant")
 
         # get mean and sem of score_list
-        if model == 491:
+        if model != 483:
             plt.plot(proportion_model, label="REINFORCE")
             test_results = mk.original_test(proportion_model)
             print(f"Mann Kendall Test for trend for {model} and {exp_name}: {test_results}")
@@ -166,26 +166,26 @@ for exp_name in exp_num_list:
     plt.ylabel("Proportion of adaptive strategies")
     # plt.title(exp_name)
     plt.legend()
-    # plt.savefig(f"results_2000_iterations/plots/proportion_{exp_name}.png")
+    plt.savefig(f"results_8000_iterations/plots/proportion_{exp_name}_reinforce_only.png")
     # plt.show()
     plt.close()
 
-# sum of all proportions
-# average_model = np.mean(model_proportion, axis=0)
-# average_pid = np.mean(pid_proportion, axis=0)
-#
-# ### plot pid vs model
-# plt.plot(average_pid, label="Participant")
-#
-# # get mean and sem of score_list
-# plt.plot(average_model, label="Model")
-#
-# # plt.ylim([1, 8])
-# plt.xticks(np.arange(0, 35, 3))
-# plt.xlabel("Trial number")
-# plt.ylabel("Proportion of adaptive strategies")
-# # plt.title(exp_name)
-# plt.legend()
-# plt.savefig("proportion_all.png")
-# # plt.show()
-# plt.close()
+##sum of all proportions
+average_model = np.mean(model_proportion, axis=0)
+average_pid = np.mean(pid_proportion, axis=0)
+
+### plot pid vs model
+plt.plot(average_pid, label="Participant")
+
+# get mean and sem of score_list
+plt.plot(average_model, label="Model")
+
+# plt.ylim([1, 8])
+plt.xticks(np.arange(0, 35, 3))
+plt.xlabel("Trial number")
+plt.ylabel("Proportion of adaptive strategies")
+# plt.title(exp_name)
+plt.legend()
+plt.savefig("results_8000_iterations/plots/proportion_reinforce_only.png")
+# plt.show()
+plt.close()
