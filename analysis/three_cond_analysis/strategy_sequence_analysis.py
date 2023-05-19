@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import defaultdict
+import statistics
 import matplotlib.pyplot as plt
 import numpy as np
 import pymannkendall as mk
@@ -7,7 +8,7 @@ from scipy import stats
 from sklearn.cluster import KMeans
 from mcl_toolbox.utils.learning_utils import get_participant_scores
 
-experiment = "c2.1"
+experiment = "v1.0"
 # add cluster names
 cluster_name_mapping = {1: "Goal-setting with exhaustive backward planning",
                         2: "Forward planning strategies similar to Breadth First Search",
@@ -156,17 +157,26 @@ def get_absolute_jeffrey_values(cluster_mapping):
         jeffrey_sub_table_within = jeffrey_table[val]
         # filter row
         jeffrey_sub_sub_table_within = jeffrey_sub_table_within[jeffrey_sub_table_within.index.isin(val)]
-        withtin_cluster_jeffrey[key] = jeffrey_sub_sub_table_within.mean().mean() / 2
+        ## take the median after removing the 0; median can work with the mirror structure
+        stacked_within_values = jeffrey_sub_sub_table_within.values.tolist()
+        if len(stacked_within_values) == 1: #only 0 left in the table
+            withtin_cluster_jeffrey[key] = 0
+        else:
+            withtin_cluster_jeffrey[key] = statistics.median(stacked_within_values[stacked_within_values != 0])
+
 
     # calculate the jeffrey between the strategies from different clusters
     between_cluster_jeffrey = {}
     for key1, val1 in res.items():
         jeffrey_sub_table_between = jeffrey_table[val1]
         for key2, val2 in res.items():
-            if key2 != key1:
+            if key2 != key1: #create df with one set of strategy on the x and the other strategies on the y
+                # no repeating strategies, therefore does not need to filter for 0 and no mirror structure
                 jeffrey_sub_sub_table_between = jeffrey_sub_table_between[jeffrey_sub_table_between.index.isin(val2)]
                 key_value = '-'.join(str(x) for x in [key1, key2])
-                between_cluster_jeffrey[key_value] = jeffrey_sub_sub_table_between.mean().mean() / 2
+                stacked_between_values = jeffrey_sub_sub_table_between.values.tolist()
+                flat_list = [item for sublist in stacked_between_values for item in sublist]
+                between_cluster_jeffrey[key_value] = statistics.median(flat_list)
 
     print("between cluster average", sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey))
     print("within cluster average", sum(withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey))
