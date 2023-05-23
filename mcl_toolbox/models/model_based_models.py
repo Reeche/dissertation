@@ -2,6 +2,7 @@ from collections import defaultdict
 import torch
 import mpmath as mp
 import numpy as np
+from pyro.distributions import DirichletMultinomial
 
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.utils.learning_utils import (break_ties_random,
@@ -20,32 +21,47 @@ class ModelBased(Learner):
 
     def init_model_params(self):
         """Initialize model parameters and initialize weights with participant priors"""
+        # node distributions follow a dirichlet distribution with two alpha parameters (basically a beta)
         self.dirichlet_alpha = {key: (1, 1) for key in range(13)}
-        self.multinomial_k = range(-48, 49) #todo: what if the range is not known
+        # click likelihood is a multinomial distribution
+        self.multinomial_k = range(-48, 49)  # todo: what if the range is not known
         self.multinomial_n = 1
+        self.action_log_probs = []
+
 
     def init_distributions(self, env):
-        available_actions = env.get_available_actions()
-        num_available_actions = len(available_actions)
+        num_available_actions = len(env.get_available_actions())
         self.action_distributions = {}
         for i in range(num_available_actions):
-            self.action_distributions[i] = torch.distributions.Dirichlet(torch.tensor([self.dirichlet_alpha[0][0], self.dirichlet_alpha[0][1]]))
+            self.action_distributions[i] = torch.distributions.Dirichlet(
+                torch.tensor([self.dirichlet_alpha[i][0], self.dirichlet_alpha[i][1]]))
 
-    def update_params(self, r):
+    def update_params(self, env):
         if self.is_null:
             return
         ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
-        #todo: need to write down the equations for the update
+        num_available_actions = len(env.get_available_actions())
 
+        # need the observed value of the node and not reward (which is the -1 click cost)
+        observed_value = env.ground_truth[env.present_trial_number][env.observed_action_list[env.present_trial_number]]
 
+        if observed_value > 24:  # alpha + 1 todo: need to choose sensible threshold
+            self.dirichlet_alpha[env.observed_action_list[env.present_trial_number]][0] = + 1
+        else:  # beta + 1
+            self.dirichlet_alpha[env.observed_action_list[env.present_trial_number]][1] = + 1
 
-    def get_action(self, env, trial_info):
+        for i in range(num_available_actions):
+            self.action_distributions[i] = DirichletMultinomial(
+                concentration=torch.tensor([self.dirichlet_alpha[i][0], self.dirichlet_alpha[i][1]]),
+                total_count=env.present_trial_number + 1) # because present_trial_number start at 0
+
+    def get_action(self, trial_info):
         """Get the best action and its features in the given state"""
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
         else:
-            ## get the best action according to the expected return of the dirichlet distributions
+            ## get the best action according to the expected return of the dirichlet/dirichlet_multinomial distributions
             expected_return = [action_distribution.mean for action_distribution in self.action_distributions]
 
             ## chose the action with the highest expected_return
@@ -54,129 +70,65 @@ class ModelBased(Learner):
             action = best_action
         return action
 
-    def perform_action_updates(self, env, reward):
-        if self.use_pseudo_rewards:
-            self.pseudo_reward = self.get_pseudo_reward(env)
-        value_estimate = reward - self.subjective_cost + self.pseudo_reward
-        self.update_params(value_estimate)
+    def perform_action_updates(self, env):
+        #if self.use_pseudo_rewards:
+        #    self.pseudo_reward = self.get_pseudo_reward(env)
+        #value_estimate = reward - self.subjective_cost + self.pseudo_reward
+        self.update_params(env)
 
-
-    def perform_end_episode_updates(self, env, features, reward, taken_path):
+    def perform_end_episode_updates(self, env, reward, taken_path):
         selected_action = 0
         delay = env.get_feedback({"taken_path": taken_path, "action": selected_action})
         pr = self.get_pseudo_reward(env)
         value_estimate = reward + pr - self.delay_scale * delay
-        self.update_params(value_estimate)
+        self.update_params(env)
         self.update_rewards.append(
             value_estimate
         )
 
-
-    def store_action_likelihood(self, env, given_action):
-        available_actions = env.get_available_actions()
-        if self.no_term:
-            available_actions.remove(0)
-        action_index = available_actions.index(given_action)
-        num_available_actions = len(available_actions)
-        feature_vals = self.get_action_features(env)
-        dists = np.zeros((num_available_actions, 2))
-        cov = np.linalg.inv(self.precision*self.num_samples)
-        for index, action in enumerate(available_actions):
-            computed_features = feature_vals[action]
-            dists[index][0] = np.dot(computed_features, self.mean)
-            dists[index][1] = np.dot(
-                np.dot(computed_features, cov), computed_features.T
-            )
-
-        means = dists[:, 0]
-        sigmas = np.sqrt(dists[:, 1])
-        # Very important to select good bounds for proper sampling.
-        ub = np.max(means + 5 * sigmas)
-        lb = np.min(means - 5 * sigmas)
-        if num_available_actions == 1:
-            selected_action_prob = 1
-        else:
-            # samples = np.random.multivariate_normal(means, np.diag(variances), size=n_samples)
-            # argmaxes = np.argmax(samples, axis=1)
-            # counts = Counter(argmaxes)
-            # get the probability of this certain action
-            # integrate normal pdf(action, mean, sigma) using lb, ub as bounds
-            selected_action_prob = mp.quad(
-                lambda x: norm_integrate(x, action_index, means, sigmas),
-                [lb, ub],
-                maxdegree=10,
-            )
-            #integrate over predicted q-value of the action
-        eps = self.eps
-        log_prob = float(
-            str(
-                mp.log(
-                    (1 - eps) * selected_action_prob + eps * (1 / num_available_actions)
-                )
-            )
-        )
-        self.action_log_probs.append(log_prob)
-        return given_action, feature_vals[action_index]
-
     def take_action(self, env, trial_info):
-        action, features = self.get_action_details(env, trial_info)
-        delay = env.get_feedback({"action": action})
+        action = self.get_action(trial_info)
         if self.compute_likelihood:
             pi = trial_info["participant"]
-            self.store_action_likelihood(env, action) #only click action and not the termination action
+            # todo: the likelihood that the model would have taken the same action as the pid, i.e. likelihood of pid action
+            self.action_log_probs.append(self.action_distributions[action]) #todo: check this
             s_next, r, done, _ = env.step(action)
             reward, taken_path, done = pi.make_click()
-            # assert r == reward #doesn't make sense because the path is not the same
         else:
             s_next, reward, done, taken_path = env.step(action)
-        return s_next, action, reward, done, taken_path, delay, features
+        return s_next, action, reward, done, taken_path
 
     def act_and_learn(self, env, trial_info=None):
         if trial_info is None:
             trial_info = {}
-        end_episode = False
-        if "end_episode" in trial_info:
-            end_episode = trial_info["end_episode"]
-        if not end_episode:
-            term_reward = self.get_term_reward(env)
-            term_features = self.get_term_features(env)
-            self.term_rewards.append(term_reward)
-            self.store_best_paths(env)
-            (
-                s_next,
-                action,
-                reward,
-                done,
-                taken_path,
-                delay,
-                features,
-            ) = self.take_action(env, trial_info)
-            if not done:
-                a_next, next_features = self.get_action_details(env, trial_info)
-                self.update_features.append(features)
-                self.perform_action_updates(
-                    env,
-                    next_features,
-                    reward - self.delay_scale * delay,
-                    term_features,
-                    term_reward,
-                    features,
-                    )
-            else: #if done; hierarchical models never enter here
-                self.update_features.append(features)
-                self.perform_end_episode_updates(env, features, reward, taken_path)
-            return action, reward, done, taken_path
-        else:  # for hierarchial model, if it says to terminate
-            # Should this model learn from the termination action?
-            reward = 0
-            taken_path = None
-            if self.compute_likelihood:
-                reward, taken_path, done = trial_info["participant"].make_click()
 
-            # todo: previously, there was no update here. does it make sense that there is no update here?
-            # todo: does it make sense to use the termination_features?
-            self.perform_end_episode_updates(env, self.get_term_features(env), reward, taken_path)
-            return 0, reward, True, taken_path
+        term_reward = self.get_term_reward(env)
+        term_features = self.get_term_features(env)
+        self.term_rewards.append(term_reward)
+        self.store_best_paths(env)
+        (
+            s_next,
+            action,
+            reward,
+            done,
+            taken_path,
+            delay,
+            features,
+        ) = self.take_action(env, trial_info)
+        if not done:
+            a_next = self.get_action(env, trial_info)
+            self.perform_action_updates(
+                env,
+                reward - self.delay_scale * delay,
+                term_features,
+                term_reward,
+                features,
+            )
+        else:  # if done; hierarchical models never enter here
+            self.update_features.append(features)
+            self.perform_end_episode_updates(env, features, reward, taken_path)
+        return action, reward, done, taken_path
+
 
     def simulate(self, env, compute_likelihood=False, participant=None):
         self.init_model_params()
@@ -184,14 +136,11 @@ class ModelBased(Learner):
         env.reset()
         trials_data = defaultdict(list)
         num_trials = env.num_trials
-        if compute_likelihood:
-            get_log_norm_pdf.cache_clear()
-            get_log_norm_cdf.cache_clear()
+
         for trial_num in range(num_trials):
             self.previous_best_paths = []
             self.num_actions = len(env.get_available_actions())
-            trials_data["w"].append(self.get_current_weights())
-            self.update_rewards, self.update_features = [], []
+            self.update_rewards  = []
             actions, rewards, self.term_rewards = [], [], []
             done = False
             while not done:
