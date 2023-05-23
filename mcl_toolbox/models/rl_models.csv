@@ -3265,3 +3265,4 @@ index,old_index,model,decision_rule,use_pseudo_rewards,pr_weight,actor,term,sele
 3263,,sdss,,FALSE,FALSE,,TRUE,rssl,baseline_reinforce,,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,TRUE,strategy_weight,non_habitual,FALSE
 3264,,sdss,,FALSE,FALSE,,TRUE,rssl,baseline_reinforce,,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,strategy_weight,non_habitual,FALSE
 3265,,sdss,,FALSE,FALSE,,TRUE,rssl,baseline_reinforce,,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,strategy_weight,non_habitual,FALSE
+3266,,model_based,,,,,,,,,,,,,,,,,,habitual,
