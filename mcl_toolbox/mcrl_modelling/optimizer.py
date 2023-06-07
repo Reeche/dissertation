@@ -21,6 +21,8 @@ from mcl_toolbox.models.lvoc_models import LVOC
 from mcl_toolbox.models.reinforce_models import REINFORCE, BaselineREINFORCE
 from mcl_toolbox.models.rssl_models import RSSL
 from mcl_toolbox.models.sdss_models import SDSS
+from mcl_toolbox.models.model_based_models import ModelBased
+
 from mcl_toolbox.utils.learning_utils import (compute_objective,
                                               get_relevant_data)
 from mcl_toolbox.utils.participant_utils import ParticipantIterator
@@ -40,6 +42,7 @@ models = {
     "sdss": SDSS,
     "reinforce": REINFORCE,
     "baseline_reinforce": BaselineREINFORCE,
+    "model_based": ModelBased,
 }
 
 mcrl_modelling_dir = Path(__file__).parents[0]
@@ -145,52 +148,55 @@ def make_prior(param_dict, num_priors, bandit_prior=False):
 def parse_config(
     learner, learner_attributes, hierarchical=False, hybrid=False, general_params=False
 ):
-    params_list = []
-    bandit_prior = False
-    learner_params = model_config[learner]
-    param_models = param_config["model_params"]
-
-    # Add base params
-    params_list += get_params(learner_params["params"], param_config)
-
-    # Adding extra params if they are in attributes and have a value True
-    extra_params = learner_params["extra_params"]
-    for i, param in enumerate(extra_params):
-        if param in learner_attributes and learner_attributes[param]:
-            params_list.append(param_info(param_models[param], param))
-        # else:
-        #     con = learner_params["extra_param_defaults"][i]
-        #     params_list.append(param_info(make_constant(con), param))
-
-    # General params
-    if general_params:
-        if "pr_weight" in learner_attributes:
-            params_list.append(param_info(param_models["pr_weight"], "pr_weight"))
-        else:
-            params_list.append(param_info(make_constant(1), "pr_weight"))
-
-    if hierarchical:
-        decision_rule = learner_attributes["decision_rule"]
-        actor = learner_attributes["actor"]
-        params_list += get_params_list(param_config["decision_params"][decision_rule])
-        params_list += parse_config(actor, learner_attributes, False, False, False)
-    elif hybrid:
-        selector = learner_attributes["selector"]
-        learner = learner_attributes["learner"]
-        params_list += parse_config(selector, learner_attributes, False, False, False)
-        params_list += parse_config(learner, learner_attributes, False, False, False)
+    if learner == "model_based":
+        return None
     else:
-        if "prior" in learner_attributes:
-            prior = learner_attributes["prior"]
-            num_priors = learner_attributes["num_priors"]
-            param_dict = param_models[prior]
-            params_list += make_prior(param_dict, num_priors, False)
-            if prior == "gaussian_prior":
-                param = "gaussian_var"
-                params_list.append(
-                    param_info(param_config["model_params"][param], param)
-                )
-    return params_list
+        params_list = []
+        bandit_prior = False
+        learner_params = model_config[learner]
+        param_models = param_config["model_params"]
+
+        # Add base params
+        params_list += get_params(learner_params["params"], param_config)
+
+        # Adding extra params if they are in attributes and have a value True
+        extra_params = learner_params["extra_params"]
+        for i, param in enumerate(extra_params):
+            if param in learner_attributes and learner_attributes[param]:
+                params_list.append(param_info(param_models[param], param))
+            # else:
+            #     con = learner_params["extra_param_defaults"][i]
+            #     params_list.append(param_info(make_constant(con), param))
+
+        # General params
+        if general_params:
+            if "pr_weight" in learner_attributes:
+                params_list.append(param_info(param_models["pr_weight"], "pr_weight"))
+            else:
+                params_list.append(param_info(make_constant(1), "pr_weight"))
+
+        if hierarchical:
+            decision_rule = learner_attributes["decision_rule"]
+            actor = learner_attributes["actor"]
+            params_list += get_params_list(param_config["decision_params"][decision_rule])
+            params_list += parse_config(actor, learner_attributes, False, False, False)
+        elif hybrid:
+            selector = learner_attributes["selector"]
+            learner = learner_attributes["learner"]
+            params_list += parse_config(selector, learner_attributes, False, False, False)
+            params_list += parse_config(learner, learner_attributes, False, False, False)
+        else:
+            if "prior" in learner_attributes:
+                prior = learner_attributes["prior"]
+                num_priors = learner_attributes["num_priors"]
+                param_dict = param_models[prior]
+                params_list += make_prior(param_dict, num_priors, False)
+                if prior == "gaussian_prior":
+                    param = "gaussian_var"
+                    params_list.append(
+                        param_info(param_config["model_params"][param], param)
+                    )
+        return params_list
 
 
 def get_space(learner, learner_attributes, optimizer="pyabc"):
@@ -201,10 +207,11 @@ def get_space(learner, learner_attributes, optimizer="pyabc"):
     if learner == "sdss":
         hybrid = True
     params_list = parse_config(learner, learner_attributes, hierarchical, hybrid, True)
-    if optimizer == "pyabc":
-        return pyabc_prior(params_list)
-    else:
-        return hyperopt_space(params_list)
+    if learner != "model_based":
+        if optimizer == "pyabc":
+            return pyabc_prior(params_list)
+        else:
+            return hyperopt_space(params_list)
 
 
 def construct_p_data(participant, pipeline):

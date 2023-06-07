@@ -16,14 +16,14 @@ class GenericMouselabEnv(gym.Env):
     """
 
     def __init__(
-        self,
-        num_trials=1,
-        pipeline={"0": ([3, 1, 2], reward_val)},
-        ground_truth=None,
-        cost=1,
-        render_path="mouselab_renders",
-        feedback="none",
-        q_fn=None,
+            self,
+            num_trials=1,
+            pipeline={"0": ([3, 1, 2], reward_val)},
+            ground_truth=None,
+            cost=1,
+            render_path="mouselab_renders",
+            feedback="none",
+            q_fn=None,
     ):
         super(GenericMouselabEnv, self).__init__()
         self.pipeline = pipeline
@@ -34,7 +34,7 @@ class GenericMouselabEnv(gym.Env):
             cost_weight, depth_weight = cost
             self.cost = lambda depth: -(1 * cost_weight + depth * depth_weight)
             self.repeat_cost = -float("inf")
-        elif hasattr(cost, '__call__'): #if it is a function
+        elif hasattr(cost, '__call__'):  # if it is a function
             self.cost = cost
             self.repeat_cost = -float("inf")
         else:  # should be a scalar
@@ -48,7 +48,6 @@ class GenericMouselabEnv(gym.Env):
         if self.feedback == "meta" and self.q_fn is None:
             raise ValueError("Q-function is required to compute metacognitive feedback")
         self.construct_env()
-
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials
@@ -249,12 +248,12 @@ class GenericMouselabEnv(gym.Env):
 
 class ModStateGenericMouselabEnv(GenericMouselabEnv):
     def __init__(
-        self,
-        num_trials=1,
-        pipeline={"0": ([3, 1, 2], reward_val)},
-        ground_truth=None,
-        cost=1,
-        render_path="mouselab_renders",
+            self,
+            num_trials=1,
+            pipeline={"0": ([3, 1, 2], reward_val)},
+            ground_truth=None,
+            cost=1,
+            render_path="mouselab_renders",
     ):
         super().__init__(num_trials, pipeline, ground_truth, cost, render_path)
 

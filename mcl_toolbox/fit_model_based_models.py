@@ -51,3 +51,4 @@ if __name__ == "__main__":
 
     model = ModelBased(pid, env, value_range)
     res = model.simulate(compute_likelihood=False, participant=participant_obj)
+    print(2)

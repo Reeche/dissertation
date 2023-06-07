@@ -3,7 +3,7 @@ import numpy as np
 from random import sample
 import matplotlib.pyplot as plt
 
-exp = "c2.1"
+exp = "c1.1"
 
 
 # sample from the learning participants
@@ -35,25 +35,32 @@ def score_according_to_strategy_used(exp):
     # score_mapping start from 0 but inferred_strategies.pkl start from 1
     df = df - 1
 
-    sampled_pid = sample_from_learning_pid(exp)
-
-    # filter df for learning participants
-    df = df[df.columns.intersection(sampled_pid)]
-
     # replace strategy with score
     df = df.replace(score_mapping)
 
+    # sampled_pid = sample_from_learning_pid(exp)
+    ## filter df for learning participants
+    # df = df[df.columns.intersection(sampled_pid)]
+
+    pid_list = [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
+                82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 124, 132, 137, 144, 146, 150, 154, 155, 158,
+                160, 165, 169, 173]
+
+    # create batches from pid_list
+    # sublists = np.array_split(pid_list, 6)
+
+
     plt.plot(range(0, 35), df)
-    if exp == "v1.0":
-        plt.axhline(y=39.99, color='b', label='Best strategy score')
-    elif exp == "c2.1":
-        plt.axhline(y=28.55, color='b', label='Best strategy score')
-    elif exp == "c1.1":
-        plt.axhline(y=6.58, color='b', label='Best strategy score')
+    # if exp == "v1.0":
+    #     plt.axhline(y=39.99, color='r', label='Best strategy score')
+    # elif exp == "c2.1":
+    #     plt.axhline(y=28.55, color='r', label='Best strategy score')
+    # elif exp == "c1.1":
+    #     plt.axhline(y=6.58, color='r', label='Best strategy score')
 
     plt.legend()
-    plt.title(exp)
-    plt.savefig(f"plots/score/{exp}_individual_strategy_score_development.png")
+    # plt.title(exp)
+    plt.savefig(f"plots/score/{exp}_individual_strategy_score_all.png")
     # plt.show()
     plt.close()
     return None

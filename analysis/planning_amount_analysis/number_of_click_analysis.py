@@ -16,6 +16,7 @@ Changes compared to NeurIPS submission:
 
 """
 
+
 def create_click_df(data):
     """
     Create a df containing "pid", "trial", "number_of_clicks", "clicks", "click_cost"
@@ -60,6 +61,7 @@ def create_click_df(data):
 
     return click_df
 
+
 def plot_clicks(average_clicks):
     ci = 1.96 * np.std(average_clicks) / np.sqrt(len(average_clicks))
     plt.plot(average_clicks)
@@ -78,7 +80,7 @@ def plot_clicks(average_clicks):
         plt.axhline(y=6.32, color='r', linestyle='-')
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
-        plt.axhline(y=0.01, color='r', linestyle='-') #it is actually 0 but needs to show on plot, therefore 0.68
+        plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.68
     else:
         label = "LVLC"
         plt.axhline(y=5.82, color='r', linestyle='-')
@@ -88,17 +90,22 @@ def plot_clicks(average_clicks):
     plt.close()
     return None
 
+
 def trend_test(average_clicks):
     result = mk.original_test(average_clicks)
     print(f"Mann Kendall test for clicks for {experiment}: clicks are {result}")
     return None
 
+
 def normality_test(average_clicks):
     k2, p = stats.normaltest(average_clicks)
     print(f"Normality test for clicks for {experiment}: p = {p}")
 
+
 def anova(click_data):
-    model = ols('number_of_clicks ~ C(trial) + click_cost + pid + C(variance) + trial:variance + trial:cost + trial:variance:cost', data=click_data).fit()
+    model = ols(
+        'number_of_clicks ~ C(trial) + click_cost + pid + C(variance) + trial:variance + trial:cost + trial:variance:cost',
+        data=click_data).fit()
     table = sm.stats.anova_lm(model, typ=2)
     print(table)
     return None
@@ -108,20 +115,19 @@ def glm(click_data):
     # filter for high and low variance
     click_data = click_data[click_data["variance"] == 0]
 
+    # click_data["trial_variance"] = click_data["trial"] * click_data["variance"]
+    # # click_data["trial:pid"] = click_data["trial"] * click_data["variance"]
+    # click_data["trial_cost"] = click_data["trial"] * click_data["click_cost"]
+    # click_data["variance_cost"] = click_data["variance"] * click_data["click_cost"]
+    # click_data["trial_variance_cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
 
-    click_data["trial:variance"] = click_data["trial"] * click_data["variance"]
-    # click_data["trial:pid"] = click_data["trial"] * click_data["variance"]
-    click_data["trial:cost"] = click_data["trial"] * click_data["click_cost"]
-    click_data["variance:cost"] = click_data["variance"] * click_data["click_cost"]
-    click_data["trial:variance:cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
-
-    cutoff = 35
-    # create df with first n trials
-    #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
-    x_learning = click_data[click_data["trial"].isin(range(1,cutoff))]
-    y_learning = x_learning["number_of_clicks"]
-    x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'pid'])
-    x_learning = sm.add_constant(x_learning)
+    # cutoff = 35
+    # # create df with first n trials
+    # #x_temp = click_data.drop(columns=['number_of_clicks', 'clicks'])
+    # x_learning = click_data[click_data["trial"].isin(range(1,cutoff))]
+    # y_learning = x_learning["number_of_clicks"]
+    # x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'pid'])
+    click_data = sm.add_constant(click_data)
 
     # create df with last n:35 trials
     # x_nonlearning = click_data[click_data["trial"].isin(range(cutoff,35))]
@@ -129,10 +135,9 @@ def glm(click_data):
     # x_nonlearning = x_nonlearning.drop(columns=['number_of_clicks', 'clicks'])
     # x_nonlearning = sm.add_constant(x_nonlearning)
 
-
     # linear mixed effect models
-    formula = "number_of_clicks ~ trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
-    gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit() #makes sense
+    formula_ = "number_of_clicks ~ C(variance) + trial + trial:C(variance) + click_cost + trial:click_cost + trial:C(variance):click_cost + C(variance):click_cost"
+    gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
 
     # glm
     # formula = "number_of_clicks ~ C(pid) + trial + C(variance) + click_cost + trial:C(variance) + trial:click_cost + C(variance):click_cost + trial:C(variance):click_cost"
@@ -145,7 +150,7 @@ def glm(click_data):
 
     # generalised linear mixed effect models
     # gamma_model = sm.PoissonBayesMixedGLM(endog=y_learning, exog=x_learning, exog_vc=x_learning["pid"], ident=[0])
-    # gamma_model = gpb.GPModel(group_data=click_data, likelihood="binary")
+    # # gamma_model = gpb.GPModel(group_data=click_data, likelihood="binary")
     # gamma_model.fit(y=y_learning, X=x_learning)
 
     print("learning results", gamma_model.summary())
@@ -156,8 +161,10 @@ def glm(click_data):
     # print("nonlearning results", gamma_results.summary())
     return None
 
+
 if __name__ == "__main__":
-    experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost", "low_variance_high_cost"]
+    experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
+                   "low_variance_high_cost"]
 
     # experiments = ["low_variance_high_cost"]
     click_df_all_conditions = pd.DataFrame()
@@ -194,7 +201,6 @@ if __name__ == "__main__":
         # else:
         #     chi2, p  = chisquare([average_clicks.values[-1], 5.82])
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-
 
         # anova(click_df_all_conditions)
     glm(click_df_all_conditions)
