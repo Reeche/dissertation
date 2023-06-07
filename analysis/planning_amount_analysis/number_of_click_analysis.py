@@ -90,6 +90,13 @@ def plot_clicks(average_clicks):
     plt.close()
     return None
 
+def plot_individual_clicks(click_df):
+    pid_list = click_df["pid"].unique()
+    for pid in pid_list:
+        click_df[click_df['pid'] == pid]["number_of_clicks"]
+        print(2)
+        # plt.plot(click_df[click_df['pid'] = pid]['number_of_clicks'])
+    return None
 
 def trend_test(average_clicks):
     result = mk.original_test(average_clicks)
@@ -109,7 +116,6 @@ def anova(click_data):
     table = sm.stats.anova_lm(model, typ=2)
     print(table)
     return None
-
 
 def glm(click_data):
     # filter for high and low variance
@@ -171,6 +177,9 @@ if __name__ == "__main__":
     for experiment in experiments:
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data)
+
+        ## plot individual clicks 
+        plot_individual_clicks(click_df)
 
         # group click_df by trial and get the average clicks
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
