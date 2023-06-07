@@ -92,11 +92,14 @@ def plot_clicks(average_clicks):
 
 def plot_individual_clicks(click_df):
     pid_list = click_df["pid"].unique()
+
     for pid in pid_list:
-        click_df[click_df['pid'] == pid]["number_of_clicks"]
+        temp_df = click_df[click_df['pid'] == pid]["number_of_clicks"]
+
         print(2)
         # plt.plot(click_df[click_df['pid'] = pid]['number_of_clicks'])
     return None
+
 
 def trend_test(average_clicks):
     result = mk.original_test(average_clicks)
