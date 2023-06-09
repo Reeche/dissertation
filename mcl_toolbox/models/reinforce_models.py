@@ -29,7 +29,8 @@ class Policy(nn.Module):
         self.rewards = []
 
     def forward(self, x, term_reward=None, termination=True):
-        # x and y are action tensor each with length 13, each with values smaller or equal to 1
+        # x has size 13 x 1 x 51 with values between 0 and 1
+        # y has size 13 x 1 x 1 with values -inf to + inf
         y = self.weighted_preference(x)
         if term_reward:
             y[0][0] = torch.Tensor([term_reward])
@@ -295,8 +296,6 @@ class REINFORCE(Learner):
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
         if self.action_log_probs:
-            #todo: why is not the policy_loss used? Because likelihood optimises for action likelihood?
-            # so the name "loss" is actually not accurate but rather what we optimise for
             trials_data["loss"] = -sum(self.action_log_probs)
         else:
             trials_data["loss"] = None

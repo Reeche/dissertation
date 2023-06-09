@@ -2,6 +2,17 @@ from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from models.model_based_models import ModelBased
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
+from hyperopt import hp, fmin, tpe, Trials
+import matplotlib.pyplot as plt
+
+
+def plot_score(model_results, participant):
+    plt.plot(model_results['r'], label="Model")
+    plt.plot(participant.score, label="Participant")
+    plt.legend()
+    plt.show()
+    return None
+
 
 if __name__ == "__main__":
     exp_name = "v1.0"
@@ -19,6 +30,7 @@ if __name__ == "__main__":
         "learn_from_path": True,
     }
 
+
     def cost_function(depth):
         if depth == 0:
             return 0
@@ -28,6 +40,7 @@ if __name__ == "__main__":
             return -3
         if depth == 3:
             return -30
+
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -49,6 +62,22 @@ if __name__ == "__main__":
     # todo: need to choose a sensible range that takes the click cost into consideration
     value_range = list(range(-100, 100))
 
-    model = ModelBased(pid, env, value_range)
-    res = model.simulate(compute_likelihood=False, participant=participant_obj)
-    print(2)
+    model = ModelBased(pid, env, value_range, True, participant_obj)
+    # res = model.simulate(compute_likelihood=True, participant=participant_obj)
+    # print(res)
+    fspace = {
+        'inverse_temp': hp.uniform('inverse_temp', 0, 1)
+    }
+
+    # minimize the objective over the space
+    best_params = fmin(fn=model.simulate,
+                space=fspace,
+                algo=tpe.suggest,
+                max_evals=5,
+                # trials=True,
+                show_progressbar=True)
+
+    ## simulate using the best parameters
+    res = model.simulate(best_params)
+    print(best_params)
+    plot_score(res, pid)

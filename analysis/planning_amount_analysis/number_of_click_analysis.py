@@ -7,6 +7,7 @@ from scipy import stats
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import statsmodels.formula.api as smf
+from collections import Counter
 from scipy.stats import chisquare
 
 """
@@ -90,14 +91,19 @@ def plot_clicks(average_clicks):
     plt.close()
     return None
 
-def plot_individual_clicks(click_df):
+
+def plot_individual_clicks(click_df, exp):
     pid_list = click_df["pid"].unique()
-
-    for pid in pid_list:
-        temp_df = click_df[click_df['pid'] == pid]["number_of_clicks"]
-
-        print(2)
-        # plt.plot(click_df[click_df['pid'] = pid]['number_of_clicks'])
+    divided_list = [pid_list[i:i + 7] for i in range(0, len(pid_list), 7)]
+    i = 0
+    for lists in divided_list:
+        for pid in lists:
+            temp_df = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
+            plt.plot(temp_df)
+        # plt.show()
+        plt.savefig(f"plots/{exp}_individual_plots_{i}")
+        plt.close()
+        i += 1
     return None
 
 
@@ -119,6 +125,7 @@ def anova(click_data):
     table = sm.stats.anova_lm(model, typ=2)
     print(table)
     return None
+
 
 def glm(click_data):
     # filter for high and low variance
@@ -171,6 +178,29 @@ def glm(click_data):
     return None
 
 
+def magnitude_of_change(click_df, experiment):
+    pid_list = click_df["pid"].unique()
+    diff_list = []
+    for pid in pid_list:
+        temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
+        diff_list.append([t - s for s, t in zip(temp_list, temp_list[1:])])
+    flat_list = [item for sublist in diff_list for item in sublist]
+    lists = sorted(Counter(flat_list).items())  # sorted by key, return a list of tuples
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.bar(x, y)
+    plt.savefig(f"plots/magnitude_{experiment}")
+    plt.close()
+    return None
+
+def no_clicking_pid(click_df, experiment):
+    pid_list = click_df["pid"].unique()
+    bad_pid = []
+    for pid in pid_list:
+        temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
+        if all(v == 0 for v in temp_list):
+            bad_pid.append(pid)
+    print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid))
+
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
                    "low_variance_high_cost"]
@@ -181,11 +211,17 @@ if __name__ == "__main__":
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data)
 
+        ## no clicking pid
+        no_clicking_pid(click_df, experiment)
+        
+        ## magnitude of change
+        # magnitude_of_change(click_df, experiment)
+
         ## plot individual clicks 
-        plot_individual_clicks(click_df)
+        # plot_individual_clicks(click_df, experiment)
 
         # group click_df by trial and get the average clicks
-        average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
+        # average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
         # plot_clicks(average_clicks)
@@ -197,7 +233,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         ##append all 4 conditions into one df
-        click_df_all_conditions = click_df_all_conditions.append(click_df)
+        # click_df_all_conditions = click_df_all_conditions.append(click_df)
 
         # optimal number of clicks vs. actual number of clicks
         # get clicks of last trial
@@ -215,4 +251,4 @@ if __name__ == "__main__":
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
-    glm(click_df_all_conditions)
+    # glm(click_df_all_conditions)

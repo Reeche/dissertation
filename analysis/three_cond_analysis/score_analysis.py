@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
 from random import sample
+import pymannkendall as mk
 import matplotlib.pyplot as plt
 
-exp = "c1.1"
-
-
-# sample from the learning participants
+exp = "v1.0"
 
 
 def sample_from_learning_pid(exp, n=5):
@@ -66,7 +64,7 @@ def score_according_to_strategy_used(exp):
     return None
 
 
-score_according_to_strategy_used(exp)
+# score_according_to_strategy_used(exp)
 
 
 def individual_scores(exp):
@@ -93,3 +91,19 @@ def individual_scores(exp):
     plt.savefig(f"plots/score/{exp}_individual_score_development.png")
     # plt.show()
     plt.close()
+
+
+def proportion_whose_score_improved(exp):
+    df = pd.read_csv(f"../../data/human/{exp}/mouselab-mdp.csv")
+    df = df[["pid", "trial_index", "score"]]
+
+    pid_list = df["pid"].unique()
+    good_pid = []
+    for pid in pid_list:
+        temp_list = df[df['pid'] == pid]["score"].to_list()
+        result = mk.original_test(temp_list)
+        if result[0] == "increasing":
+            good_pid.append(pid)
+    print(len(good_pid))
+
+proportion_whose_score_improved(exp)
