@@ -4,13 +4,15 @@ from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
 from hyperopt import hp, fmin, tpe, Trials
 import matplotlib.pyplot as plt
-
-
+import pandas as pd
+import pickle
 def plot_score(model_results, participant):
     plt.plot(model_results['r'], label="Model")
     plt.plot(participant.score, label="Participant")
     plt.legend()
-    plt.show()
+    plt.savefig(f"../../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
+    # plt.show()
+    plt.close()
     return None
 
 
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     pid, env = mf.get_participant_context(pid)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
-    value_range = list(range(-100, 100))
+    value_range = list(range(-120, 120))
 
     model = ModelBased(pid, env, value_range, True, participant_obj)
     # res = model.simulate(compute_likelihood=True, participant=participant_obj)
@@ -73,11 +75,17 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.simulate,
                 space=fspace,
                 algo=tpe.suggest,
-                max_evals=5,
+                max_evals=1,
                 # trials=True,
                 show_progressbar=True)
 
     ## simulate using the best parameters
     res = model.simulate(best_params)
-    print(best_params)
+
+    ## save result and best parameters
+    # res.update(best_params)
+    # output = open(f'../results/mcrl/{exp_name}_model_based/{pid}.pkl', 'wb')
+    # pickle.dump(res, output)
+    # output.close()
+
     plot_score(res, pid)

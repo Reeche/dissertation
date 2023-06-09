@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 from pyro.distributions import DirichletMultinomial
 from mcl_toolbox.models.base_learner import Learner
-from hyperopt import  STATUS_OK
+from hyperopt import STATUS_OK
 
 
 class ModelBased(Learner):
@@ -23,7 +23,6 @@ class ModelBased(Learner):
         self.num_available_nodes = len(self.env.get_available_actions()) - 1
         self._init_model_params()
         self._init_distributions()
-
 
     def _init_model_params(self):
         """Initialize model parameters and initialize weights with participant priors"""
@@ -57,7 +56,7 @@ class ModelBased(Learner):
                 concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
 
-    def get_myopic_action(self):
+    def get_myopic_action(self) -> int:
         ## chose the action with the highest expected_return (myopic policy)
         max_value = float('-inf')  # Initialize with negative infinity
         max_index = None
@@ -69,7 +68,7 @@ class ModelBased(Learner):
                 max_index = index
 
         if random.random() < self.inverse_temp:
-            return random.randint(0, len(self.env.get_available_actions()))
+            return random.randint(0, self.num_available_nodes)
         else:
             return max_index
 
@@ -92,7 +91,7 @@ class ModelBased(Learner):
     def perform_updates(self, reward, action):
         # if self.pseudo_reward:
         #     self.pseudo_reward = self.get_pseudo_reward()
-        value_estimate = reward  #+ self.pseudo_reward
+        value_estimate = reward  # + self.pseudo_reward
         self.update_params(value_estimate, action)
 
     # def perform_end_episode_updates(self, reward, action, taken_path): #todo: if not likelihood is used as criteria
@@ -117,52 +116,30 @@ class ModelBased(Learner):
     def take_action(self, trial_info):
         if self.compute_likelihood:
             pi = trial_info["participant"]
-            pid_action = pi.get_click()
+            action = pi.get_click()
             action_likelihood = self.calculate_likelihood()  # todo: how to determine prob of termination?
-            if pid_action != 0:
-                action = pid_action - 1
+            if action != 0:
+                action = action - 1
+                # how likely model would have taken the action
                 self.action_log_probs.append(action_likelihood[action])
 
-            # what would the model have done and received as reward?
-            best_action = self.get_myopic_action()
-            if best_action != 0:
-                action = best_action - 1
-            else:
-                action = best_action
-            _, reward, d, tp = self.env.step(action)
-
-            # what the participant actually did; to transit to the next belief state same as pid
-            r, taken_path, done = pi.make_click()
-        else:
-            best_action = self.get_myopic_action()
-            action = best_action - 1
-            _, reward, done, taken_path = self.env.step(action)
+        # what would the model have done and received as reward?
+        best_action = self.get_myopic_action()
+        _, reward, d, tp = self.env.step(best_action)
+        # need this to get the done, taken_path information and update # of clicks and trials
+        _, taken_path, done = pi.make_click()
         return action, reward, done, taken_path
-
-        # # if self.compute_likelihood, then this gets the pid action
-        # action = self.get_action(trial_info) #todo: check if this really gets the pid action if likelihood
-        # if self.compute_likelihood:
-        #     pi = trial_info["participant"]
-        #     # the likelihood that the model would have taken the same action as the pid, i.e. likelihood of pid action
-        #     action_likelihood = self.calculate_likelihood()
-        #     self.action_log_probs.append(action_likelihood[action])
-        #     _, r, done, _ = self.env.step(action)
-        #     reward, taken_path, done = pi.make_click()
-        # else:
-        #     _, reward, done, taken_path = self.env.step(action)
-        # return action, reward, done, taken_path
 
     def act_and_learn(self, trial_info=None):
         if trial_info is None:
             trial_info = {}
         action, reward, done, taken_path = self.take_action(trial_info)
         if action != 0:
-            self.perform_updates(reward,action)  # todo: check that reward is the click cost and the termination reward
+            self.perform_updates(reward, action)  # todo: check that reward is the click cost and the termination reward
         # else:
         #     self.perform_end_episode_updates(reward, action, taken_path)
         return action, reward, done, taken_path
 
-    # def simulate(self, compute_likelihood=False, participant=None, **kwargs):
     def simulate(self, params):
         self.inverse_temp = params['inverse_temp']
         self._init_model_params()
@@ -189,10 +166,8 @@ class ModelBased(Learner):
         trials_data["envs"] = self.env.ground_truth
         # Likelihoods are stored in action_log_probs
         if self.action_log_probs:
-            trials_data["loss"] = np.sum(self.action_log_probs)
+            trials_data["loss"] = -np.sum(self.action_log_probs)
         else:
             trials_data["loss"] = None
         trials_data["status"] = STATUS_OK
         return dict(trials_data)
-
-
