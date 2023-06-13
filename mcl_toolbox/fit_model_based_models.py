@@ -6,19 +6,19 @@ from hyperopt import hp, fmin, tpe, Trials
 import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
-def plot_score(model_results, participant):
-    plt.plot(model_results['r'], label="Model")
-    plt.plot(participant.score, label="Participant")
+def plot_score(res, participant):
+    plt.plot(res['model_rewards'], color="r", label="Model")
+    plt.plot(participant.score, color="b", label="Participant")
     plt.legend()
-    plt.savefig(f"../../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
     # plt.show()
+    plt.savefig(f"../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
     plt.close()
     return None
 
 
 if __name__ == "__main__":
     exp_name = "v1.0"
-    pid = 1
+    pid = 1#51#1 pid 1 is very adaptive
 
     E = Experiment("v1.0")
     p = E.participants[pid]
@@ -81,11 +81,12 @@ if __name__ == "__main__":
 
     ## simulate using the best parameters
     res = model.simulate(best_params)
+    # print(res)
 
     ## save result and best parameters
     # res.update(best_params)
     # output = open(f'../results/mcrl/{exp_name}_model_based/{pid}.pkl', 'wb')
     # pickle.dump(res, output)
     # output.close()
-
     plot_score(res, pid)
+

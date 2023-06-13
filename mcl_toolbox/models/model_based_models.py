@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 import torch
-from torch.autograd import Variable
+import math
 import torch.nn.functional as F
 import numpy as np
 from pyro.distributions import DirichletMultinomial
@@ -30,7 +30,7 @@ class ModelBased(Learner):
         dirichlet_alpha = {key: 1 for key in self.value_range}
         self.dirichlet_alpha_dict = {}
         # alpha need to be n x m, e.g. 13 x range
-        for i in range(self.num_available_nodes):
+        for i in range(1, self.num_available_nodes+1):
             self.dirichlet_alpha_dict[i] = dirichlet_alpha
 
     def _init_distributions(self):
@@ -38,23 +38,25 @@ class ModelBased(Learner):
         # create tensor of length value_range
 
         # create node distribution for all nodes
-        for i in range(self.num_available_nodes):
+        for i in range(1, self.num_available_nodes+1):
             self.node_distributions[i] = torch.distributions.Dirichlet(
                 torch.tensor(list(self.dirichlet_alpha_dict[i].values())))
 
     def update_params(self, reward, action):
         ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
 
-        # need the observed value of the node minus the reward (which is the -1 click cost)
-        # todo: check if observed_action_list is correct
-        observed_value = self.env.ground_truth[self.env.present_trial_num][self.env.observed_action_list[0]] - reward
-        self.dirichlet_alpha_dict[action - 1][
-            int(observed_value)] += 1  # -1 because dirichlet start at 0 but 0  is termination action and therefore action start 1
+        # need the observed value of the node plus the reward (which is the -1 click cost)
+        # observed_value = self.env.ground_truth[self.env.present_trial_num][action] + reward
+        # observed_value should only be the node value, i.e. model of the env and not model of the cost
+        observed_value = self.env.ground_truth[self.env.present_trial_num][action]
+        self.dirichlet_alpha_dict[action][int(observed_value)] = self.dirichlet_alpha_dict[action][int(observed_value)] + 1
+        # -1 because dirichlet start at 0 but 0  is termination action and therefore action start 1
 
-        for i in range(self.num_available_nodes):
+        for i in range(1, self.num_available_nodes+1):
             self.node_distributions[i] = DirichletMultinomial(
                 concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
+
 
     def get_myopic_action(self) -> int:
         ## chose the action with the highest expected_return (myopic policy)
@@ -72,15 +74,15 @@ class ModelBased(Learner):
         else:
             return max_index
 
-    def expected_return(self):
+    def myopic_value(self) -> list:
         ## get the best action according to the expected return of the dirichlet/dirichlet_multinomial distributions
+        ## myopic value = expected return
         expected_return = []
         for _, node_distribution in self.node_distributions.items():
             expected_return.append(node_distribution.mean)
         return expected_return
 
     def get_pseudo_reward(self):
-        pr = 0
         # maximum expected reward from previous belief state
         comp_value = self.get_best_paths_expectation(self.env)
         # maximum expected reward from current belief state (if terminate now)
@@ -94,51 +96,45 @@ class ModelBased(Learner):
         value_estimate = reward  # + self.pseudo_reward
         self.update_params(value_estimate, action)
 
-    # def perform_end_episode_updates(self, reward, action, taken_path): #todo: if not likelihood is used as criteria
-    #     selected_action = 0
-    #     # delay = self.env.get_feedback({"taken_path": taken_path, "action": selected_action}) #todo: what is delay?
-    #     # pr = self.get_pseudo_reward(self.env)
-    #     # value_estimate = reward + pr - self.delay_scale * delay
-    #     value_estimate = reward
-    #     self.update_params(value_estimate, action)
-
     def calculate_likelihood(self):
         # for expected return of each action, choose the largest ones, which is the action score
         action_score = []
-        for index, sublist in enumerate(self.expected_return()):
-            action_score.append(max(sublist))
-        # action_score = self.inverse_temp * np.array(action_score)
+        for index, sublist in enumerate(self.myopic_value()):
+            action_score.append(max(sublist) + self.env.cost(index))
 
-        softmax_vals = F.log_softmax(torch.tensor(action_score), dim=0)
+        myopic_value = (self.inverse_temp * np.array(action_score)).tolist()
+
+        # likelihood of termination, value of 0 because no information gain
+        termination_value = math.exp(0) * self.inverse_temp
+        myopic_value.insert(0, termination_value)
+        softmax_vals = F.log_softmax(torch.tensor(myopic_value), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         return softmax_vals / softmax_vals.sum()
 
     def take_action(self, trial_info):
+        pi = trial_info["participant"]
         if self.compute_likelihood:
-            pi = trial_info["participant"]
             action = pi.get_click()
-            action_likelihood = self.calculate_likelihood()  # todo: how to determine prob of termination?
-            if action != 0:
-                action = action - 1
-                # how likely model would have taken the action
-                self.action_log_probs.append(action_likelihood[action])
-
-        # what would the model have done and received as reward?
-        best_action = self.get_myopic_action()
-        _, reward, d, tp = self.env.step(best_action)
-        # need this to get the done, taken_path information and update # of clicks and trials
-        _, taken_path, done = pi.make_click()
-        return action, reward, done, taken_path
+            action_likelihood = self.calculate_likelihood()
+            # how likely model would have taken the action
+            self.action_log_probs.append(action_likelihood[action])
+            _, model_reward, _, _ = self.env.step(action)
+            pid_reward, taken_path, done = pi.make_click()
+        else:
+            action = self.get_myopic_action()
+            s_next, model_reward, _, taken_path = self.env.step(action)
+            pid_reward, done, _ = pi.make_click()
+        return action, model_reward, pid_reward, done, taken_path
 
     def act_and_learn(self, trial_info=None):
         if trial_info is None:
             trial_info = {}
-        action, reward, done, taken_path = self.take_action(trial_info)
+        action, model_reward, pid_reward, done, taken_path = self.take_action(trial_info)
         if action != 0:
-            self.perform_updates(reward, action)  # todo: check that reward is the click cost and the termination reward
+            self.perform_updates(pid_reward, action)
         # else:
         #     self.perform_end_episode_updates(reward, action, taken_path)
-        return action, reward, done, taken_path
+        return action, model_reward, pid_reward, done, taken_path
 
     def simulate(self, params):
         self.inverse_temp = params['inverse_temp']
@@ -149,18 +145,21 @@ class ModelBased(Learner):
         trials_data = defaultdict(list)
         num_trials = self.env.num_trials
         for trial_num in range(num_trials):
-            actions, rewards = [], []
+            actions, model_rewards, pid_rewards = [], [], []
             done = False
             while not done:
-                action, reward, done, taken_path = self.act_and_learn(trial_info={"participant": self.participant_obj})
-                rewards.append(reward)
+                action, model_reward, pid_reward, done, taken_path = self.act_and_learn(trial_info={"participant": self.participant_obj})
+                model_rewards.append(model_reward)
+                pid_rewards.append(pid_reward)
                 actions.append(action)
                 if done:
                     trials_data["taken_paths"].append(taken_path)
 
-            trials_data["r"].append(np.sum(rewards))
+            trials_data["model_rewards"].append(np.sum(model_rewards))
+            trials_data["pid_rewards"].append(np.sum(pid_rewards))
             trials_data["a"].append(actions)
-            trials_data["costs"].append(rewards)
+            trials_data["model_costs"].append(model_rewards)
+            trials_data["pid_costs"].append(pid_rewards)
             self.env.get_next_trial()
         # add trial ground truths
         trials_data["envs"] = self.env.ground_truth
