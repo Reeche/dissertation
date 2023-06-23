@@ -2,9 +2,9 @@ from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from models.model_based_models import ModelBased
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
-from hyperopt import hp, fmin, tpe, Trials
+from hyperopt import hp, fmin, tpe
 import matplotlib.pyplot as plt
-from mouselab.metacontroller.mouselab_env import MetaControllerMouselab
+
 
 
 def plot_score(res, participant):
@@ -76,14 +76,14 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.simulate,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=10,
+                       max_evals=1,
                        # trials=True,
                        show_progressbar=True)
 
     # best_params = {'inverse_temp': 0.5}
     ## simulate using the best parameters
-    model.compute_likelihood = False
-    res = model.simulate(best_params)
+    # model.compute_likelihood = False
+    # res = model.simulate(best_params)
     # print(res)
 
     ## save result and best parameters
@@ -91,4 +91,4 @@ if __name__ == "__main__":
     # output = open(f'../results/mcrl/{exp_name}_model_based/{pid}.pkl', 'wb')
     # pickle.dump(res, output)
     # output.close()
-    plot_score(res, pid)
+    # plot_score(res, pid)

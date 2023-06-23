@@ -75,11 +75,9 @@ class ModelBased(Learner):
         Returns: a dict that contains the path and its expected value
 
         """
-        # self.branch_map is a dict containing the branches and indeces,
-        # e.g. for 3 step task {1: (0, 1, 2, 3), 2: (0, 1, 2, 4), 3: (0, 5, 6, 7), 4: (0, 5, 6, 8), 5: (0, 9, 10, 11), 6: (0, 9, 10, 12)}
-        num_branches = len(self.env.present_trial.branch_map)
+        # self.branch_map is a dict containing the branches and indeces,#6
         expected_path_values = {}
-        for i in range(1, num_branches + 1):
+        for i in list(self.env.present_trial.branch_map.keys()):
             path = self.env.present_trial.branch_map[i]
             mer = 0
             for node_num in path:
@@ -88,9 +86,10 @@ class ModelBased(Learner):
                     mer += node.value
                 else:
                     if node_num != 0:  # if not the starting node
-                        # if deliberating about clicking the node, what is the expected return (MER)?
-                        mer += max(self.node_distributions[action].mean)  # todo: max or average?
-                        # MER for other actions are all 0
+                        if node_num == action:
+                            mer += max(self.node_distributions[action].mean)
+                        else:  # MER for other actions are all 0 because unobserved
+                            mer += 0
             expected_path_values[i] = mer
         return max(expected_path_values.values())
 
@@ -150,7 +149,7 @@ class ModelBased(Learner):
         self.init_model_params()
         self.init_distributions()
         self.env.reset()
-        self.participant_obj.reset() #resets number of trial and clicks, nothing else
+        self.participant_obj.reset()  # resets number of trial and clicks, nothing else
         trials_data = defaultdict(list)
         num_trials = self.env.num_trials
         for trial_num in range(num_trials):
