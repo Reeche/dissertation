@@ -32,7 +32,7 @@ def fit_model(
     sim_params=None,
     simulate=True,
     plotting=False,
-    data_path=None,
+    data_path="results/cm",
     save_path=None,
 ):
     """
@@ -47,7 +47,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_8000_iterations/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     #     other_params = {}
 
     exp_name = "v1.0"
-    model_index = 1297#3266 #527 or 528
+    model_index = 480
     optimization_criterion = "likelihood"
     pid = 1
     other_params = {"plotting": True}
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     if "exp_attributes" not in other_params:
         exp_attributes = {
             "exclude_trials": None,  # Trials to be excluded
-            "block": None,  # Block of the experiment
+            "block": "training",  # Block of the experiment
             "experiment": None,  # Experiment object can be passed directly with
             # Experiment object can be passed directly with pipeline and normalized features attached
             "click_cost": click_cost
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 100,
+            "max_evals": 2,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()
@@ -152,6 +152,7 @@ if __name__ == "__main__":
         number_of_trials=number_of_trials,
         model_index=model_index,
         optimization_criterion=optimization_criterion,
+        data_path="results/cm",
         **other_params,
     )
     toc = time.perf_counter()

@@ -126,6 +126,7 @@ class Experiment:
         self.exp_num = exp_num
         self.data = get_data(exp_num)
         self.cm = cm
+        self.data_path = data_path
         # self.block = None
         if pids:
             self.pids = pids
@@ -200,17 +201,20 @@ class Experiment:
             p.condition = condition
             self.participants[pid] = p
 
-        path = Path(__file__).parents[1]
-        f_path = path.joinpath("data/inferred_strategies")
+        path = Path(__file__).parents[2]
+        f_path = path.joinpath(f"{self.data_path}/inferred_strategies")
         if self.block is not None:
             prefix = f"{self.exp_num}_{self.block}"
         else:
             prefix = f"{self.exp_num}"
         # this assumes that the strategies were supplied for blocked experiment
         # (meaning excluded trials are also included)
-        if os.path.exists(f_path.joinpath(f"{prefix}_strategies.pkl")):
-            strategies = pickle_load(f_path.joinpath(f"{prefix}_strategies.pkl"))
-            temperatures = pickle_load(f_path.joinpath(f"{prefix}_temperatures.pkl"))
+        # if os.path.exists(f_path.joinpath(f"{prefix}_strategies.pkl")):
+        if os.path.exists(f_path.joinpath(f"{prefix}/strategies.pkl")):
+            # strategies = pickle_load(f_path.joinpath(f"{prefix}_strategies.pkl"))
+            strategies = pickle_load(f_path.joinpath(f"{prefix}/strategies.pkl"))
+            # temperatures = pickle_load(f_path.joinpath(f"{prefix}_temperatures.pkl"))
+            temperatures = pickle_load(f_path.joinpath(f"{prefix}/temperatures.pkl"))
             self.infer_strategies(
                 precomputed_strategies=strategies,
                 precomputed_temperatures=temperatures,

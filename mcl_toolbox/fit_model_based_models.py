@@ -4,33 +4,26 @@ from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
 from hyperopt import hp, fmin, tpe, Trials
 import matplotlib.pyplot as plt
-import pandas as pd
-import pickle
+from mouselab.metacontroller.mouselab_env import MetaControllerMouselab
+
+
 def plot_score(res, participant):
-    plt.plot(res['model_rewards'], color="r", label="Model")
+    plt.plot(res['rewards'], color="r", label="Model")
     plt.plot(participant.score, color="b", label="Participant")
     plt.legend()
-    # plt.show()
-    plt.savefig(f"../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
+    plt.show()
+    # plt.savefig(f"../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
     plt.close()
     return None
 
 
 if __name__ == "__main__":
     exp_name = "v1.0"
-    pid = 1#51#1 pid 1 is very adaptive
+    pid = 1  # 35 is okay adaptive  # 51#1 pid 1 is very adaptive
 
     E = Experiment("v1.0")
     p = E.participants[pid]
     participant_obj = ParticipantIterator(p)
-
-    exp_attributes = {
-        "exclude_trials": None,
-        "block": None,
-        "experiment": None,
-        "click_cost": 1,
-        "learn_from_path": True,
-    }
 
 
     def cost_function(depth):
@@ -43,6 +36,14 @@ if __name__ == "__main__":
         if depth == 3:
             return -30
 
+
+    exp_attributes = {
+        "exclude_trials": None,
+        "block": None,
+        "experiment": None,
+        "click_cost": 1,
+        "learn_from_path": True,
+    }
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -66,20 +67,22 @@ if __name__ == "__main__":
 
     model = ModelBased(pid, env, value_range, True, participant_obj)
     # res = model.simulate(compute_likelihood=True, participant=participant_obj)
-    # print(res)
+
     fspace = {
         'inverse_temp': hp.uniform('inverse_temp', 0, 1)
     }
 
     # minimize the objective over the space
     best_params = fmin(fn=model.simulate,
-                space=fspace,
-                algo=tpe.suggest,
-                max_evals=1,
-                # trials=True,
-                show_progressbar=True)
+                       space=fspace,
+                       algo=tpe.suggest,
+                       max_evals=10,
+                       # trials=True,
+                       show_progressbar=True)
 
+    # best_params = {'inverse_temp': 0.5}
     ## simulate using the best parameters
+    model.compute_likelihood = False
     res = model.simulate(best_params)
     # print(res)
 
@@ -89,4 +92,3 @@ if __name__ == "__main__":
     # pickle.dump(res, output)
     # output.close()
     plot_score(res, pid)
-

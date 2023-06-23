@@ -74,12 +74,12 @@ class ModelFitter:
                 raise ValueError("Please attach normalized features to the experiment")
             self.pipeline = self.E.pipeline
             self.normalized_features = self.E.normalized_features
-        else: #if exp_attributes['experiment'] is None
+        else:  # if exp_attributes['experiment'] is None
             del exp_attributes['experiment']
             self.E = Experiment(self.exp_name, data_path=data_path, **exp_attributes)
 
             # Check if experiment, already in global_vars for backwards compatibility
-            #check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
+            # check if pipeline.pkl already exist, mainly applicable for v1.0, c1.1, c1.0 and T1.1
             # if self.exp_name in structure.exp_pipelines.keys():
             #     self.pipeline = structure.exp_pipelines[self.exp_name]
             #     self.normalized_features = get_normalized_features(
@@ -105,7 +105,8 @@ class ModelFitter:
             else:
                 reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
                 branching = registry(pipeline_kwargs["exp_setting"]).branching
-                self.pipeline = construct_repeated_pipeline(branching, reward_distributions, pipeline_kwargs["number_of_trials"])
+                self.pipeline = construct_repeated_pipeline(branching, reward_distributions,
+                                                            pipeline_kwargs["number_of_trials"])
                 self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
             self.normalized_features = get_normalized_features(
@@ -195,7 +196,7 @@ class ModelFitter:
         else:
             num_priors = len(feature_space)
         pr_weight = learner_attributes["pr_weight"]
-        if not pr_weight: #todo: why?
+        if not pr_weight:  # todo: why?
             learner_attributes["pr_weight"] = 1
         learner_attributes = dict(
             features=feature_space,
@@ -206,7 +207,7 @@ class ModelFitter:
             num_actions=self.num_actions,
             **learner_attributes,
         )
-        del learner_attributes["term"] #todo: why is term deleted?
+        del learner_attributes["term"]  # todo: why is term deleted?
         return learner, learner_attributes
 
     def construct_optimizer(self, model_index, pid, optimization_criterion):
