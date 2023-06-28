@@ -9,6 +9,14 @@ from statsmodels.formula.api import ols
 import statsmodels.formula.api as smf
 from collections import Counter
 from scipy.stats import chisquare
+import os
+
+os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
+import rpy2.robjects.numpy2ri
+from rpy2.robjects.packages import importr
+
+rpy2.robjects.numpy2ri.activate()
+stats = importr('stats')
 
 """
 This file contains the new analysis for planning amount experiment for the journal paper submission
@@ -203,6 +211,27 @@ def no_clicking_pid(click_df, experiment):
     print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid))
 
 
+def sequential_dependence(data):
+    click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
+    reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
+    reshaped_click_df.columns = reshaped_click_df.columns.map(str)
+
+    pairs = []
+    for column in reshaped_click_df:
+        sequence = reshaped_click_df[column].tolist()
+        pairs.append(list(zip(sequence, sequence[1:])))
+
+    all_pairs = [item for sublist in pairs for item in sublist]
+
+    pairs_count_df = pd.DataFrame(0, index=range(0, 13), columns=range(0, 13))
+    for pair in all_pairs:
+        pairs_count_df[pair[0]][pair[1]] += 1
+
+    pairs_count = pairs_count_df.to_numpy()
+    pairs_count_no_diagonal = pairs_count[~np.eye(pairs_count.shape[0], dtype=bool)].reshape(pairs_count.shape[0], -1)
+    res = stats.fisher_test(pairs_count_no_diagonal, simulate_p_value=True)
+    print(res)
+
 
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
@@ -212,10 +241,13 @@ if __name__ == "__main__":
     click_df_all_conditions = pd.DataFrame()
     for experiment in experiments:
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
-        click_df = create_click_df(data)
+        click_df = create_click_df(data, experiment)
+
+        ## sequential dependence
+        sequential_dependence(click_df)
 
         ## no clicking pid
-        no_clicking_pid(click_df, experiment)
+        # no_clicking_pid(click_df, experiment)
 
         ## magnitude of change
         # magnitude_of_change(click_df, experiment)
