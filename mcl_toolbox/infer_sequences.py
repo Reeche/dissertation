@@ -102,7 +102,7 @@ def infer_experiment_sequences(
 
 
 if __name__ == "__main__":
-    random.seed(123)
+    # random.seed(123)
     # exp_name = sys.argv[1]  # e.g. c2.1_dec
     # block = None
     # number_of_trials = int(sys.argv[2])
@@ -114,5 +114,5 @@ if __name__ == "__main__":
     number_of_trials = 35
 
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=2
+        exp_name, number_of_trials, block, max_evals=50
     )  # max_evals have to be at least 2 for testing

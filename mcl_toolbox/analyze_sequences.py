@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # "low_variance_high_cost"
     # "low_variance_low_cost"
 
-    exp_name = "c1.1" #c2.1_dec
+    exp_name = "v1.0" #c2.1_dec
     block = "training"
     number_of_trials = 35
     create_plot = False

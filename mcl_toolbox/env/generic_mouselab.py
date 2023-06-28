@@ -246,27 +246,27 @@ class GenericMouselabEnv(gym.Env):
         self.normalized_features = normalized_features
 
 
-class ModStateGenericMouselabEnv(GenericMouselabEnv):
-    def __init__(
-            self,
-            num_trials=1,
-            pipeline={"0": ([3, 1, 2], reward_val)},
-            ground_truth=None,
-            cost=1,
-            render_path="mouselab_renders",
-    ):
-        super().__init__(num_trials, pipeline, ground_truth, cost, render_path)
-
-    def _construct_state(self):
-        self._state = np.array([0] + [0 for node_num in range(1, self.num_nodes)])
-
-    def step(self, action):
-        S, reward, done, info = super().step(action)
-        for node in self.present_trial.node_map.keys():
-            if node not in self.observed_action_list:
-                S[node] = 0
-        S = np.array(S)
-        return S, reward, done, info
+# class ModStateGenericMouselabEnv(GenericMouselabEnv):
+#     def __init__(
+#             self,
+#             num_trials=1,
+#             pipeline={"0": ([3, 1, 2], reward_val)},
+#             ground_truth=None,
+#             cost=1,
+#             render_path="mouselab_renders",
+#     ):
+#         super().__init__(num_trials, pipeline, ground_truth, cost, render_path)
+#
+#     def _construct_state(self):
+#         self._state = np.array([0] + [0 for node_num in range(1, self.num_nodes)])
+#
+#     def step(self, action):
+#         S, reward, done, info = super().step(action)
+#         for node in self.present_trial.node_map.keys():
+#             if node not in self.observed_action_list:
+#                 S[node] = 0
+#         S = np.array(S)
+#         return S, reward, done, info
 
 
 class DummyParticipant:

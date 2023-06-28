@@ -18,7 +18,7 @@ Changes compared to NeurIPS submission:
 """
 
 
-def create_click_df(data):
+def create_click_df(data, experiment):
     """
     Create a df containing "pid", "trial", "number_of_clicks", "clicks", "click_cost"
     Args:
@@ -192,6 +192,7 @@ def magnitude_of_change(click_df, experiment):
     plt.close()
     return None
 
+
 def no_clicking_pid(click_df, experiment):
     pid_list = click_df["pid"].unique()
     bad_pid = []
@@ -200,6 +201,8 @@ def no_clicking_pid(click_df, experiment):
         if all(v == 0 for v in temp_list):
             bad_pid.append(pid)
     print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid))
+
+
 
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
@@ -213,7 +216,7 @@ if __name__ == "__main__":
 
         ## no clicking pid
         no_clicking_pid(click_df, experiment)
-        
+
         ## magnitude of change
         # magnitude_of_change(click_df, experiment)
 

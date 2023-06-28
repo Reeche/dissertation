@@ -23,14 +23,14 @@ cluster_name_mapping = {1: "Goal-setting with exhaustive backward planning",
                         12: "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing",
                         13: "Miscellaneous  strategies"}
 
-training = pd.read_pickle(f"results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
+training = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
 
 training_cluster_df = pd.DataFrame.from_dict(training)
 
 # map strategy to cluster
 cluster_mapping = pd.read_pickle(f"../../mcl_toolbox/data/kl_cluster_map.pkl")
 training_cluster_df = training_cluster_df.replace(cluster_mapping)
-training_cluster_df = training_cluster_df.replace(cluster_name_mapping)
+# training_cluster_df = training_cluster_df.replace(cluster_name_mapping)
 
 
 def cluster_the_cluster(training_cluster_df):
@@ -109,31 +109,32 @@ clustering_the_cluster = {"Goal-setting with exhaustive backward planning": "Goa
                           "Miscellaneous strategies": "Miscellaneous strategies"}
 
 # cluster the cluster
-training_cluster_df = training_cluster_df.replace(clustering_the_cluster)
+# training_cluster_df = training_cluster_df.replace(clustering_the_cluster)
 
 # find out how often a trajectory has been used
-participants_dict = {}
-for columns in training_cluster_df:
-    # only tuples are hashable for flipping
-    participants_dict[columns] = tuple(training_cluster_df[columns].unique())
+def trajectory_frequency(training_cluster_df):
+    participants_dict = {}
+    for columns in training_cluster_df:
+        # only tuples are hashable for flipping
+        participants_dict[columns] = tuple(training_cluster_df[columns].unique())
 
-# flip the dict, so the value now contains which pids used the trajectory
-flipped = {}
-for key, value in participants_dict.items():
-    if value not in flipped:
-        flipped[value] = [key]
-    else:
-        flipped[value].append(key)
+    # flip the dict, so the value now contains which pids used the trajectory
+    flipped = {}
+    for key, value in participants_dict.items():
+        if value not in flipped:
+            flipped[value] = [key]
+        else:
+            flipped[value].append(key)
 
-number_of_participants = len(training)
+    number_of_participants = len(training)
 
-# replace pids for a certain trajectory with their count and divide by total number of participants count
-for key, value in flipped.items():
-    flipped[key] = len(value) / number_of_participants
+    # replace pids for a certain trajectory with their count and divide by total number of participants count
+    for key, value in flipped.items():
+        flipped[key] = len(value) / number_of_participants
 
-# sort flipped to get the trajectories with highest probabilities
-sorted_results = {k: v for k, v in sorted(flipped.items(), key=lambda item: item[1], reverse=True)}
-print(sorted_results)
+    # sort flipped to get the trajectories with highest probabilities
+    sorted_results = {k: v for k, v in sorted(flipped.items(), key=lambda item: item[1], reverse=True)}
+    print(sorted_results)
 
 """
 those clicks stay approx the same for all 4 conditions
@@ -152,3 +153,6 @@ Myopic planning                                                                 
 Strategy that explores immediate outcomes on the paths to the best final outcomes                      7.542880
 Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing     4.549273
 """
+
+## how many people did not change strategy type but changed number of clicks
+print(2)

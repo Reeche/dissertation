@@ -53,15 +53,6 @@ class ModelBased(Learner):
                 concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
 
-    def get_best_action(self) -> int:
-        ## chose the action with the highest expected_return (myopic policy)
-        action_values = self.myopic_values
-
-        if random.random() < self.inverse_temp:
-            return random.randint(0, self.num_available_nodes)
-        else:
-            return action_values.index(max(action_values))
-
     @property
     def term_reward(self):
         """Get the max expected return in the current state"""
@@ -85,11 +76,13 @@ class ModelBased(Learner):
                 if node.observed:
                     mer += node.value
                 else:
-                    if node_num != 0:  # if not the starting node
+                    if node_num == 0:
+                        mer = math.exp(0)
+                    elif node_num != 0:  # if not the starting node
                         if node_num == action:
                             mer += max(self.node_distributions[action].mean)
-                        else:  # MER for other actions are all 0 because unobserved
-                            mer += 0
+                            # MER for other actions are all 0 because unobserved
+
             expected_path_values[i] = mer
         return max(expected_path_values.values())
 
@@ -101,10 +94,10 @@ class ModelBased(Learner):
         elif action in [3, 4, 7, 8, 10, 11]:
             return 3
 
-    @property
     def myopic_values(self) -> list:
         myopic_values = []
-        for action in range(1, self.num_available_nodes + 1):
+        # for action in range(1, self.num_available_nodes + 1):
+        for action in range(len(self.env.get_available_actions())):
             mer = self.mer_for_action(action)
             myopic_value = mer - self.term_reward - self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
@@ -112,13 +105,20 @@ class ModelBased(Learner):
 
     def calculate_likelihood(self):
         # likelihood of termination, value of 0 because no information gain
-        termination_value = math.exp(0)
-        myopic_values = self.myopic_values
-        myopic_values.insert(0, termination_value)
+        myopic_values = self.myopic_values()
         softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         likelihood = softmax_vals / softmax_vals.sum()
         return likelihood
+
+    def get_best_action(self) -> int:
+        ## chose the action with the highest expected_return (myopic policy)
+        action_values = self.myopic_values()
+
+        if random.random() < self.inverse_temp:
+            return random.choice(self.env.get_available_actions())
+        else:
+            return action_values.index(max(action_values))
 
     def take_action(self, trial_info):
         pi = trial_info["participant"]
@@ -127,13 +127,11 @@ class ModelBased(Learner):
             action_likelihood = self.calculate_likelihood()
             # how likely model would have taken the action
             self.action_log_probs.append(action_likelihood[action])
-            # _, model_reward, _, _ = self.env.step(action)
             reward, taken_path, done = pi.make_click()
         else:
             action = self.get_best_action()
             s_next, reward, done, taken_path = self.env.step(
                 action)  # while not done, get the cost; if done bet expected path
-            # pid_reward, done, _ = pi.make_click()
         return action, reward, done, taken_path
 
     def act_and_learn(self, trial_info=None):
@@ -165,7 +163,7 @@ class ModelBased(Learner):
 
             trials_data["rewards"].append(np.sum(rewards))
             trials_data["a"].append(actions)
-            trials_data["costs"].append(reward)
+            trials_data["costs"].append(rewards)
             self.env.get_next_trial()
         # add trial ground truths
         trials_data["envs"] = self.env.ground_truth
