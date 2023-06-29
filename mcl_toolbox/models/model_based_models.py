@@ -31,7 +31,7 @@ class ModelBased(Learner):
         self.dirichlet_alpha_dict = {}
         # alpha need to be n x m, e.g. 13 x range
         for i in range(1, self.num_available_nodes + 1):
-            self.dirichlet_alpha_dict[i] = dirichlet_alpha
+            self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
 
     def init_distributions(self):
         self.node_distributions = {}
@@ -46,12 +46,12 @@ class ModelBased(Learner):
         ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
         # observed_value should only be the node value, i.e. model of the env and not model of the cost
         observed_value = self.env.ground_truth[self.env.present_trial_num][action]
-        self.dirichlet_alpha_dict[action][int(observed_value)] = self.dirichlet_alpha_dict[action][
-                                                                     int(observed_value)] + 1
+        self.dirichlet_alpha_dict[action][int(observed_value)] += 1
         for i in range(1, self.num_available_nodes + 1):
             self.node_distributions[i] = DirichletMultinomial(
                 concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
+        return None
 
     @property
     def term_reward(self):
@@ -72,14 +72,16 @@ class ModelBased(Learner):
             path = self.env.present_trial.branch_map[i]
             mer = 0
             for node_num in path:
-                node = self.env.present_trial.node_map[node_num]  # node object
+                node = self.env.present_trial.node_map[node_num]
                 if node.observed:
                     mer += node.value
                 else:
                     if node_num == 0:
-                        mer = math.exp(0)
+                        # mer = math.exp(0)
+                        mer = 0
                     elif node_num != 0:  # if not the starting node
                         if node_num == action:
+                            # todo: should it be the expected value or most likely because most often observed value?
                             mer += max(self.node_distributions[action].mean)
                             # MER for other actions are all 0 because unobserved
 
@@ -90,13 +92,12 @@ class ModelBased(Learner):
         if action in [1, 5, 9]:
             return 1
         elif action in [2, 6, 10]:
-            return 2
+            return 1
         elif action in [3, 4, 7, 8, 10, 11]:
-            return 3
+            return 1
 
     def myopic_values(self) -> list:
         myopic_values = []
-        # for action in range(1, self.num_available_nodes + 1):
         for action in range(len(self.env.get_available_actions())):
             mer = self.mer_for_action(action)
             myopic_value = mer - self.term_reward - self.env.cost(self.node_depth(action))
@@ -104,7 +105,6 @@ class ModelBased(Learner):
         return myopic_values
 
     def calculate_likelihood(self):
-        # likelihood of termination, value of 0 because no information gain
         myopic_values = self.myopic_values()
         softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
         softmax_vals = torch.exp(softmax_vals)
@@ -112,13 +112,9 @@ class ModelBased(Learner):
         return likelihood
 
     def get_best_action(self) -> int:
-        ## chose the action with the highest expected_return (myopic policy)
-        action_values = self.myopic_values()
-
-        if random.random() < self.inverse_temp:
-            return random.choice(self.env.get_available_actions())
-        else:
-            return action_values.index(max(action_values))
+        action_likelihood = self.calculate_likelihood()
+        action_likelihood = list(action_likelihood)
+        return action_likelihood.index(max(action_likelihood))
 
     def take_action(self, trial_info):
         pi = trial_info["participant"]

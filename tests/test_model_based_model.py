@@ -36,16 +36,37 @@ def test_model_based():
 
     model = ModelBased(pid_context, env, value_range, True, participant_obj)
     model.compute_likelihood = False
-    _ = model.simulate({'inverse_temp': 1})
-    return model.node_distributions
+    model.init_model_params()
+    model.init_distributions()
+    # model.env.reset()
+    i = 0
+    for _ in range(0,1):
+        i += 1
+        _ = model.simulate({'inverse_temp': 1})
+        # print(i)
+    return model.node_distributions,  model.dirichlet_alpha_dict
 
 class TestModels(unittest.TestCase):
-    distributions = test_model_based()
-    node_means = {}
-    for node, value in distributions.items():
-        node_means[node] = max(distributions[node].mean)
-    outer_nodes = [node_means[3], node_means[4], node_means[7], node_means[8], node_means[11], node_means[12]]
-    inner_nodes = [node_means[1], node_means[5], node_means[9]]
-    middle_nodes = [node_means[2], node_means[6], node_means[10]]
-    assert all(x > max(middle_nodes) for x in outer_nodes), "Mean of outer nodes are not larger than middle nodes"
-    assert all(x > max(inner_nodes) for x in middle_nodes), "Mean of middle nodes are not larger than outer nodes"
+    distributions, alpha = test_model_based()
+    most_likely_node_value = {}
+    for node, values in alpha.items():
+        most_likely_node_value[node] = max(alpha[node], key=alpha[node].get)
+
+    #todo: make this dynamically pull from global_vars
+    inner_nodes = [-4, -2, 2, 4]
+    middle_nodes = [-8, -4, 4, 8]
+    outer_nodes = [-48, -24, 24, 48]
+
+    assert most_likely_node_value[1] in inner_nodes
+    assert most_likely_node_value[2] in middle_nodes
+    assert most_likely_node_value[3] in outer_nodes
+    assert most_likely_node_value[4] in outer_nodes
+    assert most_likely_node_value[5] in inner_nodes
+    assert most_likely_node_value[6] in middle_nodes
+    assert most_likely_node_value[7] in outer_nodes
+    assert most_likely_node_value[8] in outer_nodes
+    assert most_likely_node_value[9] in inner_nodes
+    assert most_likely_node_value[10] in middle_nodes
+    assert most_likely_node_value[11] in outer_nodes
+    assert most_likely_node_value[12] in outer_nodes
+
