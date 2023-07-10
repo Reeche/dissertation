@@ -1,6 +1,8 @@
 from number_of_click_analysis import create_click_df
 import pandas as pd
 import pymannkendall as mk
+import statsmodels.formula.api as smf
+
 
 def get_change_indices(numbers):
     change_indices = []
@@ -46,6 +48,7 @@ def load_strategy_type_data(experiment):
     strategy_type_df.columns = strategy_type_df.columns.map(str)
     return strategy_type_df
 
+
 def divide_list_by_indices(sequence, indices):
     result = []
     start_index = 0
@@ -58,14 +61,59 @@ def divide_list_by_indices(sequence, indices):
     # Append the remaining sublist
     sublist = sequence[start_index:]
     result.append(sublist)
-
     return result
+
+
+def sequence_improvement(sequences):
+    count_increasing = 0
+    count_decreasing = 0
+    for sequence in sequences:
+        result = mk.original_test(sequence)
+        if result.trend == "increasing":
+            count_increasing += 1
+        elif result.trend == "decreasing":
+            count_decreasing += 1
+
+    print(
+        f"{experiment}: Out of {len(sequences)}, {count_increasing} click sequences are increasing, {count_decreasing} are decreasing")
+
+
+def glm(sequences: dict):
+    # within strategy analysis on how the clicks changed for the sequence of strategy type
+    flattened_values = []
+    index_within_list = []
+    first_item = []
+    pid = []
+    condition = []
+
+    for experiment, value in sequences.items():
+        for key, value_list in value.items():
+            for i, sublist in enumerate(value_list):
+                flattened_values.extend(sublist)
+                index_within_list.extend(range(len(sublist)))
+                first_item.append([sublist[0]] * len(sublist))
+                pid.append([key] * len(sublist))
+                condition.append([experiment] * len(sublist))
+
+    data = {'number_of_clicks': flattened_values,
+            'index_within_list': index_within_list,
+            'first_click': [item for sublist in first_item for item in sublist],
+            'pid': [item for sublist in pid for item in sublist],
+            'condition': [item for sublist in condition for item in sublist]}
+
+    df = pd.DataFrame(data)
+
+    ### glm
+    formula_ = "number_of_clicks ~ index_within_list:C(condition) + first_click:C(condition)"
+    gamma_model = smf.mixedlm(formula=formula_, data=df, groups=df["pid"]).fit()
+    print(gamma_model.summary())
+
 
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
                    "low_variance_high_cost"]
     # experiment = 'low_variance_high_cost'
-
+    all_data = {}
     for experiment in experiments:
         click_df = load_click_data(experiment)
         strategy_type_df = load_strategy_type_data(experiment)
@@ -74,20 +122,12 @@ if __name__ == "__main__":
         for columns in strategy_type_df:
             indices[columns] = get_change_indices(strategy_type_df[columns])
 
-        divided_sequences = []
+        divided_sequences = {}
         for columns in click_df:
-            divided_sequences.append(divide_list_by_indices(list(click_df[columns]), indices[columns]))
+            divided_sequences[columns] = divide_list_by_indices(list(click_df[columns]), indices[columns])
 
-        sequences = [item for sublist in divided_sequences for item in sublist]
-        sequences = [x for x in sequences if len(x) > 1]
-        count_increasing = 0
-        count_decreasing = 0
-        for sequence in sequences:
-            result = mk.original_test(sequence)
-            if result.trend == "increasing":
-                count_increasing += 1
-            elif result.trend == "decreasing":
-                count_decreasing += 1
-
-        print(f"{experiment}: Out of {len(sequences)}, {count_increasing} click sequences are increasing, {count_decreasing} are decreasing")
-
+        # sequences = [item for sublist in divided_sequences.values() for item in sublist]
+        # sequences = [x for x in sequences if len(x) > 1]
+        # sequence_improvement(sequences)
+        all_data[experiment] = divided_sequences
+    glm(all_data)

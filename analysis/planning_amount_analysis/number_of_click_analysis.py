@@ -8,7 +8,7 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import statsmodels.formula.api as smf
 from collections import Counter
-from scipy.stats import chisquare
+from scipy.stats import chisquare, chi2_contingency
 import os
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
@@ -212,6 +212,7 @@ def no_clicking_pid(click_df, experiment):
 
 
 def sequential_dependence(data):
+    # Fisher test
     click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
     reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
     reshaped_click_df.columns = reshaped_click_df.columns.map(str)
@@ -233,18 +234,92 @@ def sequential_dependence(data):
     print(res)
 
 
+def change_within_participant(exp, data):
+    # how many participants improved significantly
+    click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
+    reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
+    reshaped_click_df.columns = reshaped_click_df.columns.map(str)
+
+    significantly_improved_list = []
+    improved_list = []
+    for pid in reshaped_click_df:
+        result = mk.original_test(reshaped_click_df[pid])
+        if exp == "high_variance_low_cost" or exp == "high_variance_high_cost":
+            if result[0] == "increasing":
+                significantly_improved_list.append(pid)
+            if result[5] > 0:
+                improved_list.append(pid)
+        if exp == "low_variance_low_cost" or exp == "low_variance_high_cost":
+            if result[0] == "decreasing":
+                significantly_improved_list.append(pid)
+            if result[5] < 0:
+                improved_list.append(pid)
+    # print(f"Out of {reshaped_click_df.shape[1]} participants, {len(significantly_improved_list)} significantly improved, "
+    #       f"({len(significantly_improved_list) / reshaped_click_df.shape[1] * 100}%)")
+    print(f"Out of {reshaped_click_df.shape[1]} participants, {len(improved_list)} improved, "
+          f"({len(improved_list) / reshaped_click_df.shape[1] * 100}%)")
+
+    # observed = [[len(improved_list), reshaped_click_df.shape[1] - len(improved_list)],
+    #             [reshaped_click_df.shape[1] * 0.5, reshaped_click_df.shape[1] * 0.5]]
+    # chi2, p_value, dof, _ = chi2_contingency(observed)
+    # print(p_value, chi2, dof)
+
+
+def create_pairs(lst):
+    pairs = []
+    for i in range(len(lst) - 1):
+        if lst[i] != lst[i + 1]:
+            pair = (lst[i], lst[i + 1])
+            pairs.append(pair)
+    return pairs
+
+
+def monotonous_change(exp, data):
+    click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
+    reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
+    reshaped_click_df.columns = reshaped_click_df.columns.map(str)
+
+    # remove no change pair
+    pairs = []
+    for columns in reshaped_click_df:
+        clicks = reshaped_click_df[columns]
+        for i in range(len(clicks) - 1):
+            if clicks[i] != clicks[i + 1]:
+                pair = (clicks[i], clicks[i + 1])
+                pairs.append(pair)
+
+    improvement = 0
+    no_improvement = 0
+
+    for tup in pairs:
+        if tup[0] < tup[1]:
+            improvement += 1
+        elif tup[0] >= tup[1]:
+            no_improvement += 1
+
+    print(
+        f"Out of {improvement + no_improvement} click changes, {improvement} are improvements ({improvement / (improvement + no_improvement) * 100})")
+    return None
+
+
 if __name__ == "__main__":
     experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
                    "low_variance_high_cost"]
 
-    # experiments = ["low_variance_high_cost"]
+    # experiments = ["high_variance_low_cost"]
     click_df_all_conditions = pd.DataFrame()
     for experiment in experiments:
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data, experiment)
 
+        ## monotonous change
+        # monotonous_change(experiment, click_df)
+
+        ## trend test for each pid
+        change_within_participant(experiment, click_df)
+
         ## sequential dependence
-        sequential_dependence(click_df)
+        # sequential_dependence(click_df)
 
         ## no clicking pid
         # no_clicking_pid(click_df, experiment)

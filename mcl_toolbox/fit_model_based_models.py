@@ -5,11 +5,12 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 from hyperopt import hp, fmin, tpe
 import matplotlib.pyplot as plt
 import pickle
+import numpy as np
 
 
 def plot_score(res, participant):
-    plt.plot(res['rewards'], color="r", label="Model")
-    plt.plot(participant.score, color="b", label="Participant")
+    plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
+    plt.plot(participant["mer"], color="b", label="Participant")
     plt.legend()
     plt.show()
     # plt.savefig(f"../results/mcrl/{exp_name}_model_based/plots/{participant.pid}.png")
@@ -48,23 +49,27 @@ if __name__ == "__main__":
         "exclude_trials": None,
         "block": None,
         "experiment": None,
-        "click_cost": 1,
-        "learn_from_path": True,
+        "click_cost": 1
     }
 
     number_of_trials = 35
+    criterion = "pseudo_likelihood"
+    if criterion != "likelihood":
+        num_simulations = 2
+    else:
+        num_simulations = 1
+
+    if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
+        click_cost = 5
+    elif exp_name == "strategy_discovery":
+        click_cost = cost_function
+    else:
+        click_cost = 1
 
     # for pid in pid_dict[exp_name]:
-    for pid in [1]:
+    for pid in [35]:
         p = E.participants[pid]
         participant_obj = ParticipantIterator(p)
-
-        if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
-            click_cost = 5
-        elif exp_name == "strategy_discovery":
-            click_cost = cost_function
-        else:
-            click_cost = 1
 
         mf = ModelFitter(
             exp_name=exp_name,
@@ -77,15 +82,16 @@ if __name__ == "__main__":
         # todo: need to choose a sensible range that takes the click cost into consideration
         value_range = list(range(-120, 120))
 
-        model = ModelBased(pid_context, env, value_range, True, participant_obj)
+        model = ModelBased(env, value_range, participant_obj, criterion, num_simulations)
         # res = model.simulate(compute_likelihood=True, participant=participant_obj)
 
         fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', 0, 1)
+            'inverse_temp': hp.uniform('inverse_temp', 0, 1),
+            'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3))
         }
 
         # minimize the objective over the space
-        best_params = fmin(fn=model.simulate,
+        best_params = fmin(fn=model.run_multiple_simulations,
                            space=fspace,
                            algo=tpe.suggest,
                            max_evals=10,
@@ -94,14 +100,13 @@ if __name__ == "__main__":
 
         ## simulate using the best parameters
         model.compute_likelihood = False
-        res = model.simulate(best_params)
+        res = model.run_multiple_simulations(best_params)
         # print(res)
 
         ## save result and best parameters
-        res.update(best_params)
+        # res.update(best_params)
         # output = open(f'../results/mcrl/{exp_name}_model_based/data/{pid}.pkl', 'wb')
         # pickle.dump(res, output)
         # output.close()
-        plot_score(res, pid_context)
+        plot_score(res, model.p_data)
 
-# todo: loss decreases linearly
