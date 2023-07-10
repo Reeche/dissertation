@@ -53,7 +53,7 @@ if __name__ == "__main__":
     }
 
     number_of_trials = 35
-    criterion = "pseudo_likelihood"
+    criterion = "number_of_clicks_likelihood"
     if criterion != "likelihood":
         num_simulations = 2
     else:
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         click_cost = 1
 
     # for pid in pid_dict[exp_name]:
-    for pid in [35]:
+    for pid in [1]:
         p = E.participants[pid]
         participant_obj = ParticipantIterator(p)
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         # todo: need to choose a sensible range that takes the click cost into consideration
         value_range = list(range(-120, 120))
 
-        model = ModelBased(env, value_range, participant_obj, criterion, num_simulations)
+        model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
         # res = model.simulate(compute_likelihood=True, participant=participant_obj)
 
         fspace = {
@@ -94,14 +94,14 @@ if __name__ == "__main__":
         best_params = fmin(fn=model.run_multiple_simulations,
                            space=fspace,
                            algo=tpe.suggest,
-                           max_evals=10,
+                           max_evals=1,
                            # trials=True,
                            show_progressbar=True)
 
         ## simulate using the best parameters
-        model.compute_likelihood = False
+        model.test_fitted_model = True
         res = model.run_multiple_simulations(best_params)
-        # print(res)
+        print(res)
 
         ## save result and best parameters
         # res.update(best_params)

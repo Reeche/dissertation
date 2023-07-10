@@ -12,10 +12,11 @@ from scipy.stats import norm
 import warnings
 from torch.distributions import Categorical
 
+
 class ModelBased(Learner):
     """Base class of the Model-based model"""
 
-    def __init__(self, env, value_range, participant_obj, criterion, num_simulations):
+    def __init__(self, env, value_range, participant_obj, criterion, num_simulations, test_fitted_model):
         self.participant_obj = participant_obj
         self.env = env
         self.value_range = value_range
@@ -27,6 +28,7 @@ class ModelBased(Learner):
         self.optimisation_criterion = criterion
         self.p_data = self.construct_p_data()
         self.num_simulations = num_simulations
+        self.test_fitted_model = test_fitted_model
 
     def construct_p_data(self):
         p_data = {
@@ -94,13 +96,13 @@ class ModelBased(Learner):
                         mer = 0
                     elif node_num != 0:  # if not the starting node
                         if node_num == action:
-                            # todo: should it be the expected value or most likely because most often observed value?
-                            # todo: or should it be the weighted sum prob x value (conventional definition of expectation)
-                            mer += max(self.node_distributions[action].mean)
+                            # weighted sum prob x value (conventional definition of expectation)
+                            mer += np.dot(self.node_distributions[action].mean, self.value_range)
                             # MER for other actions are all 0 because unobserved
 
             expected_path_values[i] = mer
-            assert len(expected_path_values) == 6
+
+        assert len(expected_path_values) == 6
         return max(expected_path_values.values())
 
     def node_depth(self, action):
@@ -113,7 +115,7 @@ class ModelBased(Learner):
 
     def myopic_values(self) -> list:
         myopic_values = []
-        for action in self.env.get_available_actions():
+        for action in self.env.get_available_actions():  # all actions
             mer = self.mer_for_action(action)
             myopic_value = mer - self.term_reward - self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
@@ -124,6 +126,9 @@ class ModelBased(Learner):
         softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         likelihood = softmax_vals / softmax_vals.sum()
+        # for not available actions, insert 0
+        for previous_actions in self.env.observed_action_list:
+            likelihood = torch.cat((likelihood[:previous_actions], torch.tensor([0]), likelihood[previous_actions:]))
         return likelihood
 
     def get_best_action(self) -> int:
@@ -133,25 +138,23 @@ class ModelBased(Learner):
         res = dict(zip(self.env.get_available_actions(), action_likelihood))
         return max(res, key=res.get)
 
-    #todo: need to sample from available actions
     def sample_action(self) -> int:
         action_likelihood = self.calculate_likelihood()
-        m = Categorical(action_likelihood)
-        res = dict(zip(self.env.get_available_actions(), action_likelihood))
-        action = int(m.sample())
-        print(m.probs)
-        return res[action]
+        res = dict(zip(self.env.get_available_actions(), action_likelihood))  # mapping action to likelihood
+        action = random.choices(list(res.keys()), weights=res.values(), k=1)
+        return action[0]
 
     def take_action(self, trial_info):
         pi = trial_info["participant"]
-        if self.optimisation_criterion == "likelihood":
+        if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
             action = pi.get_click()
             action_likelihood = self.calculate_likelihood()
             # how likely model would have taken the action
             self.action_log_probs.append(action_likelihood[action])
             reward, taken_path, done = pi.make_click()
+            _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
         else:
-            action = self.sample_action() #todo: sample action or get best action?
+            action = self.sample_action()
             s_next, reward, done, taken_path = self.env.step(action)
         return action, reward, done, taken_path
 
@@ -168,7 +171,7 @@ class ModelBased(Learner):
         self.sigma = params['sigma']
         # self.init_model_params()
         # self.init_distributions()
-        self.env.reset()
+        # self.env.reset()
         simulations_data = defaultdict(list)
         for _ in range(self.num_simulations):
             trials_data = self.simulate()
@@ -226,12 +229,12 @@ class ModelBased(Learner):
 
             model_mer = np.mean(total_m_mers, axis=0)
             loss = -np.sum(
-                [norm.logpdf(x, loc=y, scale=np.exp(self.sigma))for x, y in zip(model_mer, self.p_data["mer"])])
+                [norm.logpdf(x, loc=y, scale=np.exp(self.sigma)) for x, y in zip(model_mer, self.p_data["mer"])])
         elif self.optimisation_criterion == "number_of_clicks_likelihood":
             # get the number of clicks of the participant and of the algorithm
             p_clicks = [len(sublist) - 1 for sublist in self.participant_obj.clicks]
             model_clicks = [len(sublist) - 1 for sublist in trials_data["a"]]
             loss = -np.sum([norm.logpdf(x, loc=y, scale=np.exp(self.sigma)) for x, y in zip(model_clicks, p_clicks)])
         else:
-            warnings.warn('The optimisation criterion is not implemented!')
+            UserWarning("Optimisation criterion not implemented")
         return loss
