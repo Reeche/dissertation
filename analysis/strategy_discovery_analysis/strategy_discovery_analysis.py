@@ -61,14 +61,14 @@ def credible_interval(data, confidence=0.95):
     return m, m - h, m + h
 
 
-def chi_square_test(count_prop):
+def chi_square(count_prop):
     # need actual count for goodness of fit test
     final_prop = count_prop.values[-1]
     res = chisquare([final_prop * 100, (1 - final_prop) * 100], f_exp=[0.15 * 100, 0.85 * 100])
     print("Chi^2 goodness of fit: ", res)
 
 
-def trend_test(count_prop):
+def trend(count_prop):
     # increasing until when?
     # for i in range(2, 121):
     #     # print(count_prop[:i])
@@ -143,19 +143,37 @@ def generate_random_sequences():
         sequences.append(random_list)
     return sequences
 
-if __name__ == "__main__":
-    # data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
-    # pid_list, click_df = create_df(data)
-
-    # classify_sequences(click_df)
-
+def random_sequences():
     ## check how many randomly generated click sequences are wrongly classified as adaptive ones
     random_sequences = generate_random_sequences()
     misclassified_prop = classify_using_clicks(random_sequences)
     res = chisquare([0.4 * 100, 0.6 * 100], f_exp = [misclassified_prop * 100, (1-misclassified_prop) * 100])
     print(res)
 
+def score_trend(click_df):
+    click_df = click_df[['pid', 'trial', 'score']].copy()
+    reshaped_score_df = click_df.pivot(index="trial", columns="pid", values="score")
+    reshaped_score_df.columns = reshaped_score_df.columns.map(str)
+
+    count = 0
+    for pid in reshaped_score_df:
+        result = mk.original_test(reshaped_score_df[pid])
+        if result.s > 0:
+            count += 1
+
+    print(f"{count} out of {reshaped_score_df.shape[0]} ({count / reshaped_score_df.shape[0]}) participants improved ")
+
+
+    return None
+
+if __name__ == "__main__":
+    data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
+    pid_list, click_df = create_df(data)
+
+    # score_trend(click_df)
+    count_prop = classify_score(click_df)
+
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend_test(count_prop)
     # chi_square_test(count_prop)
-    # plot_proportion(count_prop)
+    plot_proportion(count_prop)

@@ -142,7 +142,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": 1,
-            "max_evals": 2,
+            "max_evals": 10,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()

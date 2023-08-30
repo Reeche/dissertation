@@ -28,7 +28,7 @@ def mostly_nan(col):
 
 
 def drop_nan_cols(df):
-    return df[[name for name, col in df.iteritems() if not mostly_nan(col)]]
+    return df[[name for name, col in df.items() if not mostly_nan(col)]]
 
 
 def query_subset(df, col, subset):

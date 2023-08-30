@@ -203,7 +203,7 @@ class REINFORCE(Learner):
             action_tensor = torch.tensor(action)
             # likelihood of m (model action probabilities) and action_tensor (participant action)
             # e.g. m is a tensor of len 13, action tensor, selects the e.g. 5th action
-            self.policy.saved_log_probs.append(m.log_prob(action_tensor))
+            print(best_params).append(m.log_prob(action_tensor))
             self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
             action = self.get_action(env)

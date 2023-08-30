@@ -20,12 +20,14 @@ if __name__ == "__main__":
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
         unique_used_strategies = pd.unique(participants_df.values.flatten())
 
+        #get all the used pairs
         pairs = []
         for key, values in participants.items():
             pairs.append(list(zip(values, values[1:])))
 
         all_pairs = [item for sublist in pairs for item in sublist]
 
+        # count how often a pair was observed
         pairs_count_df = pd.DataFrame(0, index=unique_used_strategies, columns=unique_used_strategies)
         for pair in all_pairs:
             pairs_count_df[pair[0]][pair[1]] += 1

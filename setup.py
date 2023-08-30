@@ -38,5 +38,6 @@ setup(
         "pymannkendall",
         "scikit-learn",
         "rpy2",
+        "pyro-ppl"
     ],
 )

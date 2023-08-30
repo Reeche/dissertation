@@ -65,17 +65,23 @@ def divide_list_by_indices(sequence, indices):
 
 
 def sequence_improvement(sequences):
+    count_sig_increasing = 0
+    count_sig_decreasing = 0
     count_increasing = 0
     count_decreasing = 0
     for sequence in sequences:
         result = mk.original_test(sequence)
         if result.trend == "increasing":
-            count_increasing += 1
+            count_sig_increasing += 1
         elif result.trend == "decreasing":
+            count_sig_decreasing += 1
+        if result.s > 0:
+            count_increasing += 1
+        elif result.s < 0:
             count_decreasing += 1
 
-    print(
-        f"{experiment}: Out of {len(sequences)}, {count_increasing} click sequences are increasing, {count_decreasing} are decreasing")
+    # print(f"{experiment}: Out of {len(sequences)}, {count_sig_increasing} click sequences are increasing, {count_sig_decreasing} are decreasing")
+    print(f"{experiment}: {count_increasing} increasing test statistic, {count_decreasing} decreasing test statistic")
 
 
 def glm(sequences: dict):
@@ -84,7 +90,20 @@ def glm(sequences: dict):
     index_within_list = []
     first_item = []
     pid = []
-    condition = []
+    variance = []
+    cost = []
+
+    def variance_cost(experiment):
+        # low variance is 0
+        # high cost is 0
+        if experiment == "high_variance_high_cost":
+            return [1, 1]
+        elif experiment == "high_variance_low_cost":
+            return [1, 0]
+        elif experiment == "low_variance_high_cost":
+            return [0, 1]
+        elif experiment == "low_variance_low_cost":
+            return [0, 0]
 
     for experiment, value in sequences.items():
         for key, value_list in value.items():
@@ -93,18 +112,21 @@ def glm(sequences: dict):
                 index_within_list.extend(range(len(sublist)))
                 first_item.append([sublist[0]] * len(sublist))
                 pid.append([key] * len(sublist))
-                condition.append([experiment] * len(sublist))
+                variance.append([variance_cost(experiment)[0]] * len(sublist))
+                cost.append([variance_cost(experiment)[1]] * len(sublist))
 
     data = {'number_of_clicks': flattened_values,
             'index_within_list': index_within_list,
             'first_click': [item for sublist in first_item for item in sublist],
             'pid': [item for sublist in pid for item in sublist],
-            'condition': [item for sublist in condition for item in sublist]}
+            'variance': [item for sublist in variance for item in sublist],
+            'cost': [item for sublist in cost for item in sublist]}
 
     df = pd.DataFrame(data)
 
     ### glm
-    formula_ = "number_of_clicks ~ index_within_list:C(condition) + first_click:C(condition)"
+    # formula_ = "number_of_clicks ~ index_within_list*C(condition) + first_click*C(condition)"
+    formula_ = "number_of_clicks ~ index_within_list*C(variance)*C(cost) + index_within_list*C(variance) + index_within_list*C(cost) + first_click"
     gamma_model = smf.mixedlm(formula=formula_, data=df, groups=df["pid"]).fit()
     print(gamma_model.summary())
 
@@ -126,8 +148,11 @@ if __name__ == "__main__":
         for columns in click_df:
             divided_sequences[columns] = divide_list_by_indices(list(click_df[columns]), indices[columns])
 
+        ### Analysis on sequences
         # sequences = [item for sublist in divided_sequences.values() for item in sublist]
         # sequences = [x for x in sequences if len(x) > 1]
         # sequence_improvement(sequences)
+
+
         all_data[experiment] = divided_sequences
     glm(all_data)

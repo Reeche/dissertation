@@ -56,16 +56,16 @@ def create_click_df(data, experiment):
     click_df["number_of_clicks"] = number_of_clicks_list
 
     if experiment == "high_variance_low_cost":
-        click_df["click_cost"] = [1] * len(click_temp_df)
+        click_df["click_cost"] = [0] * len(click_temp_df)
         click_df["variance"] = [1] * len(click_temp_df)
     elif experiment == "high_variance_high_cost":
-        click_df["click_cost"] = [5] * len(click_temp_df)
+        click_df["click_cost"] = [1] * len(click_temp_df)
         click_df["variance"] = [1] * len(click_temp_df)
     elif experiment == "low_variance_low_cost":
-        click_df["click_cost"] = [1] * len(click_temp_df)
+        click_df["click_cost"] = [0] * len(click_temp_df)
         click_df["variance"] = [0] * len(click_temp_df)
     elif experiment == "low_variance_high_cost":
-        click_df["click_cost"] = [5] * len(click_temp_df)
+        click_df["click_cost"] = [1] * len(click_temp_df)
         click_df["variance"] = [0] * len(click_temp_df)
 
     return click_df
@@ -135,15 +135,9 @@ def anova(click_data):
     return None
 
 
-def glm(click_data):
+def lme(click_data):
     # filter for high and low variance
-    click_data = click_data[click_data["variance"] == 0]
-
-    # click_data["trial_variance"] = click_data["trial"] * click_data["variance"]
-    # # click_data["trial:pid"] = click_data["trial"] * click_data["variance"]
-    # click_data["trial_cost"] = click_data["trial"] * click_data["click_cost"]
-    # click_data["variance_cost"] = click_data["variance"] * click_data["click_cost"]
-    # click_data["trial_variance_cost"] = click_data["trial"] * click_data["click_cost"] * click_data["variance"]
+    # click_data = click_data[click_data["variance"] == 0]
 
     # cutoff = 35
     # # create df with first n trials
@@ -151,7 +145,7 @@ def glm(click_data):
     # x_learning = click_data[click_data["trial"].isin(range(1,cutoff))]
     # y_learning = x_learning["number_of_clicks"]
     # x_learning = x_learning.drop(columns=['number_of_clicks', 'clicks', 'pid'])
-    click_data = sm.add_constant(click_data)
+    # click_data = sm.add_constant(click_data) # only needed fr OLS
 
     # create df with last n:35 trials
     # x_nonlearning = click_data[click_data["trial"].isin(range(cutoff,35))]
@@ -160,7 +154,7 @@ def glm(click_data):
     # x_nonlearning = sm.add_constant(x_nonlearning)
 
     # linear mixed effect models
-    formula_ = "number_of_clicks ~ C(variance) + trial + trial:C(variance) + click_cost + trial:click_cost + trial:C(variance):click_cost + C(variance):click_cost"
+    formula_ = "number_of_clicks ~ trial + variance + click_cost + trial*variance + trial*click_cost + variance:click_cost + trial*variance*click_cost"
     gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
 
     # glm
@@ -171,11 +165,6 @@ def glm(click_data):
 
     # ols
     # gamma_model = sm.OLS(y_learning, x_learning, data=click_data).fit() #makes half sense
-
-    # generalised linear mixed effect models
-    # gamma_model = sm.PoissonBayesMixedGLM(endog=y_learning, exog=x_learning, exog_vc=x_learning["pid"], ident=[0])
-    # # gamma_model = gpb.GPModel(group_data=click_data, likelihood="binary")
-    # gamma_model.fit(y=y_learning, X=x_learning)
 
     print("learning results", gamma_model.summary())
 
@@ -208,7 +197,8 @@ def no_clicking_pid(click_df, experiment):
         temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
         if all(v == 0 for v in temp_list):
             bad_pid.append(pid)
-    print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid))
+    print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid), bad_pid)
+    return bad_pid
 
 
 def sequential_dependence(data):
@@ -234,7 +224,7 @@ def sequential_dependence(data):
     print(res)
 
 
-def change_within_participant(exp, data):
+def trend_within_participant(exp, data):
     # how many participants improved significantly
     click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
     reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
@@ -302,9 +292,57 @@ def monotonous_change(exp, data):
     return None
 
 
+def pid_improved_clicks_twice(exp, data, bad_pid):
+    click_df = data[['pid', 'trial', 'number_of_clicks']].copy()
+    reshaped_click_df = click_df.pivot(index="trial", columns="pid", values="number_of_clicks")
+
+    ## remove bad participants?
+    reshaped_click_df = reshaped_click_df.drop(bad_pid, axis=1)
+
+    reshaped_click_df.columns = reshaped_click_df.columns.map(str)
+
+    def check_increasing_sequences(lst):
+        prev_num = None
+        increases = 0
+        for num in lst:
+            if prev_num is not None and num > prev_num:
+                increases += 1
+                if increases >= 2:
+                    return 1
+            prev_num = num
+        return 0
+
+    def check_decreasing_sequences(lst):
+        prev_num = None
+        increases = 0
+        for num in lst:
+            if prev_num is not None and num > prev_num:
+                increases += 1
+                if increases >= 2:
+                    return 1
+            prev_num = num
+        return 0
+
+    if exp == "high_variance_high_cost" or exp == "high_variance_low_cost":
+        count_increasing = 0
+        for col in reshaped_click_df:
+            count_increasing += check_increasing_sequences(list(reshaped_click_df[col]))
+        print(
+            f"{exp}: {count_increasing} participants improved at least twice out of {reshaped_click_df.shape[1]} participants")
+    if exp == "low_variance_low_cost" or exp == "low_variance_high_cost":
+        count_decreasing = 0
+        for col in reshaped_click_df:
+            count_decreasing += check_decreasing_sequences(list(reshaped_click_df[col]))
+        print(
+            f"{exp}: {count_decreasing} participants improved at least twice out of {reshaped_click_df.shape[1]} participants")
+    return None
+
+
 if __name__ == "__main__":
-    experiments = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
-                   "low_variance_high_cost"]
+    experiments = ["low_variance_low_cost",
+                   "low_variance_high_cost",
+                   "high_variance_low_cost",
+                   "high_variance_high_cost"]
 
     # experiments = ["high_variance_low_cost"]
     click_df_all_conditions = pd.DataFrame()
@@ -312,17 +350,20 @@ if __name__ == "__main__":
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data, experiment)
 
+        ## no clicking pid
+        # bad_pid = no_clicking_pid(click_df, experiment)
+
+        ## participants who improved their clicks at least twice
+        # pid_improved_clicks_twice(experiment, click_df, bad_pid)
+
         ## monotonous change
         # monotonous_change(experiment, click_df)
 
         ## trend test for each pid
-        change_within_participant(experiment, click_df)
+        # trend_within_participant(experiment, click_df)
 
         ## sequential dependence
         # sequential_dependence(click_df)
-
-        ## no clicking pid
-        # no_clicking_pid(click_df, experiment)
 
         ## magnitude of change
         # magnitude_of_change(click_df, experiment)
@@ -343,7 +384,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         ##append all 4 conditions into one df
-        # click_df_all_conditions = click_df_all_conditions.append(click_df)
+        click_df_all_conditions = click_df_all_conditions.append(click_df)
 
         # optimal number of clicks vs. actual number of clicks
         # get clicks of last trial
@@ -361,4 +402,4 @@ if __name__ == "__main__":
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
-    # glm(click_df_all_conditions)
+    lme(click_df_all_conditions)

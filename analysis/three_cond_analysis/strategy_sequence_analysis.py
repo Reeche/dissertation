@@ -8,48 +8,6 @@ from scipy import stats
 from sklearn.cluster import KMeans
 from mcl_toolbox.utils.learning_utils import get_participant_scores
 
-experiment = "v1.0"
-# add cluster names
-cluster_name_mapping = {1: "Goal-setting with exhaustive backward planning",
-                        2: "Forward planning strategies similar to Breadth First Search",
-                        3: "Middle-out planning",
-                        4: "Forward planning strategies similar to Best First Search",
-                        5: "Local search",
-                        6: "Maximizing Goal-setting with exhaustive backward planning",
-                        7: "Frugal planning",
-                        8: "Myopic planning",
-                        9: "Maximizing goal-setting with limited backward planning",
-                        10: "Frugal goal-setting strategies",
-                        11: "Strategy that explores immediate outcomes on the paths to the best final outcomes",
-                        12: "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing",
-                        13: "Miscellaneous  strategies"}
-
-training = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
-strategy_unclustered = pd.DataFrame.from_dict(training)
-strategy_cluster_df = pd.DataFrame.from_dict(training)
-
-# map strategy to cluster
-cluster_mapping = pd.read_pickle(f"../../mcl_toolbox/data/kl_cluster_map.pkl")
-strategy_cluster_df = strategy_cluster_df.replace(cluster_mapping)
-strategy_cluster_df = strategy_cluster_df.replace(cluster_name_mapping)
-
-clustering_the_cluster = {"Goal-setting with exhaustive backward planning": "Goal-setting",
-                          "Forward planning strategies similar to Breadth First Search": "Forward planning",
-                          "Middle-out planning": "Middle-out planning",
-                          "Forward planning strategies similar to Best First Search": "Forward planning",
-                          "Local search": "Local search",
-                          "Maximizing Goal-setting with exhaustive backward planning": "Goal-setting",
-                          "Frugal planning": "Frugal planning",
-                          "Myopic planning": "Little planning",
-                          "Maximizing goal-setting with limited backward planning": "Goal-setting",
-                          "Frugal goal-setting strategies": "Goal-setting",
-                          "Strategy that explores immediate outcomes on the paths to the best final outcomes": "Final and then immediate outcome",
-                          "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing": "Final and then immediate outcome",
-                          "Miscellaneous strategies": "Miscellaneous strategies"}
-
-# cluster the cluster
-strategy_cluster_cluster_df = strategy_cluster_df.replace(clustering_the_cluster)
-
 
 def magnitude_of_change_based_on_cluster(strategy_df, type):
     # How often are changes within one cluster and outside one cluster?
@@ -133,8 +91,6 @@ def magnitude_of_change_based_on_jeffrey(strategy_df, between_cluster_average, w
     # print(f"Mann Kendall test for clicks for {experiment}: clicks are {result}")
 
 
-
-
 def get_absolute_jeffrey_values(cluster_mapping):
     # find the average jeffrey difference within one cluster and jeffrey difference between clusters
     jeffrey_table = pd.read_pickle(f"../../mcl_toolbox/data/jeffreys_divergences.pkl")
@@ -142,9 +98,8 @@ def get_absolute_jeffrey_values(cluster_mapping):
 
     # replace the jeffrey table column names (strategy) with corresponding cluster
     # note jeffrey table start at 0, cluster_mapping start at 1
-    jeffrey_table.columns = range(1, 90) #columns
-    jeffrey_table.index += 1 #rows
-
+    jeffrey_table.columns = range(1, 90)  # columns
+    jeffrey_table.index += 1  # rows
 
     # find the strategies that belong within one cluster and create a sub-df
     res = defaultdict(list)
@@ -159,18 +114,17 @@ def get_absolute_jeffrey_values(cluster_mapping):
         jeffrey_sub_sub_table_within = jeffrey_sub_table_within[jeffrey_sub_table_within.index.isin(val)]
         ## take the median after removing the 0; median can work with the mirror structure
         stacked_within_values = jeffrey_sub_sub_table_within.values.tolist()
-        if len(stacked_within_values) == 1: #only 0 left in the table
+        if len(stacked_within_values) == 1:  # only 0 left in the table
             withtin_cluster_jeffrey[key] = 0
         else:
             withtin_cluster_jeffrey[key] = statistics.median(stacked_within_values[stacked_within_values != 0])
-
 
     # calculate the jeffrey between the strategies from different clusters
     between_cluster_jeffrey = {}
     for key1, val1 in res.items():
         jeffrey_sub_table_between = jeffrey_table[val1]
         for key2, val2 in res.items():
-            if key2 != key1: #create df with one set of strategy on the x and the other strategies on the y
+            if key2 != key1:  # create df with one set of strategy on the x and the other strategies on the y
                 # no repeating strategies, therefore does not need to filter for 0 and no mirror structure
                 jeffrey_sub_sub_table_between = jeffrey_sub_table_between[jeffrey_sub_table_between.index.isin(val2)]
                 key_value = '-'.join(str(x) for x in [key1, key2])
@@ -180,10 +134,8 @@ def get_absolute_jeffrey_values(cluster_mapping):
 
     print("between cluster average", sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey))
     print("within cluster average", sum(withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey))
-    return sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey), sum(withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey)
-
-between_cluster_average, within_cluster_average = get_absolute_jeffrey_values(cluster_mapping)
-magnitude_of_change_based_on_jeffrey(strategy_unclustered, between_cluster_average, within_cluster_average)
+    return sum(between_cluster_jeffrey.values()) / len(between_cluster_jeffrey), sum(
+        withtin_cluster_jeffrey.values()) / len(withtin_cluster_jeffrey)
 
 
 # find out how often a trajectory has been used
@@ -210,3 +162,65 @@ def trajectory_frequency(training_cluster_df):
     # sort flipped to get the trajectories with highest probabilities
     sorted_results = {k: v for k, v in sorted(flipped.items(), key=lambda item: item[1], reverse=True)}
     print(sorted_results)
+
+
+def count_strategy_type_change(data):
+    count = 0
+    for pid in data:
+        num_strategies = len(set(data[pid]))
+        if num_strategies > 1:
+            count += 1
+    print(f"{count} participants out of {data.shape[1]} ({count/data.shape[1]}) changed their strategy more than once.")
+    return None
+
+
+if __name__ == "__main__":
+
+    # add cluster names
+    cluster_name_mapping = {1: "Goal-setting with exhaustive backward planning",
+                            2: "Forward planning strategies similar to Breadth First Search",
+                            3: "Middle-out planning",
+                            4: "Forward planning strategies similar to Best First Search",
+                            5: "Local search",
+                            6: "Maximizing Goal-setting with exhaustive backward planning",
+                            7: "Frugal planning",
+                            8: "Myopic planning",
+                            9: "Maximizing goal-setting with limited backward planning",
+                            10: "Frugal goal-setting strategies",
+                            11: "Strategy that explores immediate outcomes on the paths to the best final outcomes",
+                            12: "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing",
+                            13: "Miscellaneous  strategies"}
+
+    clustering_the_cluster = {"Goal-setting with exhaustive backward planning": "Goal-setting",
+                              "Forward planning strategies similar to Breadth First Search": "Forward planning",
+                              "Middle-out planning": "Middle-out planning",
+                              "Forward planning strategies similar to Best First Search": "Forward planning",
+                              "Local search": "Local search",
+                              "Maximizing Goal-setting with exhaustive backward planning": "Goal-setting",
+                              "Frugal planning": "Frugal planning",
+                              "Myopic planning": "Little planning",
+                              "Maximizing goal-setting with limited backward planning": "Goal-setting",
+                              "Frugal goal-setting strategies": "Goal-setting",
+                              "Strategy that explores immediate outcomes on the paths to the best final outcomes": "Final and then immediate outcome",
+                              "Strategy that explores immediate outcomes on the paths to the best final outcomes with satisficing": "Final and then immediate outcome",
+                              "Miscellaneous strategies": "Miscellaneous strategies"}
+
+    experiments = ["v1.0", "c2.1", "c1.1"]
+    for experiment in experiments:
+        training = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
+        strategy_unclustered = pd.DataFrame.from_dict(training)
+        strategy_cluster_df = pd.DataFrame.from_dict(training)
+
+        # map strategy to cluster
+        cluster_mapping = pd.read_pickle(f"../../mcl_toolbox/data/kl_cluster_map.pkl")
+        strategy_cluster_df = strategy_cluster_df.replace(cluster_mapping)
+        strategy_cluster_df = strategy_cluster_df.replace(cluster_name_mapping)
+
+        # cluster the cluster
+        strategy_cluster_cluster_df = strategy_cluster_df.replace(clustering_the_cluster)
+
+        ## count how often strategy type was changed
+        count_strategy_type_change(strategy_cluster_cluster_df)
+
+        # between_cluster_average, within_cluster_average = get_absolute_jeffrey_values(cluster_mapping)
+        # magnitude_of_change_based_on_jeffrey(strategy_unclustered, between_cluster_average, within_cluster_average)
