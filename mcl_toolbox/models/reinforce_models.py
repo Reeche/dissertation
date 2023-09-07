@@ -89,6 +89,11 @@ class REINFORCE(Learner):
 
     def init_model_params(self):
         # Initializing the parameters with people's priors.
+        #todo:
+        """
+        /Users/rhe/PycharmProjects/mcl_toolbox/mcl_toolbox/models/reinforce_models.py:93: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:233.)
+        [[self.init_weights * self.beta]]
+        """
         self.policy.weighted_preference.weight.data = torch.DoubleTensor(
             [[self.init_weights * self.beta]]
         )
@@ -203,7 +208,6 @@ class REINFORCE(Learner):
             action_tensor = torch.tensor(action)
             # likelihood of m (model action probabilities) and action_tensor (participant action)
             # e.g. m is a tensor of len 13, action tensor, selects the e.g. 5th action
-            print(best_params).append(m.log_prob(action_tensor))
             self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
             action = self.get_action(env)
@@ -230,7 +234,7 @@ class REINFORCE(Learner):
             end_episode = trial_info["end_episode"]
         policy_loss = 0
         if not end_episode:
-            # get MER based on observed nodes, todo: where is this used?
+            # get MER based on observed nodess
             term_reward = self.get_term_reward(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
