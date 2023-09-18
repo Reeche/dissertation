@@ -70,6 +70,7 @@ class ModelBased(Learner):
         for i in range(1, self.num_available_nodes + 1):
             self.node_distributions[i] = torch.distributions.Dirichlet(
                 torch.tensor(list(self.dirichlet_alpha_dict[i].values())))
+        self.node_distributions[0] = 0 #todo: if this correct? Need to adjust below
         return None
 
     def perform_updates(self, action):
@@ -84,13 +85,6 @@ class ModelBased(Learner):
             #todo: total_count = total_count=self.env.present_trial_num + 1 + round(sum(self.dirichlet_alpha_dict[i].values()))) ???
         return None
 
-    @property
-    def term_reward(self):
-        """Get the max expected return in the current state"""
-        pres_node_map = self.env.present_trial.node_map
-        term_reward = pres_node_map[0].calculate_max_expected_return()
-        #todo this is wrong, for pid 1, the term reward after first click should not be 0.0
-        return term_reward
 
     def find_best_route(self, action, action_value=0):
         """
@@ -138,6 +132,8 @@ class ModelBased(Learner):
             mer = self.find_best_route(action)
         return mer
 
+
+
     def node_depth(self, action):
         if action in [1, 5, 9]:
             return 1
@@ -149,10 +145,10 @@ class ModelBased(Learner):
     def myopic_values(self) -> list:
         myopic_values = []
         for action in self.env.get_available_actions():  # all actions
-            mer = self.mer_for_action(action)
-            # print(mer, self.term_reward, self.env.cost(self.node_depth(action)))
-            # myopic_value = mer - self.term_reward + self.env.cost(self.node_depth(action))
-            myopic_value = mer - self.term_reward + self.env.cost(self.node_depth(action))
+            mer = self.env.myopic_voc(action, self.node_distributions)
+            assert self.env.cost(self.node_depth(action)) < 0, f"Cost {self.env.cost(self.node_depth(action))} is positive"
+            # termination reward is already taken care of in mouselab.py
+            myopic_value = mer + self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
         return myopic_values
 

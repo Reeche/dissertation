@@ -1,12 +1,14 @@
 import gym
 import numpy as np
 from gym import spaces
-
+import torch
+from pydantic import NonNegativeFloat
 from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
-from mcl_toolbox.utils.distributions import Categorical
+from mouselab.distributions import PointMass, cmax, expectation, sample, smax, Categorical, Dirichlet
 from mcl_toolbox.utils.env_utils import get_num_actions
 from mcl_toolbox.utils.sequence_utils import compute_current_features
 
+ZERO = PointMass(0)
 
 class GenericMouselabEnv(gym.Env):
     """
@@ -17,6 +19,8 @@ class GenericMouselabEnv(gym.Env):
 
     def __init__(
             self,
+            tree,
+            init,
             num_trials=1,
             pipeline={"0": ([3, 1, 2], reward_val)},
             ground_truth=None,
@@ -48,6 +52,9 @@ class GenericMouselabEnv(gym.Env):
         if self.feedback == "meta" and self.q_fn is None:
             raise ValueError("Q-function is required to compute metacognitive feedback")
         self.construct_env()
+        self.tree = tree
+        self.init = init
+        self.term_action = len(self.init)
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials
@@ -245,6 +252,66 @@ class GenericMouselabEnv(gym.Env):
         self.features = features
         self.normalized_features = normalized_features
 
+    def to_obs_tree(self, state, node, action, sort=True):
+        maybe_sort = sorted if sort else lambda x: x
+
+        def expectation_dirichlet(distribution):
+            if hasattr(distribution, "concentration"):
+                return distribution.concentration[action] / torch.sum(distribution.concentration)
+            else:
+                return 0
+
+        def rec(n):
+            if n in self.observed_action_list:
+                subjective_reward = self.present_trial.ground_truth[action]
+            else:
+                subjective_reward = expectation_dirichlet(state[n])
+
+            children = tuple(maybe_sort(rec(c) for c in self.tree[n]))
+            return (subjective_reward, children)
+
+        return rec(node)
+
+    def node_value_after_observe(self, obs, node, state):
+        """A distribution over the expected value of node, after making an observation.
+
+        obs can be a single node, a list of nodes, or 'all'
+        """
+        obs_tree = self.to_obs_tree(state, node, obs)
+        # if self.exact:
+        #     return exact_node_value_after_observe(obs_tree)
+        # else:
+        return node_value_after_observe(obs_tree)
+
+    def myopic_voc(self, action, state) -> NonNegativeFloat:
+        if action == self.term_action:
+            # no information from final action
+            # explicitly set here due to numerical considerations
+            return 0
+        else:
+            gain_from_inspecting = self.node_value_after_observe(action, 0, state).expectation()
+
+            corrected_gain_from_inspecting = np.sign(gain_from_inspecting) * np.abs(
+                gain_from_inspecting)
+            return corrected_gain_from_inspecting - self.get_term_reward()
+
+
+def node_value_after_observe(obs_tree):
+    """A distribution over the expected value of node, after making an observation.
+
+    `obs` can be a single node, a list of nodes, or 'all'
+    """
+    children = tuple(node_value_after_observe(c) + c[0] for c in obs_tree[1])
+    return cmax(children, default=ZERO)
+
+
+def exact_node_value_after_observe(obs_tree):
+    """A distribution over the expected value of node, after making an observation.
+
+    `obs` can be a single node, a list of nodes, or 'all'
+    """
+    children = tuple(exact_node_value_after_observe(c) + c[0] for c in obs_tree[1])
+    return cmax(children, default=ZERO)
 
 # class ModStateGenericMouselabEnv(GenericMouselabEnv):
 #     def __init__(

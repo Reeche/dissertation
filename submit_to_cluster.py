@@ -1,4 +1,5 @@
 from condor_utils import submit_sub_file
+import pandas as pd
 
 bid = 25
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
@@ -9,13 +10,18 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 # pid_dict = {
 #     'v1.0': [121]}
 
+# load the models from csv
+all_models = pd.read_csv('model_to_be_fitted.csv')
+models_without_rssl = all_models[all_models['model'] != 'rssl']
+models = models_without_rssl['index'].tolist()
+# models = models[:1]
 
-models = ['489']
-exp_num = ['high_variance_high_cost',
+# models = ['489']
+exp_num = ['v1.0', 'c2.1', 'c1.1',
+           'high_variance_high_cost',
            'high_variance_low_cost',
            'low_variance_high_cost',
            'low_variance_low_cost']
-
 
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,

@@ -2,10 +2,8 @@ from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from mcl_toolbox.models.model_based_models import ModelBased
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
-from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 from hyperopt import hp, fmin, tpe
 import matplotlib.pyplot as plt
-import pickle
 import numpy as np
 import sys
 
@@ -86,7 +84,7 @@ if __name__ == "__main__":
         data_path=None,
         number_of_trials=number_of_trials)
 
-    pid_context, env = mf.get_participant_context(pid)
+    pid_context, env = mf.get_participant_context_model_based(pid)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
     value_range = list(range(-80, 80))
@@ -106,7 +104,7 @@ if __name__ == "__main__":
         }
     else:
         fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', 0, 0.001),
+            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
             'alpha_multiplier': hp.uniform('alpha_multiplier', 10, 100),
             'dist_alpha': hp.uniform('dist_alpha', 1, 10),
             'dist_beta': hp.uniform('dist_beta', 1, 10)
@@ -116,7 +114,7 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=1,
+                       max_evals=100,
                        # trials=True,
                        show_progressbar=True)
     # 50: {'alpha_multiplier': 15.24295352162166, 'dist_alpha': 1.855884680428046, 'dist_beta': 4.99246836152895, 'inverse_temp': -78.39705147407385}

@@ -58,7 +58,7 @@ def split_mouselab_df_into_conditions(df):
     # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "existence_no_click_v32"
+experiment = "model_free_technical_pilot"
 
 data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 
@@ -164,7 +164,7 @@ df_mouselab["state_rewards"] = temp_state_rewards
 df_mouselab["end_nodes"] = temp_end_nodes
 df_mouselab["score"] = temp_score
 # split_mouselab_df_into_conditions(df_mouselab)
-# df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
+df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
 
 ### Create participant csv
 # save the information into the created df
@@ -178,6 +178,6 @@ df_participants["age"] = temp_age_list
 df_participants.index += 1
 # remove bad participants
 df_participants = df_participants[~df_participants.index.isin(bad_pid_list)]
-print(2)
+
 # split_participants_df_into_conditions(df_participants)
-# df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")
+df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")

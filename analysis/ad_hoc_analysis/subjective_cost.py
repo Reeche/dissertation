@@ -13,6 +13,7 @@ For this, look at the average subjective cost of fitted participants for each co
 # exp_list = ["v1.0", "c2.1", "c1.1",
 #             "high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost", "low_variance_high_cost"]
 exp_list = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost", "low_variance_high_cost"]
+# exp_list = ["low_variance_low_cost"]
 sub_cost_dict = {}
 
 learning_participants = {
@@ -69,7 +70,7 @@ def avg_subjective_cost_pkl(exp, models, learning_participants):
     sub_cost_dict = {}
     for model in models:
         # Directory containing the pickle files
-        directory = f'../../results_subjective_cost/mcrl/{exp}_priors'
+        directory = f'../../results_subjective_cost_800/mcrl/{exp}_priors'
         temp_ = []
         # Loop through files in the directory
         for filename in os.listdir(directory):
@@ -81,6 +82,8 @@ def avg_subjective_cost_pkl(exp, models, learning_participants):
                         with open(file_path, 'rb') as file:
                             content = pickle.load(file)
                             temp = content[0][0]['subjective_cost']
+                            # if temp < 0:
+                            #     print("Participant", file_integer, "has subjective cost", temp)
                             temp_.append(temp)
                             # Process the content as needed
                     except Exception as e:
@@ -91,21 +94,23 @@ def avg_subjective_cost_pkl(exp, models, learning_participants):
     # for model, sub_cost in sub_cost_dict.items():
     #     print(exp, model, sum(sub_cost)/len(sub_cost))
 
-    # calculate the mode of the subjective cost
-    # for model, sub_cost in sub_cost_dict.items():
-    #     print(exp, model, multimode(sub_cost))
+    ##calculate the mode of the subjective cost
+    for model, sub_cost in sub_cost_dict.items():
+        # round the subcost to integer
+        sub_cost = [round(x) for x in sub_cost]
+        print(exp, model, multimode(sub_cost))
 
     # calculate the median of the subjective cost
-    for model, sub_cost in sub_cost_dict.items():
-        print(exp, model, sorted(sub_cost)[len(sub_cost)//2])
+    # for model, sub_cost in sub_cost_dict.items():
+    #     print(exp, model, sorted(sub_cost)[len(sub_cost)//2])
 
     # create histograms
-    for model, sub_cost in sub_cost_dict.items():
-        plt.hist(sub_cost, bins=6)
-        plt.title(f'{exp} {model}')
-        plt.savefig(f'plots/subjective_cost/{exp}_{model}_subjective_cost_8000_bin6.png')
-        # plt.show()
-        plt.close()
+    # for model, sub_cost in sub_cost_dict.items():
+    #     plt.hist(sub_cost, bins=6)
+    #     plt.title(f'{exp} {model}')
+    #     plt.savefig(f'plots/subjective_cost/{exp}_{model}_subjective_cost_8000_bin6.png')
+    #     # plt.show()
+    #     plt.close()
 
 for exp in exp_list:
     avg_subjective_cost_pkl(exp, models, learning_participants)

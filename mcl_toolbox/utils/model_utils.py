@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from mcl_toolbox.env.mouselab import MouselabEnv
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import features, model, strategies, structure
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
@@ -90,11 +91,11 @@ class ModelFitter:
             if self.exp_name in structure.branchings.keys():
                 reward_dist = "categorical"
                 reward_structure = structure.exp_reward_structures[self.exp_name]
-                reward_distributions = construct_reward_function(
+                self.reward_distributions = construct_reward_function(
                     structure.reward_levels[reward_structure], reward_dist
                 )
                 repeated_pipeline = construct_repeated_pipeline(
-                    structure.branchings[self.exp_name], reward_distributions, pipeline_kwargs["number_of_trials"]
+                    structure.branchings[self.exp_name], self.reward_distributions, pipeline_kwargs["number_of_trials"]
                 )
                 self.pipeline = repeated_pipeline
 
@@ -103,9 +104,9 @@ class ModelFitter:
                                  "num_trials")
             # if you want to use the registry to store experiment information
             else:
-                reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
+                self.reward_distributions = create_mcrl_reward_distribution(pipeline_kwargs["exp_setting"])
                 branching = registry(pipeline_kwargs["exp_setting"]).branching
-                self.pipeline = construct_repeated_pipeline(branching, reward_distributions,
+                self.pipeline = construct_repeated_pipeline(branching, self.reward_distributions,
                                                             pipeline_kwargs["number_of_trials"])
                 self.normalized_features = get_normalized_features(pipeline_kwargs["exp_setting"])
             self.E.attach_pipeline(self.pipeline)
@@ -132,9 +133,16 @@ class ModelFitter:
         if env.normalized_features is not None:
             self.normalized_features = env.normalized_features
 
-    def construct_env(self, participant, q_fn=None):
+    def construct_env_model_based(self, participant, q_fn=None):
+        tree, init = MouselabEnv.branching_and_reward_to_inputs(
+            branching=self.branching,
+            reward=self.reward_distributions,
+        )
+
         env = GenericMouselabEnv(
-            len(participant.envs),
+            tree=tree,
+            init=init,
+            num_trials=len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
             cost=self.click_cost,
@@ -160,7 +168,13 @@ class ModelFitter:
     def get_participant_context(self, pid):
         participant = self.E.participants[pid]
         q_fn, participant = self.get_q_fn(participant)
-        env = self.construct_env(participant, q_fn=q_fn)
+        env = self.construct_env_model(participant, q_fn=q_fn)
+        return participant, env
+
+    def get_participant_context_model_based(self, pid):
+        participant = self.E.participants[pid]
+        q_fn, participant = self.get_q_fn(participant)
+        env = self.construct_env_model_based(participant, q_fn=q_fn)
         return participant, env
 
     def construct_model(self, model_index):
