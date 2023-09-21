@@ -146,8 +146,8 @@ class ModelFitter:
             pipeline=self.pipeline,
             ground_truth=participant.envs,
             cost=self.click_cost,
-            feedback=participant.condition,
-            q_fn=q_fn,
+            # feedback=participant.condition,
+            # q_fn=q_fn,
         )
         return env
 

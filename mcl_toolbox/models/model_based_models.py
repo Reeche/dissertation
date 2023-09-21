@@ -21,7 +21,7 @@ class ModelBased(Learner):
         self.value_range = value_range
         self.action_log_probs = []
         self.pseudo_rewards = None
-        self.num_available_nodes = len(self.env.get_available_actions()) - 1
+        self.num_available_nodes = 12
         self.optimisation_criterion = criterion
         self.p_data = self.construct_p_data()
         self.num_simulations = num_simulations
@@ -54,23 +54,22 @@ class ModelBased(Learner):
         rv = beta(dist_alpha, dist_beta)
         x = np.linspace(beta.ppf(0.01, dist_alpha, dist_beta),
                         beta.ppf(0.99, dist_alpha, dist_beta), len(self.value_range))
-        alpha = rv.pdf(x)
+        alpha = torch.tensor(rv.pdf(x))
         alpha_list = alpha * alpha_multiplier
         alpha_list = [math.ceil(item) for item in alpha_list]
         dirichlet_alpha = dict(zip(self.value_range, alpha_list))
         self.dirichlet_alpha_dict = {}
         # alpha need to be n x m, e.g. 13 x range
-        for i in range(1, self.num_available_nodes + 1):
+        for i in range(0, self.num_available_nodes + 1):
             self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
         return None
 
     def init_distributions(self):
         self.node_distributions = {}
-        # create node distribution for all nodes
-        for i in range(1, self.num_available_nodes + 1):
+        # create node distribution for all nodes, including the starting node, whose distribution does not change
+        for i in range(0, self.num_available_nodes + 1):
             self.node_distributions[i] = torch.distributions.Dirichlet(
                 torch.tensor(list(self.dirichlet_alpha_dict[i].values())))
-        self.node_distributions[0] = torch.distributions.Categorical(torch.tensor([1]))
         return None
 
     def perform_updates(self, action):
@@ -93,20 +92,66 @@ class ModelBased(Learner):
         elif action in [3, 4, 7, 8, 10, 11]:
             return 3
 
+    def expectation_term(self, distribution):
+        """
+        Args:
+            distribution: Dirichlet distribution of selected node
+            value_range: range of possible values for the node
+
+        Returns: expected value of the node given observations (alphas)
+
+        """
+        # expectation of the selected node
+        # value range to dict with index as key
+        value_dict = {item: index for index, item in enumerate(self.value_range)}
+        expectation = 0
+        for value in self.value_range:
+            idx = value_dict[value]
+            prob = distribution.concentration[idx] / torch.sum(distribution.concentration)
+            expectation += prob * value
+        return expectation
+
+    def expectation_non_term(self, distribution, termination_value):
+        """
+        Args:
+            distribution: Dirichlet distribution of selected node
+            value_range: range of possible values for the node
+
+        Returns: expected value of the node given observations (alphas)
+
+        """
+        # expectation of the selected node
+        # value range to dict with index as key
+        value_dict = {item: index for index, item in enumerate(self.value_range)}
+        expectation = 0
+        for value in self.value_range:
+            idx = value_dict[value]
+            prob = distribution.concentration[idx] / torch.sum(distribution.concentration)
+            expectation += prob * max(value, termination_value)
+        return expectation
+
+    def myopic_value(self, action):
+        if action == 0:
+            return self.env.get_term_reward()
+            # return self.expectation_term(self.node_distributions[0])
+        else:
+            termination_value = self.expectation_term(self.node_distributions[0])
+            return self.expectation_non_term(self.node_distributions[action], termination_value)
+
+
     def calculate_myopic_values(self) -> list:
         myopic_values = []
         # for action in self.env.get_available_actions():
         for action in range(0, self.num_available_nodes +1) :  # all actions
-            myopic_value = self.env.myopic_voc(action, self.node_distributions) + self.env.cost(self.node_depth(action))
-            assert self.env.cost(self.node_depth(action)) < 0, f"Cost {self.env.cost(self.node_depth(action))} is positive"
-            # termination reward is already taken care of in myopic value calculation of mouselab.py
-            # if action != 0:
-            #     myopic_value = mer + self.env.cost(self.node_depth(action))
-            # else: #additional gain of termination
-            #     myopic_value = 0
+            # if action alredy observed, no additional gain but only cost
+            if action in self.env.observed_action_list:
+                myopic_value = torch.tensor(self.env.cost(self.node_depth(action)))
+                # myopic_value = torch.tensor(self.env.present_trial.ground_truth[action])
+            else:
+                # myopic_value = self.env.myopic_voc(action, self.node_distributions, self.value_range) + self.env.cost(self.node_depth(action))
+                myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
         print("myopic values", myopic_values)
-        # assert len(myopic_values) == 13, f"Length of myopic values is {len(myopic_values)}"
         return myopic_values
 
     def calculate_likelihood(self):
@@ -114,9 +159,6 @@ class ModelBased(Learner):
         softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         likelihood = softmax_vals / softmax_vals.sum()
-        # for not available actions, insert 0
-        # for previous_actions in self.env.observed_action_list:
-        #     likelihood = torch.cat((likelihood[:previous_actions], torch.tensor([0]), likelihood[previous_actions:]))
         return likelihood
 
     def sample_action(self) -> int:
@@ -181,7 +223,7 @@ class ModelBased(Learner):
         trials_data = defaultdict(list)
         num_trials = self.env.num_trials
         for trial_num in range(num_trials):
-            # print("trial", trial_num)
+            print("trial", trial_num)
             actions, rewards = [], []
             done = False
             while not done:

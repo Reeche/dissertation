@@ -2,7 +2,7 @@ import sys
 from collections import defaultdict
 
 import numpy as np
-from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
+from mcl_toolbox.env.generic_mouselab_backup import GenericMouselabEnv
 from mcl_toolbox.utils.planning_strategies import strategy_dict
 from mcl_toolbox.global_vars import structure
 

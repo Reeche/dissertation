@@ -6,6 +6,7 @@ from hyperopt import hp, fmin, tpe
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import torch
 
 
 def plot_score(res, participant, pid, exp_name):
@@ -16,6 +17,7 @@ def plot_score(res, participant, pid, exp_name):
     # plt.savefig(f"results/mcrl/{exp_name}_model_based/plots/{pid}.png")
     plt.close()
     return None
+
 
 def plot_clicks(res, participant):
     pid_action = []
@@ -31,6 +33,7 @@ def plot_clicks(res, participant):
     # plt.savefig(f"results/mcrl/{exp_name}_mb/plots/{pid}.png")
     plt.close()
     return None
+
 
 def cost_function(depth):
     if depth == 0:
@@ -48,9 +51,9 @@ if __name__ == "__main__":
     # criterion = sys.argv[2]
     # pid = int(sys.argv[3])
 
-    exp_name = "v1.0" #"strategy_discovery
-    criterion = "likelihood" #"number_of_clicks_likelihood"
-    pid = 35 #2
+    exp_name = "high_variance_low_cost"  # "strategy_discovery
+    criterion = "likelihood"  # "number_of_clicks_likelihood"
+    pid = 4  # 2
 
     E = Experiment(exp_name)
 
@@ -87,7 +90,8 @@ if __name__ == "__main__":
     pid_context, env = mf.get_participant_context_model_based(pid)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
-    value_range = list(range(-60, 60))
+    # Has to be symmetric, otherwise biased towards negative expected value
+    value_range = list(range(-1001, 1001))
 
     model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
     # res = model.simulate(compute_likelihood=True, participant=participant_obj)
@@ -111,21 +115,29 @@ if __name__ == "__main__":
         }
 
     ###minimize the objective over the space
-    best_params = fmin(fn=model.run_multiple_simulations,
-                       space=fspace,
-                       algo=tpe.suggest,
-                       max_evals=1,
-                       # trials=True,
-                       show_progressbar=True)
-                       # rstate=np.random.default_rng(0))
-
-    #{'alpha_multiplier': 13.287755104871485, 'dist_alpha': 3.886061271614582, 'dist_beta': 9.589713869950941,
-    # 'inverse_temp': -348.74003358438887}
-
-    print(best_params)
+    # best_params = fmin(fn=model.run_multiple_simulations,
+    #                    space=fspace,
+    #                    algo=tpe.suggest,
+    #                    max_evals=1,
+    #                    # trials=True,
+    #                    show_progressbar=True,
+    #                    rstate=np.random.default_rng(0))
+    #
+    # #{'alpha_multiplier': 13.287755104871485, 'dist_alpha': 3.886061271614582, 'dist_beta': 9.589713869950941,
+    # # 'inverse_temp': -348.74003358438887}
+    #
+    # print(best_params)
     ## simulate using the best parameters
     model.test_fitted_model = True
-    # best_params = {"inverse_temp": 0}
+    # have to use floats for log_softmax
+    best_params = {'inverse_temp': torch.tensor(1.0),
+                   'alpha_multiplier': torch.tensor(1.0),
+                   'dist_alpha': torch.tensor(2.0), #alpha 2, beta 2 => inverse normal shape
+                   'dist_beta': torch.tensor(2.0)}
+    model.env.reset()
+    model.participant_obj.reset()
+    model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'], best_params['alpha_multiplier'])
+    model.init_distributions()
     res = model.run_multiple_simulations(best_params)
 
     ## save result and best parameters
