@@ -17,10 +17,10 @@ def plot_score(res, participant, pid, exp_name):
     plt.close()
     return None
 
-def plot_clicks(res, participant, pid, exp_name):
+def plot_clicks(res, participant):
     pid_action = []
     for action in participant["a"]:
-        pid_action.append(len(action))
+        pid_action.append(len(action) - 1)
     model_action = []
     for action in res["a"][0]:
         model_action.append(len(action) - 1)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # criterion = sys.argv[2]
     # pid = int(sys.argv[3])
 
-    exp_name = "v1.0"
+    exp_name = "v1.0" #"strategy_discovery
     criterion = "likelihood" #"number_of_clicks_likelihood"
     pid = 35 #2
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     pid_context, env = mf.get_participant_context_model_based(pid)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
-    value_range = list(range(-80, 80))
+    value_range = list(range(-60, 60))
 
     model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
     # res = model.simulate(compute_likelihood=True, participant=participant_obj)
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         }
     else:
         fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-            'alpha_multiplier': hp.uniform('alpha_multiplier', 10, 100),
+            'inverse_temp': hp.uniform('inverse_temp', -10, 10),
+            'alpha_multiplier': hp.uniform('alpha_multiplier', 1, 2),
             'dist_alpha': hp.uniform('dist_alpha', 1, 10),
             'dist_beta': hp.uniform('dist_beta', 1, 10)
         }
@@ -114,10 +114,14 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=100,
+                       max_evals=1,
                        # trials=True,
                        show_progressbar=True)
-    # 50: {'alpha_multiplier': 15.24295352162166, 'dist_alpha': 1.855884680428046, 'dist_beta': 4.99246836152895, 'inverse_temp': -78.39705147407385}
+                       # rstate=np.random.default_rng(0))
+
+    #{'alpha_multiplier': 13.287755104871485, 'dist_alpha': 3.886061271614582, 'dist_beta': 9.589713869950941,
+    # 'inverse_temp': -348.74003358438887}
+
     print(best_params)
     ## simulate using the best parameters
     model.test_fitted_model = True
@@ -127,7 +131,7 @@ if __name__ == "__main__":
     ## save result and best parameters
     res.update(best_params)
     plot_score(res, model.p_data, pid, exp_name)
-    # plot_clicks(res, model.p_data, pid, exp_name)
+    plot_clicks(res, model.p_data)
 
     # output = open(f'results/mcrl/{exp_name}_model_based/data/{pid}_{criterion}.pkl', 'wb')
     # pickle.dump(res, output)

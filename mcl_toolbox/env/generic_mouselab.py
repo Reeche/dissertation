@@ -4,11 +4,12 @@ from gym import spaces
 import torch
 from pydantic import NonNegativeFloat
 from mcl_toolbox.env.modified_mouselab import TrialSequence, reward_val
-from mouselab.distributions import PointMass, cmax, expectation, sample, smax, Categorical, Dirichlet
+from mouselab.distributions import PointMass, cmax, expectation, sample, smax, Categorical
 from mcl_toolbox.utils.env_utils import get_num_actions
 from mcl_toolbox.utils.sequence_utils import compute_current_features
 
 ZERO = PointMass(0)
+
 
 class GenericMouselabEnv(gym.Env):
     """
@@ -54,7 +55,7 @@ class GenericMouselabEnv(gym.Env):
         self.construct_env()
         self.tree = tree
         self.init = init
-        self.term_action = len(self.init)
+        self.term_action = 0
 
     def custom_same_env_init(self, env, num_trials):
         self.num_trials = num_trials
@@ -252,25 +253,46 @@ class GenericMouselabEnv(gym.Env):
         self.features = features
         self.normalized_features = normalized_features
 
-    def to_obs_tree(self, state, node, action, sort=True):
-        maybe_sort = sorted if sort else lambda x: x
+    def expectation_dirichlet(self, distribution):
+        """
+        Args:
+            distribution: Dirichlet distribution of selected node
+            value_range: range of possible values for the node
 
-        def expectation_dirichlet(distribution):
-            if hasattr(distribution, "concentration"):
-                return distribution.concentration[action] / torch.sum(distribution.concentration)
-            else:
-                return 0
+        Returns: expected value of the node given observations (alphas)
 
-        def rec(n):
-            if n in self.observed_action_list:
-                subjective_reward = self.present_trial.ground_truth[action]
-            else:
-                subjective_reward = expectation_dirichlet(state[n])
+        """
+        # expectation of the selected node
+        value_range = list(range(-60, 60))
+        # value range to dict with index as key
+        value_dict = {item: index for index, item in enumerate(value_range)}
+        if hasattr(distribution, "concentration"):
+            expectation = 0
+            for value in value_range:
+                idx = value_dict[value]
+                prob = distribution.concentration[idx] / torch.sum(distribution.concentration)
+                expectation += prob * value
+            return expectation
+        else:
+            return 0
 
-            children = tuple(maybe_sort(rec(c) for c in self.tree[n]))
-            return (subjective_reward, children)
-
-        return rec(node)
+    # def node_value(self, node, state=None):
+    #     """A distribution over total rewards after the given node."""
+    #     state = state if state is not None else self._state
+    #     return max(
+    #         # (self.node_value(n1, state) + self.expectation_dirichlet(state[n1]) for n1 in self.tree[node]),
+    #         (self.node_value(n1, state) + self.state_expectations[n1] for n1 in self.tree[node]),
+    #         default=ZERO
+    #     )
+    #
+    # def term_reward(self, state=None):
+    #     """A distribution over the return gained by acting given a belief state."""
+    #     state = state if state is not None else self._state
+    #     return self.node_value(0, state)
+    #
+    # def expected_term_reward(self, state, action=None):
+    #     expected_term_reward = self.term_reward(state).expectation()
+    #     return np.sign(expected_term_reward) * np.abs(expected_term_reward)
 
     def node_value_after_observe(self, obs, node, state):
         """A distribution over the expected value of node, after making an observation.
@@ -278,22 +300,75 @@ class GenericMouselabEnv(gym.Env):
         obs can be a single node, a list of nodes, or 'all'
         """
         obs_tree = self.to_obs_tree(state, node, obs)
-        # if self.exact:
-        #     return exact_node_value_after_observe(obs_tree)
-        # else:
         return node_value_after_observe(obs_tree)
 
     def myopic_voc(self, action, state) -> NonNegativeFloat:
+        # calculate expectations for given state so we avoid doing this twice since the expectation calculation is very expensive
+        self.state_expectations = [self.expectation_dirichlet(state[node]) for node in range(len(state))]
+
         if action == self.term_action:
-            # no information from final action
-            # explicitly set here due to numerical considerations
             return 0
         else:
-            gain_from_inspecting = self.node_value_after_observe(action, 0, state).expectation()
+            gain_from_inspecting = self.node_value_after_observe(
+                (action,), 0, state
+            ).expectation()
 
             corrected_gain_from_inspecting = np.sign(gain_from_inspecting) * np.abs(
                 gain_from_inspecting)
+            # return corrected_gain_from_inspecting - self.expected_term_reward(state)
             return corrected_gain_from_inspecting - self.get_term_reward()
+
+    def to_obs_tree(self, state, node, action, sort=True):
+        """
+
+        Args:
+            state: the current state of the mouselab MDP, i.e. value and their probabilities
+            node: 0
+            action:
+            value_range:
+            sort:
+
+        Returns:
+
+        """
+        maybe_sort = sorted if sort else lambda x: x
+
+        def rec(n):
+            if n in action:
+                subjective_reward = torch.tensor(self.present_trial.ground_truth[n])
+            else:
+                # start at node 0, i.e. state[0], i.e. dirichlet distribution of node 0, which is 0 in the beginning
+                # subjective_reward = self.expectation_dirichlet(state[n])
+                subjective_reward = self.state_expectations[n]
+            children = tuple(maybe_sort(rec(c) for c in self.tree[n]))
+            return (subjective_reward, children)
+
+        return rec(node)
+
+    # def node_value_after_observe(self, state, node, action, value_range):
+    #     """A distribution over the expected value of node, after making an observation.
+    #
+    #     obs can be a single node, a list of nodes, or 'all'
+    #     """
+    #     # obs_tree returns a tree with expected value of each node
+    #     obs_tree = self.to_obs_tree(state, node, action, value_range)
+    #     # if self.exact:
+    #     #     return exact_node_value_after_observe(obs_tree)
+    #     # else:
+    #     return node_value_after_observe(obs_tree)
+    #
+    # def myopic_voc(self, state, action, value_range) -> NonNegativeFloat:
+    #     print("for action", action)
+    #     # loops through all actions, not necessarily the ones that have been observed
+    #     if action == self.term_action:
+    #         # no information from final action
+    #         # explicitly set here due to numerical considerations
+    #         return 0
+    #     else:
+    #         # gain_from_inspecting = self.node_value_after_observe(action, 0, state).expectation()
+    #         gain_from_inspecting = self.node_value_after_observe(state, 0, action, value_range).expectation()
+    #         corrected_gain_from_inspecting = np.sign(gain_from_inspecting) * np.abs(gain_from_inspecting)
+    #         return corrected_gain_from_inspecting - self.get_term_reward()
 
 
 def node_value_after_observe(obs_tree):
@@ -312,6 +387,7 @@ def exact_node_value_after_observe(obs_tree):
     """
     children = tuple(exact_node_value_after_observe(c) + c[0] for c in obs_tree[1])
     return cmax(children, default=ZERO)
+
 
 # class ModStateGenericMouselabEnv(GenericMouselabEnv):
 #     def __init__(

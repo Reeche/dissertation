@@ -9,6 +9,7 @@ from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
 from hyperopt import STATUS_OK
 from scipy.stats import norm, beta
+import math
 
 
 class ModelBased(Learner):
@@ -55,6 +56,7 @@ class ModelBased(Learner):
                         beta.ppf(0.99, dist_alpha, dist_beta), len(self.value_range))
         alpha = rv.pdf(x)
         alpha_list = alpha * alpha_multiplier
+        alpha_list = [math.ceil(item) for item in alpha_list]
         dirichlet_alpha = dict(zip(self.value_range, alpha_list))
         self.dirichlet_alpha_dict = {}
         # alpha need to be n x m, e.g. 13 x range
@@ -64,13 +66,11 @@ class ModelBased(Learner):
 
     def init_distributions(self):
         self.node_distributions = {}
-        # create tensor of length value_range
-
         # create node distribution for all nodes
         for i in range(1, self.num_available_nodes + 1):
             self.node_distributions[i] = torch.distributions.Dirichlet(
                 torch.tensor(list(self.dirichlet_alpha_dict[i].values())))
-        self.node_distributions[0] = 0 #todo: if this correct? Need to adjust below
+        self.node_distributions[0] = torch.distributions.Categorical(torch.tensor([1]))
         return None
 
     def perform_updates(self, action):
@@ -78,60 +78,11 @@ class ModelBased(Learner):
         # observed_value should only be the node value, i.e. model of the env and not model of the cost
         observed_value = self.env.ground_truth[self.env.present_trial_num][action]
         self.dirichlet_alpha_dict[action][int(observed_value)] += 1
-        for i in range(1, self.num_available_nodes + 1):
+        for i in range(1, self.num_available_nodes):
             self.node_distributions[i] = DirichletMultinomial(
                 concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
-            #todo: total_count = total_count=self.env.present_trial_num + 1 + round(sum(self.dirichlet_alpha_dict[i].values()))) ???
         return None
-
-
-    def find_best_route(self, action, action_value=0):
-        """
-        Loops through all branches and get expected value of each branch /path
-        Returns: the most/highest expected return
-
-        """
-        # find the best route
-        expected_path_values = {}
-        for i in list(self.env.present_trial.branch_map.keys()):
-            path = self.env.present_trial.branch_map[i]
-            expected_path_value = 0
-            for node_num in path:
-                node = self.env.present_trial.node_map[node_num]
-                if node.observed:
-                    expected_path_value += node.value
-                else:
-                    if node_num == 0:
-                        expected_path_value = 0
-                    elif node_num == action:
-                        expected_path_value += action_value
-            expected_path_values[i] = expected_path_value
-        assert len(expected_path_values) == 6
-        return max(expected_path_values.values())
-
-    def mer_for_action(self, action):
-        # given an action, get all possible values of the action and its probabilities
-        # multiply the probabilities with MER
-        mer = 0
-        if action != 0:
-            for index, value in enumerate(self.value_range):
-                if isinstance(self.node_distributions[action], DirichletMultinomial):
-                    # class concentration / total concentration * total count
-                    prob = self.node_distributions[action].concentration[index] * \
-                           self.node_distributions[action].total_count / \
-                           sum(self.node_distributions[action].concentration)
-                else:
-                    sampled_probs = self.node_distributions[action].sample()
-                    assert torch.round(sum(sampled_probs)) == 1, f"Sum is not 1 but {sum(sampled_probs)}"
-                    prob = sampled_probs[index]
-                    # prob = self.node_distributions[action].mean[index]
-                assert prob <= 1, f"{prob} probability is larger than 1"
-                mer += prob * self.find_best_route(action, value)
-        elif action == 0:
-            mer = self.find_best_route(action)
-        return mer
-
 
 
     def node_depth(self, action):
@@ -142,24 +93,30 @@ class ModelBased(Learner):
         elif action in [3, 4, 7, 8, 10, 11]:
             return 3
 
-    def myopic_values(self) -> list:
+    def calculate_myopic_values(self) -> list:
         myopic_values = []
-        for action in self.env.get_available_actions():  # all actions
-            mer = self.env.myopic_voc(action, self.node_distributions)
+        # for action in self.env.get_available_actions():
+        for action in range(0, self.num_available_nodes +1) :  # all actions
+            myopic_value = self.env.myopic_voc(action, self.node_distributions) + self.env.cost(self.node_depth(action))
             assert self.env.cost(self.node_depth(action)) < 0, f"Cost {self.env.cost(self.node_depth(action))} is positive"
-            # termination reward is already taken care of in mouselab.py
-            myopic_value = mer + self.env.cost(self.node_depth(action))
+            # termination reward is already taken care of in myopic value calculation of mouselab.py
+            # if action != 0:
+            #     myopic_value = mer + self.env.cost(self.node_depth(action))
+            # else: #additional gain of termination
+            #     myopic_value = 0
             myopic_values.append(myopic_value)
+        print("myopic values", myopic_values)
+        # assert len(myopic_values) == 13, f"Length of myopic values is {len(myopic_values)}"
         return myopic_values
 
     def calculate_likelihood(self):
-        myopic_values = self.myopic_values()
+        myopic_values = self.calculate_myopic_values()
         softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         likelihood = softmax_vals / softmax_vals.sum()
         # for not available actions, insert 0
-        for previous_actions in self.env.observed_action_list:
-            likelihood = torch.cat((likelihood[:previous_actions], torch.tensor([0]), likelihood[previous_actions:]))
+        # for previous_actions in self.env.observed_action_list:
+        #     likelihood = torch.cat((likelihood[:previous_actions], torch.tensor([0]), likelihood[previous_actions:]))
         return likelihood
 
     def sample_action(self) -> int:
@@ -175,8 +132,9 @@ class ModelBased(Learner):
         if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
             pi = trial_info["participant"]
             action = pi.get_click()
-            action_likelihood = self.calculate_likelihood()
+            # print("Participant clicked on node", action)
             # how likely model would have taken the action
+            action_likelihood = self.calculate_likelihood()
             self.action_log_probs.append(action_likelihood[action])
             reward, taken_path, done = pi.make_click()
             _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
@@ -200,7 +158,9 @@ class ModelBased(Learner):
 
         simulations_data = defaultdict(list)
         for _ in range(self.num_simulations):
-            trials_data = self.simulate(params['dist_alpha'], params['dist_beta'], params['alpha_multiplier'])
+            self.init_model_params(params['dist_alpha'], params['dist_beta'], params['alpha_multiplier'])
+            self.init_distributions()
+            trials_data = self.simulate()
             for param in ["rewards", "a", "loss", "status"]:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
@@ -215,14 +175,13 @@ class ModelBased(Learner):
         simulations_data["status"] = simulations_data["status"][0]
         return simulations_data
 
-    def simulate(self, dist_alpha, dist_beta, alpha_multiplier):
-        self.init_model_params(dist_alpha, dist_beta, alpha_multiplier)
-        self.init_distributions()
+    def simulate(self):
         self.env.reset()
         # self.participant_obj.reset()  # resets number of trial and clicks, nothing else
         trials_data = defaultdict(list)
         num_trials = self.env.num_trials
         for trial_num in range(num_trials):
+            # print("trial", trial_num)
             actions, rewards = [], []
             done = False
             while not done:
