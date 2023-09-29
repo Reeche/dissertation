@@ -162,8 +162,8 @@ class Experiment:
         self.participant_temperatures = {}
         self.init_participants()
         self.init_planning_data()
-        self.participant_strategies = {}
-        self.participant_temperatures = {}
+        # self.participant_strategies = {}
+        # self.participant_temperatures = {}
 
     def init_participants(self):
         participants_data = self.data["participants"]
@@ -202,7 +202,9 @@ class Experiment:
             self.participants[pid] = p
 
         path = Path(__file__).parents[2]
-        f_path = path.joinpath(f"{self.data_path}/inferred_strategies")
+        word_list = self.data_path.split('/')
+        f_path = path.joinpath(f"{word_list[0]}/cm/inferred_strategies")
+        # f_path = path.joinpath(f"{self.data_path}/inferred_strategies")
         if self.block is not None:
             prefix = f"{self.exp_num}_{self.block}"
         else:

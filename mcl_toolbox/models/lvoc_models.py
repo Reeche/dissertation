@@ -277,7 +277,7 @@ class LVOC(Learner):
             env.get_next_trial()
         # add trial ground truths
         trials_data["envs"] = env.ground_truth
-        # Likelihoods are stored in action_log_probs
+        # Likelihoods are stored in action_log_probs which are all negative, i.e. the sum is negative
         if self.action_log_probs:
             trials_data["loss"] = -np.sum(self.action_log_probs)
         else:

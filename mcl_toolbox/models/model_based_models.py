@@ -54,7 +54,7 @@ class ModelBased(Learner):
         rv = beta(dist_alpha, dist_beta)
         x = np.linspace(beta.ppf(0.01, dist_alpha, dist_beta),
                         beta.ppf(0.99, dist_alpha, dist_beta), len(self.value_range))
-        alpha = torch.tensor(rv.pdf(x))
+        alpha = torch.tensor(rv.pdf(x), dtype=torch.float32)
         alpha_list = alpha * alpha_multiplier
         alpha_list = [math.ceil(item) for item in alpha_list]
         dirichlet_alpha = dict(zip(self.value_range, alpha_list))
@@ -69,7 +69,7 @@ class ModelBased(Learner):
         # create node distribution for all nodes, including the starting node, whose distribution does not change
         for i in range(0, self.num_available_nodes + 1):
             self.node_distributions[i] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[i].values())))
+                torch.tensor(list(self.dirichlet_alpha_dict[i].values()), dtype=torch.float32))
         return None
 
     def perform_updates(self, action):
@@ -79,7 +79,7 @@ class ModelBased(Learner):
         self.dirichlet_alpha_dict[action][int(observed_value)] += 1
         for i in range(1, self.num_available_nodes):
             self.node_distributions[i] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values())), dtype=torch.float32),
                 total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
         return None
 
@@ -101,34 +101,47 @@ class ModelBased(Learner):
         Returns: expected value of the node given observations (alphas)
 
         """
-        # expectation of the selected node
-        # value range to dict with index as key
         value_dict = {item: index for index, item in enumerate(self.value_range)}
-        expectation = 0
-        for value in self.value_range:
-            idx = value_dict[value]
-            prob = distribution.concentration[idx] / torch.sum(distribution.concentration)
-            expectation += prob * value
+        total_concentration = torch.sum(distribution.concentration)
+
+        indices = np.array(list(value_dict.values()))
+        probabilities = distribution.concentration[indices] / total_concentration
+        values = torch.tensor(self.value_range, dtype=torch.float32)
+        expectation = torch.sum(probabilities * values)
+
         return expectation
+        # value_dict = {item: index for index, item in enumerate(self.value_range)}
+        # total_concentration = torch.sum(distribution.concentration)
+        # indices = torch.tensor(list(value_dict.values()))
+        # probabilities = distribution.concentration[indices] / total_concentration
+        #
+        # values = torch.tensor(self.value_range, dtype=torch.float32)
+        # expectation = torch.sum(probabilities * values)
+        #
+        # return expectation
 
     def expectation_non_term(self, distribution, termination_value):
-        """
-        Args:
-            distribution: Dirichlet distribution of selected node
-            value_range: range of possible values for the node
-
-        Returns: expected value of the node given observations (alphas)
-
-        """
-        # expectation of the selected node
-        # value range to dict with index as key
         value_dict = {item: index for index, item in enumerate(self.value_range)}
-        expectation = 0
-        for value in self.value_range:
-            idx = value_dict[value]
-            prob = distribution.concentration[idx] / torch.sum(distribution.concentration)
-            expectation += prob * max(value, termination_value)
+        total_concentration = torch.sum(distribution.concentration)
+        max_termination_value = np.full(len(self.value_range), termination_value)
+
+        indices = np.array(list(value_dict.values()))
+        probabilities = distribution.concentration[indices] / total_concentration
+        values = np.maximum(self.value_range, max_termination_value)
+
+        expectation = torch.sum(probabilities * values)
+
         return expectation
+
+        # value_dict = {item: index for index, item in enumerate(self.value_range)}
+        # total_concentration = torch.sum(distribution.concentration)
+        # indices = torch.tensor(list(value_dict.values()))
+        # probabilities = distribution.concentration[indices] / total_concentration
+        # values = torch.tensor(self.value_range, dtype=torch.float32)
+        # max_termination_value = torch.full((len(self.value_range),), termination_value, dtype=torch.float32)
+        # expectation = torch.sum(torch.max(values, max_termination_value) * probabilities)
+        #
+        # return expectation
 
     def myopic_value(self, action):
         if action == 0:
@@ -145,18 +158,18 @@ class ModelBased(Learner):
         for action in range(0, self.num_available_nodes +1) :  # all actions
             # if action alredy observed, no additional gain but only cost
             if action in self.env.observed_action_list:
-                myopic_value = torch.tensor(self.env.cost(self.node_depth(action)))
+                myopic_value = torch.tensor(self.env.cost(self.node_depth(action)), dtype=torch.float32)
                 # myopic_value = torch.tensor(self.env.present_trial.ground_truth[action])
             else:
                 # myopic_value = self.env.myopic_voc(action, self.node_distributions, self.value_range) + self.env.cost(self.node_depth(action))
                 myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
-        print("myopic values", myopic_values)
+        # print("myopic values", myopic_values)
         return myopic_values
 
     def calculate_likelihood(self):
         myopic_values = self.calculate_myopic_values()
-        softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
+        softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values], dtype=torch.float32), dim=0)
         softmax_vals = torch.exp(softmax_vals)
         likelihood = softmax_vals / softmax_vals.sum()
         return likelihood
@@ -177,7 +190,14 @@ class ModelBased(Learner):
             # print("Participant clicked on node", action)
             # how likely model would have taken the action
             action_likelihood = self.calculate_likelihood()
-            self.action_log_probs.append(action_likelihood[action])
+            if action_likelihood[action] == 1:
+                self.action_log_probs.append(np.log(1))
+            elif action_likelihood[action] == 0:
+                self.action_log_probs.append(np.log(1e-6))
+            else:
+                # turns probability into log probability, i.e. negative value
+                prob = max(np.float32(action_likelihood[action]), 1e-6)
+                self.action_log_probs.append(np.log(prob))
             reward, taken_path, done = pi.make_click()
             _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
         else:
@@ -213,8 +233,9 @@ class ModelBased(Learner):
             m_mers = get_termination_mers(self.env.ground_truth, simulations_data["a"][i], self.env.pipeline)
             total_m_mers.append(m_mers)
         simulations_data["mer"] = total_m_mers
-        simulations_data["loss"] = np.mean(simulations_data["loss"])
+        simulations_data["loss"] = -np.mean(simulations_data["loss"])
         simulations_data["status"] = simulations_data["status"][0]
+        # assert simulations_data["loss"] >= 0, f"Mean loss is not positive {simulations_data['loss']}"
         return simulations_data
 
     def simulate(self):
@@ -223,7 +244,7 @@ class ModelBased(Learner):
         trials_data = defaultdict(list)
         num_trials = self.env.num_trials
         for trial_num in range(num_trials):
-            print("trial", trial_num)
+            # print("trial", trial_num)
             actions, rewards = [], []
             done = False
             while not done:
@@ -240,14 +261,15 @@ class ModelBased(Learner):
             self.env.get_next_trial()
         # add trial ground truths
         trials_data["envs"] = self.env.ground_truth
-        trials_data["loss"] = self.objective_loss(trials_data)
+        trials_data["loss"] = self.calculate_loss(trials_data)
         trials_data["status"] = STATUS_OK
         return dict(trials_data)
 
-    def objective_loss(self, trials_data):
-        # depending on the optimisation criterion, the loss the different
+    def calculate_loss(self, trials_data):
         if self.optimisation_criterion == "likelihood":
-            loss = -np.sum(self.action_log_probs) #the likelihood should be maximised/the negative minimised, therefore the minus sign
+            # sum is negative, negation makes it positive
+            loss = -np.sum(self.action_log_probs, dtype=np.float32)
+            # assert loss >= 0, f"loss is not positive {loss}"
         elif self.optimisation_criterion == "pseudo_likelihood":
             total_m_mers = []
             m_mers = get_termination_mers(self.env.ground_truth, trials_data["a"], self.env.pipeline)
@@ -265,3 +287,8 @@ class ModelBased(Learner):
         else:
             UserWarning("Optimisation criterion not implemented")
         return loss
+
+    # def objective_loss(self, params):
+    #     res = self.run_multiple_simulations(params)
+    #     loss = -res["loss"]
+    #     return loss, res

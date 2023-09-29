@@ -20,8 +20,8 @@ class GenericMouselabEnv(gym.Env):
 
     def __init__(
             self,
-            tree,
-            init,
+            # tree,
+            # init,
             num_trials=1,
             pipeline={"0": ([3, 1, 2], reward_val)},
             ground_truth=None,
@@ -53,8 +53,8 @@ class GenericMouselabEnv(gym.Env):
         if self.feedback == "meta" and self.q_fn is None:
             raise ValueError("Q-function is required to compute metacognitive feedback")
         self.construct_env()
-        self.tree = tree
-        self.init = init
+        # self.tree = tree
+        # self.init = init
         self.term_action = 0
 
     def custom_same_env_init(self, env, num_trials):
@@ -274,47 +274,6 @@ class GenericMouselabEnv(gym.Env):
             return expectation
         else:
             return 0
-
-    # def node_value(self, node, value_range, state=None):
-    #     """A distribution over total rewards after the given node."""
-    #     state = state if state is not None else self._state
-    #     return max(
-    #         (self.node_value(n1, state) + self.expectation_dirichlet(state[n1], value_range) for n1 in self.tree[node]),
-    #         # (self.node_value(n1, state) + self.state_expectations[n1] for n1 in self.tree[node]),
-    #         default=ZERO
-    #     )
-    #
-    # def term_reward(self, value_range, state=None):
-    #     """A distribution over the return gained by acting given a belief state."""
-    #     state = state if state is not None else self._state
-    #     return self.node_value(0, state, value_range)
-    #
-    # def expected_term_reward(self, state, value_range, action=None):
-    #     expected_term_reward = self.term_reward(state, value_range).expectation()
-    #     return np.sign(expected_term_reward) * np.abs(expected_term_reward)
-
-    # def node_value_after_observe(self, obs, node, state):
-    #     """A distribution over the expected value of node, after making an observation.
-    #
-    #     obs can be a single node, a list of nodes, or 'all'
-    #     """
-    #     obs_tree = self.to_obs_tree(state, node, obs)
-    #     return node_value_after_observe(obs_tree)
-    #
-    # def myopic_voc(self, action, state) -> NonNegativeFloat:
-    #     self.state_expectations = [self.expectation_dirichlet(state[node]) for node in range(len(state))]
-    #
-    #     if action == self.term_action:
-    #         return 0
-    #     else:
-    #         gain_from_inspecting = self.node_value_after_observe(
-    #             (action,), 0, state
-    #         ).expectation()
-    #
-    #         corrected_gain_from_inspecting = np.sign(gain_from_inspecting) * np.abs(
-    #             gain_from_inspecting)
-    #         return corrected_gain_from_inspecting - self.expected_term_reward(state)
-    #         # return corrected_gain_from_inspecting - self.get_term_reward()
 
     def to_obs_tree(self, state, node, action, value_range, sort=True):
         """

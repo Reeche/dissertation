@@ -1,0 +1,8 @@
+executable = /lustre/fast/fast/rhe/venv/bin/python
+arguments = fit_model_based_models.py $(Arg1) $(Arg2) $(Arg3)
+error = errs/$(Arg1)_mb/$(Arg3).err
+getenv = True
+request_memory = 4000
+request_cpus = 1
+max_materialize=2000
+queue Arg1,Arg2,Arg3 from parameters_mb.txt

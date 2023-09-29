@@ -133,23 +133,35 @@ class ModelFitter:
         if env.normalized_features is not None:
             self.normalized_features = env.normalized_features
 
-    def construct_env_model_based(self, participant, q_fn=None):
-        tree, init = MouselabEnv.branching_and_reward_to_inputs(
-            branching=self.branching,
-            reward=self.reward_distributions,
-        )
-
+    def construct_env(self, participant, q_fn=None):
         env = GenericMouselabEnv(
-            tree=tree,
-            init=init,
-            num_trials=len(participant.envs),
+            len(participant.envs),
             pipeline=self.pipeline,
             ground_truth=participant.envs,
             cost=self.click_cost,
-            # feedback=participant.condition,
-            # q_fn=q_fn,
+            feedback=participant.condition,
+            q_fn=q_fn,
         )
         return env
+
+    # def construct_env_model_based(self, participant, q_fn=None):
+    # def construct_env(self, participant, q_fn=None):
+    #     tree, init = MouselabEnv.branching_and_reward_to_inputs(
+    #         branching=self.branching,
+    #         reward=self.reward_distributions,
+    #     )
+    #
+    #     env = GenericMouselabEnv(
+    #         tree=tree,
+    #         # init=init,
+    #         num_trials=len(participant.envs),
+    #         pipeline=self.pipeline,
+    #         ground_truth=participant.envs,
+    #         cost=self.click_cost,
+    #         # feedback=participant.condition,
+    #         # q_fn=q_fn,
+    #     )
+    #     return env
 
     def get_q_fn(self, participant):
         q_fn = None
@@ -168,14 +180,14 @@ class ModelFitter:
     def get_participant_context(self, pid):
         participant = self.E.participants[pid]
         q_fn, participant = self.get_q_fn(participant)
-        env = self.construct_env_model(participant, q_fn=q_fn)
+        env = self.construct_env(participant, q_fn=q_fn)
         return participant, env
 
-    def get_participant_context_model_based(self, pid):
-        participant = self.E.participants[pid]
-        q_fn, participant = self.get_q_fn(participant)
-        env = self.construct_env_model_based(participant, q_fn=q_fn)
-        return participant, env
+    # def get_participant_context_model_based(self, pid):
+    #     participant = self.E.participants[pid]
+    #     q_fn, participant = self.get_q_fn(participant)
+    #     env = self.construct_env_model_based(participant, q_fn=q_fn)
+    #     return participant, env
 
     def construct_model(self, model_index):
         """

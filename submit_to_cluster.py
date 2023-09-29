@@ -1,7 +1,7 @@
 from condor_utils import submit_sub_file
 import pandas as pd
 
-bid = 25
+bid = 50
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 ## for testing
@@ -10,18 +10,31 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 # pid_dict = {
 #     'v1.0': [121]}
 
-# load the models from csv
-all_models = pd.read_csv('model_to_be_fitted.csv')
-models_without_rssl = all_models[all_models['model'] != 'rssl']
-models = models_without_rssl['index'].tolist()
+# load the models from csv except for rssl model
+# all_models = pd.read_csv('model_to_be_fitted.csv')
+# models_without_rssl = all_models[all_models['model'] != 'rssl']
+# models = models_without_rssl['index'].tolist()
 # models = models[:1]
 
-# models = ['489']
+# vanilla models only
+models = [527, 491, 479, 1743, 1756]
+
 exp_num = ['v1.0', 'c2.1', 'c1.1',
            'high_variance_high_cost',
            'high_variance_low_cost',
            'low_variance_high_cost',
-           'low_variance_low_cost']
+           'low_variance_low_cost'
+           ]
+
+# pid_dict = {
+#     'v1.0': [1],
+#     'c2.1': [0],
+#     'c1.1': [2],
+#     'high_variance_high_cost': [0],
+#     'high_variance_low_cost': [4],
+#     'low_variance_high_cost': [2],
+#     'low_variance_low_cost': [3],
+#     'strategy_discovery': list(range(1, 57))}
 
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
@@ -53,8 +66,12 @@ with open("parameters.txt", "w") as parameters:
             pids = pid_dict.get(exp_num_)
             if pids:
                 for pid in pids:
-                    args = [exp_num_, models_, 'likelihood', pid, 35]
+                    if exp_num_ in ['v1.0', 'c2.1', 'c1.1']:
+                        args = [exp_num_, models_, 'pseudo_likelihood', pid, 35]
+                    else:
+                        args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, 35]
                     args_str = " ".join(str(x) for x in args) + "\n"
                     parameters.write(args_str)
+
 
 submit_sub_file("sub_multiple.sub", bid)

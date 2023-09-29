@@ -5,7 +5,7 @@ from mcl_toolbox.utils import learning_utils, distributions
 sys.modules["learning_utils"] = learning_utils
 sys.modules["distributions"] = distributions
 
-object = pd.read_pickle("../../results/mcrl/high_variance_low_cost_priors/4_likelihood_489.pkl")
-object2 = pd.read_pickle(f"../../results/mcrl/high_variance_low_cost_data/4_489_1.pkl")
+# object = pd.read_pickle("../../results/mcrl/high_variance_low_cost_priors/4_likelihood_489.pkl")
+object2 = pd.read_pickle(f"../../results/mcrl/high_variance_low_cost_model_based/data/4_likelihood.pkl")
 
 print(object)
