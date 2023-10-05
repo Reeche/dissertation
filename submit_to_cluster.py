@@ -10,14 +10,13 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 # pid_dict = {
 #     'v1.0': [121]}
 
-# load the models from csv except for rssl model
-# all_models = pd.read_csv('model_to_be_fitted.csv')
-# models_without_rssl = all_models[all_models['model'] != 'rssl']
-# models = models_without_rssl['index'].tolist()
+all_models = pd.read_csv('model_to_be_fitted_v2.csv')
+models_without_rssl = all_models[all_models['model'] != 'rssl']
+models = models_without_rssl['index'].tolist()
 # models = models[:1]
 
 # vanilla models only
-models = [527, 491, 479, 1743, 1756]
+# models = [527, 491, 479, 1743, 1756]
 
 exp_num = ['v1.0', 'c2.1', 'c1.1',
            'high_variance_high_cost',
@@ -66,10 +65,11 @@ with open("parameters.txt", "w") as parameters:
             pids = pid_dict.get(exp_num_)
             if pids:
                 for pid in pids:
-                    if exp_num_ in ['v1.0', 'c2.1', 'c1.1']:
-                        args = [exp_num_, models_, 'pseudo_likelihood', pid, 35]
-                    else:
-                        args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, 35]
+                    # if exp_num_ in ['v1.0', 'c2.1', 'c1.1']:
+                    #     args = [exp_num_, models_, 'pseudo_likelihood', pid, 35]
+                    # else:
+                    #     args = [exp_num_, models_, 'number_of_clicks_likelihood', pid, 35]
+                    args = [exp_num_, models_, 'likelihood', pid, 35]
                     args_str = " ".join(str(x) for x in args) + "\n"
                     parameters.write(args_str)
 

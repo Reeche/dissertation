@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_vanilla_models/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -100,11 +100,11 @@ if __name__ == "__main__":
     else:
         other_params = {}
 
-    # exp_name = "high_variance_high_cost"
-    # model_index = 1756
-    # optimization_criterion = "likelihood"
-    # pid = 60
-    # other_params = {"plotting": True}
+    # exp_name = "v1.0"
+    # model_index = 491 #1756
+    # optimization_criterion = "pseudo_likelihood"
+    # pid = 117
+    # other_params = {"plotting": False}
     # number_of_trials = 35
 
     def cost_function(depth):
@@ -135,11 +135,16 @@ if __name__ == "__main__":
         }
         other_params["exp_attributes"] = exp_attributes
 
+    if optimization_criterion == "likelihood":
+        num_sim = 1
+    else:
+        num_sum = 30
+
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
-            "num_simulations": 30,
-            "max_evals": 800,
+            "num_simulations": num_sim,
+            "max_evals": 2000,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()
@@ -152,5 +157,5 @@ if __name__ == "__main__":
         data_path=f"results_vanilla_models/mcrl/{exp_name}",
         **other_params,
     )
-    toc = time.perf_counter()
+    # toc = time.perf_counter()
     # print(f"Took {toc - tic:0.4f} seconds")

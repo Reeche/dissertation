@@ -3,8 +3,7 @@ from collections import defaultdict
 import torch
 import torch.nn.functional as F
 import numpy as np
-import pyro
-from pyro.distributions import DirichletMultinomial, Dirichlet
+from pyro.distributions import DirichletMultinomial
 from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
 from hyperopt import STATUS_OK

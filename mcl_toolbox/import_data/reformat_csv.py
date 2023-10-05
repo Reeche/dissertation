@@ -4,7 +4,7 @@ import numpy as np
 from mcl_toolbox.utils.learning_utils import create_dir
 
 
-def split_participants_df_into_conditions(df):
+def split_participants_df_into_conditions(df, exp):
     """
     Split the dataframe into three csv for each condition (increasing, decreasing, constant)
     Args:
@@ -29,10 +29,10 @@ def split_participants_df_into_conditions(df):
     condition = df[df["condition"] == 0]
 
     condition.to_csv(
-        "../../data/human/strategy_discovery/participants.csv", sep=",", index=False)
+        f"../../data/human/{exp}/participants.csv", sep=",", index=False)
 
 
-def split_mouselab_df_into_conditions(df):
+def split_mouselab_df_into_conditions(df, exp):
     """
     Split the dataframe into three csv for each condition (increasing, decreasing, constant)
     Args:
@@ -48,7 +48,7 @@ def split_mouselab_df_into_conditions(df):
 
     condition = df[df["condition"] == 0]
     condition.to_csv(
-        "../../data/human/strategy_discovery/mouselab-mdp.csv", sep=",", index=False)
+        f"../../data/human/{exp}/mouselab-mdp.csv", sep=",", index=False)
 
     # df_high_variance_low_click_cost.to_csv(
     #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
@@ -163,8 +163,8 @@ df_mouselab["queries"] = temp_queries
 df_mouselab["state_rewards"] = temp_state_rewards
 df_mouselab["end_nodes"] = temp_end_nodes
 df_mouselab["score"] = temp_score
-# split_mouselab_df_into_conditions(df_mouselab)
-df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
+split_mouselab_df_into_conditions(df_mouselab, experiment)
+# df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
 
 ### Create participant csv
 # save the information into the created df
@@ -173,11 +173,12 @@ df_participants["condition"] = temp_condition_list
 df_participants["bonus"] = temp_bonus_list
 df_participants["gender"] = temp_gender_list
 df_participants["age"] = temp_age_list
+df_participants["pid"] = np.unique(pid_list).tolist()
 
 ### save participant information as csv
 df_participants.index += 1
 # remove bad participants
 df_participants = df_participants[~df_participants.index.isin(bad_pid_list)]
 
-# split_participants_df_into_conditions(df_participants)
-df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")
+split_participants_df_into_conditions(df_participants, experiment)
+# df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")

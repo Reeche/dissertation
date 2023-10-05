@@ -51,7 +51,10 @@ for exp_num in exp:
     list_of_prior_files = os.listdir(priors_directory)
     new_list_of_prior_files = []
     for files in list_of_prior_files:
-        new_list_of_prior_files.append(files.replace("pseudo_likelihood_", "").replace(".pkl", "").replace("_", ","))
+        if exp_num in ["v1.0", "c2.1", "c1.1"]:
+            new_list_of_prior_files.append(files.replace("pseudo_likelihood_", "").replace(".pkl", "").replace("_", ","))
+        else:
+            new_list_of_prior_files.append(files.replace("number_of_clicks_likelihood_", "").replace(".pkl", "").replace("_", ","))
 
     # unequal items, i.e. missing PID and model_index combination
     missing_items_list = list(sorted(set(combination_all) - set(new_list_of_prior_files)))
