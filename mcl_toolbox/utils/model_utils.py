@@ -144,25 +144,6 @@ class ModelFitter:
         )
         return env
 
-    # def construct_env_model_based(self, participant, q_fn=None):
-    # def construct_env(self, participant, q_fn=None):
-    #     tree, init = MouselabEnv.branching_and_reward_to_inputs(
-    #         branching=self.branching,
-    #         reward=self.reward_distributions,
-    #     )
-    #
-    #     env = GenericMouselabEnv(
-    #         tree=tree,
-    #         # init=init,
-    #         num_trials=len(participant.envs),
-    #         pipeline=self.pipeline,
-    #         ground_truth=participant.envs,
-    #         cost=self.click_cost,
-    #         # feedback=participant.condition,
-    #         # q_fn=q_fn,
-    #     )
-    #     return env
-
     def get_q_fn(self, participant):
         q_fn = None
         file_location = Path(__file__).parents[1]

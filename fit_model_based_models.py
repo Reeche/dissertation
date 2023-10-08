@@ -53,7 +53,7 @@ if __name__ == "__main__":
     criterion = sys.argv[2]
     pid = int(sys.argv[3])
 
-    # exp_name = "v1.0"  # "strategy_discoveryƒ
+    # exp_name = "v1.0"  # "strategy_discovery
     # criterion = "pseudo_likelihood"  # "number_of_clicks_likelihood"
     # pid = 1  # 2
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     }
 
     number_of_trials = 35
-    criterion = "likelihood"
+    # criterion = "likelihood"
     if criterion != "likelihood":
         num_simulations = 30
     else:
@@ -111,11 +111,11 @@ if __name__ == "__main__":
     # the smaller, the more exploration!
     if criterion != "likelihood":
         fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', 1e-3, 1e3),
+            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
             'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
-            'alpha_multiplier': hp.uniform('alpha_multiplier', 10, 100),
-            'dist_alpha': hp.uniform('dist_alpha', 0, 10),
-            'dist_beta': hp.uniform('dist_beta', 0, 10)
+            'alpha_multiplier': hp.uniform('alpha_multiplier', 1, 100),
+            'dist_alpha': hp.uniform('dist_alpha', 1, 10),
+            'dist_beta': hp.uniform('dist_beta', 1, 10)
         }
     else:
         fspace = {
@@ -134,10 +134,10 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=1000,
+                       max_evals=800,
                        show_progressbar=True)
                        # rstate=np.random.default_rng(0))
-    print(best_params)
+    # print(best_params)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
