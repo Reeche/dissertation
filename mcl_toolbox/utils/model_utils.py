@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from mcl_toolbox.env.mouselab import MouselabEnv
+from mcl_toolbox.env.conditional_mouselab import ConditionalMouselabEnv
 from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import features, model, strategies, structure
 from mcl_toolbox.mcrl_modelling.optimizer import ParameterOptimizer
@@ -134,14 +135,24 @@ class ModelFitter:
             self.normalized_features = env.normalized_features
 
     def construct_env(self, participant, q_fn=None):
-        env = GenericMouselabEnv(
-            len(participant.envs),
-            pipeline=self.pipeline,
-            ground_truth=participant.envs,
-            cost=self.click_cost,
-            feedback=participant.condition,
-            q_fn=q_fn,
-        )
+        if self.exp_name == "strategy_discovery":
+            env = ConditionalMouselabEnv(
+                num_trials=len(participant.envs),
+                pipeline=self.pipeline,
+                ground_truth=participant.envs,
+                cost=self.click_cost,
+                feedback=participant.condition,
+                q_fn=q_fn,
+            )
+        else:
+            env = GenericMouselabEnv(
+                len(participant.envs),
+                pipeline=self.pipeline,
+                ground_truth=participant.envs,
+                cost=self.click_cost,
+                feedback=participant.condition,
+                q_fn=q_fn,
+            )
         return env
 
     def get_q_fn(self, participant):
@@ -164,11 +175,6 @@ class ModelFitter:
         env = self.construct_env(participant, q_fn=q_fn)
         return participant, env
 
-    # def get_participant_context_model_based(self, pid):
-    #     participant = self.E.participants[pid]
-    #     q_fn, participant = self.get_q_fn(participant)
-    #     env = self.construct_env_model_based(participant, q_fn=q_fn)
-    #     return participant, env
 
     def construct_model(self, model_index):
         """

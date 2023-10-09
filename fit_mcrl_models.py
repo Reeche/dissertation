@@ -88,24 +88,24 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # number_of_trials = int(sys.argv[5])
-    # other_params = {"plotting": False}
-    # # other_params = {}
-    # if len(sys.argv) > 6:
-    #     other_params = ast.literal_eval(sys.argv[6])
-    # else:
-    #     other_params = {}
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
+    other_params = {"plotting": True}
+    # other_params = {}
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
+    else:
+        other_params = {}
 
-    exp_name = "strategy_discovery"
-    model_index = 491 #1756
-    optimization_criterion = "likelihood"
-    pid = 1
-    other_params = {"plotting": False}
-    number_of_trials = 35
+    # exp_name = "strategy_discovery"
+    # model_index = 491 #1756
+    # optimization_criterion = "likelihood"
+    # pid = 1
+    # other_params = {"plotting": True}
+    # number_of_trials = 120
 
     def cost_function(depth):
         if depth == 0:
@@ -138,13 +138,13 @@ if __name__ == "__main__":
     if optimization_criterion == "likelihood":
         num_sim = 1
     else:
-        num_sum = 30
+        num_sim = 30
 
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 1,
+            "max_evals": 800,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()

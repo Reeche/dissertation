@@ -39,7 +39,7 @@ structure = {
     },
 }
 
-exp_name = "model_free_technical_pilot"
+exp_name = "mb_vs_mf_mf_v0"
 E = Experiment(exp_name, data_path=f"../../data/human/{exp_name}")
 participants = [1, 3]
 number_of_trials = 32

@@ -64,7 +64,7 @@ def infer_experiment_sequences(
     pipeline = [pipeline[0] for _ in range(100)]
 
     normalized_features = learning_utils.get_normalized_features(
-        reward_structure
+        "v1.0"
     )  # tuple of 2
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
@@ -78,9 +78,9 @@ def infer_experiment_sequences(
     # TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
     if exp_num == "c2.1_dec":
         # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block)
+        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, data_path="../results/cm")
     else:
-        exp = Experiment(exp_num, cm=cm, pids=pids, block=block)
+        exp = Experiment(exp_num, cm=cm, pids=pids, block=block, data_path="../results/cm")
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
     # create save path
@@ -109,10 +109,13 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[3]
 
-    exp_name = "high_variance_high_cost"
+    exp_name = "stroop"
     block = "training"
-    number_of_trials = 35
+    if exp_name == "mf":
+        number_of_trials = 30
+    else:
+        number_of_trials = 15
 
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=50
+        exp_name, number_of_trials, block, max_evals=5
     )  # max_evals have to be at least 2 for testing

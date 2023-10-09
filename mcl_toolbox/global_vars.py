@@ -58,7 +58,10 @@ class structure:
         "low_variance_low_cost": None,
         "high_variance_high_cost": None,
         "high_variance_low_cost": None,
-        "strategy_discovery": None
+        "strategy_discovery": None,
+        "mb": None,
+        "mf": None,
+        "stroop": None,
     }
 
 
@@ -75,6 +78,9 @@ class structure:
         "high_variance_high_cost": [3, 1, 2],
         "high_variance_low_cost": [3, 1, 2],
         "strategy_discovery": [3, 1, 2],
+        "mb": [3, 1, 2],
+        "mf": [3, 1, 2],
+        "stroop": [3, 1, 2],
     }
     strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
@@ -97,6 +103,9 @@ class structure:
         "high_variance_high_cost": high_variance_values * 3,
         "high_variance_low_cost": high_variance_values * 3,
         "strategy_discovery": strategy_discovery * 3,
+        "mb": level_values_increasing * 3,
+        "mf": level_values_increasing * 3,
+        "stroop": level_values_increasing * 3,
     }
 
     reward_exps = {
@@ -112,6 +121,9 @@ class structure:
         "low_variance_high_cost": "categorical",
         "low_variance_low_cost": "categorical",
         "strategy_discovery": "categorical",
+        "mb": "categorical",
+        "mf": "categorical",
+        "stroop": "categorical",
     }
 
     small_level_map = {
@@ -154,6 +166,9 @@ class structure:
         "high_variance_high_cost": "high_variance_high_cost",
         "high_variance_low_cost": "high_variance_low_cost",
         "strategy_discovery": "strategy_discovery",
+        "mb": "high_increasing",
+        "mf": "high_increasing",
+        "stroop": "high_increasing",
     }
 
     normalized_value_directories = {
@@ -161,6 +176,9 @@ class structure:
         "constant_variance": "low_constant",
         "decreasing_variance": "high_decreasing",
         "transfer_task": "large_increasing",
+        "mb": "high_increasing",
+        "mf": "high_increasing",
+        "stroop": "high_increasing",
     }
 
 

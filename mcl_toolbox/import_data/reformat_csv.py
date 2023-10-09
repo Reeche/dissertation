@@ -14,8 +14,8 @@ def split_participants_df_into_conditions(df, exp):
 
     """
 
-    # df_high_variance_low_click_cost = df[df["condition"] == 0]
-    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    mf = df[df["condition"] == 0]
+    stroop = df[df["condition"] == 1]
     # df_high_variance_high_click_cost = df[df["condition"] == 2]
     # df_low_variance_low_click_cost = df[df["condition"] == 3]
     #
@@ -26,10 +26,10 @@ def split_participants_df_into_conditions(df, exp):
     # df_high_variance_high_click_cost.to_csv("../../data/human/high_variance_high_cost/participants.csv", sep=",", index=False)
     # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/participants.csv", sep=",", index=False)
 
-    condition = df[df["condition"] == 0]
+    # condition = df[df["condition"] == 0]
 
-    condition.to_csv(
-        f"../../data/human/{exp}/participants.csv", sep=",", index=False)
+    stroop.to_csv(
+        f"../../data/human/stroop/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df, exp):
@@ -41,14 +41,14 @@ def split_mouselab_df_into_conditions(df, exp):
     Returns:
 
     """
-    # df_high_variance_low_click_cost = df[df["condition"] == 0]
-    # df_low_variance_high_click_cost = df[df["condition"] == 1]
+    mf = df[df["condition"] == 0]
+    stroop = df[df["condition"] == 1]
     # df_high_variance_high_click_cost = df[df["condition"] == 2]
     # df_low_variance_low_click_cost = df[df["condition"] == 3]
 
-    condition = df[df["condition"] == 0]
-    condition.to_csv(
-        f"../../data/human/{exp}/mouselab-mdp.csv", sep=",", index=False)
+    # condition = df[df["condition"] == 0]
+    stroop.to_csv(
+        f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
 
     # df_high_variance_low_click_cost.to_csv(
     #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
@@ -58,7 +58,7 @@ def split_mouselab_df_into_conditions(df, exp):
     # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "model_free_technical_pilot"
+experiment = "mb_vs_mf_mf_v0"
 
 data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 

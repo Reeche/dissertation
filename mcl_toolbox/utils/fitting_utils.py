@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from mcl_toolbox.env.generic_mouselab_backup import GenericMouselabEnv
+from mcl_toolbox.env.generic_mouselab import GenericMouselabEnv
 from mcl_toolbox.global_vars import features, model, pickle_load, strategies
 from mcl_toolbox.utils.experiment_utils import Experiment
 
