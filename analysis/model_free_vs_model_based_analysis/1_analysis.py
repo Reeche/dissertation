@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy.stats as stats
+import numpy as np
 
 """
 Analyse whether 
@@ -38,8 +40,10 @@ def merge(mb, mf, stroop):
 
 def calculate_proportion_at_index(mydict, index):
     # calculate the proportion of adaptive strategies at index 0 for MB and stroop; at index 15 for MF
-    proportion = sum(value[index] for key,value in mydict.items()) / len(mydict)
+    proportion = sum(value[index] for key, value in mydict.items()) / len(mydict)
     print(proportion)
+    return proportion
+
 
 if __name__ == "__main__":
     adaptive = [65, 64, 24, 21, 63, 43, 17, 16, 57, 59, 88, 54, 4, 31, 26, 82, 37, 48, 50, 85, 76, 18, 84, 45, 11, 6, 7,
@@ -48,13 +52,14 @@ if __name__ == "__main__":
     # others = [33, 44, 27, 79, 69, 34, 61, 73, 32]
     conditions = ["mf", "mb", "stroop"]
 
+    proportion_at_index = {}
     for condition in conditions:
         data = pd.read_pickle(f"../../results/cm/inferred_strategies/{condition}_training/strategies.pkl")
         if condition == "mf":
             index = 15
         else:
             index = 0
-        calculate_proportion_at_index(replace(data),  index)
+        proportion_at_index[condition] = calculate_proportion_at_index(replace(data), index)
 
         # Step 1: Calculate the proportion of 1s for each dictionary
         proportions_dict1 = [sum(values) / len(values) for values in zip(*replace(data).values())]
@@ -67,5 +72,23 @@ if __name__ == "__main__":
     plt.xlabel("Trial")
     plt.ylabel("Proportion of adaptive strategies")
     plt.legend()
-    plt.show()
+    # plt.show()
+    # plt.close()
+
+    # Create a contingency table
+    mb_mf = np.array([[(1 - proportion_at_index["mb"]) * 100, proportion_at_index["mb"] * 100],
+                      [(1 - proportion_at_index["mf"]) * 100, proportion_at_index["mf"] * 100]])
+    chi2_stat, p_value, dof, expected = stats.chi2_contingency(mb_mf)
+    print(p_value)
+
+    mb_stroop = np.array([[(1 - proportion_at_index["mb"]) * 100, proportion_at_index["mb"] * 100],
+                      [(1 - proportion_at_index["stroop"]) * 100, proportion_at_index["stroop"] * 100]])
+    chi2_stat, p_value, dof, expected = stats.chi2_contingency(mb_stroop)
+    print(p_value)
+
+    stroop_mf = np.array([[(1 - proportion_at_index["mf"]) * 100, proportion_at_index["mf"] * 100],
+                      [(1 - proportion_at_index["stroop"]) * 100, proportion_at_index["stroop"] * 100]])
+    chi2_stat, p_value, dof, expected = stats.chi2_contingency(stroop_mf)
+    print(p_value)
+
 

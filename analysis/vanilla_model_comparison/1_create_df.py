@@ -50,7 +50,7 @@ def click_sequence_loss(prior_data):
 def number_of_parameters(model, prior_data, model_list):
     #todo: this is only for the vanilla models
     if model in [1756, 1743]: #no learning and habitual
-        return 3
+        return 3 #the pickle files contain learning rate but it is not used as there is no learning
     elif model == 527: #RSSL
         return 2
     elif model == 491:  # reinforce

@@ -50,7 +50,7 @@ def individual_scores(exp):
     plt.close()
 
 
-def lme_score():
+def lme():
     df_inc = pd.read_csv(f"../../data/human/v1.0/mouselab-mdp.csv")
     df_inc['condition'] = [1] * df_inc.shape[0]
     df_inc['potential_improv'] = df_inc['score'] - 39.95
@@ -65,7 +65,8 @@ def lme_score():
 
     df = pd.concat([df_inc, df_dec, df_con], ignore_index=True)
     df = df[["pid", "trial_index", "score", "condition", "potential_improv"]]
-    formula_ = "score ~ trial_index*C(condition)"
+    # formula_ = "score ~ trial_index*C(condition)"
+    formula_ = "score ~ trial_index:C(condition)"
     gamma_model = smf.mixedlm(formula=formula_, data=df, groups=df["pid"]).fit()
     print(gamma_model.summary())
     return None
@@ -280,7 +281,7 @@ if __name__ == "__main__":
     }
 
     exp_list = ["v1.0", "c2.1", "c1.1"]
-    # lme_score()
+    lme()
     distance_between_strategies(exp_list)
 
     all_data = {}

@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import pymannkendall as mk
 from scipy.stats import chisquare, sem, t
 import random
-
-
+import statsmodels.formula.api as smf
 
 ### create df
 def create_df(data):
@@ -48,9 +47,6 @@ def create_df(data):
     click_df["trial"] = trial_number
 
     return pid_list, click_df
-
-
-
 
 
 def credible_interval(data, confidence=0.95):
@@ -119,6 +115,7 @@ def classify_score(click_df):
     count_prop = count / len(pid_list)
     return count_prop
 
+
 def classify_using_clicks(sequences):
     # optimal strategy is to first click inner nodes and then outer nodes
     immediate_nodes = [1, 5, 9]
@@ -127,7 +124,7 @@ def classify_using_clicks(sequences):
 
     misclassified_sequences = []
     for sequence in sequences:
-        if len(sequence) > 1 and len(sequence) < 6: #relax to second most optimal strategy by < 6
+        if len(sequence) > 1 and len(sequence) < 6:  # relax to second most optimal strategy by < 6
             # if all but last one clicks are immediate nodes and last click is the outer node
             if sequence[0] in immediate_nodes and sequence[-1] in outer_nodes:
                 misclassified_sequences.append(sequence)
@@ -135,20 +132,23 @@ def classify_using_clicks(sequences):
     print(len(misclassified_sequences) / len(sequences))
     return len(misclassified_sequences) / len(sequences)
 
+
 def generate_random_sequences():
     sequences = []
-    for _ in range(100000): #100.000 gives the same result as 1.000.000
+    for _ in range(100000):  # 100.000 gives the same result as 1.000.000
         length = random.randint(0, 12)
         random_list = [random.randint(1, 12) for _ in range(length)]
         sequences.append(random_list)
     return sequences
 
+
 def random_sequences():
     ## check how many randomly generated click sequences are wrongly classified as adaptive ones
     random_sequences = generate_random_sequences()
     misclassified_prop = classify_using_clicks(random_sequences)
-    res = chisquare([0.4 * 100, 0.6 * 100], f_exp = [misclassified_prop * 100, (1-misclassified_prop) * 100])
+    res = chisquare([0.4 * 100, 0.6 * 100], f_exp=[misclassified_prop * 100, (1 - misclassified_prop) * 100])
     print(res)
+
 
 def score_trend(click_df):
     click_df = click_df[['pid', 'trial', 'score']].copy()
@@ -162,18 +162,23 @@ def score_trend(click_df):
             count += 1
 
     print(f"{count} out of {reshaped_score_df.shape[0]} ({count / reshaped_score_df.shape[0]}) participants improved ")
-
-
     return None
+
+def lme(data):
+    formula_ = "score ~ trial"
+    gamma_model = smf.mixedlm(formula=formula_, data=data, groups=data["pid"]).fit()
+    print(gamma_model.summary())
 
 if __name__ == "__main__":
     data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
     pid_list, click_df = create_df(data)
 
+    ### lme
+    lme(click_df)
     # score_trend(click_df)
-    count_prop = classify_score(click_df)
+    # count_prop = classify_score(click_df)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend_test(count_prop)
     # chi_square_test(count_prop)
-    plot_proportion(count_prop)
+    # plot_proportion(count_prop)
