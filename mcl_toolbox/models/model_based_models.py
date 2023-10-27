@@ -8,6 +8,7 @@ from mcl_toolbox.models.base_learner import Learner
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
 from hyperopt import STATUS_OK
 from scipy.stats import norm, beta
+from scipy.special import logsumexp
 import math
 
 
@@ -35,8 +36,7 @@ class ModelBased(Learner):
         }
         return p_data
 
-    def init_model_params(self, dist_alpha_level_1, dist_beta_level_1, dist_alpha_level_2, dist_beta_level_2,
-                          dist_alpha_level_3, dist_beta_level_3):
+    def init_model_params(self, dist_alpha, dist_beta):
         """
         Init the alpha values for the Dirichlet distribution. The alphas are randomly sampled from a Beta distribution
         with the parameters dist_alpha and dist_beta (those two are optimised)
@@ -49,18 +49,10 @@ class ModelBased(Learner):
 
         """
         # each alpha parameter represents a possible value in the value_list, e.g. -48 to +48
-        rv_1 = beta(dist_alpha_level_1, dist_beta_level_1)
-        rv_2 = beta(dist_alpha_level_2, dist_beta_level_2)
-        rv_3 = beta(dist_alpha_level_3, dist_beta_level_3)
-        x1 = np.linspace(beta.ppf(0.01, dist_alpha_level_1, dist_beta_level_1),
-                        beta.ppf(0.99, dist_alpha_level_1, dist_beta_level_1), len(self.value_range))
-        x2 = np.linspace(beta.ppf(0.01, dist_alpha_level_2, dist_beta_level_2),
-                        beta.ppf(0.99, dist_alpha_level_2, dist_beta_level_2), len(self.value_range))
-        x3 = np.linspace(beta.ppf(0.01, dist_alpha_level_3, dist_beta_level_3),
-                        beta.ppf(0.99, dist_alpha_level_3, dist_beta_level_3), len(self.value_range))
-        alpha_level_1 = torch.tensor(rv_1.pdf(x1))
-        alpha_level_2 = torch.tensor(rv_2.pdf(x2))
-        alpha_level_3 = torch.tensor(rv_3.pdf(x3))
+        rv = beta(dist_alpha, dist_beta)
+        x = np.linspace(beta.ppf(0.01, dist_alpha, dist_beta),
+                        beta.ppf(0.99, dist_alpha, dist_beta), len(self.value_range))
+        alpha = torch.tensor(rv.pdf(x))
 
         def inf_values(alpha):
             # deal with inf values
@@ -72,33 +64,12 @@ class ModelBased(Learner):
                         alpha[i] = 99999
             return alpha
 
-        dirichlet_alpha_1 = dict(zip(self.value_range, inf_values(alpha_level_1).tolist()))
-        dirichlet_alpha_2 = dict(zip(self.value_range, inf_values(alpha_level_2).tolist()))
-        dirichlet_alpha_3 = dict(zip(self.value_range, inf_values(alpha_level_3).tolist()))
+        dirichlet_alpha = dict(zip(self.value_range, inf_values(alpha).tolist()))
 
         self.dirichlet_alpha_dict = {}
-
-        # todo: check whether this is correct.  why does 0 need a distribution???
-        self.dirichlet_alpha_dict[0] = dirichlet_alpha_1.copy()
-
-        self.dirichlet_alpha_dict[1] = dirichlet_alpha_1.copy()
-        self.dirichlet_alpha_dict[2] = dirichlet_alpha_2.copy()
-        self.dirichlet_alpha_dict[3] = dirichlet_alpha_3.copy()
-        self.dirichlet_alpha_dict[4] = dirichlet_alpha_3.copy()
-
-        self.dirichlet_alpha_dict[5] = dirichlet_alpha_1.copy()
-        self.dirichlet_alpha_dict[6] = dirichlet_alpha_2.copy()
-        self.dirichlet_alpha_dict[7] = dirichlet_alpha_3.copy()
-        self.dirichlet_alpha_dict[8] = dirichlet_alpha_3.copy()
-
-        self.dirichlet_alpha_dict[9] = dirichlet_alpha_1.copy()
-        self.dirichlet_alpha_dict[10] = dirichlet_alpha_2.copy()
-        self.dirichlet_alpha_dict[11] = dirichlet_alpha_3.copy()
-        self.dirichlet_alpha_dict[12] = dirichlet_alpha_3.copy()
-
         # alpha need to be n x m, e.g. 13 x range
-        # for i in range(0, self.num_available_nodes + 1):
-        #     self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
+        for i in range(0, self.num_available_nodes + 1):
+            self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
         return None
 
     def init_distributions(self):
@@ -182,23 +153,25 @@ class ModelBased(Learner):
                 myopic_value = torch.tensor(self.env.cost(self.node_depth(action)), dtype=torch.float32)
                 # myopic_value = torch.tensor(self.env.present_trial.ground_truth[action])
             else:
-                # myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
-                myopic_value = self.myopic_value(action) + self.env.get_term_reward() + self.env.cost(self.node_depth(action))
-                assert self.env.cost(self.node_depth(action)) <= 0, "Cost is not negative"
+                myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
+                # myopic_value = self.myopic_value(action) + self.env.get_term_reward() + self.env.cost(self.node_depth(action))
             myopic_values.append(myopic_value)
-        print("myopic values", myopic_values)
+        # print("myopic values", myopic_values)
         return myopic_values
 
     def calculate_likelihood(self):
         myopic_values = self.calculate_myopic_values()
-        softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values], dtype=torch.float32),
-                                     dim=0)
-        softmax_vals = torch.exp(softmax_vals)
-        likelihood = softmax_vals / softmax_vals.sum()
-        return likelihood
+        myopic_values = np.array([x * self.inverse_temp for x in myopic_values])
+        # softmax_vals = F.log_softmax(torch.tensor([x * self.inverse_temp for x in myopic_values]), dim=0)
+        logsumexp_score = np.exp(myopic_values - logsumexp(myopic_values))
+        # softmax_vals = torch.exp(softmax_vals)
+        # likelihood = softmax_vals / softmax_vals.sum()
+        action_probs = self.scale_probabilities(logsumexp_score, [1, 5, 9])
+        return action_probs
 
     def sample_action(self) -> int:
         action_likelihood = self.calculate_likelihood()
+        action_likelihood = self.scale_probabilities(action_likelihood, [1, 5, 9])
         all_actions = list(range(0, self.num_available_nodes + 1))
         res = dict(zip(all_actions, action_likelihood))  # mapping action to likelihood
 
@@ -215,17 +188,21 @@ class ModelBased(Learner):
             action = random.choices(list(res.keys()), k=1)
         # print("chosen action", action[0])
         action = action[0]
-
-        # append the likelihood of the selected action
-        # if action_likelihood[action] == 1:
-        #     self.action_log_probs.append(np.log(1))
-        # elif action_likelihood[action] == 0:
-        #     self.action_log_probs.append(np.log(1e-6))
-        # else:
-        #     prob = max(np.float32(action_likelihood[action]), 1e-6)
         self.action_log_probs.append(np.log(action_likelihood[action]))
 
         return action
+
+    def scale_probabilities(self, probabilities, indices_to_scale):
+        # introduces bias towards some nodes, e.g. the immediate nodes
+        total_sum = sum(probabilities)
+
+        for i in indices_to_scale:
+            probabilities[i] *= self.bias
+
+        scaled_sum = sum(probabilities)
+        scale_factor = total_sum / scaled_sum
+        probabilities = [p * scale_factor for p in probabilities]
+        return probabilities
 
     def take_action(self, trial_info):
         if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
@@ -234,13 +211,6 @@ class ModelBased(Learner):
 
             # how likely model would have taken the action
             action_likelihood = self.calculate_likelihood()
-            # if action_likelihood[action] == 1:
-            #     self.action_log_probs.append(np.log(1))
-            # elif action_likelihood[action] == 0:
-            #     self.action_log_probs.append(np.log(1e-6))
-            # else:
-            #     # turns probability into log probability, i.e. negative value
-            #     prob = max(np.float32(action_likelihood[action]), 1e-6)
             self.action_log_probs.append(np.log(action_likelihood[action]))
 
             reward, taken_path, done = pi.make_click()
@@ -263,11 +233,11 @@ class ModelBased(Learner):
         if self.optimisation_criterion != "likelihood":
             self.sigma = params['sigma']
 
+        self.bias = params['bias']
+
         simulations_data = defaultdict(list)
         for _ in range(self.num_simulations):
-            self.init_model_params(params['dist_alpha_level_1'], params['dist_beta_level_1'],
-                                   params['dist_alpha_level_2'], params['dist_beta_level_2'],
-                                   params['dist_alpha_level_3'], params['dist_beta_level_3'])
+            self.init_model_params(params['dist_alpha'], params['dist_beta'])
             self.init_distributions()
             trials_data = self.simulate()
             for param in ["rewards", "a", "loss", "status"]:
@@ -291,7 +261,7 @@ class ModelBased(Learner):
         num_trials = self.env.num_trials
         self.action_log_probs = []
         for trial_num in range(num_trials):
-            print("Trial", trial_num)
+            # print("Trial", trial_num)
             actions, rewards = [], []
             done = False
             while not done:
@@ -334,8 +304,3 @@ class ModelBased(Learner):
         else:
             UserWarning("Optimisation criterion not implemented")
         return loss
-
-    # def objective_loss(self, params):
-    #     res = self.run_multiple_simulations(params)
-    #     loss = -res["loss"]
-    #     return loss, res

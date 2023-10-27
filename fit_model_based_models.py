@@ -56,7 +56,7 @@ if __name__ == "__main__":
     criterion = "likelihood"  # "number_of_clicks_likelihood"
     pid = 17
 
-    E = Experiment(exp_name, data_path=f"results_mb_2000/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_2000_inc_bias/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_2000/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_2000_inc_bias/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -110,52 +110,49 @@ if __name__ == "__main__":
 
     model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
 
-    # if criterion != "likelihood":
-    #     fspace = {
-    #         'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-    #         'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
-    #         'dist_alpha': hp.uniform('dist_alpha', 0, 10),
-    #         'dist_beta': hp.uniform('dist_beta', 0, 10)
-    #     }
-    # else:
-    #     fspace = {
-    #         'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-    #         'dist_alpha': hp.uniform('dist_alpha', 0, 10),
-    #         'dist_beta': hp.uniform('dist_beta', 0, 10),
-    #     }
-    #
-    # trials = True
-    # trials = Trials() if trials else None
-    # best_params = fmin(fn=model.objective_fn,
-    #                    space=fspace,
-    #                    algo=tpe.suggest,
-    #                    max_evals=20,
-    #                    show_progressbar=True)
+    if criterion != "likelihood":
+        fspace = {
+            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
+            'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
+            'dist_alpha': hp.uniform('dist_alpha', 0, 10),
+            'dist_beta': hp.uniform('dist_beta', 0, 10),
+            'bias': hp.uniform('bias', -2, 2)
+        }
+    else:
+        fspace = {
+            'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+            'dist_alpha': hp.uniform('dist_alpha', 0, 10),
+            'dist_beta': hp.uniform('dist_beta', 0, 10),
+            'bias': hp.uniform('bias', -5, 5)
+        }
+
+    trials = True
+    trials = Trials() if trials else None
+    best_params = fmin(fn=model.run_multiple_simulations,
+                       space=fspace,
+                       algo=tpe.suggest,
+                       max_evals=2,
+                       show_progressbar=True)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
-    best_params = {'inverse_temp': torch.tensor(1),
-                   'dist_alpha': torch.tensor(1),
-                   'dist_beta': torch.tensor(1)}
-                    # 'dist_alpha_level_1': torch.tensor(1),
-                    # 'dist_beta_level_1': torch.tensor(1),
-                    # 'dist_alpha_level_2': torch.tensor(1),
-                    # 'dist_beta_level_2': torch.tensor(1),
-                    # 'dist_alpha_level_3': torch.tensor(1),
-                    # 'dist_beta_level_3': torch.tensor(1)
-                    # }
+
+    # best_params = {'inverse_temp': torch.tensor(1),
+    #                'dist_alpha': torch.tensor(1),
+    #                'dist_beta': torch.tensor(1),
+    #                'bias': torch.tensor(1.3)}
     # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'])
 
-    # model.env.reset()
-    # model.participant_obj.reset()
+    model.env.reset()
+    model.participant_obj.reset()
     res = model.run_multiple_simulations(best_params)
 
     ## save result and best parameters
     res.update(best_params)
-    plot_score(res, model.p_data, pid, exp_name)
+    # plot_score(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
     print(res)
 
-    # output = open(f'results_mb_2000_inc_v3/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
+    # output = open(f'results_mb_2000_inc_bias/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
     # pickle.dump(res, output)
     # output.close()
