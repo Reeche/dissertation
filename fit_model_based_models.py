@@ -11,7 +11,7 @@ import sys
 
 
 def plot_score(res, participant, pid, exp_name):
-    plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
+    plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
     plt.plot(participant["mer"], color="b", label="Participant")
     plt.legend()
     plt.show()
@@ -132,17 +132,18 @@ if __name__ == "__main__":
     #                    max_evals=20,
     #                    show_progressbar=True)
 
-
     ## simulate using the best parameters
     model.test_fitted_model = True
-    best_params = {'inverse_temp': torch.tensor(493),
-                   'dist_alpha_level_1': torch.tensor(1),
-                   'dist_beta_level_1': torch.tensor(1),
-                   'dist_alpha_level_2': torch.tensor(0.7),
-                   'dist_beta_level_2': torch.tensor(0.9),
-                   'dist_alpha_level_3': torch.tensor(0.5),
-                   'dist_beta_level_3': torch.tensor(0.9)
-                   }
+    best_params = {'inverse_temp': torch.tensor(1),
+                   'dist_alpha': torch.tensor(1),
+                   'dist_beta': torch.tensor(1)}
+                    # 'dist_alpha_level_1': torch.tensor(1),
+                    # 'dist_beta_level_1': torch.tensor(1),
+                    # 'dist_alpha_level_2': torch.tensor(1),
+                    # 'dist_beta_level_2': torch.tensor(1),
+                    # 'dist_alpha_level_3': torch.tensor(1),
+                    # 'dist_beta_level_3': torch.tensor(1)
+                    # }
     # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'])
 
     # model.env.reset()

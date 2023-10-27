@@ -52,15 +52,15 @@ class ModelBased(Learner):
         rv_1 = beta(dist_alpha_level_1, dist_beta_level_1)
         rv_2 = beta(dist_alpha_level_2, dist_beta_level_2)
         rv_3 = beta(dist_alpha_level_3, dist_beta_level_3)
-        x = np.linspace(beta.ppf(0.01, dist_alpha_level_1, dist_beta_level_1),
+        x1 = np.linspace(beta.ppf(0.01, dist_alpha_level_1, dist_beta_level_1),
                         beta.ppf(0.99, dist_alpha_level_1, dist_beta_level_1), len(self.value_range))
-        x = np.linspace(beta.ppf(0.01, dist_alpha_level_2, dist_beta_level_2),
+        x2 = np.linspace(beta.ppf(0.01, dist_alpha_level_2, dist_beta_level_2),
                         beta.ppf(0.99, dist_alpha_level_2, dist_beta_level_2), len(self.value_range))
-        x = np.linspace(beta.ppf(0.01, dist_alpha_level_3, dist_beta_level_3),
+        x3 = np.linspace(beta.ppf(0.01, dist_alpha_level_3, dist_beta_level_3),
                         beta.ppf(0.99, dist_alpha_level_3, dist_beta_level_3), len(self.value_range))
-        alpha_level_1 = torch.tensor(rv_1.pdf(x))
-        alpha_level_2 = torch.tensor(rv_2.pdf(x))
-        alpha_level_3 = torch.tensor(rv_3.pdf(x))
+        alpha_level_1 = torch.tensor(rv_1.pdf(x1))
+        alpha_level_2 = torch.tensor(rv_2.pdf(x2))
+        alpha_level_3 = torch.tensor(rv_3.pdf(x3))
 
         def inf_values(alpha):
             # deal with inf values
@@ -73,13 +73,32 @@ class ModelBased(Learner):
             return alpha
 
         dirichlet_alpha_1 = dict(zip(self.value_range, inf_values(alpha_level_1).tolist()))
-        dirichlet_alpha_1 = dict(zip(self.value_range, inf_values(alpha_level_1).tolist()))
-        dirichlet_alpha_1 = dict(zip(self.value_range, inf_values(alpha_level_1).tolist()))
+        dirichlet_alpha_2 = dict(zip(self.value_range, inf_values(alpha_level_2).tolist()))
+        dirichlet_alpha_3 = dict(zip(self.value_range, inf_values(alpha_level_3).tolist()))
+
         self.dirichlet_alpha_dict = {}
+
+        # todo: check whether this is correct.  why does 0 need a distribution???
+        self.dirichlet_alpha_dict[0] = dirichlet_alpha_1.copy()
+
+        self.dirichlet_alpha_dict[1] = dirichlet_alpha_1.copy()
+        self.dirichlet_alpha_dict[2] = dirichlet_alpha_2.copy()
+        self.dirichlet_alpha_dict[3] = dirichlet_alpha_3.copy()
+        self.dirichlet_alpha_dict[4] = dirichlet_alpha_3.copy()
+
+        self.dirichlet_alpha_dict[5] = dirichlet_alpha_1.copy()
+        self.dirichlet_alpha_dict[6] = dirichlet_alpha_2.copy()
+        self.dirichlet_alpha_dict[7] = dirichlet_alpha_3.copy()
+        self.dirichlet_alpha_dict[8] = dirichlet_alpha_3.copy()
+
+        self.dirichlet_alpha_dict[9] = dirichlet_alpha_1.copy()
+        self.dirichlet_alpha_dict[10] = dirichlet_alpha_2.copy()
+        self.dirichlet_alpha_dict[11] = dirichlet_alpha_3.copy()
+        self.dirichlet_alpha_dict[12] = dirichlet_alpha_3.copy()
+
         # alpha need to be n x m, e.g. 13 x range
-        for i in range(0, self.num_available_nodes + 1):
-            self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
-        #todo: why does 0 need a distribution???
+        # for i in range(0, self.num_available_nodes + 1):
+        #     self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
         return None
 
     def init_distributions(self):
@@ -163,7 +182,8 @@ class ModelBased(Learner):
                 myopic_value = torch.tensor(self.env.cost(self.node_depth(action)), dtype=torch.float32)
                 # myopic_value = torch.tensor(self.env.present_trial.ground_truth[action])
             else:
-                myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
+                # myopic_value = self.myopic_value(action) + self.env.cost(self.node_depth(action))
+                myopic_value = self.myopic_value(action) + self.env.get_term_reward() + self.env.cost(self.node_depth(action))
                 assert self.env.cost(self.node_depth(action)) <= 0, "Cost is not negative"
             myopic_values.append(myopic_value)
         print("myopic values", myopic_values)
