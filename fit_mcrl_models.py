@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -101,9 +101,9 @@ if __name__ == "__main__":
         other_params = {}
 
     # exp_name = "strategy_discovery"
-    # model_index = 491 #1756
+    # model_index = 522
     # optimization_criterion = "likelihood"
-    # pid = 1
+    # pid = 2
     # other_params = {"plotting": True}
     # number_of_trials = 120
 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 800,
+            "max_evals": 2000,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         number_of_trials=number_of_trials,
         model_index=model_index,
         optimization_criterion=optimization_criterion,
-        data_path=f"results_vanilla_models/mcrl/{exp_name}",
+        data_path=f"results/cm/{exp_name}",
         **other_params,
     )
     # toc = time.perf_counter()

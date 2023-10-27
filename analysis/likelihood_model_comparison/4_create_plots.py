@@ -1,0 +1,157 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import ast
+import numpy as np
+from vars import learning_participants
+
+def plot_mer(data, model_name, mode):
+    # get the model_mer and pid_mer
+    data = data[["model_mer", "pid_mer"]]
+    data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
+
+    my_series = data["model_mer"].apply(lambda x: ast.literal_eval(x))
+    data["model_mer"] = [item for sublist in my_series for item in sublist]
+
+    # convert series to np array
+    model = np.array(data["model_mer"].to_list())
+    model_average = np.mean(model, axis=0)
+    pid = np.array(data["pid_mer"].to_list())
+    pid_average = np.mean(pid, axis=0)
+
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(pid, axis=0)
+    n = len(pid) #todo:check
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, 35)
+
+    # plot model_mer and pid_mer
+    plt.plot(pid_average, label="Participant", color="blue")
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1, label='95% CI')
+
+    plt.plot(model_average, label=model_name, color="orange")
+
+    plt.xlabel("Trial")
+    # plt.ylim(0, 50)
+    plt.ylabel("Average expected score")
+    plt.legend()
+    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_mer.png")
+    plt.show()
+    plt.close()
+
+def plot_rewards(data, model_name, mode):
+    # get the model_mer and pid_mer
+    data = data[["model_rewards", "pid_mer"]]
+    data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
+
+    my_series = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
+    data["model_rewards"] = [item for sublist in my_series for item in sublist]
+
+    # convert series to np array
+    model = np.array(data["model_rewards"].to_list())
+    model_average = np.mean(model, axis=0)
+    pid = np.array(data["pid_mer"].to_list())
+    pid_average = np.mean(pid, axis=0)
+
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(pid, axis=0)
+    n = len(pid) #todo:check
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, 35)
+
+    # plot model_mer and pid_mer
+    plt.plot(pid_average, label="Participant", color="blue")
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1, label='95% CI')
+
+    plt.plot(model_average, label=model_name, color="orange")
+
+    plt.xlabel("Trial")
+    # plt.ylim(0, 50)
+    plt.ylabel("Average actual score")
+    plt.legend()
+    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_rewards.png")
+    plt.show()
+    plt.close()
+
+def plot_clicks(data, model_name, mode):
+    data = data[["model_clicks", "pid_clicks"]]
+    data["pid_clicks"] = data["pid_clicks"].apply(lambda x: ast.literal_eval(x))
+
+    my_series = data["model_clicks"].apply(lambda x: ast.literal_eval(x))
+    data["model_clicks"] = [item for sublist in my_series for item in sublist]
+
+    lengths_model = []
+    lengths_pid = []
+    # Iterate through the DataFrame
+    for index, row in data.iterrows():
+        lengths_model.append([len(sublist) - 1 for sublist in row['model_clicks']])
+        lengths_pid.append([len(sublist) - 1 for sublist in row['pid_clicks']])
+    data["model_clicks"] = lengths_model
+    data["pid_clicks"] = lengths_pid
+
+    # convert series to np array
+    model = np.array(data["model_clicks"].to_list())
+    model_average = np.mean(model, axis=0)
+    pid = np.array(data["pid_clicks"].to_list())
+    pid_average = np.mean(pid, axis=0)
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(pid, axis=0)
+    n = len(pid)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, 35)
+
+    # plot model_mer and pid_mer
+    plt.plot(pid_average, label="Participant", color="blue")
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
+
+    plt.plot(model_average, label=model_name, color="orange")
+
+    plt.xlabel("Trial")
+    # plt.ylim(0, 13)
+    plt.ylabel("Average clicks")
+    plt.legend()
+    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_clicks.png")
+    plt.show()
+    plt.close()
+
+
+
+model_name = ["mb"]
+
+for model in model_name:
+    exp = "v1.0"
+    mode = "inc_v2"
+    # data = pd.read_csv(f"data/{exp}.csv")
+    data = pd.read_csv(f"v1.0_mb_{mode}.csv")
+
+    # filter for the selected model
+    data = data[data["model"] == model]
+
+    # filter for adaptive participants
+    data = data[data["pid"].isin(learning_participants[exp])]
+    # data = data[data["pid"] == 17]
+
+    # if exp in ["c1.1", "c2.1", "v1.0"]:
+    #     plot_mer(data, model)
+    #     # plot_rewards(data, model)
+    # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+    #              "low_variance_low_cost"]:
+    plot_mer(data, model, mode)
+    plot_rewards(data, model, mode)
+    plot_clicks(data, model, mode)
+

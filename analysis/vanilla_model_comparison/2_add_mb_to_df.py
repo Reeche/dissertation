@@ -63,7 +63,7 @@ if __name__ == "__main__":
             criterion = 'number_of_clicks_likelihood'
 
         # open existing df
-        df = pd.read_csv(f"{exp}_{criterion}.csv", index_col=0)
+        df = pd.read_csv(f"data/{exp}_{criterion}.csv", index_col=0)
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
             pid_mer = get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline)
 
-            if criterion != "likelihood":
+            if criterion == "likelihood":
                 number_of_parameters = 4
             else:
                 number_of_parameters = 5
@@ -102,6 +102,8 @@ if __name__ == "__main__":
                                click_loss(pid_context.clicks, data["a"], data),
                                mer_loss(pid_mer, data["mer"], data), data["loss"], number_of_parameters]
 
-        df.to_csv(f"{exp}_{criterion}.csv")
+        df.to_csv(f"data/{exp}_{criterion}.csv")
 
     # df.to_csv(f"{exp}_{criterion}.csv")
+
+#todo: something is wrong here, somehow it adds 4 times the same PID and model 2 times with 4 paramters and 4 times with 5

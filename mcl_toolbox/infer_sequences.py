@@ -1,7 +1,6 @@
 import sys
 import os
 from pathlib import Path
-import random
 from mcl_toolbox.computational_microscope.computational_microscope import (
     ComputationalMicroscope,
 )
@@ -61,11 +60,9 @@ def infer_experiment_sequences(
         raise (ValueError, "Experiment pipeline not found.")
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    pipeline = [pipeline[0] for _ in range(100)]
+    pipeline = [pipeline[0] for _ in range(121)]
 
-    normalized_features = learning_utils.get_normalized_features(
-        "v1.0"
-    )  # tuple of 2
+    normalized_features = learning_utils.get_normalized_features(exp_num)
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
         pipeline,
@@ -75,12 +72,12 @@ def infer_experiment_sequences(
         normalized_features=normalized_features,
     )
 
-    # TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
-    if exp_num == "c2.1_dec":
-        # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
-        exp = Experiment("c2.1", cm=cm, pids=pids, block=block, data_path="../results/cm")
-    else:
-        exp = Experiment(exp_num, cm=cm, pids=pids, block=block, data_path="../results/cm")
+    # # TODO info on c2.1_dec should probably be added in global_vars, I also had a script I used to IRL
+    # if exp_num == "c2.1_dec":
+    #     # exp = Experiment("c2.1", cm=cm, pids=pids, block=block, variance=2442)
+    #     exp = Experiment("c2.1", cm=cm, pids=pids, block=block, data_path="../results/cm")
+    # else:
+    exp = Experiment(exp_num, cm=cm, pids=pids, block=block, data_path="../results/cm")
     exp.infer_strategies(max_evals=max_evals, show_pids=True)
 
     # create save path
@@ -109,13 +106,14 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[3]
 
-    exp_name = "stroop"
+    exp_name = "strategy_discovery"
     block = "training"
-    if exp_name == "mf":
-        number_of_trials = 30
-    else:
-        number_of_trials = 15
+    number_of_trials = 120
+    # if exp_name == "mf":
+    #     number_of_trials = 30
+    # else:
+    #     number_of_trials = 15
 
     infer_experiment_sequences(
-        exp_name, number_of_trials, block, max_evals=5
+        exp_name, number_of_trials, block, max_evals=100
     )  # max_evals have to be at least 2 for testing

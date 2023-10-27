@@ -2,21 +2,20 @@ from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from mcl_toolbox.models.model_based_models import ModelBased
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
-from hyperopt import hp, fmin, tpe, Trials
 import matplotlib.pyplot as plt
 import numpy as np
-from functools import partial
-import sys
+from hyperopt import hp, fmin, tpe, Trials
 import torch
 import pickle
+import sys
 
 
 def plot_score(res, participant, pid, exp_name):
     plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
     plt.plot(participant["mer"], color="b", label="Participant")
     plt.legend()
-    # plt.show()
-    plt.savefig(f"results/mcrl/{exp_name}_model_based/plots/score_{pid}.png")
+    plt.show()
+    # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/score_{pid}.png")
     plt.close()
     return None
 
@@ -31,8 +30,8 @@ def plot_clicks(res, participant):
     plt.plot(pid_action, color="r", label="Participant")
     plt.plot(model_action, color="b", label="Model")
     plt.legend()
-    # plt.show()
-    plt.savefig(f"results/mcrl/{exp_name}_model_based/plots/clicks_{pid}.png")
+    plt.show()
+    # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/clicks_{pid}.png")
     plt.close()
     return None
 
@@ -43,21 +42,21 @@ def cost_function(depth):
     if depth == 1:
         return -1
     if depth == 2:
-        return -1
+        return -3
     if depth == 3:
-        return -1
+        return -30
 
 
 if __name__ == "__main__":
-    exp_name = sys.argv[1]
-    criterion = sys.argv[2]
-    pid = int(sys.argv[3])
+    # exp_name = sys.argv[1]
+    # criterion = sys.argv[2]
+    # pid = int(sys.argv[3])
 
-    # exp_name = "v1.0"  # "strategy_discovery
-    # criterion = "pseudo_likelihood"  # "number_of_clicks_likelihood"
-    # pid = 1  # 2
+    exp_name = "v1.0"  # "strategy_discovery
+    criterion = "likelihood"  # "number_of_clicks_likelihood"
+    pid = 17
 
-    E = Experiment(exp_name, data_path=f"results_vanilla_models/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_2000/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -73,8 +72,11 @@ if __name__ == "__main__":
         "click_cost": click_cost
     }
 
-    number_of_trials = 35
-    # criterion = "likelihood"
+    if exp_name == "strategy_discovery":
+        number_of_trials = 120
+    else:
+        number_of_trials = 35
+
     if criterion != "likelihood":
         num_simulations = 30
     else:
@@ -86,10 +88,9 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_vanilla_models/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_2000/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
-    # pid_context, env = mf.get_participant_context_model_based(pid)
     pid_context, env = mf.get_participant_context(pid)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
@@ -102,61 +103,58 @@ if __name__ == "__main__":
         value_range = list(range(-1000, 1001))
     elif exp_name in ["low_variance_high_cost", "low_variance_low_cost"]:
         value_range = list(range(-6, 7))
+    elif exp_name == "strategy_discovery":
+        value_range = list(range(-50, 51))
     else:
         raise ValueError("Experiment name not recognised")
 
     model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
 
-    # the higher inverse temp, the less exploration!
-    # the smaller, the more exploration!
-    if criterion != "likelihood":
-        fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-            'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
-            'alpha_multiplier': hp.uniform('alpha_multiplier', 1, 100),
-            'dist_alpha': hp.uniform('dist_alpha', 1, 10),
-            'dist_beta': hp.uniform('dist_beta', 1, 10)
-        }
-    else:
-        fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-            'alpha_multiplier': hp.uniform('alpha_multiplier', 1, 100),
-            'dist_alpha': hp.uniform('dist_alpha', 1, 10),
-            'dist_beta': hp.uniform('dist_beta', 1, 10)
-        }
+    # if criterion != "likelihood":
+    #     fspace = {
+    #         'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
+    #         'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
+    #         'dist_alpha': hp.uniform('dist_alpha', 0, 10),
+    #         'dist_beta': hp.uniform('dist_beta', 0, 10)
+    #     }
+    # else:
+    #     fspace = {
+    #         'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
+    #         'dist_alpha': hp.uniform('dist_alpha', 0, 10),
+    #         'dist_beta': hp.uniform('dist_beta', 0, 10),
+    #     }
+    #
+    # trials = True
+    # trials = Trials() if trials else None
+    # best_params = fmin(fn=model.objective_fn,
+    #                    space=fspace,
+    #                    algo=tpe.suggest,
+    #                    max_evals=20,
+    #                    show_progressbar=True)
 
-
-    trials = True
-    method = tpe.suggest
-    estimator = partial(method, n_startup_jobs=30)
-    trials = Trials() if trials else None
-    ###minimize the objective over the space
-    best_params = fmin(fn=model.run_multiple_simulations,
-                       space=fspace,
-                       algo=tpe.suggest,
-                       max_evals=800,
-                       show_progressbar=True)
-                       # rstate=np.random.default_rng(0))
-    # print(best_params)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
-    # best_params = {'inverse_temp': torch.tensor(1.0),
-    #                'alpha_multiplier': torch.tensor(1.0),
-    #                'dist_alpha': torch.tensor(2.0), #alpha 2, beta 2 => inverse normal shape
-    #                'dist_beta': torch.tensor(5.0)} # alpha 2, beta 5 => left skwed
-    # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'], best_params['alpha_multiplier'])
+    best_params = {'inverse_temp': torch.tensor(493),
+                   'dist_alpha_level_1': torch.tensor(1),
+                   'dist_beta_level_1': torch.tensor(1),
+                   'dist_alpha_level_2': torch.tensor(0.7),
+                   'dist_beta_level_2': torch.tensor(0.9),
+                   'dist_alpha_level_3': torch.tensor(0.5),
+                   'dist_beta_level_3': torch.tensor(0.9)
+                   }
+    # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'])
 
-    model.env.reset()
-    model.participant_obj.reset()
-    model.init_distributions()
+    # model.env.reset()
+    # model.participant_obj.reset()
     res = model.run_multiple_simulations(best_params)
 
     ## save result and best parameters
     res.update(best_params)
-    # plot_score(res, model.p_data, pid, exp_name)
+    plot_score(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
+    print(res)
 
-    output = open(f'results_vanilla_models/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
-    pickle.dump(res, output)
-    output.close()
+    # output = open(f'results_mb_2000_inc_v3/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
+    # pickle.dump(res, output)
+    # output.close()

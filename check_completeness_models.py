@@ -27,18 +27,21 @@ pid_dict = {
                                163, 166, 171, 174, 181, 183, 192, 194, 201, 203, 206],
     'low_variance_low_cost': [3, 5, 6, 9, 11, 12, 15, 19, 27, 34, 39, 42, 44, 52, 55, 59, 66, 67, 72, 75, 77, 85, 91,
                               99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
-                              165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207]}
-exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-       "low_variance_low_cost"]
+                              165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207],
+    'strategy_discovery': list(range(1, 57))}
 
-exp_num = "low_variance_low_cost"
+exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+       "low_variance_low_cost", "strategy_discovery"]
+
+# exp_num = "low_variance_low_cost"
 for exp_num in exp:
-    # priors_directory = (f"../../../work/rhe/mcl_toolbox/results/mcrl/{exp_num}_priors/{exp_num}_priors")
-    priors_directory = (f"results_vanilla_models/mcrl/{exp_num}_priors")
-    # data_directory = (f"results/mcrl/{exp_num}_data")
 
     # range of models
-    models = [527, 491, 479, 1743, 1756]
+    models = [522, 491, 479, 1743, 1756]
+    priors_directory = (f"results_mf_models_2000/mcrl/{exp_num}_priors")
+
+    # models = ["mb"]
+    # priors_directory = (f"results_mb_2000/mcrl/{exp_num}_mb")
 
     ### Create a list of all combinations and concatenate them as str with underscore
     combinations = list(itertools.product([*pid_dict[exp_num]], models))
@@ -51,11 +54,8 @@ for exp_num in exp:
     list_of_prior_files = os.listdir(priors_directory)
     new_list_of_prior_files = []
     for files in list_of_prior_files:
-        if exp_num in ["v1.0", "c2.1", "c1.1"]:
-            new_list_of_prior_files.append(files.replace("pseudo_likelihood_", "").replace(".pkl", "").replace("_", ","))
-        else:
-            new_list_of_prior_files.append(files.replace("number_of_clicks_likelihood_", "").replace(".pkl", "").replace("_", ","))
-
+        new_list_of_prior_files.append(files.replace("likelihood_", "").replace(".pkl", "").replace("_", ","))
+        # new_list_of_prior_files.append(files.replace("likelihood", "").replace(".pkl", "").replace("_", ",")) #for mb model
     # unequal items, i.e. missing PID and model_index combination
     missing_items_list = list(sorted(set(combination_all) - set(new_list_of_prior_files)))
 
@@ -66,7 +66,8 @@ for exp_num in exp:
         temp_list.append(item.split(","))
 
     for items in temp_list:
-        empty_tuple = (int(items[0]), int(items[1]))
+        empty_tuple = (int(items[0]), int(items[1])) #mf models
+        # empty_tuple = (int(items[0]))
         new_list.append(empty_tuple)
 
     print(f"Number of missing items for {exp_num}", len(new_list))
@@ -74,16 +75,3 @@ for exp_num in exp:
     # save the missing pid and model_index as csv, first create a df
     df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
     df.to_csv(f"missing_{exp_num}.csv", index=False)
-
-    # # print(new_list)
-    # with open(f'missing_{exp_num}.txt', 'w') as f:
-    #     for line in new_list:
-    #         f.write(str(line))
-    #         f.write('\n')
-
-    # empty_file_list = []
-    # for files in list_of_prior_files:
-    #     if os.stat(f"{priors_directory}/{files}").st_size == 0:
-    #         empty_file_list.append(files.replace("likelihood_", "").replace(".pkl", "").replace("_", ","))
-    # print("Number of empty files", len(empty_file_list))
-    # print(empty_file_list)

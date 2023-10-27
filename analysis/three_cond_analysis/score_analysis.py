@@ -81,7 +81,9 @@ def proportion_whose_score_improved(exp):
     for pid in pid_list:
         temp_list = df[df['pid'] == pid]["score"].to_list()
         result = mk.original_test(temp_list)
-        if result[0] == "increasing":
+        # if result[0] == "increasing":
+        #     good_pid.append(pid)
+        if result.s > 0:
             good_pid.append(pid)
     print(len(good_pid))
 
@@ -309,7 +311,9 @@ if __name__ == "__main__":
         ## Proportion of participants whose expected score increased
         # proportion_whose_expected_strategy_score_improved(strategy_df)
 
-        all_data[exp] = strategy_df
+        ## Proportion whose score improved
+        proportion_whose_score_improved(exp)
+        # all_data[exp] = strategy_df
 
     ### test if potential improvement is different across conditions
     # improv_data = potential_improvement(all_data)

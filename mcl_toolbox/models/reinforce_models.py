@@ -38,7 +38,6 @@ class Policy(nn.Module):
             y[0][0] = torch.Tensor([-np.inf])
         action_scores = self.beta * y
 
-        # todo: why is log_softmax done twice? Here and in the return?
         softmax_vals = F.log_softmax(action_scores, dim=0)
         # softmax_vals is tensor with length 13
         softmax_vals = torch.exp(softmax_vals)

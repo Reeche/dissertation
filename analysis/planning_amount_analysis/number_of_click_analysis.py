@@ -225,14 +225,14 @@ def trend_within_participant(exp, data):
     for pid in reshaped_click_df:
         result = mk.original_test(reshaped_click_df[pid])
         if exp == "high_variance_low_cost" or exp == "high_variance_high_cost":
-            if result[0] == "increasing":
+            if result.trend == "increasing":
                 significantly_improved_list.append(pid)
-            if result[5] > 0:
+            if result.s > 0:
                 improved_list.append(pid)
         if exp == "low_variance_low_cost" or exp == "low_variance_high_cost":
-            if result[0] == "decreasing":
+            if result.trend == "decreasing":
                 significantly_improved_list.append(pid)
-            if result[5] < 0:
+            if result.s < 0:
                 improved_list.append(pid)
     # print(f"Out of {reshaped_click_df.shape[1]} participants, {len(significantly_improved_list)} significantly improved, "
     #       f"({len(significantly_improved_list) / reshaped_click_df.shape[1] * 100}%)")
@@ -350,7 +350,7 @@ if __name__ == "__main__":
         # monotonous_change(experiment, click_df)
 
         ## trend test for each pid
-        # trend_within_participant(experiment, click_df)
+        trend_within_participant(experiment, click_df)
 
         ## sequential dependence
         # sequential_dependence(click_df)
