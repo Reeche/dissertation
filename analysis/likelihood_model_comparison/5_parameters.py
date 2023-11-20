@@ -33,13 +33,15 @@ def model_based(data_dir, exp, mode):
     df = pd.DataFrame(
         columns=["exp", "pid", "model", "parameters"])
 
-    for files in os.listdir(f"{data_dir}/{exp}"):
+    for files in os.listdir(f"{data_dir}/{exp}_mb"):
         params = {}
         pid = int(files.split("_")[0])
-        data = pd.read_pickle(f'{data_dir}/{exp}/{pid}_likelihood.pkl')
+        data = pd.read_pickle(f'{data_dir}/{exp}_mb/{pid}_likelihood.pkl')
         params["dist_alpha"] = data["dist_alpha"]
         params["dist_beta"] = data["dist_beta"]
         params["inverse_temp"] = data["inverse_temp"]
+        params["bias_inner"] = data["bias_inner"]
+        params["bias_outer"] = data["bias_outer"]
 
         df.loc[len(df)] = [exp, pid, "mb", params]
 
@@ -52,22 +54,32 @@ def analyse_parameters(exp, mode):
     # replace the parameters column with dict
     df["parameters"] = df["parameters"].apply(lambda x: eval(x))
 
-    df["alpha_multiplier"] = df["parameters"].apply(lambda x: x["alpha_multiplier"])
+    df["bias_inner"] = df["parameters"].apply(lambda x: x["bias_inner"])
+    df["bias_outer"] = df["parameters"].apply(lambda x: x["bias_outer"])
     df["dist_alpha"] = df["parameters"].apply(lambda x: x["dist_alpha"])
     df["dist_beta"] = df["parameters"].apply(lambda x: x["dist_beta"])
     df["inverse_temp"] = df["parameters"].apply(lambda x: x["inverse_temp"])
 
     # get the mean for alpha_multiplier, dist_alpha, dist_beta, inverse_temp
-    print(df["alpha_multiplier"].mean())
-    print(df["dist_alpha"].mean())
-    print(df["dist_beta"].mean())
-    print(df["inverse_temp"].mean())
+    print("bias_inner", df["bias_inner"].mean())
+    print("bias_outer", df["bias_outer"].mean())
+    print("alpha", df["dist_alpha"].mean())
+    print("beta", df["dist_beta"].mean())
+    print("inverse temp", df["inverse_temp"].mean())
 
     return None
 
 
 ## create df
-mode = "inc"
-model_based(f"../../results_mb_2000_{mode}/mcrl", "v1.0_mb", mode)
+exp_list = ['v1.0', 'c2.1', 'c1.1',
+            'high_variance_high_cost',
+            'high_variance_low_cost',
+            'low_variance_high_cost',
+            'low_variance_low_cost',
+            'strategy_discovery'
+            ]
 
-# analyse_parameters("v1.0", mode)
+for exp in exp_list:
+    mode = "inc_bias_v3"
+    model_based(f"../../results_mb_2000_{mode}/mcrl", exp, mode)
+    # analyse_parameters(exp, mode)

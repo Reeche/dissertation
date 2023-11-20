@@ -76,15 +76,15 @@ def number_of_parameters(model, criterion):
 
 
 if __name__ == "__main__":
-    # exp_list = ['v1.0', 'c2.1', 'c1.1',
+    # exp_list = ['c1.1',
     #            'high_variance_high_cost',
     #            'high_variance_low_cost',
     #            'low_variance_high_cost',
-    #            'low_variance_low_cost'
+    #            'low_variance_low_cost',
+    #             'strategy_discovery'
     #            ]
-    exp_list = ['high_variance_low_cost',
-                'low_variance_high_cost',
-                'low_variance_low_cost']
+    exp_list = ['v1.0',
+                'c2.1']
 
     iterations = 1
 
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     for exp in exp_list:
         print(exp)
         df = pd.DataFrame(
-            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer",
-                     "click_loss", "mer_loss", "loss", "number_of_parameters"])
+            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
+                     "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {
@@ -132,7 +132,8 @@ if __name__ == "__main__":
                 model_params = pd.read_pickle(
                     f'{data_dir}/{exp}_priors/{pid}_likelihood_{model}.pkl')
 
-                df.loc[len(df)] = [exp, pid, model, data["a"], pid_context.clicks, data["mer"], pid_mer,
+                df.loc[len(df)] = [exp, pid, model, data["a"][0], pid_context.clicks, data["mer"][0], pid_mer,
+                                   data["r"][0], pid_context.score,
                                    click_loss(pid_context.clicks, data["a"], model_params[0], criterion="likelihood"),
                                    mer_loss(pid_mer, data["mer"], model_params[0], criterion="likelihood"),
                                    click_sequence_loss(model_params),

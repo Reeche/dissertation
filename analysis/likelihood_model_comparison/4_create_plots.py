@@ -9,8 +9,7 @@ def plot_mer(data, model_name, mode):
     data = data[["model_mer", "pid_mer"]]
     data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
 
-    my_series = data["model_mer"].apply(lambda x: ast.literal_eval(x))
-    data["model_mer"] = [item for sublist in my_series for item in sublist]
+    data["model_mer"] = data["model_mer"].apply(lambda x: ast.literal_eval(x))
 
     # convert series to np array
     model = np.array(data["model_mer"].to_list())
@@ -27,7 +26,7 @@ def plot_mer(data, model_name, mode):
     # Calculate the confidence interval
     conf_interval = 1.96 * std_err
 
-    x = np.arange(0, 35)
+    x = np.arange(0, len(model_average))
 
     # plot model_mer and pid_mer
     plt.plot(pid_average, label="Participant", color="blue")
@@ -39,22 +38,21 @@ def plot_mer(data, model_name, mode):
     # plt.ylim(0, 50)
     plt.ylabel("Average expected score")
     plt.legend()
-    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_mer.png")
+    # plt.savefig(f"{exp}_{model_name}_{mode}_mer.png")
     plt.show()
     plt.close()
 
 def plot_rewards(data, model_name, mode):
     # get the model_mer and pid_mer
-    data = data[["model_rewards", "pid_mer"]]
-    data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
+    data = data[["model_rewards", "pid_rewards"]]
+    # data["pid_rewards"] = data["pid_rewards"].apply(lambda x: list(ast.literal_eval(x)))
+    data['pid_rewards'] = data['pid_rewards'].apply(lambda x: [int(num) for num in x[1:-1].split()])
 
-    my_series = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
-    data["model_rewards"] = [item for sublist in my_series for item in sublist]
+    model_rewards = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
 
     # convert series to np array
-    model = np.array(data["model_rewards"].to_list())
-    model_average = np.mean(model, axis=0)
-    pid = np.array(data["pid_mer"].to_list())
+    model_average = np.mean(model_rewards.to_list(), axis=0)
+    pid = np.array(data["pid_rewards"].to_list())
     pid_average = np.mean(pid, axis=0)
 
 
@@ -66,7 +64,7 @@ def plot_rewards(data, model_name, mode):
     # Calculate the confidence interval
     conf_interval = 1.96 * std_err
 
-    x = np.arange(0, 35)
+    x = np.arange(0, len(model_average))
 
     # plot model_mer and pid_mer
     plt.plot(pid_average, label="Participant", color="blue")
@@ -78,7 +76,7 @@ def plot_rewards(data, model_name, mode):
     # plt.ylim(0, 50)
     plt.ylabel("Average actual score")
     plt.legend()
-    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_rewards.png")
+    # plt.savefig(f"{exp}_{model_name}_{mode}_rewards.png")
     plt.show()
     plt.close()
 
@@ -86,8 +84,7 @@ def plot_clicks(data, model_name, mode):
     data = data[["model_clicks", "pid_clicks"]]
     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: ast.literal_eval(x))
 
-    my_series = data["model_clicks"].apply(lambda x: ast.literal_eval(x))
-    data["model_clicks"] = [item for sublist in my_series for item in sublist]
+    data["model_clicks"] = data["model_clicks"].apply(lambda x: ast.literal_eval(x))
 
     lengths_model = []
     lengths_pid = []
@@ -112,7 +109,7 @@ def plot_clicks(data, model_name, mode):
     # Calculate the confidence interval
     conf_interval = 1.96 * std_err
 
-    x = np.arange(0, 35)
+    x = np.arange(0, len(model_average))
 
     # plot model_mer and pid_mer
     plt.plot(pid_average, label="Participant", color="blue")
@@ -125,7 +122,7 @@ def plot_clicks(data, model_name, mode):
     # plt.ylim(0, 13)
     plt.ylabel("Average clicks")
     plt.legend()
-    # plt.savefig(f"plot/{exp}_{model_name}_{mode}_clicks.png")
+    # plt.savefig(f"{exp}_{model_name}_{mode}_clicks.png")
     plt.show()
     plt.close()
 
@@ -135,16 +132,16 @@ model_name = ["mb"]
 
 for model in model_name:
     exp = "v1.0"
-    mode = "inc_v2"
-    # data = pd.read_csv(f"data/{exp}.csv")
-    data = pd.read_csv(f"v1.0_mb_{mode}.csv")
+    mode = "inc_bias_v3"
+    data = pd.read_csv(f"data/{exp}.csv")
+    # data = pd.read_csv(f"{exp}_mb_{mode}.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]
 
     # filter for adaptive participants
-    data = data[data["pid"].isin(learning_participants[exp])]
-    # data = data[data["pid"] == 17]
+    # data = data[data["pid"].isin(learning_participants[exp])]
+    data = data[data["pid"].isin([1])]
 
     # if exp in ["c1.1", "c2.1", "v1.0"]:
     #     plot_mer(data, model)

@@ -169,12 +169,35 @@ def lme(data):
     gamma_model = smf.mixedlm(formula=formula_, data=data, groups=data["pid"]).fit()
     print(gamma_model.summary())
 
+
+def improving_pid(data):
+    # pivot table by pid and trial_index
+    data = data[['pid', 'trial_index', 'score']].copy()
+
+    # reset trial_index for each pid from 0 to 119
+    data["trial_index"] = data.groupby("pid").cumcount()
+
+    reshaped_score_df = data.pivot(index="trial_index", columns="pid", values="score")
+
+    # Mann Kendall test and check if test statistic is positive, then add the pid to adaptiv elist
+    adaptive_pid = []
+    for pid in reshaped_score_df:
+        result = mk.original_test(reshaped_score_df[pid])
+        if result.s > 0:
+            adaptive_pid.append(pid)
+    print(adaptive_pid)
+    return None
+
+
 if __name__ == "__main__":
     data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
+
+    improving_pid(data)
+
     pid_list, click_df = create_df(data)
 
     ### lme
-    lme(click_df)
+    # lme(click_df)
     # score_trend(click_df)
     # count_prop = classify_score(click_df)
 

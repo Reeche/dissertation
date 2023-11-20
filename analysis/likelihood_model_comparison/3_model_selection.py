@@ -53,9 +53,9 @@ def create_csv_for_matlab(data, exp):
     # create csv for matlab
     # create pivot table with pid as y and model as x and fill the values with BIC
     data = data.pivot(index="model", columns="pid", values="BIC")
-    data = data.sort_index() #1743, 1756, 479, 491, 527, mb
-    data = missing_bic(data)
-    data.to_csv(f"matlab/{exp}_filled_missing_loss.csv", index=False, header=False)
+    data = data.sort_index() #1743, 1756, 479, 491, 522, mb
+    # data = missing_bic(data)
+    data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
 
 def remove_double_mb_entries(data):
     # remove entries from the data where the model is mb and the number of parameters is 4
@@ -83,9 +83,10 @@ def missing_bic(df):
     return df
 
 if __name__ == "__main__":
-    experiment = ["v1.0", "c2.1", "c1.1"]
+    # experiment = ["v1.0", "c2.1", "c1.1"]
+    experiment = ["c2.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-
+    # experiment = ["strategy_discovery"]
     df_all = []
     for exp in experiment:
 
@@ -99,12 +100,15 @@ if __name__ == "__main__":
         # elif exp == "strategy_discovery":
         #     data["BIC"] = compare_pseudo_likelihood(data, 120)
 
-        data["BIC"] = compare_loss(data, 35)
+        if exp == "strategy_discovery":
+            data["BIC"] = compare_loss(data, 120)
+        else:
+            data["BIC"] = compare_loss(data, 35)
 
         data = data[data["pid"].isin(learning_participants[exp])]
-        # data = remove_double_mb_entries(data)
         df_all.append(data)
+
     result_df = pd.concat(df_all, ignore_index=True)
-    # create_csv_for_matlab(result_df, "planningamount")
+    # create_csv_for_matlab(result_df, "lvlc")
     model_bic = sort_by_BIC(result_df)
     # bms(model_bic)

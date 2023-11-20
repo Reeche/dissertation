@@ -8,10 +8,11 @@ from hyperopt import hp, fmin, tpe, Trials
 import torch
 import pickle
 import sys
+from pathlib import Path
 
 
 def plot_score(res, participant, pid, exp_name):
-    plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
+    plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
     plt.plot(participant["mer"], color="b", label="Participant")
     plt.legend()
     plt.show()
@@ -48,15 +49,17 @@ def cost_function(depth):
 
 
 if __name__ == "__main__":
+    exp_name = "v1.0"  # "strategy_discovery
+    criterion = "likelihood"  # "number_of_clicks_likelihood"
+    pid = 35
+
     # exp_name = sys.argv[1]
     # criterion = sys.argv[2]
     # pid = int(sys.argv[3])
+    # model = sys.argv[4]
+    model_variant = "depth_mb" #"vanilla_mb", "depth_mb"
 
-    exp_name = "v1.0"  # "strategy_discovery
-    criterion = "likelihood"  # "number_of_clicks_likelihood"
-    pid = 17
-
-    E = Experiment(exp_name, data_path=f"results_mb_2000_inc_bias/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_2000/mcrl/{exp_name}_{model_variant}")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -88,7 +91,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_2000_inc_bias/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_2000/mcrl/{exp_name}_{model_variant}",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -108,39 +111,52 @@ if __name__ == "__main__":
     else:
         raise ValueError("Experiment name not recognised")
 
-    model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, test_fitted_model=False)
+    model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, model_variant, test_fitted_model=False)
 
-    if criterion != "likelihood":
-        fspace = {
-            'inverse_temp': hp.uniform('inverse_temp', -1000, 1000),
-            'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
-            'dist_alpha': hp.uniform('dist_alpha', 0, 10),
-            'dist_beta': hp.uniform('dist_beta', 0, 10),
-            'bias': hp.uniform('bias', -2, 2)
-        }
-    else:
+    if criterion != "likelihood": #todo
         fspace = {
             'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-            'dist_alpha': hp.uniform('dist_alpha', 0, 10),
-            'dist_beta': hp.uniform('dist_beta', 0, 10),
-            'bias': hp.uniform('bias', -5, 5)
+            'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
+            'dist_alpha': hp.uniform('dist_alpha', 0, 5),
+            'dist_beta': hp.uniform('dist_beta', 0, 5),
+            'bias_inner': hp.uniform('bias_inner', 1, 10),
+            'bias_outer': hp.uniform('bias_outer', 0, 1)
         }
+    else:
+        if model_variant == "vanilla_mb":
+            fspace = {
+                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+                'dist_alpha': hp.uniform('dist_alpha', 0, 5),
+                'dist_beta': hp.uniform('dist_beta', 0, 5),
+            }
+        elif model_variant == "depth_mb":
+            fspace = {
+                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+                'alpha_weight': hp.uniform('alpha_weight', 0, 1),
+                'beta_weight': hp.uniform('beta_weight', 0, 1),
+                'alpha_intercept': hp.uniform('alpha_intercept', 0, 5),
+                'beta_intercept': hp.uniform('beta_intercept', 0, 5),
+            }
+        else:
+            raise ValueError(f"Model not recognised: {model_variant}")
 
     trials = True
     trials = Trials() if trials else None
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=2,
+                       max_evals=500,
                        show_progressbar=True)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
 
-    # best_params = {'inverse_temp': torch.tensor(1),
-    #                'dist_alpha': torch.tensor(1),
-    #                'dist_beta': torch.tensor(1),
-    #                'bias': torch.tensor(1.3)}
+    ## for pid 1: scale up bias 10, all others 1 and scale down bias 0.5 seems like a good fit
+    # best_params = {'inverse_temp': torch.tensor(5),
+    #                'alpha_weight': torch.tensor(0.6),
+    #                'beta_weight': torch.tensor(0.9),
+    #                'alpha_intercept': torch.tensor(1),
+    #                'beta_intercept': torch.tensor(1)}
     # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'])
 
     model.env.reset()
@@ -149,10 +165,17 @@ if __name__ == "__main__":
 
     ## save result and best parameters
     res.update(best_params)
-    # plot_score(res, model.p_data, pid, exp_name)
+
+    plot_score(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
     print(res)
 
-    # output = open(f'results_mb_2000_inc_bias/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
+    # save_path = f'results_mb_2000/mcrl/{exp_name}_{model}'
+    # if save_path is None:
+    #     save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000/mcrl")
+    # else:
+    #     save_path.mkdir(parents=True, exist_ok=True)
+    #
+    # output = open(f'results_mb_2000/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
     # pickle.dump(res, output)
     # output.close()

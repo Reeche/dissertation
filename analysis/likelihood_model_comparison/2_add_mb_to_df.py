@@ -43,17 +43,19 @@ def mer_loss(p_mer, model_data, model_params):
 
 
 if __name__ == "__main__":
-    # exp_list = ['v1.0', 'c2.1', 'c1.1',
-    #            'high_variance_high_cost',
-    #            'high_variance_low_cost',
-    #            'low_variance_high_cost',
-    #            'low_variance_low_cost'
-    #            ]
-    exp_list = ['v1.0']
-    mode = "inc_v2"
+    exp_list = ['v1.0', 'c2.1', 'c1.1',
+                'high_variance_high_cost',
+                'high_variance_low_cost',
+                'low_variance_high_cost',
+                'low_variance_low_cost',
+                'strategy_discovery'
+                ]
+
+    # exp_list = ['v1.0']
+    mode = "inc_bias_v3"
 
     criterion = "likelihood"
-    data_dir = f"../../results_mb_2000_{mode}/mcrl"
+    data_dir = f"../../results_mb_2000/mcrl"
 
     for exp in exp_list:
 
@@ -62,11 +64,12 @@ if __name__ == "__main__":
         # else:
         #     criterion = 'number_of_clicks_likelihood'
 
-        # open existing df
-        # df = pd.read_csv(f"{exp}.csv", index_col=0)
-        df = pd.DataFrame(
-            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
-                     "click_loss", "mer_loss", "loss", "number_of_parameters"])
+        ##open existing df
+        df = pd.read_csv(f"{exp}.csv", index_col=0)
+
+        # df = pd.DataFrame(
+        #     columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
+        #              "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {
@@ -106,7 +109,8 @@ if __name__ == "__main__":
                 else:
                     number_of_parameters = 4
 
-                df.loc[len(df)] = [exp, pid, "mb", data["a"], pid_context.clicks, data["mer"], pid_mer, data["rewards"],
+                df.loc[len(df)] = [exp, pid, "mb", data["a"][0], pid_context.clicks, data["mer"][0], pid_mer,
+                                   data["rewards"][0], pid_context.score,
                                    click_loss(pid_context.clicks, data["a"], data),
                                    mer_loss(pid_mer, data["mer"], data), data["loss"], number_of_parameters]
 
