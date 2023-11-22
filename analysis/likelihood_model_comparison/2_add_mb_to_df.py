@@ -43,19 +43,18 @@ def mer_loss(p_mer, model_data, model_params):
 
 
 if __name__ == "__main__":
-    exp_list = ['v1.0', 'c2.1', 'c1.1',
-                'high_variance_high_cost',
-                'high_variance_low_cost',
-                'low_variance_high_cost',
-                'low_variance_low_cost',
-                'strategy_discovery'
-                ]
+    # exp_list = ['v1.0', 'c2.1', 'c1.1',
+    #             'high_variance_high_cost',
+    #             'high_variance_low_cost',
+    #             'low_variance_high_cost',
+    #             'low_variance_low_cost',
+    #             'strategy_discovery'
+    #             ]
 
-    # exp_list = ['v1.0']
-    mode = "inc_bias_v3"
+    exp_list = ['v1.0']
 
     criterion = "likelihood"
-    data_dir = f"../../results_mb_2000/mcrl"
+    data_dir = f"../../results_mb_8000_v2/mcrl"
 
     for exp in exp_list:
 
@@ -65,11 +64,11 @@ if __name__ == "__main__":
         #     criterion = 'number_of_clicks_likelihood'
 
         ##open existing df
-        df = pd.read_csv(f"{exp}.csv", index_col=0)
+        # df = pd.read_csv(f"{exp}.csv", index_col=0)
 
-        # df = pd.DataFrame(
-        #     columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
-        #              "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
+        df = pd.DataFrame(
+            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
+                     "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {
@@ -85,35 +84,40 @@ if __name__ == "__main__":
             num_trials = 35
 
         for files in os.listdir(f"{data_dir}/{exp}_mb"):
-            if files.split("_")[1] == "likelihood.pkl":
 
-                pid = int(files.split("_")[0])
-                data = pd.read_pickle(f'{data_dir}/{exp}_mb/{pid}_{criterion}.pkl')
+            pid = int(files.split("_")[0])
+            model_variant = files.split("_")[2].split(".")[0]
+            data = pd.read_pickle(f"{data_dir}/{exp}_mb/{files}")
 
-                p = E.participants[pid]
-                participant_obj = ParticipantIterator(p)
+            p = E.participants[pid]
+            participant_obj = ParticipantIterator(p)
 
-                mf = ModelFitter(
-                    exp_name=exp,
-                    exp_attributes=exp_attributes,
-                    data_path=f"{data_dir}/{exp}_mb",
-                    number_of_trials=num_trials)
+            mf = ModelFitter(
+                exp_name=exp,
+                exp_attributes=exp_attributes,
+                data_path=f"{data_dir}/{exp}_mb",
+                number_of_trials=num_trials)
 
-                pid_context, env = mf.get_participant_context(pid)
+            pid_context, env = mf.get_participant_context(pid)
 
-                pid_mer = get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline)
+            pid_mer = get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline)
 
-                if criterion == "likelihood":
+            if criterion == "likelihood":
+                if model_variant == "uniform":
                     number_of_parameters = 3
                     data["sigma"] = 1
-                else:
-                    number_of_parameters = 4
+                elif model_variant == "linear":
+                    number_of_parameters = 5
+                elif model_variant == "full":
+                    number_of_parameters = 7
+                data["sigma"] = 1
+            else:
+                number_of_parameters = 4 #todo
 
-                df.loc[len(df)] = [exp, pid, "mb", data["a"][0], pid_context.clicks, data["mer"][0], pid_mer,
-                                   data["rewards"][0], pid_context.score,
-                                   click_loss(pid_context.clicks, data["a"], data),
-                                   mer_loss(pid_mer, data["mer"], data), data["loss"], number_of_parameters]
+            df.loc[len(df)] = [exp, pid, model_variant, data["a"][0], pid_context.clicks, data["mer"][0], pid_mer,
+                               data["rewards"][0], pid_context.score,
+                               click_loss(pid_context.clicks, data["a"], data),
+                               mer_loss(pid_mer, data["mer"], data), data["loss"], number_of_parameters]
 
-        df.to_csv(f"{exp}_mb_{mode}.csv")
+        df.to_csv(f"{exp}_mb_8000.csv")
 
-    # df.to_csv(f"{exp}_{criterion}.csv")

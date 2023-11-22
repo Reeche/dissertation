@@ -4,7 +4,7 @@ import ast
 import numpy as np
 from vars import learning_participants
 
-def plot_mer(data, model_name, mode):
+def plot_mer(data, model_name):
     # get the model_mer and pid_mer
     data = data[["model_mer", "pid_mer"]]
     data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
@@ -38,11 +38,11 @@ def plot_mer(data, model_name, mode):
     # plt.ylim(0, 50)
     plt.ylabel("Average expected score")
     plt.legend()
-    # plt.savefig(f"{exp}_{model_name}_{mode}_mer.png")
+    # plt.savefig(f"{exp}_{model_name}_mer.png")
     plt.show()
     plt.close()
 
-def plot_rewards(data, model_name, mode):
+def plot_rewards(data, model_name):
     # get the model_mer and pid_mer
     data = data[["model_rewards", "pid_rewards"]]
     # data["pid_rewards"] = data["pid_rewards"].apply(lambda x: list(ast.literal_eval(x)))
@@ -76,11 +76,11 @@ def plot_rewards(data, model_name, mode):
     # plt.ylim(0, 50)
     plt.ylabel("Average actual score")
     plt.legend()
-    # plt.savefig(f"{exp}_{model_name}_{mode}_rewards.png")
+    # plt.savefig(f"{exp}_{model_name}_rewards.png")
     plt.show()
     plt.close()
 
-def plot_clicks(data, model_name, mode):
+def plot_clicks(data, model_name):
     data = data[["model_clicks", "pid_clicks"]]
     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: ast.literal_eval(x))
 
@@ -122,33 +122,32 @@ def plot_clicks(data, model_name, mode):
     # plt.ylim(0, 13)
     plt.ylabel("Average clicks")
     plt.legend()
-    # plt.savefig(f"{exp}_{model_name}_{mode}_clicks.png")
+    # plt.savefig(f"{exp}_{model_name}_clicks.png")
     plt.show()
     plt.close()
 
 
 
-model_name = ["mb"]
+model_name = ["full"]
 
 for model in model_name:
     exp = "v1.0"
-    mode = "inc_bias_v3"
-    data = pd.read_csv(f"data/{exp}.csv")
-    # data = pd.read_csv(f"{exp}_mb_{mode}.csv")
+    data = pd.read_csv(f"{exp}_mb_8000.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]
 
     # filter for adaptive participants
     # data = data[data["pid"].isin(learning_participants[exp])]
-    data = data[data["pid"].isin([1])]
+    data = data[data["pid"].isin([51])]
 
     # if exp in ["c1.1", "c2.1", "v1.0"]:
     #     plot_mer(data, model)
     #     # plot_rewards(data, model)
     # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #              "low_variance_low_cost"]:
-    plot_mer(data, model, mode)
-    plot_rewards(data, model, mode)
-    plot_clicks(data, model, mode)
+
+    plot_mer(data, model)
+    plot_rewards(data, model)
+    plot_clicks(data, model)
 

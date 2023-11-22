@@ -51,15 +51,15 @@ def cost_function(depth):
 if __name__ == "__main__":
     exp_name = "v1.0"  # "strategy_discovery
     criterion = "likelihood"  # "number_of_clicks_likelihood"
-    pid = 35
+    pid = 1
 
     # exp_name = sys.argv[1]
     # criterion = sys.argv[2]
     # pid = int(sys.argv[3])
-    # model = sys.argv[4]
-    model_variant = "depth_mb" #"vanilla_mb", "depth_mb"
+    # model_variant = sys.argv[4]
+    model_variant = "click_weight_only" #"full", "linear", "uniform", "click_weight_only"
 
-    E = Experiment(exp_name, data_path=f"results_mb_2000/mcrl/{exp_name}_{model_variant}")
+    E = Experiment(exp_name, data_path=f"results_mb_8000_v2/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_2000/mcrl/{exp_name}_{model_variant}",
+        data_path=f"results_mb_8000_v2/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -119,23 +119,46 @@ if __name__ == "__main__":
             'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
             'dist_alpha': hp.uniform('dist_alpha', 0, 5),
             'dist_beta': hp.uniform('dist_beta', 0, 5),
-            'bias_inner': hp.uniform('bias_inner', 1, 10),
-            'bias_outer': hp.uniform('bias_outer', 0, 1)
         }
     else:
-        if model_variant == "vanilla_mb":
+        if model_variant == "uniform":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'dist_alpha': hp.uniform('dist_alpha', 0, 5),
-                'dist_beta': hp.uniform('dist_beta', 0, 5),
+                'dist_alpha': hp.uniform('dist_alpha', np.log(1e-8), np.log(5)),
+                'dist_beta': hp.uniform('dist_beta', np.log(1e-8), np.log(5)),
             }
-        elif model_variant == "depth_mb":
+        elif model_variant == "linear":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_weight': hp.uniform('alpha_weight', 0, 1),
-                'beta_weight': hp.uniform('beta_weight', 0, 1),
-                'alpha_intercept': hp.uniform('alpha_intercept', 0, 5),
-                'beta_intercept': hp.uniform('beta_intercept', 0, 5),
+                'alpha_weight': hp.uniform('alpha_weight', np.log(1e-8), np.log(10)),
+                'beta_weight': hp.uniform('beta_weight', np.log(1e-8), np.log(10)),
+                'alpha_intercept': hp.uniform('alpha_intercept', np.log(1e-8), np.log(5)),
+                'beta_intercept': hp.uniform('beta_intercept', np.log(1e-8), np.log(5)),
+            }
+        elif model_variant == "full":
+            # fspace = {
+            #     'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+            #     'alpha_1': hp.uniform('alpha_1', np.log(0.9), np.log(1.1)),
+            #     'beta_1': hp.uniform('beta_1', np.log(0.9), np.log(1.1)),
+            #     'alpha_2': hp.uniform('alpha_2', np.log(1), np.log(2)),
+            #     'beta_2': hp.uniform('beta_2', np.log(1.5), np.log(2.5)),
+            #     'alpha_3': hp.uniform('alpha_3', np.log(1), np.log(2)),
+            #     'beta_3': hp.uniform('beta_3', np.log(2.5), np.log(3.5)),
+            #     'click_weight': hp.uniform('click_weight', 1, 50),
+            # }
+            fspace = {
+                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+                'alpha_1': hp.uniform('alpha_1', np.log(1e-3), np.log(5)),
+                'beta_1': hp.uniform('beta_1', np.log(1e-3), np.log(5)),
+                'alpha_2': hp.uniform('alpha_2', np.log(1e-3), np.log(5)),
+                'beta_2': hp.uniform('beta_2', np.log(1e-3), np.log(5)),
+                'alpha_3': hp.uniform('alpha_3', np.log(1e-3), np.log(5)),
+                'beta_3': hp.uniform('beta_3', np.log(1e-3), np.log(5)),
+                'click_weight': hp.uniform('click_weight', 1, 50),
+            }
+        elif model_variant == "click_weight_only":
+            fspace = {
+                'click_weight': hp.uniform('click_weight', 1, 50),
             }
         else:
             raise ValueError(f"Model not recognised: {model_variant}")
@@ -145,19 +168,21 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=500,
+                       max_evals=50,
                        show_progressbar=True)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
 
     ## for pid 1: scale up bias 10, all others 1 and scale down bias 0.5 seems like a good fit
-    # best_params = {'inverse_temp': torch.tensor(5),
-    #                'alpha_weight': torch.tensor(0.6),
-    #                'beta_weight': torch.tensor(0.9),
-    #                'alpha_intercept': torch.tensor(1),
-    #                'beta_intercept': torch.tensor(1)}
-    # model.init_model_params(best_params['dist_alpha'], best_params['dist_beta'])
+    # best_params = {'inverse_temp': 1,
+    #                'alpha_1': np.log(2),
+    #                'beta_1': np.log(1),
+    #                'alpha_2': np.log(1.5),
+    #                'beta_2': np.log(1),
+    #                'alpha_3': np.log(1.2),
+    #                'beta_3': np.log(1),
+    #                'click_weight': 10}
 
     model.env.reset()
     model.participant_obj.reset()
@@ -170,12 +195,10 @@ if __name__ == "__main__":
     # plot_clicks(res, model.p_data)
     print(res)
 
-    # save_path = f'results_mb_2000/mcrl/{exp_name}_{model}'
-    # if save_path is None:
-    #     save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000/mcrl")
-    # else:
-    #     save_path.mkdir(parents=True, exist_ok=True)
+    # check if dir exist
+    # if not Path(f"results_mb_8000_v2/mcrl/{exp_name}_mb").exists():
+    #     Path(f"results_mb_8000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
     #
-    # output = open(f'results_mb_2000/mcrl/{exp_name}_mb/{pid}_{criterion}.pkl', 'wb')
+    # output = open(f'results_mb_8000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
     # pickle.dump(res, output)
     # output.close()
