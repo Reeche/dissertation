@@ -132,14 +132,14 @@ model_name = ["full"]
 
 for model in model_name:
     exp = "v1.0"
-    data = pd.read_csv(f"{exp}_mb_8000.csv")
+    data = pd.read_csv(f"{exp}_mb.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]
 
     # filter for adaptive participants
-    # data = data[data["pid"].isin(learning_participants[exp])]
-    data = data[data["pid"].isin([51])]
+    data = data[data["pid"].isin(learning_participants[exp])]
+    # data = data[data["pid"].isin([1])]
 
     # if exp in ["c1.1", "c2.1", "v1.0"]:
     #     plot_mer(data, model)

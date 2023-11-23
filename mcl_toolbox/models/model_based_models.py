@@ -117,26 +117,18 @@ class ModelBased(Learner):
             alpha_clipped_1 = np.clip(alpha_1, 1e-8, 999999)
             dirichlet_alpha_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
 
-            rv_2 = beta(np.exp(params["alpha_2"]) + np.exp(params["alpha_1"]),
-                        np.exp(params["beta_2"]) + np.exp(params["beta_1"]))
-            x_2 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_2"]) + np.exp(params["alpha_1"]),
-                                       np.exp(params["beta_2"]) + np.exp(params["beta_1"])),
-                              beta.ppf(0.99, np.exp(params["alpha_2"]) + np.exp(params["alpha_1"]),
-                                       np.exp(params["beta_2"]) + np.exp(params["beta_1"])),
+            rv_2 = beta(np.exp(params["alpha_2"]), np.exp(params["beta_2"]))
+            x_2 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
+                              beta.ppf(0.99, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
                               len(self.value_range))
             alpha_2 = torch.tensor(rv_2.pdf(x_2))
             alpha_clipped_2 = np.clip(alpha_2, 1e-8, 999999)
             dirichlet_alpha_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
 
-            rv_3 = beta(np.exp(params["alpha_3"]) + np.exp(params["alpha_1"] + np.exp(params["alpha_2"]),
-                                                           np.exp(params["beta_3"]) + np.exp(params["beta_1"]) + np.exp(
-                                                               params["beta_2"])))
-            x_3 = np.linspace(
-                beta.ppf(0.01, np.exp(params["alpha_3"]) + np.exp(params["alpha_1"]) + np.exp(params["alpha_2"]),
-                         np.exp(params["beta_3"]) + np.exp(params["beta_1"]) + np.exp(params["beta_2"])),
-                beta.ppf(0.99, np.exp(params["alpha_3"]) + np.exp(params["alpha_1"]) + np.exp(params["alpha_2"]),
-                         np.exp(params["beta_3"]) + np.exp(params["beta_1"]) + np.exp(params["beta_2"])),
-                len(self.value_range))
+            rv_3 = beta(np.exp(params["alpha_3"]), np.exp(params["beta_3"]))
+            x_3 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
+                              beta.ppf(0.99, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
+                              len(self.value_range))
             alpha_3 = torch.tensor(rv_3.pdf(x_3))
             alpha_clipped_3 = np.clip(alpha_3, 1e-8, 999999)
             dirichlet_alpha_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
@@ -155,41 +147,6 @@ class ModelBased(Learner):
                                          11: dirichlet_alpha_3.copy(),
                                          12: dirichlet_alpha_3.copy()}
 
-        elif self.model == "click_weight_only":
-            rv_1 = beta(2, 1)
-            x_1 = np.linspace(beta.ppf(0.01, 2, 1),
-                              beta.ppf(0.99, 2, 1), len(self.value_range))
-            alpha_1 = torch.tensor(rv_1.pdf(x_1))
-            alpha_clipped_1 = np.clip(alpha_1, 1e-8, 999999)
-            dirichlet_alpha_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
-
-            rv_2 = beta(1.5, 1)
-            x_2 = np.linspace(beta.ppf(0.01, 1.5, 1),
-                              beta.ppf(0.99, 1.5, 1), len(self.value_range))
-            alpha_2 = torch.tensor(rv_2.pdf(x_2))
-            alpha_clipped_2 = np.clip(alpha_2, 1e-8, 999999)
-            dirichlet_alpha_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
-
-            rv_3 = beta(1.3, 1)
-            x_3 = np.linspace(beta.ppf(0.01, 1.3, 1),
-                              beta.ppf(0.99, 1.3, 1), len(self.value_range))
-            alpha_3 = torch.tensor(rv_3.pdf(x_3))
-            alpha_clipped_3 = np.clip(alpha_3, 1e-8, 999999)
-            dirichlet_alpha_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
-
-            self.dirichlet_alpha_dict = {0: dirichlet_alpha_1.copy(),
-                                         1: dirichlet_alpha_1.copy(),
-                                         2: dirichlet_alpha_2.copy(),
-                                         3: dirichlet_alpha_3.copy(),
-                                         4: dirichlet_alpha_3.copy(),
-                                         5: dirichlet_alpha_1.copy(),
-                                         6: dirichlet_alpha_2.copy(),
-                                         7: dirichlet_alpha_3.copy(),
-                                         8: dirichlet_alpha_3.copy(),
-                                         9: dirichlet_alpha_1.copy(),
-                                         10: dirichlet_alpha_2.copy(),
-                                         11: dirichlet_alpha_3.copy(),
-                                         12: dirichlet_alpha_3.copy()}
         return None
 
     def init_distributions(self):
@@ -204,7 +161,7 @@ class ModelBased(Learner):
         ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
         # observed_value should only be the node value, i.e. model of the env and not model of the cost
         observed_value = self.env.ground_truth[self.env.present_trial_num][action]
-        self.dirichlet_alpha_dict[action][int(observed_value)] += 1 * self.click_weight
+        self.dirichlet_alpha_dict[action][int(observed_value)] += 1
         # check of the node_distributions have been updated
         # old = hash(self.node_distributions)
         old = hash(frozenset(self.node_distributions.items()))
@@ -251,12 +208,12 @@ class ModelBased(Learner):
 
         indices = np.array(list(value_dict.values()))
         probabilities = distribution.concentration[indices] / total_concentration
-        if self.model == "click_weight_only":
-            expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)])
-        else:
-            max_termination_value = np.full(len(self.value_range), termination_value)
-            values = np.maximum(self.value_range, max_termination_value)  # todo: check this??
-            expectation = torch.sum(probabilities * values)
+
+        #expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)]) #todo: check this??
+
+        max_termination_value = np.full(len(self.value_range), termination_value)
+        values = np.maximum(self.value_range, max_termination_value)
+        expectation = torch.sum(probabilities * values)
         return expectation
 
     def myopic_value(self, action):
@@ -351,11 +308,7 @@ class ModelBased(Learner):
         return action, reward, done, taken_path
 
     def run_multiple_simulations(self, params):
-        if self.model == "click_weight_only":
-            self.inverse_temp = 1
-        else:
-            self.inverse_temp = params['inverse_temp']
-        self.click_weight = params['click_weight']
+        self.inverse_temp = params['inverse_temp']
         if self.optimisation_criterion != "likelihood":
             self.sigma = params['sigma']
 
