@@ -28,8 +28,8 @@ def split_participants_df_into_conditions(df, exp):
 
     # condition = df[df["condition"] == 0]
 
-    stroop.to_csv(
-        f"../../data/human/stroop/participants.csv", sep=",", index=False)
+    stroop.to_csv(f"../../data/human/stroop/participants.csv", sep=",", index=False)
+    mf.to_csv(f"../../data/human/mf/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df, exp):
@@ -47,8 +47,8 @@ def split_mouselab_df_into_conditions(df, exp):
     # df_low_variance_low_click_cost = df[df["condition"] == 3]
 
     # condition = df[df["condition"] == 0]
-    stroop.to_csv(
-        f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
+    stroop.to_csv(f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
+    mf.to_csv(f"../../data/human/mf/mouselab-mdp.csv", sep=",", index=False)
 
     # df_high_variance_low_click_cost.to_csv(
     #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
@@ -58,7 +58,7 @@ def split_mouselab_df_into_conditions(df, exp):
     # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "mb_vs_mf_mf_v0"
+experiment = "mf_stroop_full_exp"
 
 data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 
@@ -164,7 +164,7 @@ df_mouselab["state_rewards"] = temp_state_rewards
 df_mouselab["end_nodes"] = temp_end_nodes
 df_mouselab["score"] = temp_score
 split_mouselab_df_into_conditions(df_mouselab, experiment)
-# df_mouselab.to_csv(f"mouselab-all_{experiment}.csv", index=False, index_label="pid")
+df_mouselab.to_csv(f"mouselab-{experiment}.csv", index=False, index_label="pid")
 
 ### Create participant csv
 # save the information into the created df
@@ -181,4 +181,4 @@ df_participants.index += 1
 df_participants = df_participants[~df_participants.index.isin(bad_pid_list)]
 
 split_participants_df_into_conditions(df_participants, experiment)
-# df_participants.to_csv(f"participants-all_{experiment}.csv", index=True, index_label="pid")
+df_participants.to_csv(f"participants-{experiment}.csv", index=True, index_label="pid")

@@ -146,31 +146,126 @@ class ModelBased(Learner):
                                          10: dirichlet_alpha_2.copy(),
                                          11: dirichlet_alpha_3.copy(),
                                          12: dirichlet_alpha_3.copy()}
+        elif self.model == "level":
+            rv_1 = beta(np.exp(params["alpha_1"]), np.exp(params["beta_1"]))
+            x_1 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
+                              beta.ppf(0.99, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
+                              len(self.value_range))
+            alpha_1 = torch.tensor(rv_1.pdf(x_1))
+            alpha_clipped_1 = np.clip(alpha_1, 1e-8, 999999)
+            dirichlet_alpha_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
+
+            rv_2 = beta(np.exp(params["alpha_2"]), np.exp(params["beta_2"]))
+            x_2 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
+                              beta.ppf(0.99, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
+                              len(self.value_range))
+            alpha_2 = torch.tensor(rv_2.pdf(x_2))
+            alpha_clipped_2 = np.clip(alpha_2, 1e-8, 999999)
+            dirichlet_alpha_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
+
+            rv_3 = beta(np.exp(params["alpha_3"]), np.exp(params["beta_3"]))
+            x_3 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
+                              beta.ppf(0.99, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
+                              len(self.value_range))
+            alpha_3 = torch.tensor(rv_3.pdf(x_3))
+            alpha_clipped_3 = np.clip(alpha_3, 1e-8, 999999)
+            dirichlet_alpha_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
+
+            self.dirichlet_alpha_dict = {0: dirichlet_alpha_1.copy(),
+                                         1: dirichlet_alpha_1.copy(),
+                                         2: dirichlet_alpha_2.copy(),
+                                         3: dirichlet_alpha_3.copy()}
 
         return None
 
     def init_distributions(self):
         self.node_distributions = {}
+        if self.model == "level":
+            self.node_distributions[0] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[0].values()), dtype=torch.float32))
+            self.node_distributions[1] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
+            self.node_distributions[2] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
+            self.node_distributions[3] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
+            self.node_distributions[4] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
+            self.node_distributions[5] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
+            self.node_distributions[6] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
+            self.node_distributions[7] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
+            self.node_distributions[8] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
+            self.node_distributions[9] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
+            self.node_distributions[10] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
+            self.node_distributions[11] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
+            self.node_distributions[12] = torch.distributions.Dirichlet(
+                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
         # create node distribution for all nodes, including the starting node, whose distribution does not change
-        for i in range(0, self.num_available_nodes + 1):
-            self.node_distributions[i] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[i].values()), dtype=torch.float32))
+        else:
+            for i in range(0, self.num_available_nodes + 1):
+                self.node_distributions[i] = torch.distributions.Dirichlet(
+                    torch.tensor(list(self.dirichlet_alpha_dict[i].values()), dtype=torch.float32))
         return None
 
     def perform_updates(self, action):
         ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
-        # observed_value should only be the node value, i.e. model of the env and not model of the cost
-        observed_value = self.env.ground_truth[self.env.present_trial_num][action]
-        self.dirichlet_alpha_dict[action][int(observed_value)] += 1
-        # check of the node_distributions have been updated
-        # old = hash(self.node_distributions)
-        old = hash(frozenset(self.node_distributions.items()))
-        for i in range(1, self.num_available_nodes):
-            self.node_distributions[i] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
-                total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
-        new = hash(frozenset(self.node_distributions.items()))
-        assert old != new, "Node distributions have not been updated"
+        if self.model == "level":
+            self.node_distributions[1] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[2] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[3] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[4] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[5] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[6] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[7] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[8] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[9] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[10] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[11] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+            self.node_distributions[12] = DirichletMultinomial(
+                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
+                total_count=self.env.present_trial_num + 1)
+        else:
+            # observed_value should only be the node value, i.e. model of the env and not model of the cost
+            observed_value = self.env.ground_truth[self.env.present_trial_num][action]
+            self.dirichlet_alpha_dict[action][int(observed_value)] += 1
+            # check of the node_distributions have been updated
+            # old = hash(self.node_distributions)
+            old = hash(frozenset(self.node_distributions.items()))
+            for i in range(1, self.num_available_nodes):
+                self.node_distributions[i] = DirichletMultinomial(
+                    concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
+                    total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
+            new = hash(frozenset(self.node_distributions.items()))
+            assert old != new, "Node distributions have not been updated"
         return None
 
     def node_depth(self, action):
@@ -209,7 +304,7 @@ class ModelBased(Learner):
         indices = np.array(list(value_dict.values()))
         probabilities = distribution.concentration[indices] / total_concentration
 
-        #expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)]) #todo: check this??
+        # expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)]) #todo: check this??
 
         max_termination_value = np.full(len(self.value_range), termination_value)
         values = np.maximum(self.value_range, max_termination_value)

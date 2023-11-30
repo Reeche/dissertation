@@ -39,21 +39,31 @@ structure = {
     },
 }
 
-exp_name = "mb_vs_mf_mf_v0"
+exp_name = "mf"
 E = Experiment(exp_name, data_path=f"../../data/human/{exp_name}")
-participants = [1, 3]
-number_of_trials = 32
-
+participants = [3, 5, 7, 8, 9, 10, 12, 13, 15, 19, 23, 25, 28, 30, 32, 33, 34, 36, 37, 40, 41, 45, 46, 48, 52, 54, 56,
+                58, 59, 62, 63, 66, 68, 69, 72, 74, 76, 78, 82, 84, 86, 89, 90, 91, 93, 94, 96, 98, 100, 102, 104, 106,
+                108, 111, 113, 114, 115, 116, 121, 124, 125, 126, 127, 129, 130, 132, 133, 134, 137, 138, 139, 141,
+                145, 146, 148, 149, 152, 156, 158, 159, 163, 167, 168, 172, 173, 175, 176, 179, 180, 182, 184, 186, 187,
+                189, 190, 191]
+# participants = [141]
+number_of_trials = 15 #need to offset by 2 #todo: actually only need the first 15 trials of the MF condition
 
 for index, pid in enumerate(participants):
     os.makedirs(f"visualisation/{index}", exist_ok=True)
-    for trial in range(2, number_of_trials):
-        p = E.participants[pid]
+    p = E.participants[pid]
 
+    # filter for practice trials
+    trials = list(zip(p.block, p.envs))
+    training_trials = [item for item in trials if item[0] == "training"]
+
+    for trial in range(0, number_of_trials):
+        print(f"Participant {pid}, trial {trial}")
         # get the clicks and envs seen by the participant
-        deleted = p.clicks[trial].pop() #remove last action which is 0
+        deleted = p.clicks[trial].pop()  # remove last action which is 0
         clicks = p.clicks[trial]
-        values = p.envs[trial]
+
+        values = training_trials[trial][1]
 
         # Add nodes with positions
         for node, pos in structure["layout"].items():

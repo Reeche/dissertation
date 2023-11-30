@@ -49,17 +49,17 @@ def cost_function(depth):
 
 
 if __name__ == "__main__":
-    exp_name = "v1.0"  # "strategy_discovery
-    criterion = "likelihood"  # "number_of_clicks_likelihood"
-    pid = 1
+    # exp_name = "v1.0"  # "strategy_discovery
+    # criterion = "likelihood"  # "number_of_clicks_likelihood"
+    # pid = 1
 
-    # exp_name = sys.argv[1]
-    # criterion = sys.argv[2]
-    # pid = int(sys.argv[3])
+    exp_name = sys.argv[1]
+    criterion = sys.argv[2]
+    pid = int(sys.argv[3])
     # model_variant = sys.argv[4]
-    model_variant = "full" #"full", "linear", "uniform",
+    model_variant = "full" #"full", "linear", "uniform", "level"
 
-    E = Experiment(exp_name, data_path=f"results_mb_8000_v2/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_2000_v2/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_8000_v2/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_2000_v2/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -156,29 +156,40 @@ if __name__ == "__main__":
                 'beta_3': hp.uniform('beta_3', np.log(1), np.log(5)),
                 'click_weight': hp.uniform('click_weight', 1, 50),
             }
+        elif model_variant == "level":
+            fspace = {
+                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+                'alpha_1': hp.uniform('alpha_1', np.log(1), np.log(5)),
+                'beta_1': hp.uniform('beta_1', np.log(1), np.log(5)),
+                'alpha_2': hp.uniform('alpha_2', np.log(1), np.log(5)),
+                'beta_2': hp.uniform('beta_2', np.log(1), np.log(5)),
+                'alpha_3': hp.uniform('alpha_3', np.log(1), np.log(5)),
+                'beta_3': hp.uniform('beta_3', np.log(1), np.log(5)),
+                'click_weight': hp.uniform('click_weight', 1, 50),
+            }
         else:
             raise ValueError(f"Model not recognised: {model_variant}")
 
-    # trials = True
-    # trials = Trials() if trials else None
-    # best_params = fmin(fn=model.run_multiple_simulations,
-    #                    space=fspace,
-    #                    algo=tpe.suggest,
-    #                    max_evals=50,
-    #                    show_progressbar=True)
+    trials = True
+    trials = Trials() if trials else None
+    best_params = fmin(fn=model.run_multiple_simulations,
+                       space=fspace,
+                       algo=tpe.suggest,
+                       max_evals=2000,
+                       show_progressbar=True)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
 
     ## for pid 1: scale up bias 10, all others 1 and scale down bias 0.5 seems like a good fit
-    best_params = {'inverse_temp': 100,
-                   'alpha_1': np.log(2),
-                   'beta_1': np.log(1),
-                   'alpha_2': np.log(1.2),
-                   'beta_2': np.log(1),
-                   'alpha_3': np.log(1.5),
-                   'beta_3': np.log(1),
-                   'click_weight': 15}
+    # best_params = {'inverse_temp': 100,
+    #                'alpha_1': np.log(2),
+    #                'beta_1': np.log(1),
+    #                'alpha_2': np.log(1.2),
+    #                'beta_2': np.log(1),
+    #                'alpha_3': np.log(1.5),
+    #                'beta_3': np.log(1),
+    #                'click_weight': 15}
 
     model.env.reset()
     model.participant_obj.reset()
@@ -187,14 +198,14 @@ if __name__ == "__main__":
     ## save result and best parameters
     res.update(best_params)
 
-    plot_score(res, model.p_data, pid, exp_name)
-    plot_clicks(res, model.p_data)
-    print(res)
+    # plot_score(res, model.p_data, pid, exp_name)
+    # plot_clicks(res, model.p_data)
+    # print(res)
 
-    # check if dir exist
-    # if not Path(f"results_mb_8000_v2/mcrl/{exp_name}_mb").exists():
-    #     Path(f"results_mb_8000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
-    #
-    # output = open(f'results_mb_8000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
-    # pickle.dump(res, output)
-    # output.close()
+    ## check if dir exist
+    if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+
+    output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    pickle.dump(res, output)
+    output.close()

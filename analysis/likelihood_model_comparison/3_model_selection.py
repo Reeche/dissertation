@@ -50,7 +50,8 @@ def bms(model_bic):
     print("Phi Values:", phi)
 
 def create_csv_for_matlab(data, exp):
-    # create csv for matlab
+    # create csv for matlab; filter for required models
+    data = data[data["model"].isin(["1743", "1756", "479", "491", "522", "full"])]
     # create pivot table with pid as y and model as x and fill the values with BIC
     data = data.pivot(index="model", columns="pid", values="BIC")
     data = data.sort_index() #1743, 1756, 479, 491, 522, mb
@@ -84,7 +85,7 @@ def missing_bic(df):
 
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
-    experiment = ["c2.1"]
+    experiment = ["v1.0"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
     # experiment = ["strategy_discovery"]
     df_all = []
@@ -109,6 +110,6 @@ if __name__ == "__main__":
         df_all.append(data)
 
     result_df = pd.concat(df_all, ignore_index=True)
-    # create_csv_for_matlab(result_df, "lvlc")
+    # create_csv_for_matlab(result_df, "test")
     model_bic = sort_by_BIC(result_df)
     # bms(model_bic)

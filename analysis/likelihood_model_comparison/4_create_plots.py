@@ -119,7 +119,7 @@ def plot_clicks(data, model_name):
     plt.plot(model_average, label=model_name, color="orange")
 
     plt.xlabel("Trial")
-    # plt.ylim(0, 13)
+    plt.ylim(0, 10)
     plt.ylabel("Average clicks")
     plt.legend()
     # plt.savefig(f"{exp}_{model_name}_clicks.png")
@@ -128,11 +128,11 @@ def plot_clicks(data, model_name):
 
 
 
-model_name = ["full"]
+model_name = ["1756", "1743", "479", "491", "522", "full"]
 
 for model in model_name:
-    exp = "v1.0"
-    data = pd.read_csv(f"{exp}_mb.csv")
+    exp = "strategy_discovery"
+    data = pd.read_csv(f"data/{exp}.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]
@@ -147,7 +147,8 @@ for model in model_name:
     # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #              "low_variance_low_cost"]:
 
-    plot_mer(data, model)
-    plot_rewards(data, model)
+    # plot_mer(data, model)
+    # plot_rewards(data, model)
     plot_clicks(data, model)
+
 

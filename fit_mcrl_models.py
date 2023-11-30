@@ -93,15 +93,14 @@ if __name__ == "__main__":
     optimization_criterion = sys.argv[3]
     pid = int(sys.argv[4])
     number_of_trials = int(sys.argv[5])
-    other_params = {"plotting": True}
-    # other_params = {}
+    other_params = {"plotting": False}
     if len(sys.argv) > 6:
         other_params = ast.literal_eval(sys.argv[6])
     else:
         other_params = {}
 
     # exp_name = "strategy_discovery"
-    # model_index = 522
+    # model_index = 32
     # optimization_criterion = "likelihood"
     # pid = 2
     # other_params = {"plotting": True}
@@ -144,7 +143,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 2000,
+            "max_evals": 5,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()
