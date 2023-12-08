@@ -46,19 +46,31 @@ participants = [3, 5, 7, 8, 9, 10, 12, 13, 15, 19, 23, 25, 28, 30, 32, 33, 34, 3
                 108, 111, 113, 114, 115, 116, 121, 124, 125, 126, 127, 129, 130, 132, 133, 134, 137, 138, 139, 141,
                 145, 146, 148, 149, 152, 156, 158, 159, 163, 167, 168, 172, 173, 175, 176, 179, 180, 182, 184, 186, 187,
                 189, 190, 191]
-# participants = [141]
-number_of_trials = 15 #need to offset by 2 #todo: actually only need the first 15 trials of the MF condition
 
+#82 particiapnts who clicked anything
+mf_clicked = [3, 5, 9, 10, 13, 15, 23, 25, 28, 30, 32, 33, 36, 37, 41, 45, 46, 52, 56, 58, 59, 62, 63, 66, 68,
+                        69, 72, 74, 76, 78, 82, 84, 86, 89, 91, 93, 94, 96, 98, 100, 102, 104, 108, 111, 115, 116, 124,
+                        125, 126, 127, 129, 130, 132, 134, 137, 138, 139, 141, 145, 146, 148, 149, 152, 156, 158, 159,
+                        163, 167, 168, 172, 173, 175, 176, 179, 180, 182, 184, 186, 187, 189, 190, 191]
+
+# participants = [141]
+number_of_trials = 15  # need to offset by 2 #todo: actually only need the first 15 trials of the MF condition
+good_pid = []
+i = 1
 for index, pid in enumerate(participants):
-    os.makedirs(f"visualisation/{index}", exist_ok=True)
     p = E.participants[pid]
+    # check if the len of every entry of the list is 0, if yes, skip this participant
+    if all(len(entry) == 1 for entry in p.clicks):
+        continue
+
+    good_pid.append(pid)
+    os.makedirs(f"visualisation/{i}", exist_ok=True)
 
     # filter for practice trials
     trials = list(zip(p.block, p.envs))
     training_trials = [item for item in trials if item[0] == "training"]
 
     for trial in range(0, number_of_trials):
-        print(f"Participant {pid}, trial {trial}")
         # get the clicks and envs seen by the participant
         deleted = p.clicks[trial].pop()  # remove last action which is 0
         clicks = p.clicks[trial]
@@ -93,5 +105,10 @@ for index, pid in enumerate(participants):
 
         plt.axis('off')
         # plt.show()
-        plt.savefig(f"visualisation/{index}/{trial}.png")
+        plt.savefig(f"visualisation/{i}/{trial}.png")
         plt.close()
+
+    i += 1
+
+print(good_pid)
+print(len(good_pid))

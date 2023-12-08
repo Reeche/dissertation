@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_rl_variants_8000/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 5,
+            "max_evals": 8000,
         }
         other_params["optimization_params"] = optimization_params
     # tic = time.perf_counter()

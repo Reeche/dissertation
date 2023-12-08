@@ -32,16 +32,19 @@ pid_dict = {
 
 exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
        "low_variance_low_cost", "strategy_discovery"]
+# exp = ["strategy_discovery"]
 
-# exp_num = "low_variance_low_cost"
 for exp_num in exp:
 
-    # range of models
-    # models = [522, 491, 479, 1743, 1756]
-    # priors_directory = (f"results_mf_models_2000/mcrl/{exp_num}_priors")
+    ## MF models
+    ## vainlla #[522, 491, 479, 1743, 1756]
+    ## RL variants without hierarchical [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
+    models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
+    priors_directory = (f"results_rl_variants_8000/mcrl/{exp_num}_priors")
 
-    models = ["full"]
-    priors_directory = (f"results_mb_2000_v2/mcrl/{exp_num}_mb")
+    ## MB models
+    # models = ["full"]
+    # priors_directory = (f"results_mb_2000_v2/mcrl/{exp_num}_mb")
 
     ### Create a list of all combinations and concatenate them as str with underscore
     combinations = list(itertools.product([*pid_dict[exp_num]], models))
@@ -66,13 +69,14 @@ for exp_num in exp:
         temp_list.append(item.split(","))
 
     for items in temp_list:
-        # empty_tuple = (int(items[0]), int(items[1])) #mf models
-        empty_tuple = (int(items[0]))
+        empty_tuple = (int(items[0]), int(items[1])) #mf models
+        # empty_tuple = (int(items[0]))
         new_list.append(empty_tuple)
 
-    # print(f"Number of missing items for {exp_num}", len(new_list)) #mf
-    print(f"Number of missing items for {exp_num}:", new_list) #mb
+    print(f"Number of missing items for {exp_num}", len(new_list)) #mf
+    # print(f"Number of missing items for {exp_num}:", new_list) #mb
 
     # save the missing pid and model_index as csv, first create a df
-    # df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
-    # df.to_csv(f"missing_{exp_num}.csv", index=False)
+    ## MF models only
+    df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
+    df.to_csv(f"missing_{exp_num}.csv", index=False)

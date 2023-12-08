@@ -28,8 +28,8 @@ def split_participants_df_into_conditions(df, exp):
 
     # condition = df[df["condition"] == 0]
 
-    stroop.to_csv(f"../../data/human/stroop/participants.csv", sep=",", index=False)
-    mf.to_csv(f"../../data/human/mf/participants.csv", sep=",", index=False)
+    # stroop.to_csv(f"../../data/human/stroop/participants.csv", sep=",", index=False)
+    df.to_csv(f"../../data/human/mb/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df, exp):
@@ -47,8 +47,8 @@ def split_mouselab_df_into_conditions(df, exp):
     # df_low_variance_low_click_cost = df[df["condition"] == 3]
 
     # condition = df[df["condition"] == 0]
-    stroop.to_csv(f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
-    mf.to_csv(f"../../data/human/mf/mouselab-mdp.csv", sep=",", index=False)
+    # stroop.to_csv(f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
+    df.to_csv(f"../../data/human/mb/mouselab-mdp.csv", sep=",", index=False)
 
     # df_high_variance_low_click_cost.to_csv(
     #     "../../data/human/high_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
@@ -58,7 +58,7 @@ def split_mouselab_df_into_conditions(df, exp):
     # df_low_variance_low_click_cost.to_csv("../../data/human/low_variance_low_cost/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "mf_stroop_full_exp"
+experiment = "mb_full_exp"
 
 data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 

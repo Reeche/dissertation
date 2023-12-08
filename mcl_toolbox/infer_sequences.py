@@ -60,9 +60,10 @@ def infer_experiment_sequences(
         raise (ValueError, "Experiment pipeline not found.")
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
     # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
-    pipeline = [pipeline[0] for _ in range(121)]
+    pipeline = [pipeline[0] for _ in range(num_trials+1)]
 
-    normalized_features = learning_utils.get_normalized_features(exp_num)
+    # normalized_features = learning_utils.get_normalized_features(exp_num)
+    normalized_features = learning_utils.get_normalized_features("v1.0")
     W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
     cm = ComputationalMicroscope(
         pipeline,
@@ -106,9 +107,9 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[3]
 
-    exp_name = "strategy_discovery"
+    exp_name = "stroop"
     block = "training"
-    number_of_trials = 120
+    number_of_trials = 15
     # if exp_name == "mf":
     #     number_of_trials = 30
     # else:

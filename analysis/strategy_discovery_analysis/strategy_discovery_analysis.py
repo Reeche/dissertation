@@ -3,12 +3,14 @@ import pandas as pd
 import ast
 import matplotlib.pyplot as plt
 import pymannkendall as mk
-from scipy.stats import chisquare, sem, t
+from scipy.stats import chisquare, sem, t, norm
 import random
 import statsmodels.formula.api as smf
+import os
+
 
 ### create df
-def create_df(data):
+def create_df(data, learning_pid=None):
     # drop pid 22, 41
     # check if pid has more than 119 trials
     pid_list = data["pid"].unique()
@@ -46,6 +48,10 @@ def create_df(data):
     trial_number = trial_number * len(pid_list)  # (max(data["pid"]) - i)
     click_df["trial"] = trial_number
 
+    # filter for learning pid
+    if learning_pid:
+        click_df = click_df[click_df["pid"].isin(learning_pid)]
+
     return pid_list, click_df
 
 
@@ -77,6 +83,7 @@ def trend(count_prop):
 
 
 def plot_proportion(count_prop):
+    # this was used for the participants but I think something is wrong here, CI goes negative
     plt.ylabel("Proportion of optimal strategy")
     plt.xlabel("Trials")
     # reindex count_prop
@@ -85,35 +92,50 @@ def plot_proportion(count_prop):
     plt.plot(count_prop)
     x = list(range(0, len(count_prop)))
     plt.fill_between(x, (count_prop - ci), (count_prop + ci), color='blue', alpha=0.1)
-    plt.savefig("strategy_discovery.png")
+    # plt.savefig("strategy_discovery.png")
+    plt.legend()
     plt.show()
-    # plt.close()
+    plt.close()
     return None
 
 
-def classify_score(click_df):
-    # optimal strategy is to first click inner nodes and then outer nodes
-    immediate_nodes = [1, 5, 9]
-    middle_nodes = [2, 6, 10]
-    outer_nodes = [3, 4, 7, 8, 11, 12]
+def plot_confidence_interval(actual_count, prop_counts, model, participant=None):
+    # Calculate mean and standard deviation of counts
+    ci = 1.96 * np.std(prop_counts) / np.sqrt(len(prop_counts))
 
+    # Plot the counts as a line plot
+    x = np.arange(len(prop_counts))
+    plt.plot(x, prop_counts, label=model, color='blue')
+    plt.fill_between(x, prop_counts - ci, prop_counts + ci, alpha=0.3, label=f'95% Confidence Interval')
+
+    if participant:
+        ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
+        plt.plot(x, participant[1]["optimal_strategy"], label='Participant', color='red')
+        plt.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid, alpha=0.3, label=f'95% Confidence Interval')
+
+    # Set plot labels and legend
+    plt.xlabel('Index')
+    plt.ylabel('Proportion')
+    plt.legend()
+    plt.savefig(f"{model}.png")
+    # plt.show()
+    plt.close()
+
+def classify_score(click_df, pid_list):
+    # given the score, calculate the proportion of participants who used the optimal strategy
     for idx, row in click_df.iterrows():
-        # if row["number_of_clicks"] > 1 and row["number_of_clicks"] < 5: #relax to second most optimal strategy by < 6
-        #     row["clicks"] = [int(i) for i in row["clicks"]]
-        # if all but last one clicks are immediate nodes and last click is the outer node
-        # if all(item in immediate_nodes for item in row["clicks"][:-1]) and \
-        #         all(item in outer_nodes for item in row["clicks"][-1:]) and row["score"] > 34:
-        if row["score"] in [15, 14, 13]:
-            # if row["score"] in [35, 34, 33]:
+        if row["score"] in [15, 14, 13]: #does 16 make sense?
             click_df.at[idx, 'optimal_strategy'] = True
         else:
             click_df.at[idx, 'optimal_strategy'] = False
 
     # calculate proportion
-    click_df = click_df[click_df["optimal_strategy"] == True]
-    count = click_df.groupby("trial")["optimal_strategy"].count()
+    # click_df = click_df[click_df["optimal_strategy"] == True]
+    count = click_df.groupby('trial')['optimal_strategy'].sum().astype(int).reset_index()
+
+    # count = click_df.groupby("trial")["optimal_strategy"].count()
     count_prop = count / len(pid_list)
-    return count_prop
+    return count, count_prop
 
 
 def classify_using_clicks(sequences):
@@ -164,6 +186,7 @@ def score_trend(click_df):
     print(f"{count} out of {reshaped_score_df.shape[0]} ({count / reshaped_score_df.shape[0]}) participants improved ")
     return None
 
+
 def lme(data):
     formula_ = "score ~ trial"
     gamma_model = smf.mixedlm(formula=formula_, data=data, groups=data["pid"]).fit()
@@ -185,23 +208,56 @@ def improving_pid(data):
         result = mk.original_test(reshaped_score_df[pid])
         if result.s > 0:
             adaptive_pid.append(pid)
-    print(adaptive_pid)
+    print("Adaptive pid", adaptive_pid)
     return None
+
+
+def infer_fitted_model_strategy(model):
+    # get all the files in the directory that has the model number
+    files = os.listdir("../../results_rl_variants_8000/mcrl/strategy_discovery_data/")
+    matching_files = [file for file in files if str(model) in file]
+
+    # create df
+    model_df = pd.DataFrame(columns=["pid", "trial", "score"])
+    temp_score = []
+    temp_pid = []
+    temp_trial = []
+    for fil in matching_files:
+        data = pd.read_pickle(f"../../results_rl_variants_8000/mcrl/strategy_discovery_data/{fil}")
+        temp_score.append(data["r"][0])
+        temp_pid.append([fil.split("_")[0]] * 120)
+        temp_trial.append(range(1, 121))
+    model_df["pid"] = [item for sublist in temp_pid for item in sublist]
+    model_df["trial"] = [item for sublist in temp_trial for item in sublist]
+    model_df["score"] = [item for sublist in temp_score for item in sublist]
+
+    return classify_score(model_df, matching_files)
 
 
 if __name__ == "__main__":
     data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
 
-    improving_pid(data)
+    learning_pid = improving_pid(data)
 
-    pid_list, click_df = create_df(data)
+    pid_list, click_df = create_df(data, learning_pid)
 
     ### lme
     # lme(click_df)
     # score_trend(click_df)
-    # count_prop = classify_score(click_df)
+    count_prop_pid = classify_score(click_df, pid_list)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend_test(count_prop)
     # chi_square_test(count_prop)
-    # plot_proportion(count_prop)
+    # plot_confidence_interval(count_prop_pid[0]["optimal_strategy"], count_prop_pid[1]["optimal_strategy"], "Participant")
+
+    ### classify model strategy
+    # vanilla models only
+    # models = [522, 491, 479, 1743, 1756]
+
+    # reinforce variants without hierarchical models
+    # models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
+    models = [491]
+    for model in models:
+        actual_count, count_prop = infer_fitted_model_strategy(model)
+        plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop_pid)
