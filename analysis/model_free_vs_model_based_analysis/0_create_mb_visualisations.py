@@ -105,7 +105,7 @@ for index, pid in enumerate(participants):
 
         plt.axis('off')
         # plt.show()
-        plt.savefig(f"visualisation/{i}/{trial}.png")
+        # plt.savefig(f"visualisation/{i}/{trial}.png")
         plt.close()
 
     i += 1

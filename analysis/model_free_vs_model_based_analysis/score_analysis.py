@@ -109,11 +109,56 @@ def compare_expected_score(conditions, mf_clicked):
     exp_score_data.columns = ["exp_score", "pid", "condition", "trial"]
 
     ## linear regression
-    # res = ols('exp_score ~ trial*condition', data=exp_score_data).fit()
+    regression_analysis(exp_score_data)
+
+    ## Mann Whitney U test
+    mann_whitney_test(exp_score_data)
+
+
+def regression_analysis(exp_score_data):
     res = ols('exp_score ~ trial*C(condition, Treatment("mf"))', data=exp_score_data).fit()
     print(res.summary())
     return None
 
+def mann_whitney_test(exp_score_data):
+    ## Mann Whitney U test
+    # filter data for mf_clicked
+    mf_exp_score = exp_score_data[exp_score_data["condition"] == "mf"]
+    # filter for trial == 15
+    mf_exp_score = mf_exp_score[mf_exp_score["trial"] == 0]
+    # filter data for mb
+    mb_exp_score = exp_score_data[exp_score_data["condition"] == "mb"]
+    # filter for trial == 15
+    mb_exp_score = mb_exp_score[mb_exp_score["trial"] == 0]
+    # filter data for stroop
+    stroop_exp_score = exp_score_data[exp_score_data["condition"] == "stroop"]
+    # filter for trial == 15
+    stroop_exp_score = stroop_exp_score[stroop_exp_score["trial"] == 0]
+
+    # print the mean of expected score for each condition
+    print("Mean of expected score for each condition")
+    print("MF: ", mf_exp_score["exp_score"].mean())
+    print("MB: ", mb_exp_score["exp_score"].mean())
+    print("STROOP: ", stroop_exp_score["exp_score"].mean())
+
+    # sd within each group
+    print("SD of expected score for each condition")
+    print("MF: ", mf_exp_score["exp_score"].std())
+    print("MB: ", mb_exp_score["exp_score"].std())
+    print("STROOP: ", stroop_exp_score["exp_score"].std())
+
+
+    # compare mf and mb
+    print("Mann Whitney U test for expected score between MF and MB")
+    print(stats.mannwhitneyu(mf_exp_score["exp_score"], mb_exp_score["exp_score"], alternative="greater"))
+    # compare mf and stroop
+    print("Mann Whitney U test for expected score between MF and STROOP")
+    print(stats.mannwhitneyu(mf_exp_score["exp_score"], stroop_exp_score["exp_score"], alternative="greater"))
+    # compare mb and stroop
+    print("Mann Whitney U test for expected score between MB and STROOP")
+    print(stats.mannwhitneyu(mb_exp_score["exp_score"], stroop_exp_score["exp_score"], alternative="two-sided"))
+
+    return None
 
 if __name__ == "__main__":
     adaptive = [65, 64, 24, 21, 63, 43, 17, 16, 57, 59, 88, 54, 4, 31, 26, 82, 37, 48, 50, 85, 76, 18, 84, 45, 11, 6, 7,
@@ -127,5 +172,5 @@ if __name__ == "__main__":
                   125, 126, 127, 129, 130, 132, 134, 137, 138, 139, 141, 145, 146, 148, 149, 152, 156, 158, 159,
                   163, 167, 168, 172, 173, 175, 176, 179, 180, 182, 184, 186, 187, 189, 190, 191]
 
-    plot_expected_score(conditions, mf_clicked)
+    # plot_expected_score(conditions, mf_clicked)
     compare_expected_score(conditions, mf_clicked)
