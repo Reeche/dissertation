@@ -58,37 +58,30 @@ def click_sequence_loss(prior_data):
 
 
 def number_of_parameters(model, criterion):
-    if model in [1756, 1743]:  # no learning and habitual
-        if criterion == "likelihood":
-            return 3
-        else:
-            return 4
-    elif model in [527, 522]:  # RSSL
-        if criterion == "likelihood":
-            return 1
-        else:
-            return 2
-    elif model in [491, 479]:  # reinforce and lvoc
-        if criterion == "likelihood":
-            return 3
-        else:
-            return 4
+    if model in [480, 481]: # PRW + SC
+        return 5
+    elif model in [482, 483, 484, 485, 488, 489]: #PRW or SC
+        return 4
+    elif model in [486, 487, 490, 491]: # vanilla, TD, PR only
+        return 3
 
 
 if __name__ == "__main__":
-    exp_list = ['v1.0',
-                'c2.1',
-                'c1.1',
-               'high_variance_high_cost',
-               'high_variance_low_cost',
-               'low_variance_high_cost',
-               'low_variance_low_cost',
-                'strategy_discovery'
-               ]
+    # exp_list = ['v1.0',
+    #             'c2.1',
+    #             'c1.1',
+    #             'high_variance_high_cost',
+    #             'high_variance_low_cost',
+    #             'low_variance_high_cost',
+    #             'low_variance_low_cost',
+    #             'strategy_discovery'
+    #             ]
+
+    exp_list = ['strategy_discovery']
 
     iterations = 1
 
-    data_dir = "../../results_mf_models_2000/mcrl"
+    data_dir = "../../results_rl_variants_8000/mcrl"
     model_list = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")
 
     for exp in exp_list:
@@ -114,7 +107,7 @@ if __name__ == "__main__":
 
             pid = int(files.split("_")[0])
             model = int(files.split("_")[1])
-            if model in [522, 491, 479, 1743, 1756]:
+            if model in [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]:
                 p = E.participants[pid]
                 participant_obj = ParticipantIterator(p)
 

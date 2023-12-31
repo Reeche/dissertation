@@ -10,6 +10,7 @@ import statsmodels.formula.api as smf
 from collections import Counter
 from scipy.stats import chisquare, chi2_contingency
 import os
+from vars import clicking_pid
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects.numpy2ri
@@ -154,13 +155,13 @@ def lme(click_data):
     # gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
     # print("learning results", gamma_model.summary())
 
-    formula_ = "number_of_clicks ~ trial*variance + trial*click_cost"
-    gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
+    formula = "number_of_clicks ~ trial*variance*click_cost"
+    gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit()  # makes sense
     print("learning results", gamma_model.summary())
 
     formula_ = "number_of_clicks ~ trial:C(condition)"
-    gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
-    print("learning results", gamma_model.summary())
+    gamma_model_ = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
+    print("learning results", gamma_model_.summary())
 
     return None
 
@@ -180,15 +181,16 @@ def magnitude_of_change(click_df, experiment):
     return None
 
 
-def no_clicking_pid(click_df, experiment):
+def clicking_pid(click_df, experiment):
     pid_list = click_df["pid"].unique()
-    bad_pid = []
+    good_pid = []
     for pid in pid_list:
         temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
-        if all(v == 0 for v in temp_list):
-            bad_pid.append(pid)
-    print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid), bad_pid)
-    return bad_pid
+        if any(v != 0 for v in temp_list):
+            good_pid.append(pid)
+    print(f"{experiment} number of people who clicked something", len(good_pid), good_pid)
+    print("out of ", len(pid_list), "participants")
+    return good_pid
 
 
 def sequential_dependence(data):
@@ -340,8 +342,9 @@ if __name__ == "__main__":
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data, experiment)
 
-        ## no clicking pid
-        # bad_pid = no_clicking_pid(click_df, experiment)
+        # filter for participants who clicked at least once
+        # good_pid = clicking_pid(click_df, experiment)
+        click_df = click_df[click_df["pid"].isin(clicking_pid)]
 
         ## participants who improved their clicks at least twice
         # pid_improved_clicks_twice(experiment, click_df, bad_pid)
@@ -350,7 +353,7 @@ if __name__ == "__main__":
         # monotonous_change(experiment, click_df)
 
         ## trend test for each pid
-        trend_within_participant(experiment, click_df)
+        # trend_within_participant(experiment, click_df)
 
         ## sequential dependence
         # sequential_dependence(click_df)
@@ -362,7 +365,7 @@ if __name__ == "__main__":
         # plot_individual_clicks(click_df, experiment)
 
         # group click_df by trial and get the average clicks
-        # average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
+        average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
         # plot_clicks(average_clicks)

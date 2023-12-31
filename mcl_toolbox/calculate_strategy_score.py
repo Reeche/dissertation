@@ -22,6 +22,7 @@ Example: python3 calculate_strategy_score.py c1.1 200000 1 low_constant
 
 python3 calculate_strategy_score.py c1.1 200000 3 low_constant
 
+#todo: this doesnot work for strategy_discovery as constructing repeated pipeline is different
 """
 
 # exp_num = sys.argv[1]
@@ -30,15 +31,33 @@ python3 calculate_strategy_score.py c1.1 200000 3 low_constant
 # reward_level = sys.argv[4]
 
 exp_num = "v1.0"
-num_simulations = 200000  # at least 200k is recommended
+num_simulations = 2  # at least 200k is recommended
 click_cost = 9 #3, 6, 9
-reward_level = "high_decreasing"
+reward_level = "high_increasing"
 
 score_list = {}
 click_list = {}
 
+
+# def click_sequence_cost(click_sequence):
+#     def click_cost(click):
+#         if click in [0]:
+#             return 0
+#         if click in [1, 5, 9]:
+#             return 1
+#         if click in [2, 6, 10]:
+#             return 3
+#         if click in [3, 4, 7, 8, 11, 12]:
+#             return 30
+#
+#     cost = 0
+#     for click in click_sequence:
+#         cost += click_cost(click)
+#     return cost
+
+
 ### if you are using v1.0, c1.1, c2.1_dec or T1, you can uncomment this line
-if exp_num is "v1.0" or "c1.1" or "c2.1_dec":
+if exp_num in ["v1.0", "c1.1", "c2.1_dec"]:
     exp_pipelines = learning_utils.pickle_load("data/exp_pipelines.pkl")
 else:
     ## Adjust the environment that you want to simulate in global_vars.py
@@ -69,7 +88,7 @@ for strategy in range(0, 89):
         number_of_clicks.append(len(clicks))
         score = (
             env.present_trial.node_map[0].calculate_max_expected_return()
-            - (len(clicks) - 1) * click_cost
+            - (len(clicks) - 1) * click_cost(clicks)
         )  # len(clicks) is always 13
         scores.append(score)
 
@@ -82,14 +101,14 @@ for strategy in range(0, 89):
 
 score_results = dict(sorted(score_list.items(), key=lambda item: item[1], reverse=True))
 print("Score results", score_results)
-dir = "../results/cm/strategy_scores/threecond/"
+dir = "../results/cm/strategy_scores/strategy_discovery/"
 learning_utils.create_dir(dir)
 learning_utils.pickle_save(
-    score_results, f"{dir}/{exp_num}_clickcost_{click_cost}_strategy_scores.pkl"
+    score_results, f"{dir}/{exp_num}_clickcost_strategy_scores.pkl"
 )
 print("Number of clicks", click_list)
 learning_utils.pickle_save(
-    click_list, f"{dir}/{exp_num}_clickcost_{click_cost}_numberclicks.pkl"
+    click_list, f"{dir}/{exp_num}_clickcost_numberclicks.pkl"
 )
 
 # only need for

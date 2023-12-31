@@ -20,12 +20,9 @@ learning_participants = {
                            36, 37, 39, 40, 42, 43, 44, 46, 47, 48, 50, 51, 52, 53, 54, 55]}
 
 ### significantly learning participants
-# strategy_discovery: used adaptitve strategy at least 10 times
-# three cond: bonus above a certain threshold (manually set)
 # learning_participants = {
 #     "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 34, 38, 43, 55, 56, 59, 68, 69, 73, 80, 82, 94,
 #              98, 101, 104, 112, 119, 124, 144, 146, 154, 160, 165],
 #     "c2.1": [64, 67, 93, 113, 130, 172],
 #     "c1.1": [2, 32, 36, 37, 42, 63, 74, 81, 83, 89, 92, 109, 114, 135, 143, 151, 159, 168, 171],
-#     "strategy_discovery": [1, 3, 6, 7, 9, 12, 15, 17, 19, 21, 28, 29, 30, 32, 33, 36, 39, 40, 42, 46, 47, 51, 52, 53, 54, 55]
-# }
+#     "strategy_discovery": [3, 4, 6, 7, 8, 9, 12, 15, 16, 17, 19, 21, 24, 27, 30, 32, 33, 36, 39, 40, 42, 46, 47, 51, 52, 53, 54, 55]}

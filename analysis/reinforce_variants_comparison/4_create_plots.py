@@ -77,8 +77,7 @@ def plot_rewards(data, model_name):
     plt.ylabel("Average actual score")
     plt.legend()
     plt.savefig(f"plot/{exp}/{model_name}_rewards.png")
-
-    plt.show()
+    # plt.show()
     plt.close()
 
 def plot_clicks(data, model_name):
@@ -127,9 +126,19 @@ def plot_clicks(data, model_name):
     plt.show()
     plt.close()
 
+def group_pid_according_to_bic(data):
+    # group the participants into who is best explained by which model
+    def sort_by_BIC(data):
+        df = data.sort_values(by=["BIC"])
+        average_bic = df.groupby('model')['BIC'].mean().reset_index()
+        sorted_df = average_bic.sort_values(by='BIC', ascending=True)
+        # the smaller BIC the better
+        print(sorted_df)
+        return sorted_df
+    return None
 
 
-model_name = ["1756", "1743", "479", "491", "522", "full"]
+model_name = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
 
 for model in model_name:
     exp = "strategy_discovery"

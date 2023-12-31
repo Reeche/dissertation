@@ -90,8 +90,8 @@ def approx_max(dist, position=0):
         if position == 0:
             return max(dist.vals)
         else:
-            return sorted(dist.vals)[-(position + 1)] #todo: remove this for strategy discovery and SSL 527; not sure what it does or why the +1 is there
-            # return sorted(dist.vals)[-(position)] #I guess this is for choosing the largest option by sorting and then the last one in the que
+            # return sorted(dist.vals)[-(position + 1)] #todo: remove this for strategy discovery and SSL 527; not sure what it does or why the +1 is there
+            return sorted(dist.vals)[-(position)] #I guess this is for choosing the largest option by sorting and then the last one in the que
 
 
 def approx_min(dist, position=0):

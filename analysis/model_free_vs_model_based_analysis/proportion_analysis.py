@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numpy as np
 import statsmodels.api as sm
+from vars import clicked_dict
 
 """
 Analyse whether 
@@ -45,54 +46,62 @@ def calculate_proportion_at_index(mydict, index):
     print("The proportion at the 15th trial: ", proportion)
     return proportion
 
-def compare_adaptive_propotion(conditions):
+
+def count_adaptive_strategies(mydict, index):
+    return sum(value[index] for key, value in mydict.items())
+
+
+def compare_adaptive_propotion(conditions, clicked_df):
+    proportion_at_index = {}
     for condition in conditions:
         data_raw = pd.read_pickle(f"../../results/cm/inferred_strategies/{condition}_training/strategies.pkl")
         if condition == "mf":
-            index = 15
+            index = 14
         else:
             index = 0
 
-        # filter data for mf_clicked
-        if condition == "mf":
-            data = {key: data_raw[key] for key in mf_clicked if key in data_raw}
-        else:
-            data = data_raw
+        # filter data for clicked
+        data = {key: data_raw[key] for key in clicked_df[condition] if key in data_raw}
 
         proportion_at_index[condition] = calculate_proportion_at_index(replace(data), index)
 
         # Step 1: Calculate the proportion of 1s for each dictionary
-        proportions_dict1 = [sum(values) / len(values) for values in zip(*replace(data).values())]
+        proportions_list = [sum(values) / len(values) for values in zip(*replace(data).values())]
         if condition == "mf":
             x_values = list(range(30))
-            plt.plot(x_values, proportions_dict1, label="MF")
+            plt.plot(x_values, proportions_list, label="MF")
         else:
             x_values = list(range(15, 30))
-            plt.plot(x_values, proportions_dict1, label=condition.upper())
+            plt.plot(x_values, proportions_list, label=condition.upper())
 
     plt.xlabel("Trial")
     plt.ylabel("Proportion of adaptive strategies")
     plt.legend()
+    # plt.show()
+    plt.savefig(f"plots/proportion_at_index.png")
     plt.close()
     return None
 
 
-def logistic_regression(conditions, mf_clicked, adaptive_strategies):
+def logistic_regression(conditions, clicked_dict, adaptive_strategies):
     strategy_data = pd.DataFrame(columns=["trial", "condition"])
     for condition in conditions:
         data = pd.DataFrame.from_dict(
             pd.read_pickle(f"../../results/cm/inferred_strategies/{condition}_training/strategies.pkl"))
-        # filter data for mf_clicked
-        if condition == "mf":
-            data = data[mf_clicked]
+        # select only columns in data that are in clicked_dict
+        selected_columns = clicked_dict[condition]
+        selected_columns = [col for col in selected_columns if
+                            col in data.columns]  # convert to the same type as header
+        selected_df = data[selected_columns]
 
-        reshaped_df = pd.melt(data.reset_index(), id_vars='index', var_name='trial', value_name='strategy')
+        reshaped_df = pd.melt(selected_df.reset_index(), id_vars='index', var_name='trial', value_name='strategy')
         reshaped_df["condition"] = condition
 
         # if condition is MF, remove the first 15 trials from the dataframe
+        # todo: if we want to compare FIRST 15 trials of MF with the 15 first: [reshaped_df["index"] <= 15]
         if condition == "mf":
-            reshaped_df = reshaped_df[reshaped_df["index"] >= 15]
-            reshaped_df["index"] = reshaped_df["index"] - 15
+            # reshaped_df = reshaped_df[reshaped_df["index"] <= 14]
+            reshaped_df["index"] = reshaped_df["index"] - 14
 
         # if strategy is in adaptive_strategies, replace with 1, else replace with 0
         reshaped_df["strategy"] = reshaped_df["strategy"].apply(lambda x: 1 if x in adaptive_strategies else 0)
@@ -101,9 +110,51 @@ def logistic_regression(conditions, mf_clicked, adaptive_strategies):
     strategy_data.columns = ["pid", "condition", "trial", "strategy"]
 
     # fit logistic regression
-    model = sm.GLM.from_formula("strategy ~ C(condition, Treatment('mf')) * trial", data=strategy_data, family=sm.families.Binomial()).fit()
+    model = sm.GLM.from_formula("strategy ~ C(condition, Treatment('mf')) * trial", data=strategy_data,
+                                family=sm.families.Binomial()).fit()
     print(model.summary())
     return None
+
+
+def chi_test(conditions, clicked_dict):
+    ### Create a contingency table
+    proportion_at_index = {}
+    count_at_index = {}
+
+    for condition in conditions:
+        data_raw = pd.read_pickle(f"../../results/cm/inferred_strategies/{condition}_training/strategies.pkl")
+        if condition == "mf":
+            index = 14 #first test trial
+            # index = 29
+        else:
+            index = 0 #first test trial
+            # index = 14
+
+        # filter data for mf_clicked
+        data = {key: data_raw[key] for key in clicked_dict[condition] if key in data_raw}
+
+        # proportion_at_index[condition] = calculate_proportion_at_index(replace(data), index)
+        count_at_index[condition] = count_adaptive_strategies(replace(data), index)
+
+    sum_mf_mb = count_at_index["mf"] + count_at_index["mb"]
+    sum_mf_stroop = count_at_index["mf"] + count_at_index["stroop"]
+    sum_mb_stroop = count_at_index["mb"] + count_at_index["stroop"]
+
+    mb_mf = np.array([[(sum_mf_mb - count_at_index["mb"]), count_at_index["mb"]],
+                      [(sum_mf_mb - count_at_index["mf"]), count_at_index["mf"]]])
+    print("Proportion is significantly different between MB and MF at the 15th trial")
+    print(stats.chi2_contingency(mb_mf))
+
+    mb_stroop = np.array([[sum_mb_stroop - count_at_index["mb"], count_at_index["mb"]],
+                          [sum_mb_stroop - count_at_index["stroop"], count_at_index["stroop"]]])
+    print("Proportion is significantly different between MB and STROOP at the 15th trial")
+    print(stats.chi2_contingency(mb_stroop))
+
+    stroop_mf = np.array([[sum_mf_stroop - count_at_index["mf"], count_at_index["mf"]],
+                          [sum_mf_stroop - count_at_index["stroop"], count_at_index["stroop"]]])
+    # chi2_stat, p_value, dof, expected = stats.chi2_contingency(stroop_mf)
+    print("Proportion is significantly different between MF and STROOP at the 15th trial")
+    print(stats.chi2_contingency(stroop_mf))
 
 
 if __name__ == "__main__":
@@ -113,29 +164,6 @@ if __name__ == "__main__":
     # others = [33, 44, 27, 79, 69, 34, 61, 73, 32]
     conditions = ["mf", "mb", "stroop"]
 
-    mf_clicked = [3, 5, 9, 10, 13, 15, 23, 25, 28, 30, 32, 33, 36, 37, 41, 45, 46, 52, 56, 58, 59, 62, 63, 66, 68,
-                  69, 72, 74, 76, 78, 82, 84, 86, 89, 91, 93, 94, 96, 98, 100, 102, 104, 108, 111, 115, 116, 124,
-                  125, 126, 127, 129, 130, 132, 134, 137, 138, 139, 141, 145, 146, 148, 149, 152, 156, 158, 159,
-                  163, 167, 168, 172, 173, 175, 176, 179, 180, 182, 184, 186, 187, 189, 190, 191]
-
-    logistic_regression(conditions, mf_clicked, adaptive)
-    ### Create a contingency table
-    proportion_at_index = {}
-
-    mb_mf = np.array([[(1 - proportion_at_index["mb"]) * 100, proportion_at_index["mb"] * 100],
-                      [(1 - proportion_at_index["mf"]) * 100, proportion_at_index["mf"] * 100]])
-    chi2_stat, p_value, dof, expected = stats.chi2_contingency(mb_mf)
-    print("Proportion is significantly different between MB and MF at the 15th trial")
-    print(p_value)
-
-    mb_stroop = np.array([[(1 - proportion_at_index["mb"]) * 100, proportion_at_index["mb"] * 100],
-                          [(1 - proportion_at_index["stroop"]) * 100, proportion_at_index["stroop"] * 100]])
-    chi2_stat, p_value, dof, expected = stats.chi2_contingency(mb_stroop)
-    print("Proportion is significantly different between MB and STROOP at the 15th trial")
-    print(p_value)
-
-    stroop_mf = np.array([[(1 - proportion_at_index["mf"]) * 100, proportion_at_index["mf"] * 100],
-                          [(1 - proportion_at_index["stroop"]) * 100, proportion_at_index["stroop"] * 100]])
-    chi2_stat, p_value, dof, expected = stats.chi2_contingency(stroop_mf)
-    print("Proportion is significantly different between MF and STROOP at the 15th trial")
-    print(p_value)
+    compare_adaptive_propotion(conditions, clicked_dict)
+    logistic_regression(conditions, clicked_dict, adaptive)
+    # chi_test(conditions, clicked_dict)

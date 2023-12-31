@@ -7,6 +7,7 @@ from scipy.stats import chisquare, sem, t, norm
 import random
 import statsmodels.formula.api as smf
 import os
+import statsmodels.api as sm
 
 
 ### create df
@@ -111,7 +112,8 @@ def plot_confidence_interval(actual_count, prop_counts, model, participant=None)
     if participant:
         ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
         plt.plot(x, participant[1]["optimal_strategy"], label='Participant', color='red')
-        plt.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid, alpha=0.3, label=f'95% Confidence Interval')
+        plt.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid,
+                         alpha=0.3, label=f'95% Confidence Interval')
 
     # Set plot labels and legend
     plt.xlabel('Index')
@@ -121,10 +123,11 @@ def plot_confidence_interval(actual_count, prop_counts, model, participant=None)
     # plt.show()
     plt.close()
 
-def classify_score(click_df, pid_list):
+
+def classify_via_score(click_df, pid_list):
     # given the score, calculate the proportion of participants who used the optimal strategy
     for idx, row in click_df.iterrows():
-        if row["score"] in [15, 14, 13]: #does 16 make sense?
+        if row["score"] in [15, 14, 13]:  # does 16 make sense?
             click_df.at[idx, 'optimal_strategy'] = True
         else:
             click_df.at[idx, 'optimal_strategy'] = False
@@ -138,7 +141,8 @@ def classify_score(click_df, pid_list):
     return count, count_prop
 
 
-def classify_using_clicks(sequences):
+def classify_sequences(sequences):
+    # todo: not working correctly
     # optimal strategy is to first click inner nodes and then outer nodes
     immediate_nodes = [1, 5, 9]
     middle_nodes = [2, 6, 10]
@@ -167,7 +171,7 @@ def generate_random_sequences():
 def random_sequences():
     ## check how many randomly generated click sequences are wrongly classified as adaptive ones
     random_sequences = generate_random_sequences()
-    misclassified_prop = classify_using_clicks(random_sequences)
+    misclassified_prop = classify_via_score(random_sequences)
     res = chisquare([0.4 * 100, 0.6 * 100], f_exp=[misclassified_prop * 100, (1 - misclassified_prop) * 100])
     print(res)
 
@@ -187,10 +191,24 @@ def score_trend(click_df):
     return None
 
 
-def lme(data):
+def linear_regression(data):
+    # linear regression analysis of the score
     formula_ = "score ~ trial"
-    gamma_model = smf.mixedlm(formula=formula_, data=data, groups=data["pid"]).fit()
-    print(gamma_model.summary())
+    res = smf.mixedlm(formula=formula_, data=data, groups=data["pid"]).fit()
+    print(res.summary())
+
+
+def logistic_regression(data):
+    # logitic regression of the proportion of optimal strategy
+    # filter data, only keep columns pid, trial, optimal_strategy
+    data = data[["pid", "trial", "optimal_strategy"]].copy()
+
+    # replace true and false with 1 and 0
+    data["optimal_strategy"] = data["optimal_strategy"].astype(int)
+
+    res = sm.GLM.from_formula("optimal_strategy ~ trial", data=data, family=sm.families.Binomial()).fit()
+    print(res.summary())
+    return None
 
 
 def improving_pid(data):
@@ -205,11 +223,38 @@ def improving_pid(data):
     # Mann Kendall test and check if test statistic is positive, then add the pid to adaptiv elist
     adaptive_pid = []
     for pid in reshaped_score_df:
-        result = mk.original_test(reshaped_score_df[pid])
-        if result.s > 0:
-            adaptive_pid.append(pid)
+        # result = mk.original_test(reshaped_score_df[pid])
+        # if result.s > 0:
+        adaptive_pid.append(pid)
     print("Adaptive pid", adaptive_pid)
     return None
+
+
+def pid_with_adaptive_strategy(data):
+    # find the list of participants who used the adaptive strategy in the last 10 trials
+    data = data[['pid', 'trial_index', 'score']].copy()
+
+    # reset trial_index for each pid from 0 to 119
+    data["trial_index"] = data.groupby("pid").cumcount()
+
+    reshaped_score_df = data.pivot(index="trial_index", columns="pid", values="score")
+
+    average_score_pid = []
+    # check if score is > 12 in the last trials
+    for pid in reshaped_score_df:
+        if reshaped_score_df[pid][-20:].mean() > 12:
+            average_score_pid.append(pid)
+    print("PID whose average score > 12 in the last n trials", average_score_pid)
+    print(len(average_score_pid))
+
+    adaptive_strategy_pid = []
+    # check if someone has a score of 15, 14, 13, at least n times
+    for pid in reshaped_score_df:
+        if reshaped_score_df[pid].isin([13, 14, 15]).sum() >= 10:
+            adaptive_strategy_pid.append(pid)
+    print("PID who used adaptive strategy at least 3 times", adaptive_strategy_pid)
+    print(len(adaptive_strategy_pid))
+    return adaptive_strategy_pid
 
 
 def infer_fitted_model_strategy(model):
@@ -231,20 +276,34 @@ def infer_fitted_model_strategy(model):
     model_df["trial"] = [item for sublist in temp_trial for item in sublist]
     model_df["score"] = [item for sublist in temp_score for item in sublist]
 
-    return classify_score(model_df, matching_files)
+    return classify_via_score(model_df, matching_files)
+
+
+def clicking_pid(click_df):
+    pid_list = click_df["pid"].unique()
+    good_pid = []
+    for pid in pid_list:
+        temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
+        if any(v > 0 for v in temp_list):
+            good_pid.append(pid)
+    return good_pid
 
 
 if __name__ == "__main__":
     data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
 
-    learning_pid = improving_pid(data)
+    learning_pid = improving_pid(data)  # todo: currently set to all participants
+    # sig_improving_pid = pid_with_adaptive_strategy(data)
 
     pid_list, click_df = create_df(data, learning_pid)
 
-    ### lme
-    # lme(click_df)
+    clicked_pid = clicking_pid(click_df)
+
+    ### analysis
+    linear_regression(click_df)
+    logistic_regression(click_df)
     # score_trend(click_df)
-    count_prop_pid = classify_score(click_df, pid_list)
+    # count_prop = classify_via_score(click_df, pid_list)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend_test(count_prop)
@@ -257,7 +316,7 @@ if __name__ == "__main__":
 
     # reinforce variants without hierarchical models
     # models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    models = [491]
-    for model in models:
-        actual_count, count_prop = infer_fitted_model_strategy(model)
-        plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop_pid)
+    # models = [491]
+    # for model in models:
+    #     actual_count, count_prop = infer_fitted_model_strategy(model)
+    #     plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop_pid)

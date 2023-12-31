@@ -107,13 +107,13 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[3]
 
-    exp_name = "stroop"
+    exp_name = "mf"
     block = "training"
-    number_of_trials = 15
-    # if exp_name == "mf":
-    #     number_of_trials = 30
-    # else:
-    #     number_of_trials = 15
+
+    if exp_name == "mf":
+        number_of_trials = 30
+    else:
+        number_of_trials = 15
 
     infer_experiment_sequences(
         exp_name, number_of_trials, block, max_evals=100

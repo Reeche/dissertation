@@ -1,10 +1,14 @@
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv("participants-all_planningamount.csv", sep=",")
-df2 = pd.read_csv("participants_all_threecond_full.csv", sep=",")
+df = pd.read_csv("participants-mf_stroop_full_exp.csv", sep=",")
+df1 = pd.read_csv("participants-mf_stroop_full_exp.csv", sep=",")
+# append df
+df = df._append(df1, ignore_index=True)
 
-df = df.append(df2)
+# filter for condition = 0
+# df = df[df["condition"] == 1]
+
 print("Number of participants", len(df))
 gender = df["gender"].value_counts()
 print(gender)
