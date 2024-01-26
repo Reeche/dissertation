@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import ast
 import numpy as np
-from vars import learning_participants
+from vars import learning_participants, clicking_participants
 
 def plot_mer(data, model_name):
     # get the model_mer and pid_mer
@@ -70,7 +70,19 @@ def plot_rewards(data, model_name):
     plt.plot(pid_average, label="Participant", color="blue")
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1, label='95% CI')
 
-    plt.plot(model_average, label=model_name, color="orange")
+    # map model to model name
+    if model_name == 1756:
+        name = "No learning"
+    elif model_name == 1743:
+        name = "Mental habit"
+    elif model_name == 479:
+        name = "LVOC"
+    elif model_name == 491:
+        name = "Reinforce"
+    elif model_name == 522:
+        name = "SSL"
+
+    plt.plot(model_average, label=name, color="orange")
 
     plt.xlabel("Trial")
     # plt.ylim(0, 50)
@@ -129,7 +141,7 @@ def plot_clicks(data, model_name):
 
 
 
-model_name = ["1756", "1743", "479", "491", "522", "full"]
+model_name = [1756, 1743, 479, 491, 522]
 
 for model in model_name:
     exp = "strategy_discovery"
@@ -139,8 +151,11 @@ for model in model_name:
     data = data[data["model"] == model]
 
     # filter for adaptive participants
-    data = data[data["pid"].isin(learning_participants[exp])]
-    # data = data[data["pid"].isin([1])]
+    if exp in ["c1.1", "c2.1", "v1.0"]:
+        data = data[data["pid"].isin(clicking_participants[exp])]
+    elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+                    "low_variance_low_cost", "strategy_discovery"]:
+        data = data[data["pid"].isin(learning_participants[exp])]
 
     # if exp in ["c1.1", "c2.1", "v1.0"]:
     #     plot_mer(data, model)

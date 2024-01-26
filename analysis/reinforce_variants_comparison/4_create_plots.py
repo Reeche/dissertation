@@ -4,7 +4,7 @@ import ast
 import numpy as np
 from vars import learning_participants
 
-def plot_mer(data, model_name):
+def plot_mer(condition, data, model_name):
     # get the model_mer and pid_mer
     data = data[["model_mer", "pid_mer"]]
     data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
@@ -38,11 +38,11 @@ def plot_mer(data, model_name):
     # plt.ylim(0, 50)
     plt.ylabel("Average expected score")
     plt.legend()
-    plt.savefig(f"plot/{exp}/{model_name}_mer.png")
+    plt.savefig(f"plots/{condition}/{model_name}_mer.png")
     # plt.show()
     plt.close()
 
-def plot_rewards(data, model_name):
+def plot_rewards(condition, data, model_name):
     # get the model_mer and pid_mer
     data = data[["model_rewards", "pid_rewards"]]
     # data["pid_rewards"] = data["pid_rewards"].apply(lambda x: list(ast.literal_eval(x)))
@@ -76,7 +76,7 @@ def plot_rewards(data, model_name):
     # plt.ylim(0, 50)
     plt.ylabel("Average actual score")
     plt.legend()
-    plt.savefig(f"plot/{exp}/{model_name}_rewards.png")
+    plt.savefig(f"plots/{condition}/{model_name}_rewards.png")
     # plt.show()
     plt.close()
 
@@ -138,27 +138,20 @@ def group_pid_according_to_bic(data):
     return None
 
 
-model_name = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
+# model_name = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
+conditions = ["v1.0", "c1.1", "c2.1"]
+model_name = [487, 491]
 
-for model in model_name:
-    exp = "strategy_discovery"
-    data = pd.read_csv(f"data/{exp}.csv")
+for condition in conditions:
+    for model in model_name:
+        data = pd.read_csv(f"data/{condition}.csv")
 
-    # filter for the selected model
-    data = data[data["model"] == model]
+        # filter for the selected model
+        data = data[data["model"] == model]
 
-    # filter for adaptive participants
-    data = data[data["pid"].isin(learning_participants[exp])]
-    # data = data[data["pid"].isin([1])]
+        # filter for adaptive participants
+        data = data[data["pid"].isin(learning_participants[condition])]
 
-    # if exp in ["c1.1", "c2.1", "v1.0"]:
-    #     plot_mer(data, model)
-    #     # plot_rewards(data, model)
-    # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-    #              "low_variance_low_cost"]:
-
-    # plot_mer(data, model)
-    plot_rewards(data, model)
-    # plot_clicks(data, model)
-
-
+        plot_mer(condition, data, model)
+        plot_rewards(condition, data, model)
+        # plot_clicks(data, model)

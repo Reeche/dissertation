@@ -1,0 +1,8 @@
+executable = /lustre/fast/fast/rhe/venv/bin/python
+arguments = fit_mcrl_models.py $(Arg1) $(Arg2) $(Arg3) $(Arg4) $(Arg5)
+error = errs/$(Arg1)_mf/$(Arg2)_$(Arg4).err
+getenv = True
+request_memory = 16000
+request_cpus = 1
+max_materialize=2000
+queue Arg1,Arg2,Arg3,Arg4,Arg5 from parameters.txt

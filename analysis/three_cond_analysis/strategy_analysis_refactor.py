@@ -1,9 +1,11 @@
 import pandas as pd
 from sklearn.cluster import KMeans
-import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.stats import chisquare
+import statsmodels.api as sm
+from vars import clicking_pid
+import pymannkendall as mk
 
 
 def plot_strategy_proportions(data, mapping: dict):
@@ -15,8 +17,9 @@ def plot_strategy_proportions(data, mapping: dict):
         temp_freq["Adaptive"] = Counter(df[columns])["adaptive"] / len(data[0])
         temp_freq["Mod. adaptive"] = Counter(df[columns])["mod"] / len(data[0])
         temp_freq["Maladaptive"] = Counter(df[columns])["mal"] / len(data[0])
-        frequencies = frequencies.append(temp_freq, ignore_index=True)
+        frequencies = frequencies._append(temp_freq, ignore_index=True)
 
+    trend_test(frequencies)
     plt.plot(frequencies)
     # plt.legend()
     plt.show()
@@ -75,14 +78,56 @@ def adaptive_proportion_higher_than_chance(strategy_labels, participants_df):
     res = chisquare([participant_counts["adaptive"], non_adaptive_pid], f_exp=[cm_counts["adaptive"], non_adaptive_cm])
     print(res)
 
+def logistic_regression(participants_df, mapping_dict):
+
+    # replace the column strategy with the mapping selected from the column condition
+    participants_df["strategy"] = participants_df.apply(lambda x: mapping_dict[x["condition"]][x["strategy"]], axis=1)
+
+    # replace strategy with 1 for adaptive and 0 for anything else
+    participants_df["strategy"] = [1 if x == "adaptive" else 0 for x in participants_df["strategy"]]
+
+    # logistic regression
+    # model = sm.GLM.from_formula("strategy ~ C(condition, Treatment('c1.1'))*trial", data=participants_df,
+    #                             family=sm.families.Binomial()).fit()
+    # print(model.summary())
+
+    ### logisit regression for each condition
+    for condition in pd.unique(participants_df["condition"]):
+        condition_df = participants_df[participants_df["condition"] == condition]
+        model = sm.GLM.from_formula("strategy ~ trial", data=condition_df,
+                                    family=sm.families.Binomial()).fit()
+        print(condition)
+        print(model.summary())
+
+    # from sklearn.linear_model import LogisticRegression
+    # logreg = LogisticRegression(multi_class='ovr', solver='liblinear')
+    # # x_train is trial and condition, convert condition to dummy variables
+    # X_train = pd.get_dummies(participants_df[["trial", "condition"]], columns=["condition"])
+    #
+    # # y_train is strategy
+    # y_train = participants_df["strategy"]
+    # logreg.fit(X_train, y_train)
+    # print(logreg.coef_)
+    return None
+
+def trend_test(data):
+    result = mk.original_test(data["Adaptive"])
+    print(result)
+    return None
+
 if __name__ == "__main__":
     # experiment = "v1.0"
     experiments = ["v1.0", "c2.1", "c1.1"]
+    all_pid = pd.DataFrame()
+    mapping_dict = {}
     for experiment in experiments:
         strategy_scores = pd.read_pickle(f"../../results/strategy_scores/{experiment}_strategy_scores.pkl")
         strategy_scores = pd.DataFrame.from_dict(strategy_scores, orient='index')
         strategy_scores.index += 1  # increment by one because participants start at 1
         participants = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
+
+        # filter for clicking participants
+        participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
 
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
 
@@ -90,12 +135,25 @@ if __name__ == "__main__":
         unique_used_strategies = pd.unique(participants_df.values.flatten())
 
         ## filter strategy score by used strategies
-        used_strategy_score = (strategy_scores.loc[unique_used_strategies])
+        used_strategy_score = strategy_scores.loc[unique_used_strategies] #important to use loc here
 
         strategy_labels = clustering(used_strategy_score)
+
         ## create mapping
-        mapping_dict = used_strategy_score.set_index(strategy_labels.index)['label']
+        mapping = used_strategy_score.set_index(strategy_labels.index)['label']
 
-        adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+        # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+        plot_strategy_proportions(participants_df, mapping)
 
-        # plot_strategy_proportions(participants_df, mapping_dict)
+        ### reshape df for logisitic regression
+        # participants_df = participants_df.transpose()
+        # participants_df = pd.melt(participants_df)
+        # participants_df.columns = ["pid", "strategy"]
+        # participants_df["trial"] = participants_df.groupby("pid").cumcount() + 1
+        # participants_df["condition"] = experiment
+        #
+        # all_pid = all_pid._append(participants_df)
+        # mapping_dict[experiment] = mapping
+    #
+    # logistic_regression(all_pid, mapping_dict)
+

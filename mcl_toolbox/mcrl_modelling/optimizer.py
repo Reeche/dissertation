@@ -334,7 +334,7 @@ class ParameterOptimizer:
         simulations_data = self.agent.run_multiple_simulations(
             self.env,
             self.num_simulations,
-            participant=ParticipantIterator(self.participant),
+            participant=ParticipantIterator(self.participant, click_cost=self.click_cost),
             compute_likelihood=self.compute_likelihood,
         )
         relevant_data = get_relevant_data(simulations_data, self.objective)
@@ -364,7 +364,7 @@ class ParameterOptimizer:
 
     def optimize(self, objective, num_simulations=1, optimizer="pyabc",
                  db_path="sqlite:///test.db", compute_likelihood=False,
-                 max_evals=100, rstate=None):
+                 max_evals=100, click_cost=1, rstate=None):
         """
         This function first gets the relevant participant data,
         creates a lambda function as required by fmin function
@@ -395,6 +395,7 @@ class ParameterOptimizer:
         self.num_simulations = num_simulations
         self.optimizer = optimizer
         prior = self.get_prior()
+        self.click_cost = click_cost
         # get participant data as dict
         p_data = construct_p_data(self.participant, self.pipeline)
         self.p_data = p_data
@@ -421,7 +422,8 @@ class ParameterOptimizer:
         data = self.objective_fn(params)
         return data, p_data
 
-    def run_hp_model(self, params, objective, num_simulations=1):
+    def run_hp_model(self, params, objective, num_simulations=1, click_cost=1):
+        self.click_cost = click_cost
         self.objective = objective
         self.num_simulations = num_simulations
         p_data = construct_p_data(self.participant, self.pipeline)

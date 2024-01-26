@@ -279,10 +279,12 @@ class ModelFitter:
             plot_dir=None,
     ):
         if sim_params is None:
-            sim_params = {"num_simulations": 30}
+            sim_params = {"num_simulations": 30,
+                          "click_cost": 1}
         if env is None and pid is None:
             raise ValueError("Either env or pid has to be specified")
         num_simulations = sim_params["num_simulations"]
+        click_cost = sim_params["click_cost"]
         participant = None
         if pid is not None:
             participant = self.E.participants[pid]
@@ -300,7 +302,7 @@ class ModelFitter:
             plot_file = f"{model_index}_{num_simulations}.png"
         else:
             (r_data, sim_data), p_data = optimizer.run_hp_model(
-                params, "reward", num_simulations=num_simulations
+                params, "reward", num_simulations=num_simulations, click_cost=click_cost
             )
             plot_file = f"{participant.pid}_{model_index}_{num_simulations}.png"
         if plot_dir is not None:

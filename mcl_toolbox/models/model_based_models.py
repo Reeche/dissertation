@@ -30,7 +30,7 @@ class ModelBased(Learner):
 
     def construct_p_data(self):
         p_data = {
-            "envs": self.participant_obj.envs,
+            "envs": self.participant_obj.envs*2,
             "a": self.participant_obj.clicks,
             "mer": get_termination_mers(self.participant_obj.envs, self.participant_obj.clicks, self.env.pipeline),
             "r": self.participant_obj.rewards
@@ -306,6 +306,7 @@ class ModelBased(Learner):
 
         # expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)]) #todo: check this??
 
+        # We want the larger value between max_termination_value or the value_range
         max_termination_value = np.full(len(self.value_range), termination_value)
         values = np.maximum(self.value_range, max_termination_value)
         expectation = torch.sum(probabilities * values)

@@ -10,7 +10,7 @@ import statsmodels.formula.api as smf
 from collections import Counter
 from scipy.stats import chisquare, chi2_contingency
 import os
-from vars import clicking_pid
+from vars import clicking_pid, learning_pid
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects.numpy2ri
@@ -90,7 +90,7 @@ def plot_clicks(average_clicks):
     plt.plot(average_clicks)
     plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
                      alpha=.1)
-    plt.ylim(top=7.5)
+    plt.ylim(top=9)
     plt.ylim(bottom=-1)
     plt.xlabel("Trial Number", size=15)
     plt.xticks(fontsize=13)
@@ -103,12 +103,12 @@ def plot_clicks(average_clicks):
         plt.axhline(y=6.32, color='r', linestyle='-')
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
-        plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.68
+        plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
     else:
         label = "LVLC"
         plt.axhline(y=5.82, color='r', linestyle='-')
     plt.ylabel(f"Average number of clicks for {label}", fontsize=15)
-    plt.savefig(f"results/plots/{experiment}_average_clicks")
+    plt.savefig(f"plots/{experiment}_average_clicks.png")
     # plt.show()
     plt.close()
     return None
@@ -151,17 +151,13 @@ def anova(click_data):
 
 def lme(click_data):
     # linear mixed effect models
-    # formula_ = "number_of_clicks ~ trial + variance + click_cost + trial:variance + trial:click_cost + variance:click_cost + trial:variance:click_cost"
-    # gamma_model = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
-    # print("learning results", gamma_model.summary())
+    # formula = "number_of_clicks ~ trial*variance*click_cost"
+    # gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit()  # makes sense
+    # print(gamma_model.summary())
 
-    formula = "number_of_clicks ~ trial*variance*click_cost"
-    gamma_model = smf.mixedlm(formula=formula, data=click_data, groups=click_data["pid"]).fit()  # makes sense
-    print("learning results", gamma_model.summary())
-
-    formula_ = "number_of_clicks ~ trial:C(condition)"
+    formula_ = "number_of_clicks ~ trial"
     gamma_model_ = smf.mixedlm(formula=formula_, data=click_data, groups=click_data["pid"]).fit()  # makes sense
-    print("learning results", gamma_model_.summary())
+    print(gamma_model_.summary())
 
     return None
 
@@ -331,12 +327,12 @@ def pid_improved_clicks_twice(exp, data, bad_pid):
 
 
 if __name__ == "__main__":
-    experiments = ["low_variance_low_cost",
-                   "low_variance_high_cost",
+    experiments = ["high_variance_high_cost",
                    "high_variance_low_cost",
-                   "high_variance_high_cost"]
+                   "low_variance_high_cost",
+                   "low_variance_low_cost"]
 
-    # experiments = ["high_variance_low_cost"]
+    # experiments = ["low_variance_low_cost"]
     click_df_all_conditions = []
     for experiment in experiments:
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
@@ -344,7 +340,7 @@ if __name__ == "__main__":
 
         # filter for participants who clicked at least once
         # good_pid = clicking_pid(click_df, experiment)
-        click_df = click_df[click_df["pid"].isin(clicking_pid)]
+        click_df = click_df[click_df["pid"].isin(learning_pid[experiment])]
 
         ## participants who improved their clicks at least twice
         # pid_improved_clicks_twice(experiment, click_df, bad_pid)
@@ -368,7 +364,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
-        # plot_clicks(average_clicks)
+        plot_clicks(average_clicks)
 
         ##trend test
         # trend_test(average_clicks)
@@ -377,7 +373,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         ##append all 4 conditions into one df
-        click_df_all_conditions.append(click_df)
+        # click_df_all_conditions.append(click_df)
 
         # optimal number of clicks vs. actual number of clicks
         # get clicks of last trial
@@ -395,5 +391,5 @@ if __name__ == "__main__":
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
-    result_df = pd.concat(click_df_all_conditions, ignore_index=True)
-    lme(result_df)
+    # result_df = pd.concat(click_df_all_conditions, ignore_index=True)
+    # lme(result_df)

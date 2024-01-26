@@ -6,7 +6,7 @@ from mcl_toolbox.computational_microscope.computational_microscope import \
     ComputationalMicroscope
 from mcl_toolbox.global_vars import features, strategies, structure
 from mcl_toolbox.utils import learning_utils
-from mcl_toolbox.utils.analysis_utils import get_data
+from utils.analysis_utils import get_data
 
 """
 Run this file to infer the averaged(?) sequences of the participants.
@@ -28,7 +28,7 @@ def get_participant_data(exp_num, pid, block=None):
     if block:
         clicks_data = clicks_data[
             (clicks_data.pid == pid) & (clicks_data.block == block)
-        ]
+            ]
     else:
         clicks_data = clicks_data[clicks_data.pid == pid]
     click_sequence = [q["click"]["state"]["target"] for q in clicks_data.queries]
@@ -41,17 +41,17 @@ def get_participant_data(exp_num, pid, block=None):
 
 
 def infer_strategies(
-    click_sequences, envs, pipeline, strategy_space, W, features, normalized_features
+        click_sequences, envs, pipeline, strategy_space, W, features, normalized_features, max_evals
 ):
     cm = ComputationalMicroscope(
         pipeline, strategy_space, W, features, normalized_features
     )
-    S, _, _, T = cm.infer_sequences(click_sequences, envs)
+    S, _, _, T = cm.infer_sequences(click_sequences, envs, max_evals)
     return S, T
 
 
 def infer_many_participant_sequences(
-    exp_num_list=["F1"], pid_list=[0, 3, 5, 13], block="training"
+        exp_num_list=["F1"], pid_list=[0, 3, 5, 13], block="training"
 ):
     """
     Infers each participant individually, for a list of experiments
@@ -65,28 +65,40 @@ def infer_many_participant_sequences(
             infer_participant_sequences(pid, exp, block)
 
 
-def infer_participant_sequences(pid, exp_num, block=None):
+def infer_participant_sequences(pid, exp_num, num_trials, block, max_evals):
     strategy_space = strategies.strategy_space
     microscope_features = features.microscope
     strategy_weights = strategies.strategy_weights
 
-    exp_pipelines = structure.exp_pipelines
-
-    if exp_num not in structure.exp_reward_structures:
-        raise (ValueError, "Reward structure not found.")
-    reward_structure = structure.exp_reward_structures[exp_num]
+    if exp_num not in ["v1.0", "c1.1", "c2.1", "c2.1_dec", "F1", "IRL1"]:
+        reward_dist = "categorical"
+        reward_structure = exp_num
+        reward_distributions = learning_utils.construct_reward_function(
+            structure.reward_levels[reward_structure], reward_dist
+        )
+        repeated_pipeline = learning_utils.construct_repeated_pipeline(
+            structure.branchings[exp_num], reward_distributions, num_trials
+        )
+        exp_pipelines = {exp_num: repeated_pipeline}
+    else:
+        # list of all experiments, e.g. v1.0, T1.1 only has the transfer after training (20 trials)
+        exp_pipelines = structure.exp_pipelines
+        if exp_num not in structure.exp_reward_structures:
+            raise (ValueError, "Reward structure not found.")
+        reward_structure = structure.exp_reward_structures[exp_num]
 
     if exp_num not in exp_pipelines:
         raise (ValueError, "Experiment pipeline not found.")
     pipeline = exp_pipelines[exp_num]  # select from exp_pipeline the selected v1.0
-    pipeline = [pipeline[0] for _ in range(100)]
-
-    normalized_features = learning_utils.get_normalized_features(reward_structure)
-    W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
+    # pipeline is a list of len 30, each containing a tuple of 2 {[3, 1, 2], some reward function}
+    pipeline = [pipeline[0] for _ in range(num_trials + 1)]
 
     # Get clicks and envs of a particular participant
     clicks, envs = get_participant_data(exp_num, pid, block=block)
-    # TODO these analysis files are switched around,
+
+    normalized_features = learning_utils.get_normalized_features(exp_num)
+    W = learning_utils.get_modified_weights(strategy_space, strategy_weights)
+
     # the one uses ComputationalMicroscope.infer_strategies, whereas infer_sequences.py uses ComputationalMicroscope.infer_participant_sequences
     # I see why they might've been named this as infer_sequences works for a whole experiment, whereas this one is participant by participant
     inferred_strategies, inferred_temperatures = infer_strategies(
@@ -97,6 +109,7 @@ def infer_participant_sequences(pid, exp_num, block=None):
         W,
         microscope_features,
         normalized_features,
+        max_evals
     )
 
     parent_directory = Path(__file__).parents[1]
@@ -120,8 +133,15 @@ def infer_participant_sequences(pid, exp_num, block=None):
 
 if __name__ == "__main__":
     pid = int(sys.argv[1])
-    exp_num = sys.argv[2]
-    block = None
-    if len(sys.argv) > 3:
-        block = sys.argv[3]
-    infer_participant_sequences(pid, exp_num, block)
+    exp_num = str(sys.argv[2])
+    num_trials = int(sys.argv[3])
+    # block = None
+    if len(sys.argv) > 4:
+        block = sys.argv[4]
+
+    # pid = 2
+    # exp_num = "strategy_discovery"
+    # num_trials = 120
+    # block = "training"
+
+    infer_participant_sequences(pid, exp_num, num_trials, block="training", max_evals=100)

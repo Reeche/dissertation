@@ -28,19 +28,19 @@ pid_dict = {
     'low_variance_low_cost': [3, 5, 6, 9, 11, 12, 15, 19, 27, 34, 39, 42, 44, 52, 55, 59, 66, 67, 72, 75, 77, 85, 91,
                               99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
                               165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207],
-    'strategy_discovery': list(range(1, 57))}
+    'strategy_discovery': list(range(1, 379))}
 
-exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-       "low_variance_low_cost", "strategy_discovery"]
-# exp = ["strategy_discovery"]
+# exp = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+#        "low_variance_low_cost", "strategy_discovery"]
+exp = ["strategy_discovery"]
 
 for exp_num in exp:
 
     ## MF models
-    ## vainlla #[522, 491, 479, 1743, 1756]
+    # vainlla #[522, 491, 479, 1743, 1756]
     ## RL variants without hierarchical [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    priors_directory = (f"results_rl_variants_8000/mcrl/{exp_num}_priors")
+    models = [522, 491, 479, 1743, 1756]
+    priors_directory = (f"results_mf_models_2000/mcrl/{exp_num}_priors")
 
     ## MB models
     # models = ["full"]

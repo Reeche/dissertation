@@ -5,31 +5,13 @@ import pymannkendall as mk
 import matplotlib.pyplot as plt
 import statsmodels.formula.api as smf
 from scipy import stats
-
-
-def sample_from_learning_pid(exp, n=5):
-    learning_participants = {
-        "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
-                 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 124, 132, 137, 144, 146, 150, 154, 155, 158,
-                 160, 165, 169, 173],
-        "c2.1": [0, 8, 13, 16, 20, 25, 26, 30, 31, 33, 39, 41, 47, 49, 52, 53, 58, 60, 61, 64, 67, 84, 86, 93, 95, 96,
-                 99, 103, 108, 113, 115, 118, 122, 123, 128, 130, 133, 134, 136, 138, 142, 145, 149, 156, 164, 166,
-                 170],
-        "c1.1": [2, 4, 7, 9, 12, 19, 23, 27, 28, 32, 37, 42, 44, 50, 54, 57, 63, 65, 70, 71, 74, 76, 81, 89, 91, 92,
-                 100, 102, 105, 109, 116, 120, 125, 127, 129, 131, 135, 139, 143, 151, 153, 157, 159, 161, 163, 167,
-                 168, 171]}
-
-    learning_pid_for_exp = learning_participants[exp]
-    sampled_pid = sample(learning_pid_for_exp, n)
-    return sampled_pid
+from vars import clicking_pid
 
 
 def individual_scores(exp):
     # plot score development for individuals
     df = pd.read_csv(f"../../data/human/{exp}/mouselab-mdp.csv")
     df = df[["pid", "trial_index", "score"]]
-
-    sampled_pid = sample_from_learning_pid(exp)
 
     # plot for each individual individually and add them to the plot
     for pid in sampled_pid:
@@ -178,13 +160,6 @@ def potential_improvement(data):
     b = improv_data["c2.1"].values.flatten()
     c = improv_data["c1.1"].values.flatten()
 
-    ### test for normality
-    # all = [a, b, c]
-    # for item in all:
-    #     normal_res = stats.normaltest(item)
-    #     print("Normality test: ", normal_res)
-    ## all not normal
-
     S, p = stats.kruskal(a, b, c)
     print("Kruskal test", S, p)
 
@@ -220,7 +195,8 @@ def lme_expected_score(data):
     concat_data = pd.concat(temp_list, ignore_index=True)
 
     formula_ = "expected_score ~ trial_index*C(condition)"  # adding improvement does not work
-    gamma_model = smf.mixedlm(formula=formula_, data=concat_data, groups=concat_data["pid"]).fit()
+    gamma_model = smf.mixedlm(formula=formula_, data=concat_data).fit()
+    # gamma_model = smf.mixedlm(formula=formula_, data=concat_data, groups=concat_data["pid"]).fit()
     print(gamma_model.summary())
     # somehow the slope for increasing variance is decreasing
     return None
@@ -262,20 +238,7 @@ def distance_between_strategies(exp_list):
 
     return None
 
-
 if __name__ == "__main__":
-
-    learning_participants = {
-        "v1.0": [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 55, 56, 59, 66, 68, 69, 73, 75, 77, 80,
-                 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 124, 132, 137, 144, 146, 150, 154, 155, 158,
-                 160, 165, 169, 173],
-        "c2.1": [0, 8, 13, 16, 20, 25, 26, 30, 31, 33, 39, 41, 47, 49, 52, 53, 58, 60, 61, 64, 67, 84, 86, 93, 95, 96,
-                 99, 103, 108, 113, 115, 118, 122, 123, 128, 130, 133, 134, 136, 138, 142, 145, 149, 156, 164, 166,
-                 170],
-        "c1.1": [2, 4, 7, 9, 12, 19, 23, 27, 28, 32, 37, 42, 44, 50, 54, 57, 63, 65, 70, 71, 74, 76, 81, 89, 91, 92,
-                 100, 102, 105, 109, 116, 120, 125, 127, 129, 131, 135, 139, 143, 151, 153, 157, 159, 161, 163, 167,
-                 168, 171]}
-
     participants_starting_optimally = {
         "v1.0": [85, 140],
         "c2.1": [0, 8, 39, 41, 58, 72, 99, 130, 152, 172],
@@ -283,8 +246,8 @@ if __name__ == "__main__":
     }
 
     exp_list = ["v1.0", "c2.1", "c1.1"]
-    lme()
-    distance_between_strategies(exp_list)
+    # lme()
+    # distance_between_strategies(exp_list)
 
     all_data = {}
 
@@ -298,22 +261,22 @@ if __name__ == "__main__":
         strategy_df = strategy_df - 1
 
         # replace strategy with score
-        strategy_df = strategy_df.replace(score_mapping)
+        # strategy_df = strategy_df.replace(score_mapping)
 
-        ### If filtering
-        # sampled_pid = sample_from_learning_pid(exp)
-        # filter df for learning participants
-        # strategy_df = strategy_df[strategy_df.columns.intersection(learning_participants[exp])]
+        ### filter for clicking participants
+        strategy_df = strategy_df[clicking_pid[exp]]
 
-        # count_of_expected_score_improvement(strategy_df, exp)
+        ### count_of_expected_score_improvement(strategy_df, exp)
         # proportion_of_expected_score_increase(strategy_df)
 
-        ## Proportion of participants whose expected score increased
+        ### Proportion of participants whose expected score increased
         # proportion_whose_expected_strategy_score_improved(strategy_df)
 
-        ## Proportion whose score improved
-        proportion_whose_score_improved(exp)
-        # all_data[exp] = strategy_df
+        ### Proportion whose score improved
+        # proportion_whose_score_improved(exp)
+        all_data[exp] = strategy_df
+
+
 
     ### test if potential improvement is different across conditions
     # improv_data = potential_improvement(all_data)

@@ -43,15 +43,15 @@ def mer_loss(p_mer, model_data, model_params):
 
 
 if __name__ == "__main__":
-    exp_list = ['v1.0', 'c2.1', 'c1.1',
-                'high_variance_high_cost',
-                'high_variance_low_cost',
-                'low_variance_high_cost',
-                'low_variance_low_cost',
-                'strategy_discovery'
-                ]
+    # exp_list = ['v1.0', 'c2.1', 'c1.1',
+    #             'high_variance_high_cost',
+    #             'high_variance_low_cost',
+    #             'low_variance_high_cost',
+    #             'low_variance_low_cost',
+    #             'strategy_discovery'
+    #             ]
 
-    # exp_list = ['v1.0']
+    exp_list = ['strategy_discovery']
 
     criterion = "likelihood"
     data_dir = f"../../results_mb_2000_v2/mcrl"

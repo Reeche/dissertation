@@ -72,7 +72,8 @@ class REINFORCE(Learner):
 
     def __init__(self, params, attributes):
         super().__init__(params, attributes)
-        self.lr = np.exp(params["lr"])
+        # self.lr = np.exp(params["lr"])
+        self.lr = 1
         self.gamma = np.exp(params["gamma"])
         self.beta = np.exp(params["inverse_temperature"])
         self.init_weights = np.array(params["priors"])
@@ -140,20 +141,33 @@ class REINFORCE(Learner):
         self.policy.saved_log_probs.append(m.log_prob(action))
 
     def get_end_episode_returns(self):
+        """
+        Get the external rewards (returns) after end of episode.
+        If learn from path, then only the external reward are taken here and the click cost are added in the if condition
+        If not learn from path, then self.policy.rewards is a list consisting of click cost and the final reward after walking e.g. [-1, -1, ..., 200]
+        Returns:
+
+        """
         returns = []
         self.term_rewards.insert(0, 0)
         R = 0
         offset = 0
         if self.path_learn:
-            offset = 3 #todo: why?
-        # self.policy.rewards is a list consisting of click cost and the final reward after walking e.g. [-1, -1, ..., 200]
-        for i, r in enumerate(self.policy.rewards[:: -1 - offset]): #get every n in reverse order
+            # because every third reward is an external reward (because of third node)
+            offset = 3
+        # for i, r in enumerate(self.policy.rewards[:: -1 - offset]):
+        # I think it should be everything except the last 4 items and then reverse the order
+        for i, r in enumerate(self.policy.rewards[:-(1+offset)][::-1]):
             pr = 0
             if self.use_pseudo_rewards:
                 pr = self.pseudo_rewards[::-1][i]
             R = (r + pr) + self.gamma * R
-            returns.insert(0, R)
+            returns.insert(0, R) #includes both external reward and the click costs [-1, -1, .. +50]
         if self.path_learn:
+            # the last 3 values from policy.reward are the actual values underneath the nodes
+            # for example [-1, -1, -1, -1, -1, 24, 0.0, 4, -4, 24], participant clicked 5 times,
+            # received 24 (without click cost), the values underneath the path is 0 -> 4 -> -4 -> 24
+            # todo: for strategy discovery, the value after termination is currently taking clicks into account, whereas it should not
             returns += self.policy.rewards[-3:]
         return returns
 
@@ -161,6 +175,11 @@ class REINFORCE(Learner):
         """
         Computing gradients and updating parameters.
         """
+        if not self.is_null:
+            self.policy.train(True)
+        elif self.is_null:
+            self.policy.train(False)
+
         policy_loss = []
         returns = self.get_end_episode_returns()
         returns = torch.tensor(returns)
@@ -207,6 +226,7 @@ class REINFORCE(Learner):
             action_tensor = torch.tensor(action)
             # likelihood of m (model action probabilities) and action_tensor (participant action)
             # e.g. m is a tensor of len 13, action tensor, selects the e.g. 5th action
+            self.policy.saved_log_probs.append(m.log_prob(action_tensor))
             self.action_log_probs.append(m.log_prob(action_tensor).data.item())
         else:
             action = self.get_action(env)
@@ -275,6 +295,7 @@ class REINFORCE(Learner):
         env.reset()
         policy_loss = 0
         for trial_num in range(num_trials):
+            # print(f"Trial {trial_num}")
             trials_data["w"].append(self.get_current_weights())
             actions = []
             rewards = []

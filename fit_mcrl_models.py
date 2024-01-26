@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_rl_variants_8000/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -76,7 +76,7 @@ def fit_model(
         params_dir=prior_directory,
     )
     if simulate:
-        mf.simulate_params(
+        r_data, sim_data = mf.simulate_params(
             model_index,
             res[0],
             pid=pid,
@@ -85,6 +85,7 @@ def fit_model(
             # sim_params=sim_params,
             sim_params=optimization_params,
         )
+    return r_data, sim_data
 
 
 if __name__ == "__main__":
@@ -99,22 +100,26 @@ if __name__ == "__main__":
     else:
         other_params = {}
 
-    # exp_name = "strategy_discovery"
-    # model_index = 32
+    # exp_name = "v1.0"
+    # model_index = 491
     # optimization_criterion = "likelihood"
-    # pid = 2
+    # pid = 1
     # other_params = {"plotting": True}
-    # number_of_trials = 120
+
+    if exp_name != "strategy_discovery":
+        number_of_trials = 35
+    else:
+        number_of_trials = 120
 
     def cost_function(depth):
         if depth == 0:
             return 0
         if depth == 1:
-            return -1
+            return 1
         if depth == 2:
-            return -3
+            return 3
         if depth == 3:
-            return -30
+            return 30
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -143,11 +148,11 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 8000,
+            "max_evals": 2000,
+            "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params
-    # tic = time.perf_counter()
-    fit_model(
+    r_data, sim_data = fit_model(
         exp_name=exp_name,
         pid=pid,
         number_of_trials=number_of_trials,
@@ -156,5 +161,5 @@ if __name__ == "__main__":
         data_path=f"results/cm/{exp_name}",
         **other_params,
     )
-    # toc = time.perf_counter()
-    # print(f"Took {toc - tic:0.4f} seconds")
+
+    # print(r_data)

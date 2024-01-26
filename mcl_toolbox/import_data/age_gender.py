@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv("participants-mf_stroop_full_exp.csv", sep=",")
-df1 = pd.read_csv("participants-mf_stroop_full_exp.csv", sep=",")
+df = pd.read_csv("participants-strategy_discovery_v2.csv", sep=",")
+# df1 = pd.read_csv("participants-mf_stroop_full_exp.csv", sep=",")
 # append df
-df = df._append(df1, ignore_index=True)
+# df = df._append(df1, ignore_index=True)
 
 # filter for condition = 0
 # df = df[df["condition"] == 1]

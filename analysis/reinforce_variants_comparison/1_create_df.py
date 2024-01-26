@@ -67,17 +67,16 @@ def number_of_parameters(model, criterion):
 
 
 if __name__ == "__main__":
-    # exp_list = ['v1.0',
-    #             'c2.1',
-    #             'c1.1',
-    #             'high_variance_high_cost',
-    #             'high_variance_low_cost',
-    #             'low_variance_high_cost',
-    #             'low_variance_low_cost',
-    #             'strategy_discovery'
-    #             ]
+    exp_list = ['v1.0',
+                'c2.1',
+                'c1.1',
+                'high_variance_high_cost',
+                'high_variance_low_cost',
+                'low_variance_high_cost',
+                'low_variance_low_cost',
+                ]
 
-    exp_list = ['strategy_discovery']
+    # exp_list = ['strategy_discovery']
 
     iterations = 1
 

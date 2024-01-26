@@ -10,10 +10,20 @@ import pickle
 import sys
 from pathlib import Path
 
+"""
+There are 4 variants: 
+full: every node has its own alpha and beta
+linear: alpha and beta are linearly interpolated between the node levels
+uniform: alpha and beta are the same for all nodes
+level: alpha and beta are the same for all nodes of the same level
+
+Currently, the full model works the best and uniform the worst
+Could not tell differences between the linear and level models 
+"""
 
 def plot_score(res, participant, pid, exp_name):
-    plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
-    plt.plot(participant["mer"], color="b", label="Participant")
+    plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
+    # plt.plot(participant["r"], color="b", label="Participant")
     plt.legend()
     plt.show()
     # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/score_{pid}.png")
@@ -49,13 +59,13 @@ def cost_function(depth):
 
 
 if __name__ == "__main__":
-    # exp_name = "v1.0"  # "strategy_discovery
-    # criterion = "likelihood"  # "number_of_clicks_likelihood"
-    # pid = 1
+    exp_name = "strategy_discovery"  # "strategy_discovery
+    criterion = "likelihood"  # "number_of_clicks_likelihood"
+    pid = 38
 
-    exp_name = sys.argv[1]
-    criterion = sys.argv[2]
-    pid = int(sys.argv[3])
+    # exp_name = sys.argv[1]
+    # criterion = sys.argv[2]
+    # pid = int(sys.argv[3])
     # model_variant = sys.argv[4]
     model_variant = "full" #"full", "linear", "uniform", "level"
 
@@ -76,7 +86,7 @@ if __name__ == "__main__":
     }
 
     if exp_name == "strategy_discovery":
-        number_of_trials = 120
+        number_of_trials = 1200
     else:
         number_of_trials = 35
 
@@ -85,9 +95,6 @@ if __name__ == "__main__":
     else:
         num_simulations = 1
 
-    p = E.participants[pid]
-    participant_obj = ParticipantIterator(p)
-
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
@@ -95,6 +102,7 @@ if __name__ == "__main__":
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
+    participant_obj = ParticipantIterator(pid_context)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
     # Has to be symmetric, otherwise biased towards negative expected value
@@ -172,24 +180,33 @@ if __name__ == "__main__":
 
     trials = True
     trials = Trials() if trials else None
-    best_params = fmin(fn=model.run_multiple_simulations,
-                       space=fspace,
-                       algo=tpe.suggest,
-                       max_evals=2000,
-                       show_progressbar=True)
+    # best_params = fmin(fn=model.run_multiple_simulations,
+    #                    space=fspace,
+    #                    algo=tpe.suggest,
+    #                    max_evals=2000,
+    #                    show_progressbar=False)
 
     ## simulate using the best parameters
     model.test_fitted_model = True
 
-    ## for pid 1: scale up bias 10, all others 1 and scale down bias 0.5 seems like a good fit
-    # best_params = {'inverse_temp': 100,
+    # best_params = {'inverse_temp': 1,
     #                'alpha_1': np.log(2),
     #                'beta_1': np.log(1),
     #                'alpha_2': np.log(1.2),
     #                'beta_2': np.log(1),
     #                'alpha_3': np.log(1.5),
     #                'beta_3': np.log(1),
-    #                'click_weight': 15}
+    #                'click_weight': 10}
+
+    # for pid 38 strategy discovery
+    best_params = {'inverse_temp': 0.33,
+                   'alpha_1': np.log(0.4404),
+                   'beta_1': np.log(0.7824),
+                   'alpha_2': np.log(0.1946),
+                   'beta_2': np.log(1.5247),
+                   'alpha_3': np.log(1.6084),
+                   'beta_3': np.log(0.0022),
+                   'click_weight': 49}
 
     model.env.reset()
     model.participant_obj.reset()
@@ -198,14 +215,16 @@ if __name__ == "__main__":
     ## save result and best parameters
     res.update(best_params)
 
-    # plot_score(res, model.p_data, pid, exp_name)
+
+    plot_score(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
-    # print(res)
+    print(res)
+
 
     ## check if dir exist
-    if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    # if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
+    #     Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
-    pickle.dump(res, output)
-    output.close()
+    # output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    # pickle.dump(res, output)
+    # output.close()

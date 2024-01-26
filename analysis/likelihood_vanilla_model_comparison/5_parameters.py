@@ -21,9 +21,8 @@ def model_free(data_dir, exp):
 
             df.loc[len(df)] = [exp, pid, model, no_prior_data]
 
-    df.to_csv(f"{exp}.csv")
+    df.to_csv(f"{exp}_parameters.csv")
 
-# model_free("../../results_mf_models_2000/mcrl", "v1.0")
 def model_based(data_dir, exp):
     # try:
     #     exp_ = exp.split("_")[0]
@@ -76,4 +75,4 @@ exp_list = ["v1.0"]
 
 for exp in exp_list:
     # model_based(f"../../results_mb_2000/mcrl", exp)
-    analyse_parameters(exp)
+    model_free("../../results_mf_models_2000/mcrl", "v1.0")

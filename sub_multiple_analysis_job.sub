@@ -1,0 +1,8 @@
+executable = /lustre/fast/fast/rhe/venv/bin/python
+arguments = analysis/likelihood_vanilla_model_comparison/1_create_df.py
+error = analysis_job.err
+getenv = True
+request_memory = 32000
+request_cpus = 1
+max_materialize=2000
+queue

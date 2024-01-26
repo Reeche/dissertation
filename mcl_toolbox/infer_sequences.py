@@ -1,5 +1,6 @@
 import sys
 import os
+import random
 from pathlib import Path
 from mcl_toolbox.computational_microscope.computational_microscope import (
     ComputationalMicroscope,
@@ -107,13 +108,17 @@ if __name__ == "__main__":
     # if len(sys.argv) > 2:
     #     block = sys.argv[3]
 
-    exp_name = "mf"
+    exp_name = "strategy_discovery"
+    number_of_trials = 120
     block = "training"
 
-    if exp_name == "mf":
-        number_of_trials = 30
-    else:
-        number_of_trials = 15
+    # exp_name = "mf"
+    # block = "training"
+
+    # if exp_name == "mf":
+    #     number_of_trials = 30
+    # else:
+    #     number_of_trials = 15
 
     infer_experiment_sequences(
         exp_name, number_of_trials, block, max_evals=100

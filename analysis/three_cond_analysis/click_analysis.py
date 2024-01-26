@@ -56,14 +56,15 @@ def create_click_df(data):
 
 
 
-def no_clicking_pid(click_df, experiment):
+def clicking_pid(click_df, experiment):
     pid_list = click_df["pid"].unique()
-    bad_pid = []
+    good_pid = []
     for pid in pid_list:
         temp_list = click_df[click_df['pid'] == pid]["number_of_clicks"].to_list()
-        if all(v == 0 for v in temp_list):
-            bad_pid.append(pid)
-    print(f"{experiment} number of people who did not click anything throughout all trials", len(bad_pid))
+        if any(v != 0 for v in temp_list):
+            good_pid.append(pid)
+    print(f"{experiment} number of people who clicked something ", len(good_pid), "out of ", len(pid_list))
+    print(good_pid)
 
 
 if __name__ == "__main__":
@@ -73,4 +74,4 @@ if __name__ == "__main__":
         click_df = create_click_df(data)
 
         ## no clicking pid
-        no_clicking_pid(click_df, experiment)
+        clicking_pid(click_df, experiment)

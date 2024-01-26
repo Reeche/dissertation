@@ -14,13 +14,43 @@ class ParticipantIterator:
         self.current_trial = 0
         self.current_click = 0
 
+
     def modify_scores(self, scores, p_clicks):
+        """
+
+        Args:
+            scores:
+            p_clicks:
+
+        Returns: a list containing the click costs and external reward, e.g. [-1, -1, 40]
+
+        """
         p_rewards = []
         for score, clicks in zip(scores, p_clicks):
+            total_click_cost = []
+            click_cost_list = []
             num_clicks = len(clicks) - 1
-            total_click_cost = self.click_cost * num_clicks
-            rewards = [-self.click_cost] * num_clicks + [score + total_click_cost]
-            p_rewards.append(rewards)
+            # if self.click_cost is a function
+            if callable(self.click_cost): #for strategy discovery
+                # click 1, 5, 9 have depth; 2, 6, 10 have depth 2; all others have depth 3
+                replacement_dict = {0: 0, 1: 1, 5: 1, 9: 1, 2: 2, 6: 2, 10: 2, 3: 3, 4: 3, 7: 3, 8: 3, 11: 3, 12: 3}
+                clicks_depth = [replacement_dict[click] for click in clicks]
+                for click_depth in clicks_depth:
+                    click_cost_list.append(-self.click_cost(click_depth))
+
+                click_cost_list.pop() #remove the 0 cost for termination
+                total_click_cost.append(score - sum(click_cost_list))
+            else:
+                total_click_cost = self.click_cost * num_clicks
+
+            if callable(self.click_cost): #that is if strategy discovery
+                rewards = [click_cost_list, total_click_cost]
+                flattened_list = [item for sublist in rewards for item in sublist]
+                p_rewards.append(flattened_list)
+
+            else:
+                rewards = [-self.click_cost] * num_clicks + [score + total_click_cost]
+                p_rewards.append(rewards)
         return p_rewards
 
     def get_click(self):

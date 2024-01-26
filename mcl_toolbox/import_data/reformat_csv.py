@@ -14,11 +14,11 @@ def split_participants_df_into_conditions(df, exp):
 
     """
 
-    mf = df[df["condition"] == 0]
-    stroop = df[df["condition"] == 1]
+    # df = df[df["condition"] == 0]
+    # stroop = df[df["condition"] == 1]
 
     # stroop.to_csv(f"../../data/human/stroop/participants.csv", sep=",", index=False)
-    df.to_csv(f"../../data/human/mb/participants.csv", sep=",", index=False)
+    df.to_csv(f"../../data/human/{exp}/participants.csv", sep=",", index=False)
 
 
 def split_mouselab_df_into_conditions(df, exp):
@@ -30,14 +30,17 @@ def split_mouselab_df_into_conditions(df, exp):
     Returns:
 
     """
-    mf = df[df["condition"] == 0]
-    stroop = df[df["condition"] == 1]
+    # mf = df[df["condition"] == 0]
+    # stroop = df[df["condition"] == 1]
+
+    # reset trial_index to start from 0 to 119 for each participant
+    df["trial_index"] = df.groupby("pid").cumcount()
 
     # stroop.to_csv(f"../../data/human/stroop/mouselab-mdp.csv", sep=",", index=False)
-    df.to_csv(f"../../data/human/mb/mouselab-mdp.csv", sep=",", index=False)
+    df.to_csv(f"../../data/human/{exp}/mouselab-mdp.csv", sep=",", index=False)
 
 
-experiment = "mb_full_exp"
+experiment = "strategy_discovery_v2"
 
 data_full = pd.read_csv(f"data/dataclips_{experiment}.csv", sep=",")
 
@@ -142,7 +145,7 @@ df_mouselab["queries"] = temp_queries
 df_mouselab["state_rewards"] = temp_state_rewards
 df_mouselab["end_nodes"] = temp_end_nodes
 df_mouselab["score"] = temp_score
-# split_mouselab_df_into_conditions(df_mouselab, experiment)
+split_mouselab_df_into_conditions(df_mouselab, experiment)
 df_mouselab.to_csv(f"mouselab-{experiment}.csv", index=False, index_label="pid")
 
 ### Create participant csv
@@ -159,5 +162,5 @@ df_participants.index += 1
 # remove bad participants
 df_participants = df_participants[~df_participants.index.isin(bad_pid_list)]
 
-# split_participants_df_into_conditions(df_participants, experiment)
+split_participants_df_into_conditions(df_participants, experiment)
 df_participants.to_csv(f"participants-{experiment}.csv", index=True, index_label="pid")

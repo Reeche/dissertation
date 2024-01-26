@@ -1,24 +1,38 @@
 import pandas as pd
 import numpy as np
 import os
-from vars import learning_participants
+from vars import clicking_participants, learning_participants, discovered_participants
 import matplotlib.pyplot as plt
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, kruskal
+import ast
 
 """
 Compare vanilla models based on the fit
 """
 
 
-def compare_pseudo_likelihood(data, trials):
+def compare_clicks_likelihood(data, trials):
     BIC = 2 * data["click_loss"] + data["number_of_parameters"] * np.log(trials)
     return BIC
 
 
-def compare_number_of_clicks_likelihood(data, trials):
+def compare_mer_likelihood(data, trials):
     BIC = 2 * data["mer_loss"] + data["number_of_parameters"] * np.log(trials)
     return BIC
 
+
+def calculate_score_loss(data):
+    # for every row, model_rewards - pid_rewards
+    data['model_rewards'] = data['model_rewards'].apply(ast.literal_eval)
+    data['pid_rewards'] = data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
+    pid_rewards_array = np.array(data['pid_rewards'].to_list(), dtype=np.float32)
+    model_rewards_array = np.array(data['model_rewards'].to_list(), dtype=np.float32)
+    reward_loss_array = pid_rewards_array - model_rewards_array
+    data['reward_difference'] = reward_loss_array.tolist()
+
+    # sum over the absolute values of reward_difference for each row
+    data['reward_loss'] = data['reward_difference'].apply(lambda x: np.sum(np.abs(x)))
+    return data
 
 def compare_loss(data, trials):
     BIC = 2 * data["loss"] + data["number_of_parameters"] * np.log(trials)
@@ -56,10 +70,12 @@ def bms(model_bic):
 
 def create_csv_for_matlab(data, exp):
     # create csv for matlab; filter for required models
-    data = data[data["model"].isin(["1743", "1756", "479", "491", "522", "full"])]
+    # data = data[data["model"].isin(["1743", "1756", "479", "491", "522", "full"])]
+    data = data[data["model"].isin([1743, 1756, 479, 491, 522])]
     # create pivot table with pid as y and model as x and fill the values with BIC
     data = data.pivot(index="model", columns="pid", values="BIC")
-    data = data.sort_index()  # 1743, 1756, 479, 491, 522, mb
+    # data = data.sort_index()  # 1743, 1756, 479, 491, 522, mb
+    ## for strategy discovery the order is: 479, 491, 522, 1743, 1756
     # data = missing_bic(data)
     data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
 
@@ -94,11 +110,21 @@ def missing_bic(df):
 def group_pid_by_bic(data):
     # which model explains which participant best
 
-    ## optional filter only for 1743, 491, 479
-    data = data[data["model"].isin(["1743", "491", "479"])]
+    ## optional filter only for 1743, 491, 479 (1756 is not learning)
+    # data = data[data["model"].isin([1743, 1756, 491, 479, 522])]
+    data = data[data["model"].isin([1743, 491, 479, 522])]
 
     # for each pid, find the model with the lowest BIC
     min_bic_idx = data.groupby('pid')['BIC'].idxmin()
+    res = data.loc[min_bic_idx]
+    return res
+
+def group_pid_by_score(data):
+    ## optional filter only for 1743, 491, 479 (1756 is not learning)
+    data = data[data["model"].isin([1743, 1756, 491, 479, 522])]
+
+    # for each pid, find the model with the lowest BIC
+    min_bic_idx = data.groupby('pid')['reward_loss'].idxmin()
     res = data.loc[min_bic_idx]
     return res
 
@@ -107,28 +133,31 @@ def plot_pid_score_grouped_by_model(data, exp=None):
     # plot the score of the participants who are best explained by a certain model
 
     model_dict = {
-        "Reinforce": "491",
-        "LVOC": "479",
-        "Habitual": "1743",
-        "Not learning": "1756",
-        "SSL": "522",
-        "Model-based": "full"}
+        "Reinforce": 491,
+        "LVOC": 479,
+        "Habitual": 1743,
+        # "Not learning": 1756,
+        "SSL": 522}
+        # "Model-based": "full"}
 
     for model_type, models in model_dict.items():
         # filter for the model in data
         filtered_data = data[data["model"] == models]
-        # print(len(filtered_data), "unique pid are best explained by the model", model_type)
+        print(len(filtered_data), "unique pid are best explained by the model", model_type)
 
-        filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(
-            lambda s: [int(num) for num in s.strip('[]').split()])
+        # filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
 
         # calculate the average of the pid_rewards
         pid_rewards = np.array(filtered_data["pid_rewards"].to_list())
         pid_rewards_average = np.mean(pid_rewards, axis=0)
 
-
         # plot the average
         plt.plot(pid_rewards_average, label=f"{model_type}, N={len(filtered_data)}")
+
+        # add 95% confidence interval
+        plt.fill_between(np.arange(1, 121), pid_rewards_average - 1.96 * np.std(pid_rewards, axis=0),
+                         pid_rewards_average + 1.96 * np.std(pid_rewards, axis=0), alpha=0.2)
+
         plt.xlabel("Trial")
         plt.ylabel("Average score")
         plt.legend()
@@ -141,15 +170,13 @@ def plot_pid_score_grouped_by_model(data, exp=None):
     if not os.path.exists(f"plot/{exp}"):
         os.makedirs(f"plot/{exp}")
 
-    plt.savefig(f"plot/{exp}/pid_grouped_by_model.png")
+    plt.savefig(f"plot/{exp}/only_learning_models.png")
     plt.close()
 
     return None
 
 
-def anova(data):
-    # anova for the last 60 trials across all models
-
+def kruskal(exp, data):
     # get only relevant columns model, pid_rewards
     data = data[["model", "pid_rewards"]]
 
@@ -157,7 +184,10 @@ def anova(data):
     data['pid_rewards'] = data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
 
     # for each pid_rewards, calculate the average of the last 60 trials
-    data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-60:]))
+    if exp == "strategy_discovery":
+        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-60:]))
+    else:
+        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-10:]))
 
     # groupby model and conduct anova using statsmodel
     # import statsmodels.api as sm
@@ -169,17 +199,20 @@ def anova(data):
 
     ## Kruskal-Wallis H-test
     from scipy.stats import kruskal
-    x = data[data["model"] == "1743"]["pid_rewards"]
-    y = data[data["model"] == "491"]["pid_rewards"]
-    z = data[data["model"] == "479"]["pid_rewards"]
+    q = data[data["model"] == 1756]["pid_rewards"]
+    x = data[data["model"] == 1743]["pid_rewards"]
+    y = data[data["model"] == 491]["pid_rewards"]
+    z = data[data["model"] == 479]["pid_rewards"]
 
-    res = kruskal(x, y, z)
+
+    res = kruskal(q, x, y, z)
     print(res)
 
     return None
 
+def mann_whitney_u_test(exp, data, models):
+    ## test whether average score of pid of a model pair is significantly different
 
-def mann_whitney_u_test(data, models):
     # model 1:
     data_a = data[data["model"] == models[0]]
     data_a['pid_rewards'] = data_a['pid_rewards'].apply(
@@ -187,7 +220,11 @@ def mann_whitney_u_test(data, models):
     pid_rewards_a = np.array(data_a["pid_rewards"].to_list())
     pid_rewards_average_a = np.mean(pid_rewards_a, axis=0)
     # last 60 trials
-    pid_rewards_average_a = pid_rewards_average_a[-60:]
+    if exp == "strategy_discovery":
+        last_trials = 60
+    else:
+        last_trials = 10
+    pid_rewards_average_a = pid_rewards_average_a[-last_trials:]
 
     # model 2:
     data_b = data[data["model"] == models[1]]
@@ -196,12 +233,12 @@ def mann_whitney_u_test(data, models):
     pid_rewards_b = np.array(data_b["pid_rewards"].to_list())
     pid_rewards_average_b = np.mean(pid_rewards_b, axis=0)
     # last 60 trials
-    pid_rewards_average_b = pid_rewards_average_b[-60:]
+    pid_rewards_average_b = pid_rewards_average_b[-last_trials:]
 
     res = mannwhitneyu(pid_rewards_average_b, pid_rewards_average_a, alternative="greater")
     print(f"Mann whitney U for models {models[0]} and model {models[1]}: {res}")
-    print(f"Mean average score of model {models[0]}: {np.mean(pid_rewards_average_a[-60:])}")
-    print(f"Mean average score of model {models[1]}: {np.mean(pid_rewards_average_b[-60:])}")
+    print(f"Mean average score of model {models[0]}: {np.mean(pid_rewards_average_a[-last_trials:])}")
+    print(f"Mean average score of model {models[1]}: {np.mean(pid_rewards_average_b[-last_trials:])}")
     return None
 
 
@@ -215,30 +252,33 @@ if __name__ == "__main__":
         df_all = []
         data = pd.read_csv(f"data/{exp}.csv", index_col=0)
 
-        # add BIC
-        # if exp in ["v1.0", "c1.1", "c2.1"]:
-        #     data["BIC"] = compare_pseudo_likelihood(data, 35)
-        # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
-        #     data["BIC"] = compare_number_of_clicks_likelihood(data, 35)
-        # elif exp == "strategy_discovery":
-        #     data["BIC"] = compare_pseudo_likelihood(data, 120)
+        calculate_score_loss(data)
 
         if exp == "strategy_discovery":
             data["BIC"] = compare_loss(data, 120)
         else:
             data["BIC"] = compare_loss(data, 35)
 
-        data = data[data["pid"].isin(learning_participants[exp])]
+        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+            data = data[data["pid"].isin(clicking_participants[exp])]
+        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
+            data = data[data["pid"].isin(learning_participants[exp])]
         df_all.append(data)
 
+        ### for individual analysis
         result_df = pd.concat(df_all, ignore_index=True)
-        res = group_pid_by_bic(result_df)
+        res = group_pid_by_bic(result_df) # get BIC for only selected models
+        # res = group_pid_by_score(result_df)
         plot_pid_score_grouped_by_model(res, exp)
-        # mann_whitney_u_test(res, ["1743", "479"])
-        # anova(res)
+        # kruskal(exp, res)
+        # mann_whitney_u_test(exp, res, [1743, 1756])
+        # mann_whitney_u_test(exp, res, [1743, 479])
+        # mann_whitney_u_test(exp, res, [1743, 491])
+        # mann_whitney_u_test(exp, res, [491, 479])
+
 
     # result_df = pd.concat(df_all, ignore_index=True)
-    # create_csv_for_matlab(result_df, "test")
+    # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")
     # model_bic = sort_by_BIC(result_df)
     # bms(model_bic)
     # res = group_pid_by_bic(result_df)
