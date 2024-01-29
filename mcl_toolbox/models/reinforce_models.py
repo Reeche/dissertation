@@ -72,8 +72,7 @@ class REINFORCE(Learner):
 
     def __init__(self, params, attributes):
         super().__init__(params, attributes)
-        # self.lr = np.exp(params["lr"])
-        self.lr = 1
+        self.lr = np.exp(params["lr"])
         self.gamma = np.exp(params["gamma"])
         self.beta = np.exp(params["inverse_temperature"])
         self.init_weights = np.array(params["priors"])
@@ -113,6 +112,7 @@ class REINFORCE(Learner):
         else:
             # calls the forward method in Policy class
             probs = self.policy(X_new, termination=not self.no_term)
+
         complete_probs = torch.zeros(self.num_actions)
         for index, action in enumerate(available_actions):
             complete_probs[action] = probs[index]
@@ -167,7 +167,6 @@ class REINFORCE(Learner):
             # the last 3 values from policy.reward are the actual values underneath the nodes
             # for example [-1, -1, -1, -1, -1, 24, 0.0, 4, -4, 24], participant clicked 5 times,
             # received 24 (without click cost), the values underneath the path is 0 -> 4 -> -4 -> 24
-            # todo: for strategy discovery, the value after termination is currently taking clicks into account, whereas it should not
             returns += self.policy.rewards[-3:]
         return returns
 
@@ -175,10 +174,11 @@ class REINFORCE(Learner):
         """
         Computing gradients and updating parameters.
         """
-        if not self.is_null:
-            self.policy.train(True)
-        elif self.is_null:
-            self.policy.train(False)
+        # if not self.is_null:
+        #     self.policy.train(True)
+        # elif self.is_null:
+        #     self.policy.train(False)
+        #     self.lr = 0
 
         policy_loss = []
         returns = self.get_end_episode_returns()

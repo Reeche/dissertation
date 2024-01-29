@@ -20,6 +20,7 @@ from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
 implemented_features = features.implemented
 microscope_features = features.microscope
+non_learning_features = features.non_learning
 model_attributes = model.model_attributes
 strategy_spaces = strategies.strategy_spaces
 
@@ -182,6 +183,8 @@ class ModelFitter:
         2. Attach selected features (if habitual, then full set of features (implemented_features.pkl; if not habitual,
         then microscope_features because the CM only uses the subset of features that are independent of what the
         participant did on the previous trials, i.e. no 5 habitual features)
+        If it is the non-learning model, the non_learning_features.pkl is used, which contains one feature less than
+        the microscope_features.pkl, namely trial_level_std
 
         Args:
             model_index: integer
@@ -200,10 +203,13 @@ class ModelFitter:
             strategy_space_type if strategy_space_type else "microscope"
         )
         strategy_space = strategy_spaces[strategy_space_type]
-        if learner_attributes["habitual_features"] == "habitual":
-            feature_space = implemented_features
+        if learner_attributes["is_null"]:
+            feature_space = non_learning_features
         else:
-            feature_space = microscope_features
+            if learner_attributes["habitual_features"] == "habitual":
+                feature_space = implemented_features
+            else:
+                feature_space = microscope_features
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:

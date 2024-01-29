@@ -11,7 +11,7 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 # vanilla models only
 # models = [522, 491, 479, 1743, 1756]
-models = [491, 1756]
+models = [522, 479]
 
 # reinforce variants
 # models = [32, 33, 34, 35, 36, 37, 38, 39, 80, 81, 82, 83, 84, 85, 86, 87, 128, 129, 130, 131, 132, 133, 134, 135, 176,

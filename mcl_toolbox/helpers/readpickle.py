@@ -10,5 +10,5 @@ sys.modules["distributions"] = distributions
 # object3 = pd.read_pickle("../../results/cm/inferred_strategies/strategy_discovery_training/strategies.pkl")
 # object4 = pd.read_pickle("../../results/cm/inferred_strategies/strategy_discovery_training/temperatures.pkl")
 # object5 = pd.read_pickle("../../results/cm/inferred_strategies/v1.0_training/temperatures.pkl")
-object = pd.read_pickle("../../results_mb_2000_v2/mcrl/strategy_discovery_mb/38_likelihood_full.pkl")
+object = pd.read_pickle("../../results_mf_models_2000/mcrl/strategy_discovery_data/28_491_1.pkl")
 print(object)

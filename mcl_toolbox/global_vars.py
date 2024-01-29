@@ -333,6 +333,9 @@ class features:
     implemented = pickle_load(
         file_location.joinpath("data/implemented_features.pkl")
     )  # this is 56 features
+    non_learning = pickle_load(
+        file_location.joinpath("data/non_learning_features.pkl")
+    )
 
 
 class hierarchical_params:

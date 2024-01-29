@@ -278,7 +278,7 @@ def infer_fitted_model_strategy_server(model):
 def infer_fitted_model_strategy_local_via_click_sequence(model):
     # it is not as accurate as classifying via score because someone could have clicked e.g 9 and 4, which is the outer node on a different branch
     # therefore not really used
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_mb.csv")
+    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_1756_lr0.csv")
     data = data[data["model"] == model]
 
     # keep only pid, model, model_clicks columns
@@ -330,16 +330,20 @@ def infer_fitted_model_strategy_local_via_click_sequence(model):
         columns=["model_inner_nodes", "pid_inner_nodes", "model_outer_node", "pid_outer_node", "model_optimal_number",
                  "pid_optimal_number", "model_number_of_clicks", "pid_number_of_clicks"])
 
+    # mk test of trend
+    result = mk.original_test(model_count["model_optimal_strategy"])
+    print(model, result)
+
     plt.plot(model_count["model_optimal_strategy"] / len(data["pid"].unique()))
     # plt.plot(pid_count["pid_optimal_strategy"] / len(data["pid"].unique()))
-    # plt.show()
-    # plt.close()
+    plt.show()
+    plt.close()
 
     return data
 
 
 def infer_fitted_model_strategy_local_score(model):
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_mb.csv")
+    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_1756_lr0.csv")
     data = data[data["model"] == model]
     data = data[data["pid"].isin(clicked_pid)]
 
@@ -367,9 +371,10 @@ def infer_fitted_model_strategy_local_score(model):
     print(model, result)
 
     # map model index to model name
-    model_name = {"491": "REINFORCE", "479": "LVOC", "1743": "Mental habit", "1756": "Non-learning"}
+    model_name = {491: "REINFORCE", "479": "LVOC", "1743": "Mental habit", 1756: "Non-learning"}
 
     plt.plot(model_count["model_optimal_strategy"] / len(data["pid"].unique()), label=model_name[model])
+    # plt.plot(pid_count["pid_optimal_strategy"] / len(data["pid"].unique()), label="Participant")
     plt.xlabel("Trials")
     plt.ylabel("Proportion of optimal strategy")
     plt.legend()
@@ -421,10 +426,11 @@ if __name__ == "__main__":
 
     # reinforce variants without hierarchical models
     # models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    models = ["491", "479", "1743", "1756"]
+    # models = ["491", "479", "1743", "1756"]
+    models = [1756]
     for model in models:
-        test = infer_fitted_model_strategy_local_score(model)
-        # test = infer_fitted_model_strategy_local_via_click_sequence(model)
+        # test = infer_fitted_model_strategy_local_score(model)
+        test = infer_fitted_model_strategy_local_via_click_sequence(model)
         # actual_count, count_prop = infer_fitted_model_strategy(model)
         # plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop)
     # plt.legend()

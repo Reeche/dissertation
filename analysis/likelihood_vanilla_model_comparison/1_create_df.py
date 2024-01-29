@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-import ast
 import os
 
-from mcl_toolbox.utils.participant_utils import ParticipantIterator
+# from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.utils.experiment_utils import Experiment
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
@@ -85,20 +84,28 @@ if __name__ == "__main__":
     #            'low_variance_low_cost',
     #             'strategy_discovery'
     #            ]
-    exp_list = ["strategy_discovery"]
+    exp_list = ["high_variance_low_cost"]
 
     iterations = 1
 
-    data_dir = "results_mf_models_2000/mcrl" # for server
-    # data_dir = "../../results_mf_models_2000/mcrl"
-    model_list = pd.read_csv("mcl_toolbox/models/rl_models.csv") #for server
-    # model_list = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")
+    # data_dir = "results_mf_models_2000/mcrl" # for clsuter job
+    data_dir = "../../results_mf_models_2000/mcrl"
+    # model_list = pd.read_csv("mcl_toolbox/models/rl_models.csv") #for cluster job
+    model_list = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")
 
     for exp in exp_list:
         print(exp)
         df = pd.DataFrame(
-            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
-                     "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
+            columns=["exp", "pid", "model", "model_clicks",
+                     "pid_clicks",
+                     "model_mer",
+                     "pid_mer",
+                     "model_rewards",
+                     "pid_rewards",
+                     "click_loss",
+                     "mer_loss",
+                     "loss",
+                     "number_of_parameters"])
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {
@@ -117,9 +124,9 @@ if __name__ == "__main__":
 
             pid = int(files.split("_")[0])
             model = int(files.split("_")[1])
-            if model in [522, 491, 479, 1743, 1756]:
+            if model in [1756]:
                 p = E.participants[pid]
-                participant_obj = ParticipantIterator(p)
+                # participant_obj = ParticipantIterator(p) #I think this is not needed
 
                 mf = ModelFitter(
                     exp_name=exp,
@@ -135,12 +142,16 @@ if __name__ == "__main__":
                 model_params = pd.read_pickle(
                     f'{data_dir}/{exp}_priors/{pid}_likelihood_{model}.pkl')
 
-                df.loc[len(df)] = [exp, pid, model, data["a"][0], pid_context.clicks, data["mer"][0], pid_mer,
-                                   data["r"][0], pid_context.score,
+                df.loc[len(df)] = [exp, pid, model, data["a"][0],
+                                   pid_context.clicks,
+                                   data["mer"][0],
+                                   pid_mer,
+                                   data["r"][0],
+                                   pid_context.score,
                                    click_loss(pid_context.clicks, data["a"], model_params[0], criterion="likelihood"),
                                    mer_loss(pid_mer, data["mer"], model_params[0], criterion="likelihood"),
                                    click_sequence_loss(model_params),
                                    number_of_parameters(model, criterion="likelihood")]
 
         # save df as csv
-        df.to_csv(f"{exp}.csv")
+        df.to_csv(f"{exp}_1756.csv")

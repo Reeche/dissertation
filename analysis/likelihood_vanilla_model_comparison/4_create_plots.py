@@ -141,11 +141,12 @@ def plot_clicks(data, model_name):
 
 
 
-model_name = [1756, 1743, 479, 491, 522]
+# model_name = [1756, 1743, 479, 491, 522]
+model_name = [1756, 491]
 
 for model in model_name:
     exp = "strategy_discovery"
-    data = pd.read_csv(f"data/{exp}.csv")
+    data = pd.read_csv(f"{exp}.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]
