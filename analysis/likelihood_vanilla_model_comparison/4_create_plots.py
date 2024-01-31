@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import ast
 import numpy as np
 from vars import learning_participants, clicking_participants
+import pymannkendall as mk
 
 def plot_mer(data, model_name):
     # get the model_mer and pid_mer
@@ -38,8 +39,8 @@ def plot_mer(data, model_name):
     # plt.ylim(0, 50)
     plt.ylabel("Average expected score")
     plt.legend()
-    plt.savefig(f"plot/{exp}/{model_name}_mer.png")
-    # plt.show()
+    # plt.savefig(f"plot/{exp}/{model_name}_mer.png")
+    plt.show()
     plt.close()
 
 def plot_rewards(data, model_name):
@@ -54,6 +55,11 @@ def plot_rewards(data, model_name):
     model_average = np.mean(model_rewards.to_list(), axis=0)
     pid = np.array(data["pid_rewards"].to_list())
     pid_average = np.mean(pid, axis=0)
+
+    # Mann Kendall test of trend
+    result = mk.original_test(model_average)
+    print(model_name, result)
+
 
 
     # Calculate mean and standard error for each data point
@@ -88,7 +94,7 @@ def plot_rewards(data, model_name):
     # plt.ylim(0, 50)
     plt.ylabel("Average actual score")
     plt.legend()
-    plt.savefig(f"plot/{exp}/{model_name}_rewards.png")
+    # plt.savefig(f"plot/{exp}/{model_name}_rewards.png")
 
     plt.show()
     plt.close()
@@ -142,11 +148,11 @@ def plot_clicks(data, model_name):
 
 
 # model_name = [1756, 1743, 479, 491, 522]
-model_name = [1756, 491]
+model_name = [491]
 
 for model in model_name:
-    exp = "strategy_discovery"
-    data = pd.read_csv(f"{exp}.csv")
+    exp = "v1.0"
+    data = pd.read_csv(f"{exp}_491.csv")
 
     # filter for the selected model
     data = data[data["model"] == model]

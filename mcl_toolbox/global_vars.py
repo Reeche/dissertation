@@ -64,7 +64,6 @@ class structure:
         "stroop": None,
     }
 
-
     branchings = {
         "v1.0": [3, 1, 2],
         "F1": [3, 1, 2],
@@ -327,15 +326,11 @@ class strategies:
 
 
 class features:
-    microscope = pickle_load(
-        file_location.joinpath("data/microscope_features.pkl")
-    )  # this is 51 features
-    implemented = pickle_load(
-        file_location.joinpath("data/implemented_features.pkl")
-    )  # this is 56 features
-    non_learning = pickle_load(
-        file_location.joinpath("data/non_learning_features.pkl")
-    )
+    microscope = pickle_load(file_location.joinpath("data/microscope_features.pkl"))  # this is 51 features
+    implemented = pickle_load(file_location.joinpath("data/implemented_features.pkl"))  # this is 56 features
+    non_learning = pickle_load(file_location.joinpath("data/non_learning_features.pkl")) # 50 features
+    model_free_habitual = pickle_load(file_location.joinpath("data/model_free_features.pkl")) # without MB features
+
 
 
 class hierarchical_params:

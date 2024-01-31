@@ -51,7 +51,7 @@ def cost_function(depth):
 
 
 if __name__ == "__main__":
-    exp_name = "high_variance_low_cost"
+    exp_name = "strategy_discovery"
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -66,9 +66,9 @@ if __name__ == "__main__":
         "experiment": None,  # Experiment object can be passed directly with
         "click_cost": click_cost
     }
-    model_index = 1756
-    pid = 7 #7
-    num_simulations = 10
+    model_index = 491
+    pid = 100 #7
+    num_simulations = 1
     plotting = False
 
     sim_params = {"num_simulations": num_simulations,
@@ -77,10 +77,10 @@ if __name__ == "__main__":
 
     parent_directory = Path(__file__).parents[1]
     # param_dir = parent_directory.joinpath(f"results_mf_models_2000/mcrl_backup_correct_ones/{exp_name}_priors")
-    param_dir = parent_directory.joinpath(f"results/mcrl/{exp_name}_priors")
+    param_dir = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_priors")
     # and directory to save fit model info in
     # model_info_directory = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_data")
-    model_info_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_data")
+    model_info_directory = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_data")
     create_dir(model_info_directory)
 
     # add directory for reward plots, if plotting

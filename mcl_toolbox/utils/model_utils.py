@@ -18,9 +18,17 @@ from mcl_toolbox.utils.learning_utils import (
 )
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
-implemented_features = features.implemented
-microscope_features = features.microscope
-non_learning_features = features.non_learning
+"""
+Reinforce/LVOC: MF + habitual features
+Habitual: MF + MB + habitual features
+SSL: MF + MB + habitual features
+Non-learning: MF + MB (without trial std that carries information from previous trials)
+"""
+
+all_features = features.implemented
+non_habitual_features = features.microscope #contains both model free and model based features
+non_learning_features = features.non_learning # no habitual but has model free and model based features
+model_free_habitual_features = features.model_free_habitual # model free and habitual features
 model_attributes = model.model_attributes
 strategy_spaces = strategies.strategy_spaces
 
@@ -207,9 +215,10 @@ class ModelFitter:
             feature_space = non_learning_features
         else:
             if learner_attributes["habitual_features"] == "habitual":
-                feature_space = implemented_features
-            else:
-                feature_space = microscope_features
+                feature_space = model_free_habitual_features
+                # feature_space = implemented_features
+            else: # for the model not using habitual features
+                feature_space = non_habitual_features
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:

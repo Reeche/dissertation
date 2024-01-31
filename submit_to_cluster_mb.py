@@ -12,7 +12,7 @@ bid = 25
 #            'strategy_discovery']
 
 exp_num = ['strategy_discovery']
-# pid_dict = {'strategy_discovery': [377, 378]}
+# pid_dict = {'strategy_discovery': [2, 28, 38]}
 
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,

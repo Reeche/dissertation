@@ -5,7 +5,6 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 import matplotlib.pyplot as plt
 import numpy as np
 from hyperopt import hp, fmin, tpe, Trials
-import torch
 import pickle
 import sys
 from pathlib import Path
@@ -51,22 +50,22 @@ def cost_function(depth):
     if depth == 0:
         return 0
     if depth == 1:
-        return -1
+        return 1
     if depth == 2:
-        return -3
+        return 3
     if depth == 3:
-        return -30
+        return 30
 
 
 if __name__ == "__main__":
-    exp_name = "strategy_discovery"  # "strategy_discovery
-    criterion = "likelihood"  # "number_of_clicks_likelihood"
-    pid = 38
-
-    # exp_name = sys.argv[1]
-    # criterion = sys.argv[2]
-    # pid = int(sys.argv[3])
+    exp_name = sys.argv[1]
+    criterion = sys.argv[2]
+    pid = int(sys.argv[3])
     # model_variant = sys.argv[4]
+
+    # exp_name = "strategy_discovery"  # "strategy_discovery
+    # criterion = "likelihood"  # "number_of_clicks_likelihood"
+    # pid = 38
     model_variant = "full" #"full", "linear", "uniform", "level"
 
     E = Experiment(exp_name, data_path=f"results_mb_2000_v2/mcrl/{exp_name}_mb")
@@ -102,7 +101,7 @@ if __name__ == "__main__":
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
-    participant_obj = ParticipantIterator(pid_context)
+    participant_obj = ParticipantIterator(pid_context, click_cost=click_cost)
 
     # todo: need to choose a sensible range that takes the click cost into consideration
     # Has to be symmetric, otherwise biased towards negative expected value
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Experiment name not recognised")
 
-    model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, model_variant, test_fitted_model=False)
+    model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, model_variant, compute_likelihood=True)
 
     if criterion != "likelihood": #todo
         fspace = {
@@ -144,16 +143,6 @@ if __name__ == "__main__":
                 'beta_intercept': hp.uniform('beta_intercept', np.log(1e-8), np.log(5)),
             }
         elif model_variant == "full":
-            # fspace = {
-            #     'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-            #     'alpha_1': hp.uniform('alpha_1', np.log(0.9), np.log(1.1)),
-            #     'beta_1': hp.uniform('beta_1', np.log(0.9), np.log(1.1)),
-            #     'alpha_2': hp.uniform('alpha_2', np.log(1), np.log(2)),
-            #     'beta_2': hp.uniform('beta_2', np.log(2.5), np.log(3)),
-            #     'alpha_3': hp.uniform('alpha_3', np.log(1), np.log(2)),
-            #     'beta_3': hp.uniform('beta_3', np.log(2.5), np.log(3.5)),
-            #     'click_weight': hp.uniform('click_weight', 1, 50),
-            # }
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -1, 1),
                 'alpha_1': hp.uniform('alpha_1', np.log(1), np.log(5)),
@@ -180,33 +169,24 @@ if __name__ == "__main__":
 
     trials = True
     trials = Trials() if trials else None
-    # best_params = fmin(fn=model.run_multiple_simulations,
-    #                    space=fspace,
-    #                    algo=tpe.suggest,
-    #                    max_evals=2000,
-    #                    show_progressbar=False)
+    best_params = fmin(fn=model.run_multiple_simulations,
+                       space=fspace,
+                       algo=tpe.suggest,
+                       max_evals=2000,
+                       show_progressbar=False)
 
     ## simulate using the best parameters
-    model.test_fitted_model = True
-
-    # best_params = {'inverse_temp': 1,
-    #                'alpha_1': np.log(2),
-    #                'beta_1': np.log(1),
-    #                'alpha_2': np.log(1.2),
-    #                'beta_2': np.log(1),
-    #                'alpha_3': np.log(1.5),
-    #                'beta_3': np.log(1),
-    #                'click_weight': 10}
+    model.compute_likelihood = False
 
     # for pid 38 strategy discovery
-    best_params = {'inverse_temp': 0.33,
-                   'alpha_1': np.log(0.4404),
-                   'beta_1': np.log(0.7824),
-                   'alpha_2': np.log(0.1946),
-                   'beta_2': np.log(1.5247),
-                   'alpha_3': np.log(1.6084),
-                   'beta_3': np.log(0.0022),
-                   'click_weight': 49}
+    # best_params = {'inverse_temp': 0.33,
+    #                'alpha_1': np.log(0.4404),
+    #                'beta_1': np.log(0.7824),
+    #                'alpha_2': np.log(0.1946),
+    #                'beta_2': np.log(1.5247),
+    #                'alpha_3': np.log(1.6084),
+    #                'beta_3': np.log(0.0022),
+    #                'click_weight': 49}
 
     model.env.reset()
     model.participant_obj.reset()
@@ -215,16 +195,17 @@ if __name__ == "__main__":
     ## save result and best parameters
     res.update(best_params)
 
-
-    plot_score(res, model.p_data, pid, exp_name)
-    # plot_clicks(res, model.p_data)
-    print(res)
-
-
     ## check if dir exist
-    # if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
-    #     Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    # output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
-    # pickle.dump(res, output)
-    # output.close()
+    output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    pickle.dump(res, output)
+    output.close()
+
+    # plot_score(res, model.p_data, pid, exp_name)
+    # plot_clicks(res, model.p_data)
+    # print(res)
+
+
+

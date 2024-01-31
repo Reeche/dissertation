@@ -11,7 +11,7 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 # vanilla models only
 # models = [522, 491, 479, 1743, 1756]
-models = [522, 479]
+models = [1756]
 
 # reinforce variants
 # models = [32, 33, 34, 35, 36, 37, 38, 39, 80, 81, 82, 83, 84, 85, 86, 87, 128, 129, 130, 131, 132, 133, 134, 135, 176,
@@ -30,10 +30,10 @@ models = [522, 479]
 #            'low_variance_low_cost'
 #            ]
 
-exp_num = ["strategy_discovery"]
+exp_num = ["high_variance_low_cost"]
 
 # pid_dict = {
-#     'v1.0': [1],
+#     'v1.0': [1, 5, 6],
 #     'c2.1': [0],
 #     'c1.1': [2],
 #     'high_variance_high_cost': [0],

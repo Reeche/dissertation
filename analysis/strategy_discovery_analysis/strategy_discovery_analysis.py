@@ -343,7 +343,7 @@ def infer_fitted_model_strategy_local_via_click_sequence(model):
 
 
 def infer_fitted_model_strategy_local_score(model):
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_1756_lr0.csv")
+    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_1756_v2.csv")
     data = data[data["model"] == model]
     data = data[data["pid"].isin(clicked_pid)]
 
@@ -429,8 +429,8 @@ if __name__ == "__main__":
     # models = ["491", "479", "1743", "1756"]
     models = [1756]
     for model in models:
-        # test = infer_fitted_model_strategy_local_score(model)
-        test = infer_fitted_model_strategy_local_via_click_sequence(model)
+        test = infer_fitted_model_strategy_local_score(model)
+        # test = infer_fitted_model_strategy_local_via_click_sequence(model)
         # actual_count, count_prop = infer_fitted_model_strategy(model)
         # plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop)
     # plt.legend()

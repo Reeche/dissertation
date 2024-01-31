@@ -15,7 +15,7 @@ import math
 class ModelBased(Learner):
     """Base class of the Model-based model"""
 
-    def __init__(self, env, value_range, participant_obj, criterion, num_simulations, model, test_fitted_model):
+    def __init__(self, env, value_range, participant_obj, criterion, num_simulations, model, compute_likelihood):
         self.participant_obj = participant_obj
         self.env = env
         self.value_range = value_range
@@ -25,12 +25,13 @@ class ModelBased(Learner):
         self.optimisation_criterion = criterion
         self.p_data = self.construct_p_data()
         self.num_simulations = num_simulations
-        self.test_fitted_model = test_fitted_model
+        self.compute_likelihood = compute_likelihood
         self.model = model
 
     def construct_p_data(self):
         p_data = {
-            "envs": self.participant_obj.envs*2,
+            # "envs": self.participant_obj.envs*2, #todo: why *2?
+            "envs": self.participant_obj.envs,
             "a": self.participant_obj.clicks,
             "mer": get_termination_mers(self.participant_obj.envs, self.participant_obj.clicks, self.env.pipeline),
             "r": self.participant_obj.rewards
@@ -42,6 +43,16 @@ class ModelBased(Learner):
         Init the alpha values for the Dirichlet distribution. The alphas are randomly sampled from a Beta distribution
         with the parameters dist_alpha and dist_beta (those two are optimised)
 
+        "Uniform": for this model, all node values share the same set of parameters
+
+        "Linear": for this model, the node values are linearly dependent of depth node.
+        It is initialised with one alpha intercept + weight and one beta intercept + weight.
+        alpha = alpha_intercept + alpha_weight * depth
+        beta = beta_intercept + beta_weight * depth
+
+        "Full": for this model, each node has its own set of alpha and beta
+
+        "Level": for this model, all nodes on the same level share the same alpha and beta
 
         Args:
             dist_alpha: alpha of the beta distribution
@@ -377,8 +388,26 @@ class ModelBased(Learner):
         probabilities = [p * scale_factor for p in probabilities]
         return probabilities
 
-    def take_action(self, trial_info):
-        if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
+    # def take_action(self, trial_info): #my implementation
+    #     if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
+    #         pi = trial_info["participant"]
+    #         action = pi.get_click()
+    #
+    #         # how likely model would have taken the action
+    #         action_likelihood = self.calculate_likelihood()
+    #         # if log underflow, that is probabily is too close to 0
+    #         action_likelihood = np.clip(action_likelihood, 1e-8, 1)
+    #         self.action_log_probs.append(np.log(action_likelihood[action]))
+    #
+    #         reward, taken_path, done = pi.make_click()
+    #         _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
+    #     else:
+    #         action = self.sample_action()
+    #         s_next, reward, done, taken_path = self.env.step(action)
+    #     return action, reward, done, taken_path
+
+    def take_action(self, trial_info): #Yash implementation
+        if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
 
@@ -387,13 +416,15 @@ class ModelBased(Learner):
             # if log underflow, that is probabily is too close to 0
             action_likelihood = np.clip(action_likelihood, 1e-8, 1)
             self.action_log_probs.append(np.log(action_likelihood[action]))
-
-            reward, taken_path, done = pi.make_click()
-            _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
         else:
             action = self.sample_action()
+        if self.compute_likelihood:
+            s_next, r, done, _ = self.env.step(action)
+            reward, taken_path, done = pi.make_click()
+        else:
             s_next, reward, done, taken_path = self.env.step(action)
         return action, reward, done, taken_path
+
 
     def act_and_learn(self, trial_info=None):
         if trial_info is None:

@@ -89,7 +89,7 @@ if __name__ == "__main__":
     iterations = 1
 
     # data_dir = "results_mf_models_2000/mcrl" # for clsuter job
-    data_dir = "../../results_mf_models_2000/mcrl"
+    data_dir = "../../results_mf_models_2000_v2/mcrl"
     # model_list = pd.read_csv("mcl_toolbox/models/rl_models.csv") #for cluster job
     model_list = pd.read_csv("../../mcl_toolbox/models/rl_models.csv")
 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
             pid = int(files.split("_")[0])
             model = int(files.split("_")[1])
-            if model in [1756]:
+            if model in [491]:
                 p = E.participants[pid]
                 # participant_obj = ParticipantIterator(p) #I think this is not needed
 
@@ -154,4 +154,4 @@ if __name__ == "__main__":
                                    number_of_parameters(model, criterion="likelihood")]
 
         # save df as csv
-        df.to_csv(f"{exp}_1756.csv")
+        df.to_csv(f"{exp}_491.csv")
