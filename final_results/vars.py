@@ -1,48 +1,3 @@
-from condor_utils import submit_sub_file
-
-bid = 25
-script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
-
-## for testing
-# exp_num = ['v1.0']
-# models = [256]
-# pid_dict = {
-#     'v1.0': [121]}
-
-# vanilla models only
-# models = [522, 491, 479, 1743, 1756]
-models = [491, 479, 522]
-
-# reinforce variants
-# models = [32, 33, 34, 35, 36, 37, 38, 39, 80, 81, 82, 83, 84, 85, 86, 87, 128, 129, 130, 131, 132, 133, 134, 135, 176,
-#           177, 178, 179, 180, 181, 182, 18, 22, 225, 226, 227, 228, 229, 230, 231, 272, 273, 274, 275, 276, 277, 278,
-#           279, 320, 321, 322, 323, 324, 325, 326, 327, 368, 369, 370, 371, 372, 373, 374, 375, 416, 417, 418, 419, 420,
-#           421, 422, 423, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-
-# reinforce variants without hierarchical models
-# models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-
-
-# exp_num = ['v1.0', 'c2.1', 'c1.1',
-#            'high_variance_high_cost',
-#            'high_variance_low_cost',
-#            'low_variance_high_cost',
-#            'low_variance_low_cost',
-#            'strategy_discovery'
-#            ]
-
-exp_num = ["strategy_discovery"]
-
-# pid_dict = {
-#     'v1.0': [10],
-#     'c2.1': [0],
-#     'c1.1': [2],
-#     'high_variance_high_cost': [0],
-#     'high_variance_low_cost': [4],
-#     'low_variance_high_cost': [2],
-#     'low_variance_low_cost': [3],
-#     'strategy_discovery': [2]}
-
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
              80, 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 121, 124, 126, 132, 137, 140, 141, 144, 146,
@@ -66,19 +21,3 @@ pid_dict = {
                               99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
                               165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207],
     'strategy_discovery': list(range(1, 379))}
-
-with open("parameters.txt", "w") as parameters:
-    for exp_num_ in exp_num:
-        if exp_num_ == 'strategy_discovery':
-            num_trial = 120
-        else:
-            num_trial = 35
-        for models_ in models:
-            pids = pid_dict.get(exp_num_)
-            if pids:
-                for pid in pids:
-                    args = [exp_num_, models_, 'likelihood', pid, num_trial]
-                    args_str = " ".join(str(x) for x in args) + "\n"
-                    parameters.write(args_str)
-
-submit_sub_file("sub_multiple.sub", bid)

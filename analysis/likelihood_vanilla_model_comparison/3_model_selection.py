@@ -34,6 +34,7 @@ def calculate_score_loss(data):
     data['reward_loss'] = data['reward_difference'].apply(lambda x: np.sum(np.abs(x)))
     return data
 
+
 def compare_loss(data, trials):
     BIC = 2 * data["loss"] + data["number_of_parameters"] * np.log(trials)
     return BIC
@@ -71,40 +72,11 @@ def bms(model_bic):
 def create_csv_for_matlab(data, exp):
     # create csv for matlab; filter for required models
     # data = data[data["model"].isin(["1743", "1756", "479", "491", "522", "full"])]
-    data = data[data["model"].isin([1743, 1756, 479, 491, 522])]
+    # data = data[data["model"].isin([1743, 1756, 479, 491, 522])]
     # create pivot table with pid as y and model as x and fill the values with BIC
     data = data.pivot(index="model", columns="pid", values="BIC")
-    # data = data.sort_index()  # 1743, 1756, 479, 491, 522, mb
-    ## for strategy discovery the order is: 479, 491, 522, 1743, 1756
-    # data = missing_bic(data)
+    # habitual, MB, non-learning, SSL, hybrid LVOC, hybrid Reinforce, pure Reinforce
     data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
-
-
-def remove_double_mb_entries(data):
-    # remove entries from the data where the model is mb and the number of parameters is 4
-    data = data[~((data["model"] == "mb") & (data["number_of_parameters"] == 4))]
-    # remove duplicates
-    data = data.drop_duplicates(subset=["pid", "model"])
-    # save as csv
-    # data.to_csv(f"{exp}_{criterion}.csv", index=False)
-    return data
-
-
-def missing_bic(df):
-    # replace the missing value by row and column average
-    # Calculate row averages
-    row_avg = df.mean(axis=1, skipna=True).tolist()
-
-    # Calculate column averages
-    col_avg = df.mean(axis=0, skipna=True).tolist()
-
-    # Iterate through DataFrame
-    for i in range(df.shape[0]):
-        for j in range(df.shape[1]):
-            if pd.isna(df.iat[i, j]):
-                df.iat[i, j] = (row_avg[i] + col_avg[j]) / 2
-
-    return df
 
 
 def group_pid_by_bic(data):
@@ -112,12 +84,13 @@ def group_pid_by_bic(data):
 
     ## optional filter only for 1743, 491, 479 (1756 is not learning)
     # data = data[data["model"].isin([1743, 1756, 491, 479, 522])]
-    data = data[data["model"].isin([1743, 491, 479, 522])]
+    # data = data[data["model_index"].isin(["1743", "1756", "491", "479", "522", "full"])]
 
     # for each pid, find the model with the lowest BIC
     min_bic_idx = data.groupby('pid')['BIC'].idxmin()
     res = data.loc[min_bic_idx]
     return res
+
 
 def group_pid_by_score(data):
     ## optional filter only for 1743, 491, 479 (1756 is not learning)
@@ -131,21 +104,21 @@ def group_pid_by_score(data):
 
 def plot_pid_score_grouped_by_model(data, exp=None):
     # plot the score of the participants who are best explained by a certain model
-
     model_dict = {
-        "Reinforce": 491,
-        "LVOC": 479,
-        "Habitual": 1743,
-        # "Not learning": 1756,
-        "SSL": 522}
-        # "Model-based": "full"}
+        "Reinforce": "491",
+        "LVOC": "479",
+        "Habitual": "1743",
+        "Not learning": "1756",
+        "SSL": "522",
+        "Model-based": "full"}
 
     for model_type, models in model_dict.items():
         # filter for the model in data
-        filtered_data = data[data["model"] == models]
+        filtered_data = data[data["model_index"] == models]
         print(len(filtered_data), "unique pid are best explained by the model", model_type)
-
-        # filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
+        if len(filtered_data) == 0:
+            continue
+        filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
 
         # calculate the average of the pid_rewards
         pid_rewards = np.array(filtered_data["pid_rewards"].to_list())
@@ -155,7 +128,7 @@ def plot_pid_score_grouped_by_model(data, exp=None):
         plt.plot(pid_rewards_average, label=f"{model_type}, N={len(filtered_data)}")
 
         # add 95% confidence interval
-        plt.fill_between(np.arange(1, 121), pid_rewards_average - 1.96 * np.std(pid_rewards, axis=0),
+        plt.fill_between(np.arange(1, 36), pid_rewards_average - 1.96 * np.std(pid_rewards, axis=0),
                          pid_rewards_average + 1.96 * np.std(pid_rewards, axis=0), alpha=0.2)
 
         plt.xlabel("Trial")
@@ -163,19 +136,85 @@ def plot_pid_score_grouped_by_model(data, exp=None):
         plt.legend()
 
     # save the plot
-    # plt.show()
+    plt.show()
 
     # if no dir, create dir
+    # if not os.path.exists(f"plot/{exp}"):
+    #     os.makedirs(f"plot/{exp}")
 
-    if not os.path.exists(f"plot/{exp}"):
-        os.makedirs(f"plot/{exp}")
-
-    plt.savefig(f"plot/{exp}/only_learning_models.png")
+    # plt.savefig(f"plot/{exp}/only_learning_models.png")
     plt.close()
 
     return None
 
+def plot_pid_clicks_grouped_by_model(data, condition):
+    # plot the clicks of the participants who are best explained by a certain model
 
+    # model_dict = {
+    #     "Reinforce": "491",
+    #     "LVOC": "479",
+    #     "Habitual": "1743",
+    #     "Not learning": "1756",
+    #     "SSL": "522",
+    #     "Model-based": "full"}
+
+    # todo: filter for hybrid and pure Reinforce/LVOC
+    # get unique models
+    models = list(data["model"].unique())
+
+
+
+    # for model_type, models in model_dict.items():
+    for model in models:
+        # filter for the model in data
+        filtered_data = data[data["model"] == model]
+        print(len(filtered_data), "unique pid are best explained by the model", model)
+        if len(filtered_data) == 0:
+            continue
+
+        filtered_data['pid_clicks'] = filtered_data['pid_clicks'].apply(lambda x: ast.literal_eval(x))
+
+        # calculate the average of the pid_rewards
+        pid_clicks = np.array(filtered_data["pid_clicks"].to_list())
+        result_array = np.array([[len(cell) - 1 for cell in row] for row in pid_clicks])
+        pid_clicks_average = np.mean(result_array, axis=0)
+
+        # plot the average
+        plt.plot(pid_clicks_average, label=f"{model}, N={len(filtered_data)}")
+
+        if condition == "high_variance_low_cost":
+            label = "High variance low cost"
+            plt.axhline(y=7.10, color='r', linestyle='-')
+        elif condition == "high_variance_high_cost":
+            label = "High variance high cost"
+            plt.axhline(y=6.32, color='r', linestyle='-')
+        elif condition == "low_variance_high_cost":
+            label = "Low variance high cost"
+            plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
+        else:
+            label = "Low variance low cost"
+            plt.axhline(y=5.82, color='r', linestyle='-')
+
+        # add 95% confidence interval
+        # plt.fill_between(np.arange(1, 36), pid_clicks_average - 1.96 * np.std(result_array, axis=0),
+        #                  pid_clicks_average + 1.96 * np.std(result_array, axis=0), alpha=0.2)
+
+        plt.title(label)
+        plt.xlabel("Trial")
+        plt.ylabel("Average number of clicks")
+        plt.legend()
+
+    # save the plot
+    plt.show()
+
+    # if no dir, create dir
+    # if not os.path.exists(f"plot/{exp}"):
+    #     os.makedirs(f"plot/{exp}")
+
+    # plt.savefig(f"plot/{exp}/only_learning_models.png")
+    plt.close()
+
+    return None
 def kruskal(exp, data):
     # get only relevant columns model, pid_rewards
     data = data[["model", "pid_rewards"]]
@@ -204,11 +243,11 @@ def kruskal(exp, data):
     y = data[data["model"] == 491]["pid_rewards"]
     z = data[data["model"] == 479]["pid_rewards"]
 
-
     res = kruskal(q, x, y, z)
     print(res)
 
     return None
+
 
 def mann_whitney_u_test(exp, data, models):
     ## test whether average score of pid of a model pair is significantly different
@@ -241,41 +280,70 @@ def mann_whitney_u_test(exp, data, models):
     print(f"Mean average score of model {models[1]}: {np.mean(pid_rewards_average_b[-last_trials:])}")
     return None
 
+def assign_model_names(row):
+    if row['class'] == 'hybrid' and row['model_index'] == "491":
+        return 'hybrid Reinforce'
+    elif row['class'] == 'hybrid' and row['model_index'] == "479":
+        return 'hybrid LVOC'
+    elif row['class'] == 'pure' and row['model_index'] == "491":
+        return 'pure Reinforce'
+    elif row['class'] == 'pure' and row['model_index'] == "479":
+        return 'pure LVOC'
+    elif row['model_index'] == "1743":
+        return 'Habitual'
+    elif row['model_index'] == "1756":
+        return 'Non-learning'
+    elif row['model_index'] == "522":
+        return 'SSL'
+    elif row['model_index'] == "full":
+        return 'Model-based'
+    else:
+        raise ValueError("Model class combination not found")
+
 
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0"]
-    # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+    #               "low_variance_low_cost"]
+    experiment = ["high_variance_high_cost"]
     # df_all = []
     for exp in experiment:
         df_all = []
-        data = pd.read_csv(f"data/{exp}.csv", index_col=0)
+        data = pd.read_csv(f"../../final_results/{exp}.csv", index_col=0)
 
-        calculate_score_loss(data)
+        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+            data = data[data["pid"].isin(clicking_participants[exp])]
+        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+                     "low_variance_low_cost"]:
+            data = data[data["pid"].isin(learning_participants[exp])]
+
+        # create a new column. If column "class" = "hybrid" and "model_index" = 491, then "model" = "pure Reinforce"
+        data['model'] = data.apply(assign_model_names, axis=1)
+
+        # calculate_score_loss(data)
 
         if exp == "strategy_discovery":
             data["BIC"] = compare_loss(data, 120)
         else:
             data["BIC"] = compare_loss(data, 35)
 
-        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            data = data[data["pid"].isin(clicking_participants[exp])]
-        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
-            data = data[data["pid"].isin(learning_participants[exp])]
         df_all.append(data)
 
         ### for individual analysis
         result_df = pd.concat(df_all, ignore_index=True)
-        res = group_pid_by_bic(result_df) # get BIC for only selected models
+
+        # create_csv_for_matlab(result_df, exp)
+
+        res = group_pid_by_bic(result_df)  # get BIC for only selected models
         # res = group_pid_by_score(result_df)
-        plot_pid_score_grouped_by_model(res, exp)
+        # plot_pid_score_grouped_by_model(res, exp)
+        plot_pid_clicks_grouped_by_model(res, exp)
         # kruskal(exp, res)
         # mann_whitney_u_test(exp, res, [1743, 1756])
         # mann_whitney_u_test(exp, res, [1743, 479])
         # mann_whitney_u_test(exp, res, [1743, 491])
         # mann_whitney_u_test(exp, res, [491, 479])
-
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

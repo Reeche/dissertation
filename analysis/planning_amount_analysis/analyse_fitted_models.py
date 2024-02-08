@@ -6,7 +6,7 @@ import statsmodels.formula.api as smf
 
 
 def model_clicks(model, condition):
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/{condition}_1756.csv")
+    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/{condition}_491.csv")
     # filter for model
     data = data[data['model'] == model]
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     conditions = ["high_variance_low_cost"]
 
     # models = [522, 491, 479, 1743, 1756]
-    models = [1756]
+    models = [491]
     for condition in conditions:
         for model in models:
             model_clicks(model, condition)

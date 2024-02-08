@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
             pid = int(files.split("_")[0])
             model = int(files.split("_")[1])
-            if model in [491]:
+            if model in [1756]:
                 p = E.participants[pid]
                 # participant_obj = ParticipantIterator(p) #I think this is not needed
 
@@ -139,8 +139,7 @@ if __name__ == "__main__":
                 pid_mer = get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline)
 
                 data = pd.read_pickle(f'{data_dir}/{exp}_data/{pid}_{model}_{iterations}.pkl')
-                model_params = pd.read_pickle(
-                    f'{data_dir}/{exp}_priors/{pid}_likelihood_{model}.pkl')
+                model_params = pd.read_pickle(f'{data_dir}/{exp}_priors/{pid}_likelihood_{model}.pkl')
 
                 df.loc[len(df)] = [exp, pid, model, data["a"][0],
                                    pid_context.clicks,
@@ -154,4 +153,4 @@ if __name__ == "__main__":
                                    number_of_parameters(model, criterion="likelihood")]
 
         # save df as csv
-        df.to_csv(f"{exp}_491.csv")
+        df.to_csv(f"{exp}_1756.csv")

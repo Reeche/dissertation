@@ -3,16 +3,16 @@ from condor_utils import submit_sub_file
 bid = 25
 
 # exp_num = ['v1.0',
-#            'c2.1',
-#            'c1.1',
-#            'high_variance_high_cost',
-#            'high_variance_low_cost',
-#            'low_variance_high_cost',
-#            'low_variance_low_cost',
-#            'strategy_discovery']
+           # 'c2.1',
+           # 'c1.1',
+           # 'high_variance_high_cost',
+           # 'high_variance_low_cost']
+           # 'low_variance_high_cost',
+           # 'low_variance_low_cost',
+           # 'strategy_discovery']
 
 exp_num = ['strategy_discovery']
-# pid_dict = {'strategy_discovery': [2, 28, 38]}
+# pid_dict = {'strategy_discovery': [2, 28]}
 
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
@@ -51,14 +51,7 @@ submit_sub_file("sub_multiple_model_based.sub", bid)
 
 
 ### for missing pid
-# missing_dict = {"v1.0": [15, 154, 56],
-#                 "c2.1": [107, 133, 149, 164],
-#                 "c1.1": [111, 127, 135, 147, 161],
-#                 "high_variance_high_cost": [0, 1, 103, 108, 111, 118, 125, 134, 156, 164, 188, 22, 25, 38, 41, 47, 63, 83, 94],
-#                 "high_variance_low_cost": [112, 131, 154, 158, 17, 205, 33, 48, 50, 53, 82, 92],
-#                 "low_variance_high_cost": [128, 203],
-#                 "low_variance_low_cost":  [106, 115, 121, 152, 159, 19, 67, 9, 91],
-#                 "strategy_discovery": [28, 34]}
+# missing_dict = {"strategy_discovery": [127, 249, 3]}
 #
 # with open("parameters_mb.txt", "a") as parameters:
 #     for keys in missing_dict.keys():

@@ -212,13 +212,15 @@ class ModelFitter:
         )
         strategy_space = strategy_spaces[strategy_space_type]
         if learner_attributes["is_null"]:
-            feature_space = non_learning_features
+            feature_space = non_learning_features # for non learning model
+            if learner_attributes["habitual_features"] == "habitual":
+                feature_space = model_free_habitual_features #for habitual model
         else:
             if learner_attributes["habitual_features"] == "habitual":
-                feature_space = model_free_habitual_features
-                # feature_space = implemented_features
-            else: # for the model not using habitual features
-                feature_space = non_habitual_features
+                feature_space = model_free_habitual_features #for pure reinforce/LVOC
+            # else: # for the model not using habitual features
+            #     feature_space = non_habitual_features # MF + MB features (no habitual)
+        # feature_space = all_features
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:

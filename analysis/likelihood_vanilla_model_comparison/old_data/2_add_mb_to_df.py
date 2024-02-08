@@ -51,12 +51,13 @@ if __name__ == "__main__":
     #             'strategy_discovery'
     #             ]
 
-    exp_list = ['strategy_discovery']
+    exp_list = ['v1.0', 'high_variance_low_cost']
 
     criterion = "likelihood"
-    data_dir = f"../../results_mb_2000_v2/mcrl"
+    data_dir = f"../../results_mb_2000_v3/mcrl"
 
     for exp in exp_list:
+        print(exp)
 
         # if exp in ["v1.0", "c1.1", "c2.1"]:
         #     criterion = 'pseudo_likelihood'
@@ -64,11 +65,11 @@ if __name__ == "__main__":
         #     criterion = 'number_of_clicks_likelihood'
 
         ##open existing df
-        df = pd.read_csv(f"data/{exp}.csv", index_col=0)
+        # df = pd.read_csv(f"data/{exp}.csv", index_col=0)
 
-        # df = pd.DataFrame(
-        #     columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
-        #              "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
+        df = pd.DataFrame(
+            columns=["exp", "pid", "model", "model_clicks", "pid_clicks", "model_mer", "pid_mer", "model_rewards",
+                     "pid_rewards", "click_loss", "mer_loss", "loss", "number_of_parameters"])
 
         E = Experiment(exp, data_path=f"../../results/cm/inferred_strategies/{exp}_training/")
         exp_attributes = {

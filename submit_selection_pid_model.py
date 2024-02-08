@@ -5,18 +5,18 @@ from condor_utils import submit_sub_file
 bid = 25
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
-# exp_num = 'high_variance_high_cost'
-exp_num = sys.argv[1]
-missing_df = pd.read_csv(f'missing_{exp_num}.csv')
 
-#
-# # low_variance_low_cost_data
-# data = [[60, 1756]]
-# missing_df = pd.DataFrame(data, columns=["pid", "model"])
+# exp_num = sys.argv[1]
+# missing_df = pd.read_csv(f'missing_{exp_num}.csv')
+
+
+exp_num = 'c2.1'
+data = [[86, 1743]]
+missing_df = pd.DataFrame(data, columns=["pid", "model"])
 
 for index, row in missing_df.iterrows():
     with open("parameters.txt", "a") as parameters:
-        args = [exp_num, row[1], 'likelihood', row[0], 120]
+        args = [exp_num, row[1], 'likelihood', row[0], 35]
         args_str = " ".join(str(x) for x in args) + "\n"
         parameters.write(args_str)
 

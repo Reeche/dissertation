@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_mf_models_2000_v2/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 

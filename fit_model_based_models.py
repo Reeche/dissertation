@@ -61,14 +61,13 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     criterion = sys.argv[2]
     pid = int(sys.argv[3])
-    # model_variant = sys.argv[4]
 
     # exp_name = "strategy_discovery"  # "strategy_discovery
     # criterion = "likelihood"  # "number_of_clicks_likelihood"
     # pid = 38
     model_variant = "full" #"full", "linear", "uniform", "level"
 
-    E = Experiment(exp_name, data_path=f"results_mb_2000_v2/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_2000_v3/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     }
 
     if exp_name == "strategy_discovery":
-        number_of_trials = 1200
+        number_of_trials = 120
     else:
         number_of_trials = 35
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_2000_v2/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_2000_v3/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -128,40 +127,42 @@ if __name__ == "__main__":
             'dist_beta': hp.uniform('dist_beta', 0, 5),
         }
     else:
+        min_value = 1
+        max_value = 10
         if model_variant == "uniform":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'dist_alpha': hp.uniform('dist_alpha', np.log(1e-8), np.log(5)),
-                'dist_beta': hp.uniform('dist_beta', np.log(1e-8), np.log(5)),
+                'dist_alpha': hp.uniform('dist_alpha', np.log(min_value), np.log(max_value)),
+                'dist_beta': hp.uniform('dist_beta', np.log(min_value), np.log(max_value)),
             }
         elif model_variant == "linear":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_weight': hp.uniform('alpha_weight', np.log(1e-8), np.log(10)),
-                'beta_weight': hp.uniform('beta_weight', np.log(1e-8), np.log(10)),
-                'alpha_intercept': hp.uniform('alpha_intercept', np.log(1e-8), np.log(5)),
-                'beta_intercept': hp.uniform('beta_intercept', np.log(1e-8), np.log(5)),
+                'alpha_weight': hp.uniform('alpha_weight', np.log(min_value), np.log(max_value)),
+                'beta_weight': hp.uniform('beta_weight', np.log(min_value), np.log(max_value)),
+                'alpha_intercept': hp.uniform('alpha_intercept', np.log(min_value), np.log(max_value)),
+                'beta_intercept': hp.uniform('beta_intercept', np.log(min_value), np.log(max_value)),
             }
         elif model_variant == "full":
             fspace = {
-                'inverse_temp': hp.uniform('inverse_temp', -1, 1),
-                'alpha_1': hp.uniform('alpha_1', np.log(1), np.log(5)),
-                'beta_1': hp.uniform('beta_1', np.log(1), np.log(5)),
-                'alpha_2': hp.uniform('alpha_2', np.log(1), np.log(5)),
-                'beta_2': hp.uniform('beta_2', np.log(1), np.log(5)),
-                'alpha_3': hp.uniform('alpha_3', np.log(1), np.log(5)),
-                'beta_3': hp.uniform('beta_3', np.log(1), np.log(5)),
+                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
+                'alpha_1': hp.uniform('alpha_1', np.log(min_value), np.log(max_value)),
+                'beta_1': hp.uniform('beta_1', np.log(min_value), np.log(max_value)),
+                'alpha_2': hp.uniform('alpha_2', np.log(min_value), np.log(max_value)),
+                'beta_2': hp.uniform('beta_2', np.log(min_value), np.log(max_value)),
+                'alpha_3': hp.uniform('alpha_3', np.log(min_value), np.log(max_value)),
+                'beta_3': hp.uniform('beta_3', np.log(min_value), np.log(max_value)),
                 'click_weight': hp.uniform('click_weight', 1, 50),
             }
         elif model_variant == "level":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_1': hp.uniform('alpha_1', np.log(1), np.log(5)),
-                'beta_1': hp.uniform('beta_1', np.log(1), np.log(5)),
-                'alpha_2': hp.uniform('alpha_2', np.log(1), np.log(5)),
-                'beta_2': hp.uniform('beta_2', np.log(1), np.log(5)),
-                'alpha_3': hp.uniform('alpha_3', np.log(1), np.log(5)),
-                'beta_3': hp.uniform('beta_3', np.log(1), np.log(5)),
+                'alpha_1': hp.uniform('alpha_1', np.log(min_value), np.log(max_value)),
+                'beta_1': hp.uniform('beta_1', np.log(min_value), np.log(max_value)),
+                'alpha_2': hp.uniform('alpha_2', np.log(min_value), np.log(max_value)),
+                'beta_2': hp.uniform('beta_2', np.log(min_value), np.log(max_value)),
+                'alpha_3': hp.uniform('alpha_3', np.log(min_value), np.log(max_value)),
+                'beta_3': hp.uniform('beta_3', np.log(min_value), np.log(max_value)),
                 'click_weight': hp.uniform('click_weight', 1, 50),
             }
         else:
@@ -196,10 +197,10 @@ if __name__ == "__main__":
     res.update(best_params)
 
     ## check if dir exist
-    if not Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_2000_v2/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_2000_v3/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_2000_v3/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_2000_v2/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    output = open(f'results_mb_2000_v3/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 

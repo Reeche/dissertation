@@ -60,8 +60,6 @@ def plot_rewards(data, model_name):
     result = mk.original_test(model_average)
     print(model_name, result)
 
-
-
     # Calculate mean and standard error for each data point
     std_dev = np.std(pid, axis=0)
     n = len(pid) #todo:check
@@ -87,6 +85,8 @@ def plot_rewards(data, model_name):
         name = "Reinforce"
     elif model_name == 522:
         name = "SSL"
+    elif model_name == "full":
+        name = "MB"
 
     plt.plot(model_average, label=name, color="orange")
 
@@ -148,14 +148,14 @@ def plot_clicks(data, model_name):
 
 
 # model_name = [1756, 1743, 479, 491, 522]
-model_name = [491]
+model_name = ["1756"]
 
 for model in model_name:
-    exp = "v1.0"
-    data = pd.read_csv(f"{exp}_491.csv")
+    exp = "high_variance_high_cost"
+    data = pd.read_csv(f"../../final_results/{exp}.csv")
 
     # filter for the selected model
-    data = data[data["model"] == model]
+    data = data[data["model_index"] == model]
 
     # filter for adaptive participants
     if exp in ["c1.1", "c2.1", "v1.0"]:
@@ -171,7 +171,7 @@ for model in model_name:
     #              "low_variance_low_cost"]:
 
     # plot_mer(data, model)
-    plot_rewards(data, model)
-    # plot_clicks(data, model)
+    # plot_rewards(data, model)
+    plot_clicks(data, model)
 
 

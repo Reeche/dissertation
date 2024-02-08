@@ -39,12 +39,12 @@ for exp_num in exp:
     ## MF models
     # vainlla #[522, 491, 479, 1743, 1756]
     ## RL variants without hierarchical [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    models = [522, 491, 479, 1743, 1756]
-    priors_directory = (f"results_mf_models_2000/mcrl/{exp_num}_priors")
+    # models = [522, 491, 479, 1743, 1756]
+    # priors_directory = (f"results_mf_models_2000/mcrl/{exp_num}_priors")
 
     ## MB models
-    # models = ["full"]
-    # priors_directory = (f"results_mb_2000_v2/mcrl/{exp_num}_mb")
+    models = ["full"]
+    priors_directory = (f"results_mb_2000_v2/mcrl/{exp_num}_mb")
 
     ### Create a list of all combinations and concatenate them as str with underscore
     combinations = list(itertools.product([*pid_dict[exp_num]], models))
@@ -57,8 +57,8 @@ for exp_num in exp:
     list_of_prior_files = os.listdir(priors_directory)
     new_list_of_prior_files = []
     for files in list_of_prior_files:
-        new_list_of_prior_files.append(files.replace("likelihood_", "").replace(".pkl", "").replace("_", ","))
-        # new_list_of_prior_files.append(files.replace("likelihood", "").replace(".pkl", "").replace("_", ",")) #for mb model
+        # new_list_of_prior_files.append(files.replace("likelihood_", "").replace(".pkl", "").replace("_", ",")) #for mf models
+        new_list_of_prior_files.append(files.replace("_likelihood", "").replace(".pkl", "").replace("_", ",")) #for mb model
     # unequal items, i.e. missing PID and model_index combination
     missing_items_list = list(sorted(set(combination_all) - set(new_list_of_prior_files)))
 
@@ -69,14 +69,14 @@ for exp_num in exp:
         temp_list.append(item.split(","))
 
     for items in temp_list:
-        empty_tuple = (int(items[0]), int(items[1])) #mf models
-        # empty_tuple = (int(items[0]))
+        # empty_tuple = (int(items[0]), int(items[1])) #mf models
+        empty_tuple = (int(items[0])) #mb models
         new_list.append(empty_tuple)
 
-    print(f"Number of missing items for {exp_num}", len(new_list)) #mf
-    # print(f"Number of missing items for {exp_num}:", new_list) #mb
+    # print(f"Number of missing items for {exp_num}", len(new_list)) #mf
+    print(f"Number of missing items for {exp_num}:", new_list) #mb
 
     # save the missing pid and model_index as csv, first create a df
     ## MF models only
-    df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
-    df.to_csv(f"missing_{exp_num}.csv", index=False)
+    # df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
+    # df.to_csv(f"missing_{exp_num}.csv", index=False)

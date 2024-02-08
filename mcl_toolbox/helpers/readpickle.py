@@ -5,10 +5,10 @@ import pandas as pd
 # sys.modules["learning_utils"] = learning_utils
 # sys.modules["distributions"] = distributions
 
-# object2 = pd.read_pickle("../../results/cm/inferred_strategies/strategy_discovery_training_test/strategies.pkl")
-# object = pd.read_pickle("../../results/inferred_participant_sequences/strategy_discovery/1_training_temperature.pkl")
-# object3 = pd.read_pickle("../../results/cm/inferred_strategies/strategy_discovery_training/strategies.pkl")
-# object4 = pd.read_pickle("../../results/cm/inferred_strategies/strategy_discovery_training/temperatures.pkl")
-# object5 = pd.read_pickle("../../results/cm/inferred_strategies/v1.0_training/temperatures.pkl")
-object = pd.read_pickle("../../results_mf_models_2000_v2/mcrl/v1.0_priors/1_likelihood_491.pkl")
+# object1 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_491.pkl")
+# object2 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_1743.pkl")
+# object3 = pd.read_pickle(f"../../final_results/pure/non_learning/high_variance_high_cost_priors/0_likelihood_1756.pkl")
+
+object = pd.read_pickle("../../results_mb_2000_v3/mcrl/strategy_discovery_mb/2_likelihood_full.pkl")
+
 print(object)
