@@ -54,8 +54,8 @@ def plot_score(pretraining_exp, training, test_exp, pretraining_control, test_co
     plt.yticks(fontsize=10)
     # plt.title(experiment)
     plt.legend(fontsize=10, loc="lower center")
-    plt.savefig(f"average_score_training_{experiment}_{condition}_journal")
-    # plt.show()
+    # plt.savefig(f"average_score_training_{experiment}_{condition}_journal")
+    plt.show()
     plt.close()
     return None
 
@@ -84,7 +84,7 @@ def mean_confidence_interval(data, confidence=0.95):
 
 
 experiment = "with_click"
-condition = "exp"
+condition = "control"
 
 data = pd.read_csv(f"../../data/human/existence_{experiment}_{condition}/mouselab-mdp.csv")
 pid = pd.read_csv(f"../../data/human/existence_{experiment}_{condition}/participants.csv")

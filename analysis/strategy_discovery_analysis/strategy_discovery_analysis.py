@@ -78,24 +78,33 @@ def trend(count_prop):
 
 def plot_proportion(count_prop):
     # this was used for the participants but I think something is wrong here, CI goes negative
+
+
+    # reindex count_prop
+    count_prop = count_prop.reset_index(drop=True)
+    ci = 0.1 * np.std(count_prop) / np.mean(count_prop)
+    plt.plot(count_prop[1]["optimal_strategy"], label="Participant", color='red')
+    x = list(range(0, len(count_prop)))
+    plt.fill_between(x, (count_prop - ci), (count_prop + ci), color='blue', alpha=0.1)
+
+    # font size
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    # legend font size
+    plt.legend(fontsize=12, loc='lower right')
     plt.ylabel("Proportion of optimal strategy")
     plt.xlabel("Trials")
-    # reindex count_prop
-    # count_prop = count_prop.reset_index(drop=True)
-    # ci = 0.1 * np.std(count_prop) / np.mean(count_prop)
-    plt.plot(count_prop[1]["optimal_strategy"], label="Participant", color='red')
-    # x = list(range(0, len(count_prop)))
-    # plt.fill_between(x, (count_prop - ci), (count_prop + ci), color='blue', alpha=0.1)
-    # plt.savefig("strategy_discovery.png")
-    plt.legend()
-    plt.show()
+
+    plt.savefig("plots/strategy_discovery.png")
+
+    # plt.show()
     plt.close()
     return None
 
 
 def plot_confidence_interval(actual_count, prop_counts, model, participant=None):
     # turn prop_copunt into percentages
-    prop_counts = prop_counts * 100
+    # prop_counts = prop_counts * 100
 
     # Calculate mean and standard deviation of counts
     ci = 1.96 * np.std(prop_counts) / np.sqrt(len(prop_counts))
@@ -112,15 +121,20 @@ def plot_confidence_interval(actual_count, prop_counts, model, participant=None)
                          alpha=0.3, label=f'95% Confidence Interval')
 
     # Set plot labels and legend
-    plt.xlabel('Trial')
-    plt.ylabel('Proportion of adaptive strategy')
+    plt.xlabel('Trial', fontsize=12)
+    plt.ylabel('Proportion of adaptive strategy', fontsize=12)
     plt.legend()
-    # plt.savefig(f"{model}.png")
+
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(fontsize=12, loc='lower right')
+
+    plt.savefig(f"plots/proportion.png")
     plt.show()
     plt.close()
 
 
-def classify_via_score(click_df, pid_list):
+def classify_via_score(click_df):
     # given the score, calculate the proportion of participants who used the optimal strategy
     for idx, row in click_df.iterrows():
         if row["score"] in [15, 14, 13]:  # does 16 make sense?
@@ -133,7 +147,7 @@ def classify_via_score(click_df, pid_list):
     count = click_df.groupby('trial')['optimal_strategy'].sum().astype(int).reset_index()
 
     # count = click_df.groupby("trial")["optimal_strategy"].count()
-    count_prop = count / len(pid_list)
+    count_prop = count / len(clicked_pid)
     return count, count_prop
 
 
@@ -342,46 +356,69 @@ def infer_fitted_model_strategy_local_via_click_sequence(model):
     return data
 
 
-def infer_fitted_model_strategy_local_score(model):
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/strategy_discovery_1756_v2.csv")
-    data = data[data["model"] == model]
-    data = data[data["pid"].isin(clicked_pid)]
+def assign_model_names(row):
+    if row['class'] == 'hybrid' and row['model_index'] == "491":
+        return 'hybrid Reinforce'
+    elif row['class'] == 'hybrid' and row['model_index'] == "479":
+        return 'hybrid LVOC'
+    elif row['class'] == 'pure' and row['model_index'] == "491":
+        return 'pure Reinforce'
+    elif row['class'] == 'pure' and row['model_index'] == "479":
+        return 'pure LVOC'
+    elif row['model_index'] == "1743":
+        return 'Habitual'
+    elif row['model_index'] == "1756":
+        return 'Non-learning'
+    elif row['model_index'] == "522":
+        return 'SSL'
+    elif row['model_index'] == "full":
+        return 'Model-based'
+    else:
+        raise ValueError("Model class combination not found")
 
-    # keep only pid, model, model_clicks columns
+
+def infer_fitted_model_strategy_local_score():
+    data = pd.read_csv(f"../../final_results/aggregated_data/strategy_discovery.csv")
+    data['model'] = data.apply(assign_model_names, axis=1)
+    models = list(data["model"].unique())
+
+    data = data[data["pid"].isin(clicked_pid)]
     data = data[["pid", "model", "model_rewards", "pid_rewards"]]
 
-    # get model clicks
-    data['model_rewards'] = data['model_rewards'].apply(ast.literal_eval)
-    data['pid_rewards'] = data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
+    for model in models:
+        filtered_data = data[data["model"] == model]
+        # keep only pid, model, model_clicks columns
 
-    data = data.explode(['model_rewards', 'pid_rewards']).reset_index(drop=True)
+        # get model clicks
+        filtered_data['model_rewards'] = filtered_data['model_rewards'].apply(ast.literal_eval)
+        filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(
+            lambda s: [int(num) for num in s.strip('[]').split()])
 
-    data["trial_index"] = data.groupby("pid").cumcount()
+        filtered_data = filtered_data.explode(['model_rewards', 'pid_rewards']).reset_index(drop=True)
 
-    # if the score is 15, 14, 13, then optimal strategy is true
-    data["model_optimal_strategy"] = data["model_rewards"].isin([15, 14, 13])
-    data["pid_optimal_strategy"] = data["pid_rewards"].isin([15, 14, 13])
+        filtered_data["trial_index"] = filtered_data.groupby("pid").cumcount()
 
-    # count the number of participants who used the optimal strategy by trial
-    model_count = data.groupby('trial_index')['model_optimal_strategy'].sum().astype(int).reset_index()
-    pid_count = data.groupby('trial_index')['pid_optimal_strategy'].sum().astype(int).reset_index()
+        # if the score is 15, 14, 13, then optimal strategy is true
+        filtered_data["model_optimal_strategy"] = filtered_data["model_rewards"].isin([15, 14, 13])
+        filtered_data["pid_optimal_strategy"] = filtered_data["pid_rewards"].isin([15, 14, 13])
 
-    # mk test of trend
-    result = mk.original_test(model_count["model_optimal_strategy"])
-    print(model, result)
+        # count the number of participants who used the optimal strategy by trial
+        model_count = filtered_data.groupby('trial_index')['model_optimal_strategy'].sum().astype(int).reset_index()
+        pid_count = filtered_data.groupby('trial_index')['pid_optimal_strategy'].sum().astype(int).reset_index()
 
-    # map model index to model name
-    model_name = {491: "REINFORCE", "479": "LVOC", "1743": "Mental habit", 1756: "Non-learning"}
+        # mk test of trend
+        result = mk.original_test(model_count["model_optimal_strategy"])
+        print(model, result)
 
-    plt.plot(model_count["model_optimal_strategy"] / len(data["pid"].unique()), label=model_name[model])
-    # plt.plot(pid_count["pid_optimal_strategy"] / len(data["pid"].unique()), label="Participant")
-    plt.xlabel("Trials")
-    plt.ylabel("Proportion of optimal strategy")
-    plt.legend()
-    # plt.plot(pid_count["pid_optimal_strategy"] / len(data["pid"].unique()))
-    plt.show()
-    plt.close()
-    return data
+        # plt.plot(model_count["model_optimal_strategy"] / len(filtered_data["pid"].unique()), label=model)
+        # plt.plot(pid_count["pid_optimal_strategy"] / len(data["pid"].unique()), label="Participant")
+        # plt.xlabel("Trials")
+        # plt.ylabel("Proportion of optimal strategy")
+        # plt.legend()
+        # plt.savefig(f"plots/{model}.png")
+        # plt.show()
+        # plt.close()
+    # return data
 
 
 def clicking_pid(click_df):
@@ -393,9 +430,37 @@ def clicking_pid(click_df):
             good_pid.append(pid)
     return good_pid
 
+def plot_score(click_df):
+    pid_average = click_df.groupby('trial')['score'].mean()
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(click_df["score"], axis=0)
+    n = len(pid_average)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = click_df.groupby('trial')['score'].mean().index
+
+    # plot model_mer and pid_mer
+    plt.plot(pid_average, label="Participant", color="blue")
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
+
+    plt.xlabel("Trials")
+    plt.ylabel("Average score")
+
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(fontsize=12, loc='lower right')
+    plt.savefig("plots/score.png")
+    # plt.show()
+    plt.close()
+    return None
 
 if __name__ == "__main__":
-    # data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
+    data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
 
     # pid_with_adaptive_strategy_in_last_trials = pid_with_adaptive_strategy(data)
 
@@ -403,7 +468,7 @@ if __name__ == "__main__":
 
     # clicked_pid = clicking_pid(click_df)
 
-    ### filter for clicked_pid
+    ## filter for clicked_pid
     # click_df = click_df[click_df["pid"].isin(clicked_pid)]
 
     ### analysis
@@ -411,9 +476,10 @@ if __name__ == "__main__":
     # logistic_regression(click_df)
     # score_trend(click_df)
 
-    # count_prop = classify_via_score(click_df, pid_list)
+    # count_prop = classify_via_score(click_df)
 
-    # plot_proportion(count_prop)
+    # plot_score(click_df)
+    # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend(count_prop)
@@ -421,18 +487,5 @@ if __name__ == "__main__":
     # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
 
     ### classify model strategy
-    # vanilla models only
-    # models = [522, 491, 479, 1743, 1756]
-
-    # reinforce variants without hierarchical models
-    # models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-    # models = ["491", "479", "1743", "1756"]
-    models = [1756]
-    for model in models:
-        test = infer_fitted_model_strategy_local_score(model)
-        # test = infer_fitted_model_strategy_local_via_click_sequence(model)
-        # actual_count, count_prop = infer_fitted_model_strategy(model)
-        # plot_confidence_interval(actual_count["optimal_strategy"], count_prop["optimal_strategy"], model, count_prop)
-    # plt.legend()
-    # plt.show()
-    # plt.close()
+    # test = infer_fitted_model_strategy_local_via_click_sequence()
+    infer_fitted_model_strategy_local_score()

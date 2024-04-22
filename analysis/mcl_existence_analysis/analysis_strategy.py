@@ -7,12 +7,12 @@ from itertools import groupby
 def create_one_pkl_file():
     strategy_scores_all = {}
     for strategy in range(1,90):
-        strategy_scores = pd.read_pickle(f"results/strategy_scores/existence_with_click/{strategy}_strategy_scores.pkl")
+        strategy_scores = pd.read_pickle(f"../../results/strategy_scores/existence_with_click/{strategy}_strategy_scores.pkl")
         strategy_scores_all = {**strategy_scores_all, **strategy_scores}
 
     strategy_clicks_all = {}
     for strategy in range(1,90):
-        strategy_clicks = pd.read_pickle(f"results/strategy_scores/existence_with_click/{strategy}_number_of_clicks.pkl")
+        strategy_clicks = pd.read_pickle(f"../../results/strategy_scores/existence_with_click/{strategy}_number_of_clicks.pkl")
         strategy_clicks_all = {**strategy_clicks_all, **strategy_clicks}
     return strategy_scores_all, strategy_clicks_all
 
@@ -58,7 +58,8 @@ def cluster(participant_strategies):
     other_strategies = list(strategy_df[strategy_df['label'] == "other_strategies"].index)
 
     # adaptive under click limitation (8) constraint strategies, i.e. change the labelling if click are more than 8
-    adaptive_under_constraint = list(strategy_df[(strategy_df['label'] == "adaptive_strategies") & (strategy_df['click'] < 8)].index)
+    # adaptive_under_constraint = list(strategy_df[(strategy_df['label'] == "adaptive_strategies") & (strategy_df['click'] < 8)].index)
+    adaptive_under_constraint = list(strategy_df[strategy_df['label'] == "adaptive_strategies"].index)
     adaptive_without_constraint = [x for x in adaptive_strategies if x not in adaptive_under_constraint]
 
     # match adaptive, maladaptive and other to the participant
@@ -106,13 +107,14 @@ def frequency_of_strategy_change_test(control, exp):
 experiment = "with_click"
 
 ### comparing exp pretraining and test, expect to see difference through training
-pretraining_exp = pd.read_pickle(f"results/cm/inferred_strategies/existence_{experiment}_exp_pretraining/strategies.pkl")
-test_exp = pd.read_pickle(f"results/cm/inferred_strategies/existence_{experiment}_exp_test/strategies.pkl")
+pretraining_exp = pd.read_pickle(f"../../results/cm/inferred_strategies/existence_{experiment}_exp_pretraining/strategies.pkl")
+test_exp = pd.read_pickle(f"../../results/cm/inferred_strategies/existence_{experiment}_exp_test/strategies.pkl")
 
 pretraining_exp = pd.DataFrame.from_dict(pretraining_exp)
 test_exp = pd.DataFrame.from_dict(test_exp)
 
-df_exp = pretraining_exp.append(test_exp)
+# create dataframe
+df_exp = pretraining_exp._append(test_exp)
 
 labelled_strategies_exp = cluster(df_exp)
 labelled_strategies_exp = labelled_strategies_exp.T
@@ -129,13 +131,13 @@ print(f"Chi square independence test between EXPERIMENTAL pretraining and test: 
 
 
 ### comparing control pretraining and test, expect to see NO difference because NO training
-pretraining_control = pd.read_pickle(f"results/cm/inferred_strategies/existence_{experiment}_control_pretraining/strategies.pkl")
-test_control = pd.read_pickle(f"results/cm/inferred_strategies/existence_{experiment}_control_test/strategies.pkl")
+pretraining_control = pd.read_pickle(f"../../results/cm/inferred_strategies/existence_{experiment}_control_pretraining/strategies.pkl")
+test_control = pd.read_pickle(f"../../results/cm/inferred_strategies/existence_{experiment}_control_test/strategies.pkl")
 
 pretraining_control = pd.DataFrame.from_dict(pretraining_control)
 test_control = pd.DataFrame.from_dict(test_control)
 
-df_control = pretraining_control.append(test_control)
+df_control = pretraining_control._append(test_control)
 
 labelled_strategies_control = cluster(df_control)
 labelled_strategies_control = labelled_strategies_control.T
@@ -150,11 +152,17 @@ b = labelled_strategies_control["Test"].value_counts().sort_index()
 if len(a) != len(b):
     a["adaptive_more_than_8_clicks"] = 0
     print("check which strategy is missing and add accordingly")
-# t = np.array([a.values, b.values])
+
+
+# chi^2 test between controls
 obs_2 = np.array([a, b])
 chi2, p, dof, expctd = chi2_contingency(obs_2)
 print(f"Chi square independence test between CONTROL pretraining and test: chi2={chi2}, p={p}")
 
+# chi^2 test between exps
+obs_5 = np.array([labelled_strategies_exp["Pretraining"].value_counts().sort_index(), labelled_strategies_exp["Test"].value_counts().sort_index()])
+chi2, p, dof, expctd = chi2_contingency(obs_5)
+print(f"Chi square independence test between EXP pretraining and test: chi2={chi2}, p={p}")
 
 # chi^2 test between control vs exp
 obs_3 = np.array([labelled_strategies_exp["Pretraining"].value_counts().sort_index(), a])
@@ -202,7 +210,8 @@ cluster_name_mapping = {1: "P - Best first search",
                         # 8: "Non-Prioritizing - Local search",
                         8: "Misc. planning"}
 
-strategy_maping = pd.read_pickle("../../mcl_toolbox/data/si_strategy_map.pkl")
+# strategy_maping = pd.read_pickle("../../mcl_toolbox/data/si_strategy_map.pkl")
+strategy_maping = pd.read_pickle("../../mcl_toolbox/data/si_strategy_names.pkl")
 # replace the straegy number from Falk's clustering with the ones implemented
 for key, value in falks_clustering.items():
     falks_clustering[key] = [strategy_maping.get(item, item) for item in value]

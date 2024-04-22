@@ -869,6 +869,7 @@ def cholesky_decomposition(A):
 
 
 def sample_mvnrnd_precision(mean, precision):
+    # generates samples from a multivariate normal distribution with a given mean and precision matrix
     n_dim = precision.shape[0]
     L = cholesky_decomposition(precision)
     Z = np.random.randn(n_dim)
@@ -901,7 +902,7 @@ def estimate_bayes_glm(X, y, prior_mean, prior_precision, a, b):
 
 def sample_coeffs(prior_mean, prior_precision, a, b, n_samples=1):
     """
-    TODO:
+    Generate samples from a multivariate normal distribution with a precision matrix
     """
     gamma_rvs = gamma.rvs(a * np.ones(n_samples), scale=(1 / b) * np.ones(n_samples))
     k = np.maximum(gamma_rvs, np.finfo(float).eps)

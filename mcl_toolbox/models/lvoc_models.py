@@ -29,6 +29,7 @@ class LVOC(Learner):
 
     def init_model_params(self):
         """Initialize model parameters and initialize weights with participant priors"""
+        # todo: how is this initialised using participant priors? I think it is randomly initialised based on the optimiser and the range of possible values
         self.mean = self.init_weights
         self.precision = np.diag([1 / self.standard_dev ** 2] * self.num_features)
         self.gamma_a = 1
@@ -71,7 +72,7 @@ class LVOC(Learner):
             pi = trial_info["participant"]
             action = pi.get_click()
         else:
-            available_actions = env.get_available_actions()
+            available_actions = env.get_available_actions() #it includes the termination action 0
             num_available_actions = len(available_actions)
 
             q = np.zeros(num_available_actions)
@@ -102,7 +103,7 @@ class LVOC(Learner):
         return action, features
 
     def perform_action_updates(
-        self, env, next_features, reward, term_features, term_reward, features
+            self, env, next_features, reward, term_features, term_reward, features
     ):
         q = np.dot(self.mean, next_features)
         pr = self.get_pseudo_reward(env)
@@ -133,7 +134,7 @@ class LVOC(Learner):
         self.perform_montecarlo_updates()
 
     def learn_from_path(self, env, features, taken_path):
-        if self.path_learn and taken_path: # during simulation if end_episode and not likelihood, taken_path is None
+        if self.path_learn and taken_path:  # during simulation if end_episode and not likelihood, taken_path is None
             for node in taken_path:
                 # get features and reward given current node
                 # action, features = self.get_action_details(env, trial_info)
@@ -148,7 +149,7 @@ class LVOC(Learner):
         num_available_actions = len(available_actions)
         feature_vals = self.get_action_features(env)
         dists = np.zeros((num_available_actions, 2))
-        cov = np.linalg.inv(self.precision*self.num_samples)
+        cov = np.linalg.inv(self.precision * self.num_samples)
         for index, action in enumerate(available_actions):
             computed_features = feature_vals[action]
             dists[index][0] = np.dot(computed_features, self.mean)
@@ -174,7 +175,7 @@ class LVOC(Learner):
                 [lb, ub],
                 maxdegree=10,
             )
-            #integrate over predicted q-value of the action
+            # integrate over predicted q-value of the action
         eps = self.eps
         log_prob = float(
             str(
@@ -191,7 +192,7 @@ class LVOC(Learner):
         delay = env.get_feedback({"action": action})
         if self.compute_likelihood:
             pi = trial_info["participant"]
-            self.store_action_likelihood(env, action) #only click action and not the termination action
+            self.store_action_likelihood(env, action)  # only click action and not the termination action
             s_next, r, done, _ = env.step(action)
             reward, taken_path, done = pi.make_click()
             # assert r == reward #doesn't make sense because the path is not the same
@@ -230,7 +231,7 @@ class LVOC(Learner):
                     term_reward,
                     features,
                 )
-            else: #if done; hierarchical models never enter here
+            else:  # if done; hierarchical models never enter here
                 self.update_features.append(features)
                 self.perform_end_episode_updates(env, features, reward, taken_path)
             return action, reward, done, taken_path

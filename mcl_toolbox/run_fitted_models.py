@@ -51,7 +51,7 @@ def cost_function(depth):
 
 
 if __name__ == "__main__":
-    exp_name = "strategy_discovery"
+    exp_name = "v1.0"
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -66,8 +66,8 @@ if __name__ == "__main__":
         "experiment": None,  # Experiment object can be passed directly with
         "click_cost": click_cost
     }
-    model_index = 491
-    pid = 100 #7
+    model_index = 479
+    pid = 158
     num_simulations = 1
     plotting = False
 
@@ -76,11 +76,9 @@ if __name__ == "__main__":
     fit_criterion = "likelihood"
 
     parent_directory = Path(__file__).parents[1]
-    # param_dir = parent_directory.joinpath(f"results_mf_models_2000/mcrl_backup_correct_ones/{exp_name}_priors")
-    param_dir = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_priors")
+    param_dir = parent_directory.joinpath(f"results_pure_missing_jobs/mcrl/{exp_name}_priors")
     # and directory to save fit model info in
-    # model_info_directory = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_data")
-    model_info_directory = parent_directory.joinpath(f"results_mf_models_2000/mcrl/{exp_name}_data")
+    model_info_directory = parent_directory.joinpath(f"results_pure_missing_jobs/mcrl/{exp_name}_data")
     create_dir(model_info_directory)
 
     # add directory for reward plots, if plotting
@@ -93,12 +91,11 @@ if __name__ == "__main__":
         exp_name,
         exp_attributes=exp_attributes,
         data_path=f"results/mcrl/{exp_name}",
-        number_of_trials=120,
+        number_of_trials=35,
     )
 
     all_data = {}
-    # for pid in [4, 7, 8, 17, 23, 35, 48, 50, 51, 53, 58, 71, 82, 92, 93, 96, 101, 117, 126, 136, 141, 145, 146, 151,
-    #             154, 158, 180, 189, 197]:
+
     (res, prior) = pickle_load(
         param_dir.joinpath(f"{pid}_{fit_criterion}_{model_index}.pkl")
     )

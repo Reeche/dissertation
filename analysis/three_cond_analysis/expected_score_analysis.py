@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     exp_list = ["v1.0", "c2.1", "c1.1"]
     # lme()
-    # distance_between_strategies(exp_list)
+    distance_between_strategies(exp_list)
 
     all_data = {}
 

@@ -8,7 +8,7 @@ Also create one csv for each condition for BMS for Matlab
 """
 
 def get_all_combinations(model_class, condition):
-    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491], "mb": ["full"]}
+    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479], "mb": ["full"]}
     model_type = mapping[model_class]
     combinations = list(itertools.product([*pid_dict[condition]], [*model_type]))
     return combinations

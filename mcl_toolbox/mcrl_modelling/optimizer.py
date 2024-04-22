@@ -251,7 +251,7 @@ def optimize_hyperopt_params(
     trials = Trials() if trials else None
     best_params = fmin(
         fn=objective_fn,
-        space=param_ranges,
+        space=param_ranges, #here the optimiser gets the sapce of each parameter and samples randomly (?) from the space
         algo=estimator,
         max_evals=max_evals,
         trials=trials,
@@ -409,6 +409,7 @@ class ParameterOptimizer:
             res = estimate_pyabc_posterior(self.objective_fn, prior, distance_fn, observation,
                                            db_path, num_populations=5)
         else:
+            # the x here are the values of the parameters sampled by the optimizer
             lambda_objective_fn = lambda x: distance_fn(self.objective_fn(x), p_data)
             res = optimize_hyperopt_params(lambda_objective_fn, prior, max_evals=max_evals,
                                            show_progressbar=True, rstate=rstate)  # returns best parameters (res) and trials

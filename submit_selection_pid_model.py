@@ -10,8 +10,10 @@ script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 # missing_df = pd.read_csv(f'missing_{exp_num}.csv')
 
 
-exp_num = 'c2.1'
-data = [[86, 1743]]
+exp_num = 'strategy_discovery'
+data = [[45, 479]]
+
+
 missing_df = pd.DataFrame(data, columns=["pid", "model"])
 
 for index, row in missing_df.iterrows():

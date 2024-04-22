@@ -7,8 +7,7 @@ import pandas as pd
 
 # object1 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_491.pkl")
 # object2 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_1743.pkl")
-# object3 = pd.read_pickle(f"../../final_results/pure/non_learning/high_variance_high_cost_priors/0_likelihood_1756.pkl")
+object = pd.read_pickle(f"../../results_pure_missing_jobs/mcrl/v1.0_priors/158_likelihood_479.pkl")
 
-object = pd.read_pickle("../../results_mb_2000_v3/mcrl/strategy_discovery_mb/2_likelihood_full.pkl")
 
 print(object)

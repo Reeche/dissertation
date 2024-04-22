@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numpy as np
 import statsmodels.api as sm
-from statsmodels.formula.api import ols
+from statsmodels.formula.api import ols, mixedlm
 from vars import clicked_dict
 
 """
@@ -11,7 +11,7 @@ Analyse whether score and expected score differs across the conditions
 """
 
 
-def compare_score(conditions, mf_clicked):
+def plot_actual_score(conditions, mf_clicked):
     for condition in conditions:
         # compare and plot and score of all the conditions: MF, MB, STROOP
         df = pd.read_csv(f"../../data/human/{condition}/mouselab-mdp.csv")
@@ -19,8 +19,7 @@ def compare_score(conditions, mf_clicked):
         df = df[df["block"] == "training"]
         df = df[["pid", "trial_index", "score"]]
 
-        if condition == "mf":
-            df = df[df["pid"].isin(mf_clicked)]
+        df = df[df["pid"].isin(mf_clicked[condition])]
 
         # reset trial_index; each pid has trial 1-30
         df["trial_index"] = df.groupby("pid").cumcount() + 1
@@ -30,10 +29,29 @@ def compare_score(conditions, mf_clicked):
 
         if condition == "mf":
             x_values = list(range(30))
-            plt.plot(x_values, df_score["score"], label=condition)
+            plt.plot(x_values, df_score["score"], label="Hybrid")
         else:
             x_values = list(range(15, 30))
-            plt.plot(x_values, df_score["score"], label=condition)
+            if condition == "mb":
+                plt.plot(x_values, df_score["score"], label="Model-based")
+            else:
+                plt.plot(x_values, df_score["score"], label="Stroop")
+
+        # add 95% confidence interval
+        # calculate standard error
+        standard_error = df["score"].sem()
+        # calculate upper and lower bound
+        upper_bound = df_score["score"] + 1.96 * standard_error
+        lower_bound = df_score["score"] - 1.96 * standard_error
+        # plot the upper and lower bound
+        plt.fill_between(x_values, upper_bound, lower_bound, alpha=0.2)
+
+    plt.xlabel("Trial")
+    plt.ylabel("Actual score")
+    plt.legend()
+    # plt.show()
+    plt.savefig(f"plots/actual_score.png")
+    plt.close()
     return None
 
 
@@ -59,10 +77,13 @@ def plot_expected_score(conditions, clicked_dict):
         # plot the average
         if condition == "mf":
             x_values = list(range(30))
-            plt.plot(x_values, average, label=condition.upper())
+            plt.plot(x_values, average, label="Hybrid")
         else:
             x_values = list(range(15, 30))
-            plt.plot(x_values, average, label=condition.upper())
+            if condition == "mb":
+                plt.plot(x_values, average, label="Model-based")
+            else:
+                plt.plot(x_values, average, label="Stroop")
 
         # add 95% confidence interval
         # calculate standard error
@@ -138,14 +159,14 @@ def compare_actual_score(conditions, clicked_dict):
             data["trial_index"] = data["trial_index"] - 14
 
         # keep only the columns "score", "trial_index" and "condition"
-        data = data[["score", "trial_index", "condition"]]
+        data = data[["pid", "score", "trial_index", "condition"]]
 
         # set column condition = condition
         data["condition"] = condition
 
         # create a dataframe with score, trial and condition
         score_data = score_data._append(data)
-    score_data.columns = ["score", "trial", "condition"]
+    score_data.columns = ["pid", "score", "trial", "condition"]
 
     ## linear regression
     regression_analysis(score_data)
@@ -155,8 +176,13 @@ def compare_actual_score(conditions, clicked_dict):
 
 
 def regression_analysis(exp_score_data):
-    res = ols('score ~ trial*C(condition, Treatment("mf"))', data=exp_score_data).fit()
-    print(res.summary())
+    # res = ols('score ~ trial*C(condition, Treatment("mf"))', data=exp_score_data).fit()
+    # print(res.summary())
+
+    formula_ = 'score ~ trial*C(condition, Treatment("mf"))'
+    gamma_model_ = mixedlm(formula=formula_, data=exp_score_data, groups=exp_score_data["pid"]).fit()  # makes sense
+    print(gamma_model_.summary())
+
     return None
 
 
@@ -211,7 +237,8 @@ if __name__ == "__main__":
     # others = [33, 44, 27, 79, 69, 34, 61, 73, 32]
     conditions = ["mf", "mb", "stroop"]
 
-    # plot_expected_score(conditions, clicked_dict)
-    compare_expected_score(conditions, clicked_dict)
+    plot_expected_score(conditions, clicked_dict)
+    # compare_expected_score(conditions, clicked_dict)
 
+    # plot_actual_score(conditions, clicked_dict)
     # compare_actual_score(conditions, clicked_dict)

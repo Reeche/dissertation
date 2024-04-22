@@ -1,0 +1,227 @@
+import pandas as pd
+from sklearn.cluster import KMeans
+from collections import Counter
+import matplotlib.pyplot as plt
+from scipy.stats import chisquare
+import statsmodels.api as sm
+from vars import clicking_pid
+import pymannkendall as mk
+import ast
+
+
+def plot_strategy_proportions(data, model, mapping: dict):
+    df = data.replace(mapping)
+
+    frequencies = pd.DataFrame(columns=["Adaptive", "Mod. adaptive", "Maladaptive"])
+    for columns in df:
+        frequencies = frequencies._append({'Adaptive': Counter(df[columns])["adaptive"] / len(df),
+                                          'Mod. adaptive': Counter(df[columns])["mod"] / len(df),
+                                          'Maladaptive': Counter(df[columns])["mal"] / len(df)}, ignore_index=True)
+
+    trend_test(frequencies)
+    # plt.plot(frequencies, label=["Adaptive", "Mod. adaptive", "Maladaptive"])
+    #
+    # # get the std error for each column
+    # std_err = frequencies.std() / (len(frequencies) ** 0.5)
+    # error_margin = 1.96 * std_err
+    # # Confidence interval for each column
+    # for column in frequencies:
+    #     plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
+    #                      frequencies[column] + error_margin[column], alpha=0.2)
+    # plt.ylim(-0.1, 1)
+    # plt.xlabel("Trials")
+    # plt.ylabel("Proportion")
+    # plt.title(f"Strategy proportions for {model}")
+    # plt.legend()
+    # plt.savefig(f"plots/{experiment}_{model}_cm.png")
+    # # plt.show()
+    # plt.close()
+    return None
+
+
+def compare_last_trial_proportions(participants: dict):
+    ## get last row of strategies
+    last_strategy = []
+    for key, value in participants.items():
+        if isinstance(value, list) and len(value) > 0:
+            last_strategy.append(value[-1])
+    # Use map() function to replace each item from the list
+    mapped_list = list(map(mapping_dict.get, last_strategy))
+    counter = Counter(mapped_list)
+    print("Participants")
+    for key in counter.keys():
+        print(key, counter[key] / len(mapped_list))
+
+
+def clustering_kmeans(strategy_scores):
+    kmeans = KMeans(n_clusters=3, n_init="auto", max_iter=10000, random_state=42)
+    kmeans.fit(strategy_scores.values)
+    strategy_scores["label"] = kmeans.labels_
+
+    ## relabel the cluster centers
+    cluster_centers = pd.Series(kmeans.cluster_centers_.flatten())
+    cluster_centers = cluster_centers.sort_values()
+    strategy_scores["label"] = strategy_scores["label"].replace(int(cluster_centers.index[0]), "mal")
+    strategy_scores["label"] = strategy_scores["label"].replace(int(cluster_centers.index[1]), "mod")
+    strategy_scores["label"] = strategy_scores["label"].replace(int(cluster_centers.index[2]), "adaptive")
+    return strategy_scores
+
+
+def clustering_participants(strategies, experiment):
+    # the clustering that was used for the participants
+
+    if experiment == "v1.0":
+        mapping_dict = {
+            "adaptive": [21, 63, 88, 40, 51, 50, 38, 16, 83, 80, 29, 67, 47, 64, 58, 43, 24, 49, 42, 25, 57, 41, 31, 37,
+                         75, 76, 19, 68, 85, 18, 17, 20, 87, 84, 52, 48, 62, 60, 77, 82, 59, 3, 9, 8, 10, 15, 5, 4, 54,
+                         2, 36, 1, 71, 7, 11, 14, 46, 6, 72, 12, 13, 65, 26, 78, 45, 55, 56, 35, 86],
+            "mal": [33, 73, 32, 79, 89, 69, 44, 34, 81, 27, 61],
+            "mod": [74, 66, 22, 28, 70, 53, 30, 23, 39]}
+    elif experiment == "c2.1":
+        mapping_dict = {
+            "adaptive": [70, 23, 69, 65, 32, 33, 81, 37, 25, 79, 53, 22, 34, 31, 47, 64, 49, 80, 63, 48, 62, 84, 13, 54,
+                         10, 11, 14, 71, 3, 82, 36, 1, 5, 2, 7, 15, 6, 72, 12, 8, 9, 4, 46, 45, 60],
+            "mal": [75, 68, 19, 20, 18, 17, 28, 61, 35, 44, 59],
+            "mod": [74, 66, 78, 21, 86, 26, 89, 27, 73, 52, 77, 30, 56, 55, 67, 58, 88, 87, 85, 41, 57, 16, 29, 38, 76,
+                    50, 24, 40, 51, 43, 42, 83, 39]}
+    elif experiment == "c1.1":
+        mapping_dict = {
+            "adaptive": [19, 17, 18, 20, 68, 67, 75, 55, 56, 70, 22, 43, 58, 76, 53, 87, 62, 85, 48, 73, 61, 44, 60, 41,
+                         31, 23, 89, 74, 7, 6, 11, 12, 72, 10, 14, 36, 9, 71, 2, 1, 13, 3, 5, 8, 15, 46, 4, 54, 42, 24,
+                         27, 28, 66, 30],
+            "mal": [39],
+            "mod": [65, 33, 81, 34, 21, 69, 64, 63, 25, 32, 88, 79, 16, 37, 29, 86, 26, 49, 83, 80, 51, 38, 50, 35, 52,
+                    77, 78, 40, 84, 47, 57, 59, 82, 45]}
+
+    # Iterate over each key-value pair in the mapping dictionary
+    for replacement, values in mapping_dict.items():
+        # Replace values in the DataFrame for each key-value pair
+        strategies.replace({col: {val: replacement for val in values} for col in strategies.columns}, inplace=True)
+
+    return strategies
+
+
+def frequency(kmeans_results):
+    counter = Counter(kmeans_results.labels_)
+    print("Simulation")
+    for key in counter.keys():
+        print(key, counter[key] / len(kmeans_results.labels_))
+
+
+def adaptive_proportion_higher_than_chance(strategy_labels, participants_df):
+    ## count how many
+    cm_counts = (strategy_labels["label"].value_counts() / sum(strategy_labels["label"].value_counts())) * 100
+    participants_counter = participants_df.iloc[:, -1:].replace(mapping_dict)
+    participant_counts = (participants_counter.value_counts() / sum(participants_counter.value_counts())) * 100
+    non_adaptive_cm = cm_counts["mal"] + cm_counts["mod"]
+    if "mal" in participant_counts.index and "mod" in participant_counts.index:
+        non_adaptive_pid = participant_counts["mal"] + participant_counts["mod"]
+    elif "mal" in participant_counts.index and "mod" not in participant_counts.index:
+        non_adaptive_pid = participant_counts["mal"]
+    elif "mod" in participant_counts.index and "mal" not in participant_counts.index:
+        non_adaptive_pid = participant_counts["mod"]
+    print("pid", participant_counts["adaptive"], non_adaptive_pid)
+    print("CM", cm_counts["adaptive"], non_adaptive_cm)
+    res = chisquare([participant_counts["adaptive"], non_adaptive_pid], f_exp=[cm_counts["adaptive"], non_adaptive_cm])
+    print(res)
+
+
+def logistic_regression(df, mapping_dict):
+    # replace the column strategy with the mapping selected from the column condition
+    df["strategy"] = df.apply(lambda x: mapping_dict[x["strategy"]], axis=1)
+
+    # replace strategy with 1 for adaptive and 0 for anything else
+    df["strategy"] = [1 if x == "adaptive" else 0 for x in df["strategy"]]
+
+    # logistic regression
+    # model = sm.GLM.from_formula("strategy ~ C(condition, Treatment('c1.1'))*trial", data=participants_df,
+    #                             family=sm.families.Binomial()).fit()
+    # print(model.summary())
+
+    ### logisit regression for each condition
+    for condition in pd.unique(df["condition"]):
+        condition_df = df[df["condition"] == condition]
+        model = sm.GLM.from_formula("strategy ~ trial", data=condition_df,
+                                    family=sm.families.Binomial()).fit()
+        print(condition)
+        print(model.summary())
+
+    return None
+
+
+def trend_test(data):
+    result = mk.original_test(data["Adaptive"])
+    print(result)
+    return None
+
+
+if __name__ == "__main__":
+    experiments = ["v1.0", "c2.1", "c1.1"]
+    # experiments = ["c2.1"]
+    all_pid = pd.DataFrame()
+    mapping_dict = {}
+    for experiment in experiments:
+        strategy_scores = pd.read_pickle(f"../../results/strategy_scores/{experiment}_strategy_scores.pkl")
+        strategy_scores = pd.DataFrame.from_dict(strategy_scores, orient='index')
+        strategy_scores.index += 1  # increment by one because participants start at 1
+
+        ### load participanta data
+        participants = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
+        # filter for clicking participants
+        participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
+        participants_df = pd.DataFrame.from_dict(participants, orient='index')
+        ## get only used strategies
+        unique_used_strategies = pd.unique(participants_df.values.flatten())
+
+        ##plot strategy proportions for participants
+        # k means based on used strategy scores
+        used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+        strategy_labels = clustering_kmeans(used_strategy_score)
+        mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+
+        # plot_strategy_proportions(participants_df, "pid", mapping)
+
+        ### load CM model data
+        # model_data = pd.read_csv(f"../../final_results/model_cm/{experiment}.csv")
+        # # filter for clicking participants
+        # model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+        #
+        # # get list of unique models
+        # unique_models = pd.unique(model_data["model"])
+
+        # for model in unique_models:
+            # model = "hybrid LVOC"
+            # filtered_model_data = model_data[model_data["model"] == model]
+            # filtered_model_data['model_strategies'] = filtered_model_data['model_strategies'].apply(ast.literal_eval)
+
+            # reshape
+            # filtered_model_data = pd.DataFrame(filtered_model_data['model_strategies'].tolist(),
+            #                                    columns=[f'{i + 1}' for i in range(35)])
+            #
+            # unique_used_strategies = pd.unique(filtered_model_data.values.flatten())
+
+            # clustering based on clusters used for participants
+            # mapping = clustering_participants(filtered_model_data, experiment)
+
+            ## k means based on used strategy scores
+            # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+            # strategy_labels = clustering_kmeans(used_strategy_score)
+            # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+
+            # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+            # plot_strategy_proportions(filtered_model_data, model, mapping)
+
+        ### reshape df for logisitic regression
+        df = participants_df.transpose()
+        df = pd.melt(df)
+        df.columns = ["pid", "strategy"]
+        df["trial"] = df.groupby("pid").cumcount() + 1
+        df["condition"] = experiment
+
+        logistic_regression(df, mapping)
+
+        # all_pid = all_pid._append(df)
+        # mapping_dict[experiment] = mapping
+
+    # logistic_regression(all_pid, mapping_dict)
+    #

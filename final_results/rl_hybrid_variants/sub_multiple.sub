@@ -1,8 +1,8 @@
 executable = /lustre/fast/fast/rhe/venv/bin/python
-arguments = infer_model_sequences.py $(Arg1) $(Arg2)
-error = errs/cm/$(Arg1)/$(Arg2).err
+arguments = 2_create_csv.py $(Arg1) $(Arg2)
+error = errs/$(Arg1)/$(Arg2).err
 getenv = True
-request_memory = 8000
+request_memory = 16000
 request_cpus = 1
 max_materialize=2000
 queue Arg1,Arg2 from parameters.txt

@@ -364,7 +364,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
-        plot_clicks(average_clicks)
+        # plot_clicks(average_clicks)
 
         ##trend test
         # trend_test(average_clicks)
@@ -375,20 +375,20 @@ if __name__ == "__main__":
         ##append all 4 conditions into one df
         # click_df_all_conditions.append(click_df)
 
-        # optimal number of clicks vs. actual number of clicks
-        # get clicks of last trial
-        # if experiment == "high_variance_low_cost":
-        #     chi2, p = chisquare([average_clicks.values[-1], 7.1])
-        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
-        # elif experiment == "high_variance_high_cost":
-        #     chi2, p  = chisquare([average_clicks.values[-1], 6.32])
-        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        # elif experiment == "low_variance_high_cost":
-        #     chi2, p  = chisquare([average_clicks.values[-1], 0])
-        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        # else:
-        #     chi2, p  = chisquare([average_clicks.values[-1], 5.82])
-        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        ###optimal number of clicks vs. actual number of clicks
+        ##get clicks of last trial
+        if experiment == "high_variance_low_cost":
+            chi2, p = chisquare([average_clicks.values[-1], 7.1])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
+        elif experiment == "high_variance_high_cost":
+            chi2, p  = chisquare([average_clicks.values[-1], 6.32])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        elif experiment == "low_variance_high_cost":
+            chi2, p  = chisquare([average_clicks.values[-1], 0])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        else:
+            chi2, p  = chisquare([average_clicks.values[-1], 5.82])
+            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
     # result_df = pd.concat(click_df_all_conditions, ignore_index=True)

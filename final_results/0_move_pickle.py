@@ -28,11 +28,11 @@ def move_pickle_files(root_folder, folder_list):
 
 
 if __name__ == "__main__":
-    root_folder = "hybrid"  # Replace with the path to your root folder
-    folder_list = ["v1.0_data", "v1.0_priors", "c2.1_data", "c2.1_priors", "c1.1_data", "c1.1_priors",
-                   "high_variance_high_cost_data", "high_variance_high_cost_priors",
-                   "high_variance_low_cost_data", "high_variance_low_cost_priors",
-                   "low_variance_high_cost_data", "low_variance_high_cost_priors",
-                   "low_variance_low_cost_data", "low_variance_low_cost_priors"]  # Add other folders if needed
-    # folder_list = ["strategy_discovery_data", "strategy_discovery_priors"]
+    root_folder = "rl_hybrid_variants"  # Replace with the path to your root folder
+    # folder_list = ["v1.0_data", "v1.0_priors", "c2.1_data", "c2.1_priors", "c1.1_data", "c1.1_priors",
+    #                "high_variance_high_cost_data", "high_variance_high_cost_priors",
+    #                "high_variance_low_cost_data", "high_variance_low_cost_priors",
+    #                "low_variance_high_cost_data", "low_variance_high_cost_priors",
+    #                "low_variance_low_cost_data", "low_variance_low_cost_priors"]  # Add other folders if needed
+    folder_list = ["strategy_discovery_data", "strategy_discovery_priors"]
     move_pickle_files(root_folder, folder_list)

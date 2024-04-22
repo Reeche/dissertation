@@ -6,7 +6,28 @@ from scipy.stats import norm
 from vars import pid_dict
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
-def click_loss(p_data, model_data, model_params, criterion):
+
+"""
+This script created csv for each condition and each model. 
+Each csv contains the following columns:
+- pid: participant id
+- class: model class
+- model_index: model index
+- condition: condition
+- loss: click sequence loss
+- number_of_parameters: number of parameters
+- model_clicks: model clicks
+- model_mer: model mer
+- model_rewards: model rewards
+- pid_clicks: participant clicks
+- pid_mer: participant mer
+- pid_rewards: participant rewards
+- click_loss: click loss
+- mer_loss: mer loss
+"""
+
+
+def click_loss(p_data, model_data, criterion, model_params=None):
     p_number_of_clicks_per_trial = [
         [len([click for click in p_clicks if click not in [0, None]]) for p_clicks in p_data]]
     a_number_of_clicks_per_trial = [
@@ -16,7 +37,10 @@ def click_loss(p_data, model_data, model_params, criterion):
     if criterion == "likelihood":
         sigma = 1
     else:
-        sigma = np.exp(model_params[0]["lik_sigma"])
+        if model_params:
+            sigma = np.exp(model_params[0]["lik_sigma"])
+        else:
+            sigma = 1
 
     objective_value = -np.sum(
         [
@@ -29,12 +53,16 @@ def click_loss(p_data, model_data, model_params, criterion):
     return objective_value
 
 
-def mer_loss(p_mer, model_data, model_params, criterion):
+def mer_loss(p_mer, model_data, criterion, model_params=None):
     mean_mer = np.mean(model_data, axis=0)
     if criterion == "likelihood":
         sigma = 1
     else:
-        sigma = np.exp(model_params[0]["lik_sigma"])
+        if model_params:
+            sigma = np.exp(model_params[0]["lik_sigma"])
+        else:
+            sigma = 1
+
     normal_objective = -np.sum(
         [
             norm.logpdf(x, loc=y, scale=sigma)
@@ -60,17 +88,30 @@ def number_of_parameters(model, criterion):
             return 1
         else:
             return 2
-    elif model in [491, 479]:  # reinforce and lvoc
+    elif model in [491, 479, 486, 487, 490]:  # reinforce and lvoc
         if criterion == "likelihood":
             return 3
         else:
             return 4
-    elif model == "full":
+    elif model in [480, 481]:
+        if criterion == "likelihood":
+            return 5
+        else:
+            return 6
+    elif model in [482, 483, 484, 485, 488, 489]:
+        if criterion == "likelihood":
+            return 4
+        else:
+            return 5
+    else:
         if criterion == "likelihood":
             return 8
 
+
 def get_all_combinations(model_class, condition):
-    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491], "mb": ["full"]}
+    # mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479],
+    #            "mb": ["full"]}
+    mapping = {"rl_hybrid_variants": [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]}
     model_index = mapping[model_class]
     combinations = list(itertools.product([*pid_dict[condition]], [*model_index]))
     return combinations
@@ -83,13 +124,17 @@ exp_attributes = {
     "click_cost": 1
 }
 
-
-
 if __name__ == "__main__":
     root_folder = os.getcwd()
-    folder_list = ["habitual", "hybrid", "non_learning", "pure", "ssl", "mb"]
-    # conditions = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    conditions = ["c2.1", "c1.1"]
+    # folder_list = ["habitual", "hybrid", "non_learning", "pure", "ssl", "mb"]
+    # folder_list = ["non_learning", "pure", "ssl", "mb"]
+    # conditions = ["v1.0", "c2.1", "c1.1",
+    #               "high_variance_high_cost", "high_variance_low_cost",
+    #               "low_variance_high_cost", "low_variance_low_cost",
+    #               "strategy_discovery"]
+    # conditions = ["v1.0", "c2.1", "c1.1"]
+    folder_list = ["rl_hybrid_variants"]
+    conditions = ["strategy_discovery"]
 
     for condition in conditions:
 
@@ -115,18 +160,31 @@ if __name__ == "__main__":
             for index, row in df.iterrows():
                 pid = row["pid"]
                 model = row["model_index"]
+                print(pid, model)
                 if model_class != "mb":
                     data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_data/{pid}_{model}_1.pkl')
-                    model_params = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                    model_params = pd.read_pickle(
+                        f'{root_folder}/{model_class}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                elif model_class == "mb":
+                    data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_mb/{pid}_likelihood_full.pkl')
+                else:  # print warning that model class is not recognized
+                    print("Model class not recognized")
 
                 # add loss to the row
-                df.at[index, "loss"] = click_sequence_loss(model_params)
+                if model_class != "mb":
+                    df.at[index, "loss"] = click_sequence_loss(model_params)
+                elif model_class == "mb":
+                    df.at[index, "loss"] = data["loss"]
+
                 df.at[index, "number_of_parameters"] = number_of_parameters(model, criterion="likelihood")
 
-                # add model information
+                # add model information #todo: why str?
                 df.at[index, "model_clicks"] = str(data["a"][0])
                 df.at[index, "model_mer"] = str(data["mer"][0])
-                df.at[index, "model_rewards"] = str(data["r"][0])
+                if model_class != "mb":
+                    df.at[index, "model_rewards"] = str(data["r"][0])
+                elif model_class == "mb":
+                    df.at[index, "model_rewards"] = str(data["rewards"][0])
 
                 # add participant information
                 mf = ModelFitter(
@@ -142,8 +200,15 @@ if __name__ == "__main__":
                 df.at[index, "pid_mer"] = str(get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline))
                 df.at[index, "pid_rewards"] = str(pid_context.score)
 
-                df.at[index, "click_loss"] = click_loss(pid_context.clicks, data["a"], model_params[0], criterion="likelihood")
-                df.at[index, "mer_loss"] = mer_loss(pid_mer, data["mer"], model_params[0], criterion="likelihood")
+                if model_class != "mb":
+                    df.at[index, "click_loss"] = click_loss(pid_context.clicks, data["a"], criterion="likelihood",
+                                                            model_params=model_params[0])
+                    df.at[index, "mer_loss"] = mer_loss(pid_mer, data["mer"], criterion="likelihood",
+                                                        model_params=model_params[0])
+                elif model_class == "mb":
+                    df.at[index, "click_loss"] = click_loss(pid_context.clicks, data["a"], criterion="likelihood",
+                                                            model_params=None)
+                    df.at[index, "mer_loss"] = mer_loss(pid_mer, data["mer"], criterion="likelihood", model_params=None)
 
             # save the dataframe as csv
             df.to_csv(f"{model_class}_{condition}.csv")
