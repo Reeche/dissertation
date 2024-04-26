@@ -9,16 +9,7 @@ import pickle
 import sys
 from pathlib import Path
 
-"""
-There are 4 variants: 
-full: every node has its own alpha and beta
-linear: alpha and beta are linearly interpolated between the node levels
-uniform: alpha and beta are the same for all nodes
-level: alpha and beta are the same for all nodes of the same level
 
-Currently, the full model works the best and uniform the worst
-Could not tell differences between the linear and level models 
-"""
 
 def plot_score(res, participant, pid, exp_name):
     plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
@@ -29,6 +20,7 @@ def plot_score(res, participant, pid, exp_name):
     # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/score_{pid}.png")
     plt.close()
     return None
+
 
 def plot_mer(res, participant, pid, exp_name):
     plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
@@ -72,7 +64,8 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     criterion = sys.argv[2]
     pid = int(sys.argv[3])
-    model_variant = sys.argv[4]
+    node_assumption = sys.argv[4]
+    update_rule = sys.argv[5]
 
     """
     List of models: 
@@ -89,9 +82,10 @@ if __name__ == "__main__":
     # exp_name = "high_variance_low_cost"  # "strategy_discovery
     # criterion = "likelihood"  # "number_of_clicks_likelihood"
     # pid = 4
-    # model_variant = "full" #"full", "linear", "uniform", "level", "no_assumption"
+    # node_assumption = "uniform" #"uniform", "level", "no_assumption"
+    # update_rule = "individual"  # "individual", "level"
 
-    E = Experiment(exp_name, data_path=f"results_mb_test12/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_test13/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -120,7 +114,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_test12/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_test13/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -129,24 +123,27 @@ if __name__ == "__main__":
     # todo: need to choose a sensible range that takes the click cost into consideration
     # Has to be symmetric, otherwise biased towards negative expected value
     if exp_name in ["v1.0", "c2.1"]:
-        # value_range = list(range(-49, 49))
         value_range = [-48, -24, -8, -4, -2, 2, 4, 8, 24, 48]
         term_range = list(range(-61, 61))
     elif exp_name == "c1.1":
-        value_range = list(range(-31, 31))
+        value_range = [-10, -5, 5, 10]
+        term_range = list(range(-31, 31))
     elif exp_name in ["high_variance_high_cost", "high_variance_low_cost"]:
         value_range = [-1000, -100, -50, -20, 50, 100]
         term_range = list(range(-3001, 3001))
     elif exp_name in ["low_variance_high_cost", "low_variance_low_cost"]:
-        value_range = list(range(-7, 7))
+        value_range = [-6, -4, -2, 2, 4, 6]
+        term_range = list(range(-19, 19))
     elif exp_name == "strategy_discovery":
-        value_range = list(range(-51, 51))
+        value_range = [-50, -5, -1, 1, 50]
+        term_range = list(range(-47, 47))
     else:
         raise ValueError("Experiment name not recognised")
 
-    model = ModelBased(env, value_range, term_range, participant_obj, criterion, num_simulations, model_variant, compute_likelihood=True)
+    model = ModelBased(env, value_range, term_range, participant_obj, criterion, num_simulations, node_assumption,
+                       update_rule, compute_likelihood=True)
 
-    if criterion != "likelihood": #todo
+    if criterion != "likelihood":  # todo
         fspace = {
             'inverse_temp': hp.uniform('inverse_temp', -100, 100),
             'sigma': hp.uniform('sigma', np.log(1e-3), np.log(1e3)),
@@ -156,22 +153,14 @@ if __name__ == "__main__":
     else:
         min_value = 1
         max_value = 10
-        if model_variant == "uniform":
+        if node_assumption == "uniform":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
                 'alpha': hp.uniform('alpha', min_value, max_value),
                 'beta': hp.uniform('beta', min_value, max_value),
                 'click_weight': hp.uniform('click_weight', 1, 100),
             }
-        elif model_variant == "linear": #not really used
-            fspace = {
-                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_weight': hp.uniform('alpha_weight', np.log(min_value), np.log(max_value)),
-                'beta_weight': hp.uniform('beta_weight', np.log(min_value), np.log(max_value)),
-                'alpha_intercept': hp.uniform('alpha_intercept', np.log(min_value), np.log(max_value)),
-                'beta_intercept': hp.uniform('beta_intercept', np.log(min_value), np.log(max_value)),
-            }
-        elif model_variant == "full" or model_variant == "level":
+        elif node_assumption == "level":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
                 'alpha_1': hp.uniform('alpha_1', min_value, max_value),
@@ -182,20 +171,20 @@ if __name__ == "__main__":
                 'beta_3': hp.uniform('beta_3', min_value, max_value),
                 'click_weight': hp.uniform('click_weight', 1, 100),
             }
-        elif model_variant == "no_assumption":
+        elif node_assumption == "no_assumption":
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
                 'click_weight': hp.uniform('click_weight', 1, 100),
             }
         else:
-            raise ValueError(f"Model not recognised: {model_variant}")
+            raise ValueError(f"Model not recognised: {node_assumption}")
 
     trials = True
     trials = Trials() if trials else None
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=2000,
+                       max_evals=4000,
                        show_progressbar=True)
 
     ## simulate using the best parameters
@@ -220,10 +209,10 @@ if __name__ == "__main__":
     res.update(best_params)
 
     ## check if dir exist
-    if not Path(f"results_mb_test12/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_test12/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_test13/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_test13/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_test12/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    output = open(f'results_mb_test13/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 
@@ -231,6 +220,3 @@ if __name__ == "__main__":
     # plot_mer(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
     # print(res)
-
-
-

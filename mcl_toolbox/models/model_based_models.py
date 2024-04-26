@@ -13,7 +13,8 @@ from scipy.special import logsumexp
 class ModelBased(Learner):
     """Base class of the Model-based model"""
 
-    def __init__(self, env, value_range, term_range, participant_obj, criterion, num_simulations, model, compute_likelihood):
+    def __init__(self, env, value_range, term_range, participant_obj, criterion, num_simulations, node_assumption, update_rule,
+                 compute_likelihood):
         self.participant_obj = participant_obj
         self.env = env
         self.value_range = value_range
@@ -24,8 +25,9 @@ class ModelBased(Learner):
         self.optimisation_criterion = criterion
         self.p_data = self.construct_p_data()
         self.num_simulations = num_simulations
+        self.update_rule = update_rule
         self.compute_likelihood = compute_likelihood
-        self.model = model
+        self.node_assumption = node_assumption
         self.node_distributions = {}
 
     def construct_p_data(self):
@@ -50,7 +52,7 @@ class ModelBased(Learner):
         alpha = alpha_intercept + alpha_weight * depth
         beta = beta_intercept + beta_weight * depth
 
-        "Full": for this model, each node has its own set of alpha and beta
+        "Single": for this model, each node has its own set of alpha and beta
 
         "Level": for this model, all nodes on the same level share the same alpha and beta
 
@@ -62,7 +64,7 @@ class ModelBased(Learner):
         """
         # todo: does it make sense that value of termination is the same as first level?
         ## each alpha parameter represents a possible value in the value_list, e.g. -48 to +48
-        if self.model == "uniform":
+        if self.node_assumption == "uniform":
             # all nodes share the same set of parameters
             rv = beta(np.exp(params["alpha"]), np.exp(params["beta"]))
             x = np.linspace(beta.ppf(0.01, np.exp(params["alpha"]), np.exp(params["beta"])),
@@ -80,52 +82,7 @@ class ModelBased(Learner):
             for i in range(1, self.num_available_nodes + 1):
                 self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
 
-        elif self.model == "linear":
-            # nodes are linearly dependent of depth
-            # depth of 1 for nodes 1, 5, 9; weight * 0 + intercept -> only intercept
-            rv_1 = beta(np.exp(params["alpha_intercept"]), np.exp(params["beta_intercept"]))
-            x_1 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_intercept"]), np.exp(params["beta_intercept"])),
-                              beta.ppf(0.99, np.exp(params["alpha_intercept"]), np.exp(params["beta_intercept"])),
-                              len(self.value_range))
-            alpha_level_1 = torch.tensor(rv_1.pdf(x_1))
-            alpha_clipped_1 = np.clip(alpha_level_1, 1e-8, 999999)
-            dirichlet_alpha_level_1 = OrderedDict(zip(self.value_range, alpha_clipped_1.tolist()))
-
-            # depth of 2 for nodes 2, 6, 10; weight * 1 + intercept
-            alpha_dist_2 = np.exp(params["alpha_weight"]) + np.exp(params["alpha_intercept"])
-            beta_dist_2 = np.exp(params["beta_weight"]) + np.exp(params["beta_intercept"])
-            rv_2 = beta(alpha_dist_2, beta_dist_2)
-            x_2 = np.linspace(beta.ppf(0.01, alpha_dist_2, beta_dist_2), beta.ppf(0.99, alpha_dist_2, beta_dist_2),
-                              len(self.value_range))
-            alpha_level_2 = torch.tensor(rv_2.pdf(x_2))
-            alpha_clipped_2 = np.clip(alpha_level_2, 1e-8, 999999)
-            dirichlet_alpha_level_2 = OrderedDict(zip(self.value_range, alpha_clipped_2.tolist()))
-
-            # depth for 3 for nodes 3, 4, 7, 8, 11, 12; weight * 2 + intercept
-            alpha_dist_3 = 2 * np.exp(params["alpha_weight"]) + np.exp(params["alpha_intercept"])
-            beta_dist_3 = 2 * np.exp(params["beta_weight"]) + np.exp(params["beta_intercept"])
-            rv_3 = beta(alpha_dist_3, beta_dist_3)
-            x_3 = np.linspace(beta.ppf(0.01, alpha_dist_3, beta_dist_3), beta.ppf(0.99, alpha_dist_3, beta_dist_3),
-                              len(self.value_range))
-            alpha_level_3 = torch.tensor(rv_3.pdf(x_3))
-            alpha_clipped_3 = np.clip(alpha_level_3, 1e-8, 999999)
-            dirichlet_alpha_level_3 = OrderedDict(zip(self.value_range, alpha_clipped_3.tolist()))
-
-            self.dirichlet_alpha_dict = {0: dirichlet_alpha_level_1.copy(),  # todo: does this make sense?
-                                         1: dirichlet_alpha_level_1.copy(),
-                                         2: dirichlet_alpha_level_2.copy(),
-                                         3: dirichlet_alpha_level_3.copy(),
-                                         4: dirichlet_alpha_level_3.copy(),
-                                         5: dirichlet_alpha_level_1.copy(),
-                                         6: dirichlet_alpha_level_2.copy(),
-                                         7: dirichlet_alpha_level_3.copy(),
-                                         8: dirichlet_alpha_level_3.copy(),
-                                         9: dirichlet_alpha_level_1.copy(),
-                                         10: dirichlet_alpha_level_2.copy(),
-                                         11: dirichlet_alpha_level_3.copy(),
-                                         12: dirichlet_alpha_level_3.copy()}
-
-        elif self.model == "full" or self.model == "level":
+        elif self.node_assumption == "level":
             # termination probability
             # rv_term = beta(params["alpha_term"], params["beta_term"])
             # x_term = np.linspace(beta.ppf(0.01, params["alpha_term"], params["beta_term"]),
@@ -172,13 +129,13 @@ class ModelBased(Learner):
                                          11: dirichlet_alpha_3.copy(),
                                          12: dirichlet_alpha_3.copy()}
 
-        elif self.model == "no_assumption":
+        elif self.node_assumption == "no_assumption":
             para_a = 1
             para_b = 1
             rv = beta(para_a, para_b)
             x = np.linspace(beta.ppf(0.01, para_a, para_b),
-                              beta.ppf(0.99, para_a, para_b),
-                              len(self.value_range))
+                            beta.ppf(0.99, para_a, para_b),
+                            len(self.value_range))
             alpha = torch.tensor(rv.pdf(x))
             dirichlet_alpha = OrderedDict(zip(self.value_range, alpha.tolist()))
 
@@ -209,7 +166,8 @@ class ModelBased(Learner):
         return None
 
     def perform_updates(self, action):
-        if self.model == "level" or self.model == "no_assumption":
+        if self.update_rule == "level":
+            print("Level update rule")
             observed_value = self.env.ground_truth[self.env.present_trial_num][action]
             if action in [1, 5, 9]:
                 self.dirichlet_alpha_dict[1][int(observed_value)] += self.click_weight
@@ -240,7 +198,8 @@ class ModelBased(Learner):
             assert self.dirichlet_alpha_dict[3] == self.dirichlet_alpha_dict[4] == self.dirichlet_alpha_dict[7] == \
                    self.dirichlet_alpha_dict[8] == self.dirichlet_alpha_dict[11] == self.dirichlet_alpha_dict[
                        12], "Distribution on the third level are not the same"
-        else:
+        elif self.update_rule == "individual":
+            print("Individual update rule")
             observed_value = self.env.ground_truth[self.env.present_trial_num][action]
             self.dirichlet_alpha_dict[action][int(observed_value)] += self.click_weight
             old_distributions = frozenset(self.node_distributions.items())
@@ -252,6 +211,8 @@ class ModelBased(Learner):
                 )
             new_distributions = frozenset(self.node_distributions.items())
             assert old_distributions != new_distributions, "Node distributions have not been updated"
+        else:
+            raise ValueError("Update rule not recognised")
         return None
 
     def node_depth(self, action):

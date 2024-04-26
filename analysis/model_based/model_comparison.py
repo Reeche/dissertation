@@ -8,8 +8,8 @@ import pymannkendall as mk
 
 exp_num = "high_variance_low_cost"
 pid_list = get_all_pid_for_env(exp_num)
-# model_list = [491, 479, "mb"] # + model_based
-model_list = ["full", "level", "no_assumption"]
+# model_list = ["full", "level", "no_assumption"]
+model_list = ["no_assumption"]
 
 ## create empty df
 df = pd.DataFrame(
@@ -28,7 +28,7 @@ temp_model_clicks = []
 for index, row in df.iterrows():
     if row['model'] not in ["full", "level", "no_assumption"]:
         model_data = pd.read_pickle(
-            f"../../results_mb_test11/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")
+            f"../../results_mb_test12/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")
         temp_model_score.append(model_data["r"][0])
         temp_action = []
         for action in model_data["a"][0]:
@@ -36,7 +36,7 @@ for index, row in df.iterrows():
         temp_model_clicks.append(temp_action)
     else:
         model_data = pd.read_pickle(
-            f"../../results_mb_test11/mcrl/{exp_num}_mb/{row['pid']}_likelihood_{row['model']}.pkl")
+            f"../../results_mb_test12/mcrl/{exp_num}_mb/{row['pid']}_likelihood_{row['model']}.pkl")
         temp_model_score.append(model_data["rewards"][0])
         temp_action = []
         for action in model_data["a"][0]:

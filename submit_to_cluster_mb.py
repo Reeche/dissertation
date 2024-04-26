@@ -11,7 +11,8 @@ bid = 25
             # 'low_variance_low_cost',
             # 'strategy_discovery']
 
-models = ['no_assumption']
+node_assumptions = ["uniform", "level", "no_assumption"]
+update_rules = ["individual", "level"]
 
 exp_num = ['high_variance_low_cost']
 # pid_dict = {'strategy_discovery': [2, 28]}
@@ -43,11 +44,12 @@ pid_dict = {
 with open("parameters_mb.txt", "w") as parameters:
     for exp_num_ in exp_num:
         pids = pid_dict.get(exp_num_)
-        for model in models:
-            for pid in pids:
-                args = [exp_num_, 'likelihood', pid, model]
-                args_str = " ".join(str(x) for x in args) + "\n"
-                parameters.write(args_str)
+        for model in node_assumptions:
+            for update_rule in update_rules:
+                for pid in pids:
+                    args = [exp_num_, 'likelihood', pid, model, update_rule]
+                    args_str = " ".join(str(x) for x in args) + "\n"
+                    parameters.write(args_str)
 
 submit_sub_file("sub_multiple_model_based.sub", bid)
 

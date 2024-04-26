@@ -3,8 +3,10 @@ from mcl_toolbox.utils.participant_utils import ParticipantIterator
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.models.model_based_models import ModelBased
 import unittest
-import pytest
-
+# import pytest
+import subprocess
+import random
+from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 
 def test_learning_pid():
     exp_name = "v1.0"
@@ -102,3 +104,31 @@ def test_non_clicking_pid():
     res = model.run_multiple_simulations({'inverse_temp': 0.5, 'sigma': 0.5})
     # because nothing clicked
     assert (p == 1 for p in model.dirichlet_alpha_dict.values())
+
+class TestScript(unittest.TestCase):
+    def test_multiple_runs_with_random_parameters(self):
+        num_runs = 10
+        for i in range(num_runs):
+            # Sample random parameters
+            exp_name = random.choice(['v1.0', 'c2.1', 'c1.1', 'high_variance_high_cost', 'high_variance_low_cost', 'low_variance_high_cost', 'low_variance_low_cost', 'strategy_discovery'])
+            pid = random.sample(get_all_pid_for_env(exp_name), 1)[0]
+            node_assumption = random.choice(['uniform', 'level', 'no_assumption'])
+            update_rule = random.choice(['individual', 'level'])
+
+            # exp_name = "high_variance_low_cost"
+            # pid = "4"
+            # node_assumption = "uniform"
+            # update_rule = "individual"
+
+            print(f"Testing with parameters: {exp_name}, {pid}, {node_assumption}, {update_rule}")
+
+            cmd = ['python', '../fit_model_based_models.py', exp_name, 'likelihood', str(pid), node_assumption,
+                   update_rule]
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+
+            self.assertEqual(process.returncode, 0, msg=f"Script returned an error: {stderr}")
+
+
+if __name__ == '__main__':
+    unittest.main()
