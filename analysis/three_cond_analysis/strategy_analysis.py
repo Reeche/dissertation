@@ -18,24 +18,24 @@ def plot_strategy_proportions(data, model, mapping: dict):
                                           'Mod. adaptive': Counter(df[columns])["mod"] / len(df),
                                           'Maladaptive': Counter(df[columns])["mal"] / len(df)}, ignore_index=True)
 
-    trend_test(frequencies)
-    # plt.plot(frequencies, label=["Adaptive", "Mod. adaptive", "Maladaptive"])
-    #
-    # # get the std error for each column
-    # std_err = frequencies.std() / (len(frequencies) ** 0.5)
-    # error_margin = 1.96 * std_err
-    # # Confidence interval for each column
-    # for column in frequencies:
-    #     plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
-    #                      frequencies[column] + error_margin[column], alpha=0.2)
-    # plt.ylim(-0.1, 1)
-    # plt.xlabel("Trials")
-    # plt.ylabel("Proportion")
-    # plt.title(f"Strategy proportions for {model}")
-    # plt.legend()
-    # plt.savefig(f"plots/{experiment}_{model}_cm.png")
-    # # plt.show()
-    # plt.close()
+    # trend_test(frequencies)
+    plt.plot(frequencies, label=["Adaptive", "Mod. adaptive", "Maladaptive"])
+
+    # get the std error for each column
+    std_err = frequencies.std() / (len(frequencies) ** 0.5)
+    error_margin = 1.96 * std_err
+    # Confidence interval for each column
+    for column in frequencies:
+        plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
+                         frequencies[column] + error_margin[column], alpha=0.2)
+    plt.ylim(-0.1, 1)
+    plt.xlabel("Trials")
+    plt.ylabel("Proportion")
+    plt.title(f"Strategy proportions for {model}")
+    plt.legend()
+    plt.savefig(f"plots/CM_all_strategies/{experiment}_{model}_cm.png")
+    # plt.show()
+    plt.close()
     return None
 
 
@@ -68,7 +68,7 @@ def clustering_kmeans(strategy_scores):
 
 
 def clustering_participants(strategies, experiment):
-    # the clustering that was used for the participants
+    # clustering of all available strategies, not only used ones
 
     if experiment == "v1.0":
         mapping_dict = {
@@ -86,11 +86,11 @@ def clustering_participants(strategies, experiment):
                     50, 24, 40, 51, 43, 42, 83, 39]}
     elif experiment == "c1.1":
         mapping_dict = {
-            "adaptive": [19, 17, 18, 20, 68, 67, 75, 55, 56, 70, 22, 43, 58, 76, 53, 87, 62, 85, 48, 73, 61, 44, 60, 41,
+            "mod": [19, 17, 18, 20, 68, 67, 75, 55, 56, 70, 22, 43, 58, 76, 53, 87, 62, 85, 48, 73, 61, 44, 60, 41,
                          31, 23, 89, 74, 7, 6, 11, 12, 72, 10, 14, 36, 9, 71, 2, 1, 13, 3, 5, 8, 15, 46, 4, 54, 42, 24,
                          27, 28, 66, 30],
             "mal": [39],
-            "mod": [65, 33, 81, 34, 21, 69, 64, 63, 25, 32, 88, 79, 16, 37, 29, 86, 26, 49, 83, 80, 51, 38, 50, 35, 52,
+            "adaptive": [65, 33, 81, 34, 21, 69, 64, 63, 25, 32, 88, 79, 16, 37, 29, 86, 26, 49, 83, 80, 51, 38, 50, 35, 52,
                     77, 78, 40, 84, 47, 57, 59, 82, 45]}
 
     # Iterate over each key-value pair in the mapping dictionary
@@ -128,7 +128,7 @@ def adaptive_proportion_higher_than_chance(strategy_labels, participants_df):
 
 def logistic_regression(df, mapping_dict):
     # replace the column strategy with the mapping selected from the column condition
-    df["strategy"] = df.apply(lambda x: mapping_dict[x["strategy"]], axis=1)
+    # df["strategy"] = df.apply(lambda x: mapping_dict[x["strategy"]], axis=1)
 
     # replace strategy with 1 for adaptive and 0 for anything else
     df["strategy"] = [1 if x == "adaptive" else 0 for x in df["strategy"]]
@@ -165,51 +165,52 @@ if __name__ == "__main__":
         strategy_scores = pd.DataFrame.from_dict(strategy_scores, orient='index')
         strategy_scores.index += 1  # increment by one because participants start at 1
 
-        ### load participanta data
+        # ### load participanta data
         participants = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
-        # filter for clicking participants
+        # # filter for clicking participants
         participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
-        ## get only used strategies
-        unique_used_strategies = pd.unique(participants_df.values.flatten())
-
-        ##plot strategy proportions for participants
-        # k means based on used strategy scores
-        used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
-        strategy_labels = clustering_kmeans(used_strategy_score)
-        mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-
+        # ## get only used strategies
+        # unique_used_strategies = pd.unique(participants_df.values.flatten())
+        #
+        # ##plot strategy proportions for participants
+        # # k means based on used strategy scores
+        # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+        # # strategy_labels = clustering_kmeans(used_strategy_score)
+        # # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+        #
+        # ### clustering by using all strategies
+        mapping = clustering_participants(participants_df, experiment)
         # plot_strategy_proportions(participants_df, "pid", mapping)
 
-        ### load CM model data
-        # model_data = pd.read_csv(f"../../final_results/model_cm/{experiment}.csv")
-        # # filter for clicking participants
-        # model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
-        #
-        # # get list of unique models
-        # unique_models = pd.unique(model_data["model"])
-
-        # for model in unique_models:
-            # model = "hybrid LVOC"
-            # filtered_model_data = model_data[model_data["model"] == model]
-            # filtered_model_data['model_strategies'] = filtered_model_data['model_strategies'].apply(ast.literal_eval)
-
-            # reshape
-            # filtered_model_data = pd.DataFrame(filtered_model_data['model_strategies'].tolist(),
-            #                                    columns=[f'{i + 1}' for i in range(35)])
-            #
-            # unique_used_strategies = pd.unique(filtered_model_data.values.flatten())
-
-            # clustering based on clusters used for participants
-            # mapping = clustering_participants(filtered_model_data, experiment)
-
-            ## k means based on used strategy scores
-            # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
-            # strategy_labels = clustering_kmeans(used_strategy_score)
-            # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-
-            # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
-            # plot_strategy_proportions(filtered_model_data, model, mapping)
+       #  ## load CM model data
+       #  model_data = pd.read_csv(f"../../final_results/model_cm/{experiment}.csv")
+       # ## filter for clicking participants
+       #  model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+       #
+       #  ##get list of unique models
+       #  unique_models = pd.unique(model_data["model"])
+       #
+       #  for model in unique_models:
+       #      ##model = "hybrid LVOC"
+       #      filtered_model_data = model_data[model_data["model"] == model]
+       #      filtered_model_data['model_strategies'] = filtered_model_data['model_strategies'].apply(ast.literal_eval)
+       #
+       #      filtered_model_data = pd.DataFrame(filtered_model_data['model_strategies'].tolist(),
+       #                                         columns=[f'{i + 1}' for i in range(35)])
+       #
+       #      unique_used_strategies = pd.unique(filtered_model_data.values.flatten())
+       #
+       #      ##clustering based on clusters used for participants
+       #      mapping = clustering_participants(filtered_model_data, experiment)
+       #
+       #      # k means based on used strategy scores
+       #      # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+       #      # strategy_labels = clustering_kmeans(used_strategy_score)
+       #      # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+       #
+       #      # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+       #      plot_strategy_proportions(filtered_model_data, model, mapping)
 
         ### reshape df for logisitic regression
         df = participants_df.transpose()
@@ -220,8 +221,8 @@ if __name__ == "__main__":
 
         logistic_regression(df, mapping)
 
-        # all_pid = all_pid._append(df)
-        # mapping_dict[experiment] = mapping
+        all_pid = all_pid._append(df)
+        mapping_dict[experiment] = mapping
 
     # logistic_regression(all_pid, mapping_dict)
     #

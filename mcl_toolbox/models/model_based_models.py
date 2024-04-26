@@ -1,7 +1,6 @@
 import random
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import torch
-import torch.nn.functional as F
 import numpy as np
 from pyro.distributions import DirichletMultinomial
 from mcl_toolbox.models.base_learner import Learner
@@ -9,16 +8,16 @@ from mcl_toolbox.env.modified_mouselab import get_termination_mers
 from hyperopt import STATUS_OK
 from scipy.stats import norm, beta
 from scipy.special import logsumexp
-import math
 
 
 class ModelBased(Learner):
     """Base class of the Model-based model"""
 
-    def __init__(self, env, value_range, participant_obj, criterion, num_simulations, model, compute_likelihood):
+    def __init__(self, env, value_range, term_range, participant_obj, criterion, num_simulations, model, compute_likelihood):
         self.participant_obj = participant_obj
         self.env = env
         self.value_range = value_range
+        self.term_range = term_range
         self.action_log_probs = []
         self.pseudo_rewards = None
         self.num_available_nodes = 12
@@ -27,6 +26,7 @@ class ModelBased(Learner):
         self.num_simulations = num_simulations
         self.compute_likelihood = compute_likelihood
         self.model = model
+        self.node_distributions = {}
 
     def construct_p_data(self):
         p_data = {
@@ -60,22 +60,28 @@ class ModelBased(Learner):
         Returns:
 
         """
+        # todo: does it make sense that value of termination is the same as first level?
         ## each alpha parameter represents a possible value in the value_list, e.g. -48 to +48
         if self.model == "uniform":
-            rv = beta(np.exp(params["dist_alpha"]), np.exp(params["dist_beta"]))
-            x = np.linspace(beta.ppf(0.01, np.exp(params["dist_alpha"]), np.exp(params["dist_beta"])),
-                            beta.ppf(0.99, np.exp(params["dist_alpha"]), np.exp(params["dist_beta"])),
+            # all nodes share the same set of parameters
+            rv = beta(np.exp(params["alpha"]), np.exp(params["beta"]))
+            x = np.linspace(beta.ppf(0.01, np.exp(params["alpha"]), np.exp(params["beta"])),
+                            beta.ppf(0.99, np.exp(params["alpha"]), np.exp(params["beta"])),
                             len(self.value_range))
             alpha = torch.tensor(rv.pdf(x))
-            alpha_clipped = np.clip(alpha, 1e-8, 999999)
-            dirichlet_alpha = dict(zip(self.value_range, alpha_clipped.tolist()))
+            dirichlet_alpha = OrderedDict(zip(self.value_range, alpha.tolist()))
 
             self.dirichlet_alpha_dict = {}
+
+            dirichlet_alpha_term = OrderedDict(zip(self.term_range, [1] * len(self.term_range)))
+            self.dirichlet_alpha_dict[0] = dirichlet_alpha_term.copy()
+
             # alpha need to be n x m, e.g. 13 x range
-            for i in range(0, self.num_available_nodes + 1):
+            for i in range(1, self.num_available_nodes + 1):
                 self.dirichlet_alpha_dict[i] = dirichlet_alpha.copy()
 
         elif self.model == "linear":
+            # nodes are linearly dependent of depth
             # depth of 1 for nodes 1, 5, 9; weight * 0 + intercept -> only intercept
             rv_1 = beta(np.exp(params["alpha_intercept"]), np.exp(params["beta_intercept"]))
             x_1 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_intercept"]), np.exp(params["beta_intercept"])),
@@ -83,7 +89,7 @@ class ModelBased(Learner):
                               len(self.value_range))
             alpha_level_1 = torch.tensor(rv_1.pdf(x_1))
             alpha_clipped_1 = np.clip(alpha_level_1, 1e-8, 999999)
-            dirichlet_alpha_level_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
+            dirichlet_alpha_level_1 = OrderedDict(zip(self.value_range, alpha_clipped_1.tolist()))
 
             # depth of 2 for nodes 2, 6, 10; weight * 1 + intercept
             alpha_dist_2 = np.exp(params["alpha_weight"]) + np.exp(params["alpha_intercept"])
@@ -93,7 +99,7 @@ class ModelBased(Learner):
                               len(self.value_range))
             alpha_level_2 = torch.tensor(rv_2.pdf(x_2))
             alpha_clipped_2 = np.clip(alpha_level_2, 1e-8, 999999)
-            dirichlet_alpha_level_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
+            dirichlet_alpha_level_2 = OrderedDict(zip(self.value_range, alpha_clipped_2.tolist()))
 
             # depth for 3 for nodes 3, 4, 7, 8, 11, 12; weight * 2 + intercept
             alpha_dist_3 = 2 * np.exp(params["alpha_weight"]) + np.exp(params["alpha_intercept"])
@@ -103,9 +109,9 @@ class ModelBased(Learner):
                               len(self.value_range))
             alpha_level_3 = torch.tensor(rv_3.pdf(x_3))
             alpha_clipped_3 = np.clip(alpha_level_3, 1e-8, 999999)
-            dirichlet_alpha_level_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
+            dirichlet_alpha_level_3 = OrderedDict(zip(self.value_range, alpha_clipped_3.tolist()))
 
-            self.dirichlet_alpha_dict = {0: dirichlet_alpha_level_1.copy(),
+            self.dirichlet_alpha_dict = {0: dirichlet_alpha_level_1.copy(),  # todo: does this make sense?
                                          1: dirichlet_alpha_level_1.copy(),
                                          2: dirichlet_alpha_level_2.copy(),
                                          3: dirichlet_alpha_level_3.copy(),
@@ -119,32 +125,40 @@ class ModelBased(Learner):
                                          11: dirichlet_alpha_level_3.copy(),
                                          12: dirichlet_alpha_level_3.copy()}
 
-        elif self.model == "full":
-            rv_1 = beta(np.exp(params["alpha_1"]), np.exp(params["beta_1"]))
-            x_1 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
-                              beta.ppf(0.99, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
+        elif self.model == "full" or self.model == "level":
+            # termination probability
+            # rv_term = beta(params["alpha_term"], params["beta_term"])
+            # x_term = np.linspace(beta.ppf(0.01, params["alpha_term"], params["beta_term"]),
+            #                   beta.ppf(0.99, params["alpha_term"], params["beta_term"]),
+            #                   len(self.term_range))
+            # alpha_term = torch.tensor(rv_term.pdf(x_term))
+            # dirichlet_alpha_term = OrderedDict(zip(self.term_range, alpha_term.tolist()))
+
+            # each node has its own set of parameters
+            rv_1 = beta(params["alpha_1"], params["beta_1"])
+            x_1 = np.linspace(beta.ppf(0.01, params["alpha_1"], params["beta_1"]),
+                              beta.ppf(0.99, params["alpha_1"], params["beta_1"]),
                               len(self.value_range))
             alpha_1 = torch.tensor(rv_1.pdf(x_1))
-            alpha_clipped_1 = np.clip(alpha_1, 1e-8, 999999)
-            dirichlet_alpha_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
+            dirichlet_alpha_1 = OrderedDict(zip(self.value_range, alpha_1.tolist()))
 
-            rv_2 = beta(np.exp(params["alpha_2"]), np.exp(params["beta_2"]))
-            x_2 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
-                              beta.ppf(0.99, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
+            rv_2 = beta(params["alpha_2"], params["beta_2"])
+            x_2 = np.linspace(beta.ppf(0.01, params["alpha_2"], params["beta_2"]),
+                              beta.ppf(0.99, params["alpha_2"], params["beta_2"]),
                               len(self.value_range))
             alpha_2 = torch.tensor(rv_2.pdf(x_2))
-            alpha_clipped_2 = np.clip(alpha_2, 1e-8, 999999)
-            dirichlet_alpha_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
+            dirichlet_alpha_2 = OrderedDict(zip(self.value_range, alpha_2.tolist()))
 
-            rv_3 = beta(np.exp(params["alpha_3"]), np.exp(params["beta_3"]))
-            x_3 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
-                              beta.ppf(0.99, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
+            rv_3 = beta(params["alpha_3"], params["beta_3"])
+            x_3 = np.linspace(beta.ppf(0.01, params["alpha_3"], params["beta_3"]),
+                              beta.ppf(0.99, params["alpha_3"], params["beta_3"]),
                               len(self.value_range))
             alpha_3 = torch.tensor(rv_3.pdf(x_3))
-            alpha_clipped_3 = np.clip(alpha_3, 1e-8, 999999)
-            dirichlet_alpha_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
+            dirichlet_alpha_3 = OrderedDict(zip(self.value_range, alpha_3.tolist()))
 
-            self.dirichlet_alpha_dict = {0: dirichlet_alpha_1.copy(),
+            dirichlet_alpha_term = OrderedDict(zip(self.term_range, [1] * len(self.term_range)))
+
+            self.dirichlet_alpha_dict = {0: dirichlet_alpha_term.copy(),
                                          1: dirichlet_alpha_1.copy(),
                                          2: dirichlet_alpha_2.copy(),
                                          3: dirichlet_alpha_3.copy(),
@@ -157,126 +171,87 @@ class ModelBased(Learner):
                                          10: dirichlet_alpha_2.copy(),
                                          11: dirichlet_alpha_3.copy(),
                                          12: dirichlet_alpha_3.copy()}
-        elif self.model == "level":
-            rv_1 = beta(np.exp(params["alpha_1"]), np.exp(params["beta_1"]))
-            x_1 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
-                              beta.ppf(0.99, np.exp(params["alpha_1"]), np.exp(params["beta_1"])),
-                              len(self.value_range))
-            alpha_1 = torch.tensor(rv_1.pdf(x_1))
-            alpha_clipped_1 = np.clip(alpha_1, 1e-8, 999999)
-            dirichlet_alpha_1 = dict(zip(self.value_range, alpha_clipped_1.tolist()))
 
-            rv_2 = beta(np.exp(params["alpha_2"]), np.exp(params["beta_2"]))
-            x_2 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
-                              beta.ppf(0.99, np.exp(params["alpha_2"]), np.exp(params["beta_2"])),
+        elif self.model == "no_assumption":
+            para_a = 1
+            para_b = 1
+            rv = beta(para_a, para_b)
+            x = np.linspace(beta.ppf(0.01, para_a, para_b),
+                              beta.ppf(0.99, para_a, para_b),
                               len(self.value_range))
-            alpha_2 = torch.tensor(rv_2.pdf(x_2))
-            alpha_clipped_2 = np.clip(alpha_2, 1e-8, 999999)
-            dirichlet_alpha_2 = dict(zip(self.value_range, alpha_clipped_2.tolist()))
+            alpha = torch.tensor(rv.pdf(x))
+            dirichlet_alpha = OrderedDict(zip(self.value_range, alpha.tolist()))
 
-            rv_3 = beta(np.exp(params["alpha_3"]), np.exp(params["beta_3"]))
-            x_3 = np.linspace(beta.ppf(0.01, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
-                              beta.ppf(0.99, np.exp(params["alpha_3"]), np.exp(params["beta_3"])),
-                              len(self.value_range))
-            alpha_3 = torch.tensor(rv_3.pdf(x_3))
-            alpha_clipped_3 = np.clip(alpha_3, 1e-8, 999999)
-            dirichlet_alpha_3 = dict(zip(self.value_range, alpha_clipped_3.tolist()))
+            # termination with 0 everything, i.e. init a dict with 1 everywhere
+            dirichlet_alpha_term = OrderedDict(zip(self.term_range, [1] * len(self.term_range)))
 
-            self.dirichlet_alpha_dict = {0: dirichlet_alpha_1.copy(),
-                                         1: dirichlet_alpha_1.copy(),
-                                         2: dirichlet_alpha_2.copy(),
-                                         3: dirichlet_alpha_3.copy()}
+            self.dirichlet_alpha_dict = {0: dirichlet_alpha_term.copy(),
+                                         1: dirichlet_alpha.copy(),
+                                         2: dirichlet_alpha.copy(),
+                                         3: dirichlet_alpha.copy(),
+                                         4: dirichlet_alpha.copy(),
+                                         5: dirichlet_alpha.copy(),
+                                         6: dirichlet_alpha.copy(),
+                                         7: dirichlet_alpha.copy(),
+                                         8: dirichlet_alpha.copy(),
+                                         9: dirichlet_alpha.copy(),
+                                         10: dirichlet_alpha.copy(),
+                                         11: dirichlet_alpha.copy(),
+                                         12: dirichlet_alpha.copy()}
 
         return None
 
     def init_distributions(self):
-        self.node_distributions = {}
-        if self.model == "level":
-            self.node_distributions[0] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[0].values()), dtype=torch.float32))
-            self.node_distributions[1] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
-            self.node_distributions[2] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
-            self.node_distributions[3] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-            self.node_distributions[4] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-            self.node_distributions[5] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
-            self.node_distributions[6] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
-            self.node_distributions[7] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-            self.node_distributions[8] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-            self.node_distributions[9] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[1].values()), dtype=torch.float32))
-            self.node_distributions[10] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[2].values()), dtype=torch.float32))
-            self.node_distributions[11] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-            self.node_distributions[12] = torch.distributions.Dirichlet(
-                torch.tensor(list(self.dirichlet_alpha_dict[3].values()), dtype=torch.float32))
-        # create node distribution for all nodes, including the starting node, whose distribution does not change
-        else:
-            for i in range(0, self.num_available_nodes + 1):
-                self.node_distributions[i] = torch.distributions.Dirichlet(
-                    torch.tensor(list(self.dirichlet_alpha_dict[i].values()), dtype=torch.float32))
+        for i in range(self.num_available_nodes + 1):
+            alpha_values = list(self.dirichlet_alpha_dict[i].values())
+            self.node_distributions[i] = torch.distributions.Dirichlet(
+                torch.tensor(alpha_values, dtype=torch.float32))
         return None
 
     def perform_updates(self, action):
-        ## for the click that has been made, update the corresponding dirichlet alphas with the multinomial distribution (likelihood)
-        if self.model == "level":
-            self.node_distributions[1] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[2] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[3] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[4] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[5] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[6] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[7] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[8] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[9] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[1].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[10] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[2].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[11] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-            self.node_distributions[12] = DirichletMultinomial(
-                concentration=torch.tensor((list(self.dirichlet_alpha_dict[3].values()))),
-                total_count=self.env.present_trial_num + 1)
-        else:
-            # observed_value should only be the node value, i.e. model of the env and not model of the cost
+        if self.model == "level" or self.model == "no_assumption":
             observed_value = self.env.ground_truth[self.env.present_trial_num][action]
-            self.dirichlet_alpha_dict[action][int(observed_value)] += 1
-            # check of the node_distributions have been updated
-            # old = hash(self.node_distributions)
-            old = hash(frozenset(self.node_distributions.items()))
-            for i in range(1, self.num_available_nodes):
+            if action in [1, 5, 9]:
+                self.dirichlet_alpha_dict[1][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[5][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[9][int(observed_value)] += self.click_weight
+            elif action in [2, 6, 10]:
+                self.dirichlet_alpha_dict[2][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[6][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[10][int(observed_value)] += self.click_weight
+            elif action in [3, 4, 7, 8, 11, 12]:
+                self.dirichlet_alpha_dict[3][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[4][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[7][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[8][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[11][int(observed_value)] += self.click_weight
+                self.dirichlet_alpha_dict[12][int(observed_value)] += self.click_weight
+
+            for i in range(1, self.num_available_nodes + 1):
+                alpha_values = list(self.dirichlet_alpha_dict[i].values())
                 self.node_distributions[i] = DirichletMultinomial(
-                    concentration=torch.tensor((list(self.dirichlet_alpha_dict[i].values()))),
-                    total_count=self.env.present_trial_num + 1)  # because present_trial_number start at 0
-            new = hash(frozenset(self.node_distributions.items()))
-            assert old != new, "Node distributions have not been updated"
+                    concentration=torch.tensor(alpha_values),
+                    total_count=self.env.present_trial_num + 1
+                )
+            assert self.dirichlet_alpha_dict[1] == self.dirichlet_alpha_dict[5] == self.dirichlet_alpha_dict[
+                9], "Distribution on the first level are not the same"
+            assert self.dirichlet_alpha_dict[2] == self.dirichlet_alpha_dict[6] == self.dirichlet_alpha_dict[
+                10], "Distribution on the second level are not the same"
+            assert self.dirichlet_alpha_dict[3] == self.dirichlet_alpha_dict[4] == self.dirichlet_alpha_dict[7] == \
+                   self.dirichlet_alpha_dict[8] == self.dirichlet_alpha_dict[11] == self.dirichlet_alpha_dict[
+                       12], "Distribution on the third level are not the same"
+        else:
+            observed_value = self.env.ground_truth[self.env.present_trial_num][action]
+            self.dirichlet_alpha_dict[action][int(observed_value)] += self.click_weight
+            old_distributions = frozenset(self.node_distributions.items())
+            for i in range(1, self.num_available_nodes + 1):
+                alpha_values = list(self.dirichlet_alpha_dict[i].values())
+                self.node_distributions[i] = DirichletMultinomial(
+                    concentration=torch.tensor(alpha_values),
+                    total_count=self.env.present_trial_num + 1
+                )
+            new_distributions = frozenset(self.node_distributions.items())
+            assert old_distributions != new_distributions, "Node distributions have not been updated"
         return None
 
     def node_depth(self, action):
@@ -315,12 +290,14 @@ class ModelBased(Learner):
         indices = np.array(list(value_dict.values()))
         probabilities = distribution.concentration[indices] / total_concentration
 
-        # expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)]) #todo: check this??
+        # this is actually the same function as above but because we mignt need the commented lines below, so keep it here
+        expectation = np.sum([a * b for a, b in zip(probabilities, self.value_range)])
 
         # We want the larger value between max_termination_value or the value_range
-        max_termination_value = np.full(len(self.value_range), termination_value)
-        values = np.maximum(self.value_range, max_termination_value)
-        expectation = torch.sum(probabilities * values)
+        # todo: something is wrong here, it makes the myopic values according to backward planning
+        # max_termination_value = np.full(len(self.value_range), termination_value)
+        # values = np.maximum(self.value_range, max_termination_value)
+        # expectation = torch.sum(probabilities * values)
         return expectation
 
     def myopic_value(self, action):
@@ -330,83 +307,35 @@ class ModelBased(Learner):
             termination_value = self.expectation_term(self.node_distributions[0])
             return self.expectation_non_term(self.node_distributions[action], termination_value)
 
-    def calculate_myopic_values(self) -> list:
-        myopic_values_list = []
-        # for action in self.env.get_available_actions():
-        for action in range(0, self.num_available_nodes + 1):  # all actions
-            if action in self.env.observed_action_list:
-                myopic_vals = torch.tensor(self.env.cost(self.node_depth(action)))
-                # myopic_value = torch.tensor(self.env.present_trial.ground_truth[action])
-            else:
-                myopic_vals = self.myopic_value(action) + self.env.cost(self.node_depth(action))
-            myopic_values_list.append(myopic_vals)
-        # print("myopic values", myopic_values_list)
-        return myopic_values_list
+    def calculate_myopic_values(self) -> dict:
+        # create empty dict with all actions as keys
+        myopic_values_dict = OrderedDict.fromkeys(self.env.get_available_actions())
+        for action in self.env.get_available_actions():
+            myopic_vals = self.myopic_value(action) + self.env.cost(self.node_depth(action))
+            myopic_values_dict[action] = myopic_vals
+        # print("myopic values", myopic_values_dict)
+        return myopic_values_dict
 
     def calculate_likelihood(self):
-        myopic_vals = self.calculate_myopic_values()
-        myopic_vals = np.array([x * self.inverse_temp for x in myopic_vals])
-        logsumexp_score = np.exp(myopic_vals - logsumexp(myopic_vals))
-        action_probs = self.scale_probabilities(logsumexp_score)
+        myopic_vals_dict = self.calculate_myopic_values()
+        myopic_vals = {key: value * self.inverse_temp for key, value in myopic_vals_dict.items()}
+
+        logsum = logsumexp(list(myopic_vals.values()))
+        action_probs = {key: np.exp(value - logsum) for key, value in myopic_vals.items()}
+
         return action_probs
 
     def sample_action(self) -> int:
         # used when done fitting the parameter and simulate the model behaviour
         action_likelihood = self.calculate_likelihood()
-        action_likelihood = self.scale_probabilities(action_likelihood)
-        all_actions = list(range(0, self.num_available_nodes + 1))
-        res = dict(zip(all_actions, action_likelihood))  # mapping action to likelihood
-
-        # remove the already taken actions
-        available_actions = self.env.get_available_actions()
-
-        keys_to_remove = [key for key in res.keys() if key not in available_actions]
-        for key in keys_to_remove:
-            del res[key]
-
-        action = random.choices(list(res.keys()), weights=list(res.values()), k=1)
+        # print("action likelihood", action_likelihood)
+        action = random.choices(list(action_likelihood.keys()), weights=list(action_likelihood.values()), k=1)
         action = action[0]
         self.action_log_probs.append(np.log(action_likelihood[action]))
 
         return action
 
-    def scale_probabilities(self, probabilities):
-        # introduces bias towards some nodes, e.g. the immediate nodes
-        total_sum = sum(probabilities)
-        # bias_inner = 100
-        for i in [1, 5, 9]:
-            # probabilities[i] *= bias_inner
-            # bias_inner *= 0.7 #bias decay
-            probabilities[i] *= 1
-
-        for j in [3, 4, 7, 8, 11, 12]:  # scale down outer nodes
-            # probabilities[j] *= self.bias_outer
-            probabilities[j] *= 1
-
-        scaled_sum = sum(probabilities)
-        scale_factor = total_sum / scaled_sum
-        probabilities = [p * scale_factor for p in probabilities]
-        return probabilities
-
-    # def take_action(self, trial_info): #my implementation
-    #     if self.optimisation_criterion == "likelihood" and not self.test_fitted_model:
-    #         pi = trial_info["participant"]
-    #         action = pi.get_click()
-    #
-    #         # how likely model would have taken the action
-    #         action_likelihood = self.calculate_likelihood()
-    #         # if log underflow, that is probabily is too close to 0
-    #         action_likelihood = np.clip(action_likelihood, 1e-8, 1)
-    #         self.action_log_probs.append(np.log(action_likelihood[action]))
-    #
-    #         reward, taken_path, done = pi.make_click()
-    #         _, _, _, _ = self.env.step(action)  # needs to do this for env to mark node as observed
-    #     else:
-    #         action = self.sample_action()
-    #         s_next, reward, done, taken_path = self.env.step(action)
-    #     return action, reward, done, taken_path
-
-    def take_action(self, trial_info): #Yash implementation
+    def take_action(self, trial_info):  # Yash implementation
         if self.compute_likelihood:
             pi = trial_info["participant"]
             action = pi.get_click()
@@ -414,7 +343,7 @@ class ModelBased(Learner):
             # how likely model would have taken the action
             action_likelihood = self.calculate_likelihood()
             # if log underflow, that is probabily is too close to 0
-            action_likelihood = np.clip(action_likelihood, 1e-8, 1)
+            # action_likelihood = np.clip(action_likelihood, 1e-8, 1)
             self.action_log_probs.append(np.log(action_likelihood[action]))
         else:
             action = self.sample_action()
@@ -424,7 +353,6 @@ class ModelBased(Learner):
         else:
             s_next, reward, done, taken_path = self.env.step(action)
         return action, reward, done, taken_path
-
 
     def act_and_learn(self, trial_info=None):
         if trial_info is None:
@@ -436,6 +364,7 @@ class ModelBased(Learner):
 
     def run_multiple_simulations(self, params):
         self.inverse_temp = params['inverse_temp']
+        self.click_weight = params['click_weight']
         if self.optimisation_criterion != "likelihood":
             self.sigma = params['sigma']
 

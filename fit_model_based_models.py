@@ -24,6 +24,16 @@ def plot_score(res, participant, pid, exp_name):
     plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
     # plt.plot(participant["r"], color="b", label="Participant")
     plt.legend()
+    plt.title(f"Score")
+    plt.show()
+    # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/score_{pid}.png")
+    plt.close()
+    return None
+
+def plot_mer(res, participant, pid, exp_name):
+    plt.plot(np.mean(res["mer"], axis=0), color="r", label="Model")
+    plt.legend()
+    plt.title(f"MER")
     plt.show()
     # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/score_{pid}.png")
     plt.close()
@@ -40,6 +50,7 @@ def plot_clicks(res, participant):
     plt.plot(pid_action, color="r", label="Participant")
     plt.plot(model_action, color="b", label="Model")
     plt.legend()
+    plt.title(f"Clicks")
     plt.show()
     # plt.savefig(f"results_mb_2000_inc/mcrl/{exp_name}_mb/plots/clicks_{pid}.png")
     plt.close()
@@ -61,13 +72,26 @@ if __name__ == "__main__":
     exp_name = sys.argv[1]
     criterion = sys.argv[2]
     pid = int(sys.argv[3])
+    model_variant = sys.argv[4]
 
-    # exp_name = "strategy_discovery"  # "strategy_discovery
+    """
+    List of models: 
+    
+    no assumption: Beta(1,1) for all nodes
+    uniform assumption: Beta(alpha, beta) for all nodes
+    level assumption: Beta(alpha_level, beta_level) for all nodes of the same level    
+    
+    ways of update: 
+    individual node: update every node
+    level update: update all nodes of the same level
+    """
+
+    # exp_name = "high_variance_low_cost"  # "strategy_discovery
     # criterion = "likelihood"  # "number_of_clicks_likelihood"
-    # pid = 38
-    model_variant = "full" #"full", "linear", "uniform", "level"
+    # pid = 4
+    # model_variant = "full" #"full", "linear", "uniform", "level", "no_assumption"
 
-    E = Experiment(exp_name, data_path=f"results_mb_2000_v3/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_test12/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -96,7 +120,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_2000_v3/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_test12/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -105,19 +129,22 @@ if __name__ == "__main__":
     # todo: need to choose a sensible range that takes the click cost into consideration
     # Has to be symmetric, otherwise biased towards negative expected value
     if exp_name in ["v1.0", "c2.1"]:
-        value_range = list(range(-48, 49))
+        # value_range = list(range(-49, 49))
+        value_range = [-48, -24, -8, -4, -2, 2, 4, 8, 24, 48]
+        term_range = list(range(-61, 61))
     elif exp_name == "c1.1":
-        value_range = list(range(-30, 31))
+        value_range = list(range(-31, 31))
     elif exp_name in ["high_variance_high_cost", "high_variance_low_cost"]:
-        value_range = list(range(-1000, 1001))
+        value_range = [-1000, -100, -50, -20, 50, 100]
+        term_range = list(range(-3001, 3001))
     elif exp_name in ["low_variance_high_cost", "low_variance_low_cost"]:
-        value_range = list(range(-6, 7))
+        value_range = list(range(-7, 7))
     elif exp_name == "strategy_discovery":
-        value_range = list(range(-50, 51))
+        value_range = list(range(-51, 51))
     else:
         raise ValueError("Experiment name not recognised")
 
-    model = ModelBased(env, value_range, participant_obj, criterion, num_simulations, model_variant, compute_likelihood=True)
+    model = ModelBased(env, value_range, term_range, participant_obj, criterion, num_simulations, model_variant, compute_likelihood=True)
 
     if criterion != "likelihood": #todo
         fspace = {
@@ -131,11 +158,12 @@ if __name__ == "__main__":
         max_value = 10
         if model_variant == "uniform":
             fspace = {
-                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'dist_alpha': hp.uniform('dist_alpha', np.log(min_value), np.log(max_value)),
-                'dist_beta': hp.uniform('dist_beta', np.log(min_value), np.log(max_value)),
+                'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
+                'alpha': hp.uniform('alpha', min_value, max_value),
+                'beta': hp.uniform('beta', min_value, max_value),
+                'click_weight': hp.uniform('click_weight', 1, 100),
             }
-        elif model_variant == "linear":
+        elif model_variant == "linear": #not really used
             fspace = {
                 'inverse_temp': hp.uniform('inverse_temp', -100, 100),
                 'alpha_weight': hp.uniform('alpha_weight', np.log(min_value), np.log(max_value)),
@@ -143,27 +171,21 @@ if __name__ == "__main__":
                 'alpha_intercept': hp.uniform('alpha_intercept', np.log(min_value), np.log(max_value)),
                 'beta_intercept': hp.uniform('beta_intercept', np.log(min_value), np.log(max_value)),
             }
-        elif model_variant == "full":
+        elif model_variant == "full" or model_variant == "level":
             fspace = {
-                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_1': hp.uniform('alpha_1', np.log(min_value), np.log(max_value)),
-                'beta_1': hp.uniform('beta_1', np.log(min_value), np.log(max_value)),
-                'alpha_2': hp.uniform('alpha_2', np.log(min_value), np.log(max_value)),
-                'beta_2': hp.uniform('beta_2', np.log(min_value), np.log(max_value)),
-                'alpha_3': hp.uniform('alpha_3', np.log(min_value), np.log(max_value)),
-                'beta_3': hp.uniform('beta_3', np.log(min_value), np.log(max_value)),
-                'click_weight': hp.uniform('click_weight', 1, 50),
+                'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
+                'alpha_1': hp.uniform('alpha_1', min_value, max_value),
+                'beta_1': hp.uniform('beta_1', min_value, max_value),
+                'alpha_2': hp.uniform('alpha_2', min_value, max_value),
+                'beta_2': hp.uniform('beta_2', min_value, max_value),
+                'alpha_3': hp.uniform('alpha_3', min_value, max_value),
+                'beta_3': hp.uniform('beta_3', min_value, max_value),
+                'click_weight': hp.uniform('click_weight', 1, 100),
             }
-        elif model_variant == "level":
+        elif model_variant == "no_assumption":
             fspace = {
-                'inverse_temp': hp.uniform('inverse_temp', -100, 100),
-                'alpha_1': hp.uniform('alpha_1', np.log(min_value), np.log(max_value)),
-                'beta_1': hp.uniform('beta_1', np.log(min_value), np.log(max_value)),
-                'alpha_2': hp.uniform('alpha_2', np.log(min_value), np.log(max_value)),
-                'beta_2': hp.uniform('beta_2', np.log(min_value), np.log(max_value)),
-                'alpha_3': hp.uniform('alpha_3', np.log(min_value), np.log(max_value)),
-                'beta_3': hp.uniform('beta_3', np.log(min_value), np.log(max_value)),
-                'click_weight': hp.uniform('click_weight', 1, 50),
+                'inverse_temp': hp.uniform('inverse_temp', 0.01, 10),
+                'click_weight': hp.uniform('click_weight', 1, 100),
             }
         else:
             raise ValueError(f"Model not recognised: {model_variant}")
@@ -174,20 +196,21 @@ if __name__ == "__main__":
                        space=fspace,
                        algo=tpe.suggest,
                        max_evals=2000,
-                       show_progressbar=False)
+                       show_progressbar=True)
 
     ## simulate using the best parameters
     model.compute_likelihood = False
 
-    # for pid 38 strategy discovery
-    # best_params = {'inverse_temp': 0.33,
-    #                'alpha_1': np.log(0.4404),
-    #                'beta_1': np.log(0.7824),
-    #                'alpha_2': np.log(0.1946),
-    #                'beta_2': np.log(1.5247),
-    #                'alpha_3': np.log(1.6084),
-    #                'beta_3': np.log(0.0022),
-    #                'click_weight': 49}
+    # best_params = {
+    #     'inverse_temp': 1,
+    #     'alpha_1': 1,
+    #     'beta_1': 1,
+    #     'alpha_2': 1,
+    #     'beta_2': 1,
+    #     'alpha_3': 1,
+    #     'beta_3': 1,
+    #     'click_weight': 10,
+    # }
 
     model.env.reset()
     model.participant_obj.reset()
@@ -197,14 +220,15 @@ if __name__ == "__main__":
     res.update(best_params)
 
     ## check if dir exist
-    if not Path(f"results_mb_2000_v3/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_2000_v3/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_test12/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_test12/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_2000_v3/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
+    output = open(f'results_mb_test12/mcrl/{exp_name}_mb/{pid}_{criterion}_{model_variant}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 
     # plot_score(res, model.p_data, pid, exp_name)
+    # plot_mer(res, model.p_data, pid, exp_name)
     # plot_clicks(res, model.p_data)
     # print(res)
 
