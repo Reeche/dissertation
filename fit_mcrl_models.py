@@ -101,9 +101,9 @@ if __name__ == "__main__":
     #     other_params = {}
 
     exp_name = "v1.0"
-    model_index = 479
+    model_index = 491
     optimization_criterion = "likelihood"
-    pid = 1
+    pid = 5
     other_params = {"plotting": True}
 
     if exp_name != "strategy_discovery":

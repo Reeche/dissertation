@@ -220,7 +220,7 @@ class ModelFitter:
                 feature_space = model_free_habitual_features #for pure reinforce/LVOC
             # else: # for the model not using habitual features
             #     feature_space = non_habitual_features # MF + MB features (no habitual)
-        # feature_space = all_features # for hybrid models
+        feature_space = all_features # for hybrid models
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:

@@ -4,49 +4,29 @@ import ast
 from mcl_toolbox.utils.analysis_utils import get_all_pid_for_env
 import matplotlib.pyplot as plt
 import pymannkendall as mk
+from itertools import product
 
-
-exp_num = "high_variance_low_cost"
+exp_num = "strategy_discovery"
 pid_list = get_all_pid_for_env(exp_num)
-# model_list = ["full", "level", "no_assumption"]
-model_list = ["no_assumption"]
+node_assumptions = ["uniform", "level", "no_assumption"]
+update_rules = ["individual", "level"]
 
 ## create empty df
 df = pd.DataFrame(
-    columns=["pid", "model", "model_score", "pid_score"])
-df["pid"] = sorted(pid_list * len(model_list))
-df["model"] = model_list * len(pid_list)
+    columns=["pid", "node_assumption", "update_rule", "model_score", "pid_score"])
+# df["pid"] = sorted(pid_list * (len(node_assumptions) + len(update_rules)))
 
+# create all combinations of pid_list, node_assumptions, and update_rules
+combinations = list(product(pid_list, node_assumptions, update_rules))
 
-def plot_dictionary_values_as_lines(dictionary):
-    for key, values in dictionary.items():
-        plt.plot(range(1, len(values) + 1), values, label=key)
+# first column of the df is first item in combinations
+df["pid"] = [x[0] for x in combinations]
+# second column of the df is second item in combinations
+df["node_assumption"] = [x[1] for x in combinations]
+# third column of the df is third item in combinations
+df["update_rule"] = [x[2] for x in combinations]
 
-
-temp_model_score = []
-temp_model_clicks = []
-for index, row in df.iterrows():
-    if row['model'] not in ["full", "level", "no_assumption"]:
-        model_data = pd.read_pickle(
-            f"../../results_mb_test12/mcrl/{exp_num}_data/{row['pid']}_{row['model']}_1.pkl")
-        temp_model_score.append(model_data["r"][0])
-        temp_action = []
-        for action in model_data["a"][0]:
-            temp_action.append(len(action))
-        temp_model_clicks.append(temp_action)
-    else:
-        model_data = pd.read_pickle(
-            f"../../results_mb_test12/mcrl/{exp_num}_mb/{row['pid']}_likelihood_{row['model']}.pkl")
-        temp_model_score.append(model_data["rewards"][0])
-        temp_action = []
-        for action in model_data["a"][0]:
-            temp_action.append(len(action))
-        temp_model_clicks.append(temp_action)
-
-df["model_score"] = temp_model_score
-df["model_action"] = temp_model_clicks
-
-
+### get human data
 df["pid_clicks"] = "na"
 df["pid_score"] = "na"
 pid_info = pd.read_csv(f"../../data/human/{exp_num}/mouselab-mdp.csv")
@@ -66,72 +46,56 @@ for pid in df["pid"]:
         df.at[idx_, 'pid_clicks'] = temp_click_list
         df.at[idx_, 'pid_score'] = temp_reward_list
 
-
-### plot the score
-# for each model, get the average score
-averages = {}
-for model in model_list:
-    model_score = np.array(df[df["model"] == model]["model_score"].to_list())
-    average_list = model_score.mean(axis=0)
-    result = mk.original_test(average_list)
-    print(f"Score: {model}: {result}")
-    averages[model] = average_list
-
-pid_score = np.array(df[df["model"] == model]["pid_score"].to_list()) #take any more
+### add pid score to plot
+pid_score = np.array(df["pid_score"].to_list()) #take any more
 average_list = pid_score.mean(axis=0)
-averages["pid"] = average_list
+plt.plot(range(1, len(average_list) + 1), average_list, label=f"Participant")
 
+### Scores
+for assumption in node_assumptions:
+    for update_rule in update_rules:
+        df_temp = df.loc[(df['node_assumption'] == assumption) & (df['update_rule'] == update_rule)]
+        temp_model_score = []
+        temp_model_clicks = []
+        for index, row in df_temp.iterrows():
+            model_data = pd.read_pickle(
+                f"../../results_mb_test13/mcrl/{exp_num}_mb/{row['pid']}_likelihood_{row['node_assumption']}_{row['update_rule']}.pkl")
+            temp_model_score.append(model_data["rewards"][0])
+        model_score = np.array(temp_model_score)
+        average_list = model_score.mean(axis=0)
+        plt.plot(range(1, len(average_list) + 1), average_list, label=f"{assumption}_{update_rule}")
 
-
-# Plot each dictionary
-# Function to plot the values of each key as a line
-
-
-##Plot the dictionary values as lines
-plot_dictionary_values_as_lines(averages)
-
-# Add labels, title, and legend
-plt.xlabel('Trials')
-plt.ylabel('Rewards')
-# plt.title('Values of Keys as Lines')
 plt.legend()
-
-# Show the plot
-plt.grid(True)
-plt.savefig(f"reward_{model}.png")
+plt.savefig("score.png")
 # plt.show()
 plt.close()
 
+### Clicks
+for assumption in node_assumptions:
+    for update_rule in update_rules:
+        df_temp = df.loc[(df['node_assumption'] == assumption) & (df['update_rule'] == update_rule)]
+        temp_model_clicks = []
+        for index, row in df_temp.iterrows():
+            model_data = pd.read_pickle(
+                f"../../results_mb_test13/mcrl/{exp_num}_mb/{row['pid']}_likelihood_{row['node_assumption']}_{row['update_rule']}.pkl")
+            temp_action = []
+            for action in model_data["a"][0]:
+                temp_action.append(len(action))
+            temp_model_clicks.append(temp_action)
 
+        model_clicks = np.array(temp_model_clicks)
+        average_list = model_clicks.mean(axis=0)
+        plt.plot(range(1, len(average_list) + 1), average_list, label=f"{assumption}_{update_rule}")
 
-# for each model, get the average clicks
-averages_clicks = {}
-for model in model_list:
-    model_clicks= np.array(df[df["model"] == model]["model_action"].to_list())
-    average_list = model_clicks.mean(axis=0)
+        # Mann-Kendall test
+        result = mk.original_test(average_list)
+        print(f"Clicks: {assumption}_{update_rule}: {result}")
 
-    result = mk.original_test(average_list)
-    print(f"Clicks: {model}: {result}")
-
-    averages_clicks[model] = average_list
-
-pid_clicks = np.array(df[df["model"] == model]["pid_clicks"].to_list()) #take any more
+pid_clicks = np.array(df["pid_clicks"].to_list()) #take any more
 average_list = pid_clicks.mean(axis=0)
-averages_clicks["pid"] = average_list
+plt.plot(range(1, len(average_list) + 1), average_list, label=f"Participant")
 
-# Plot the dictionary values as lines
-plot_dictionary_values_as_lines(averages_clicks)
-
-
-
-# Add labels, title, and legend
-plt.xlabel('Trials')
-plt.ylabel('Clicks')
-# plt.title('Values of Keys as Lines')
 plt.legend()
-
-# Show the plot
-plt.grid(True)
+plt.savefig("clicks.png")
 # plt.show()
-plt.savefig(f"clicks_{model}.png")
 plt.close()

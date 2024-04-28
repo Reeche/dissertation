@@ -2,19 +2,19 @@ from condor_utils import submit_sub_file
 
 bid = 25
 
-# exp_num = ['v1.0',
-            # 'c2.1',
-            # 'c1.1',
-            # 'high_variance_high_cost',
-            # 'high_variance_low_cost']
-            # 'low_variance_high_cost',
-            # 'low_variance_low_cost',
-            # 'strategy_discovery']
+exp_num = ['v1.0',
+           'c2.1',
+           'c1.1',
+           'high_variance_high_cost',
+           'high_variance_low_cost',
+           'low_variance_high_cost',
+           'low_variance_low_cost',
+           'strategy_discovery']
 
 node_assumptions = ["uniform", "level", "no_assumption"]
 update_rules = ["individual", "level"]
 
-exp_num = ['high_variance_low_cost']
+# exp_num = ['high_variance_low_cost']
 # pid_dict = {'strategy_discovery': [2, 28]}
 
 pid_dict = {
@@ -44,10 +44,10 @@ pid_dict = {
 with open("parameters_mb.txt", "w") as parameters:
     for exp_num_ in exp_num:
         pids = pid_dict.get(exp_num_)
-        for model in node_assumptions:
+        for assumption in node_assumptions:
             for update_rule in update_rules:
                 for pid in pids:
-                    args = [exp_num_, 'likelihood', pid, model, update_rule]
+                    args = [exp_num_, 'likelihood', pid, assumption, update_rule]
                     args_str = " ".join(str(x) for x in args) + "\n"
                     parameters.write(args_str)
 

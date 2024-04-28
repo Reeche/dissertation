@@ -167,7 +167,6 @@ class ModelBased(Learner):
 
     def perform_updates(self, action):
         if self.update_rule == "level":
-            print("Level update rule")
             observed_value = self.env.ground_truth[self.env.present_trial_num][action]
             if action in [1, 5, 9]:
                 self.dirichlet_alpha_dict[1][int(observed_value)] += self.click_weight
@@ -199,7 +198,6 @@ class ModelBased(Learner):
                    self.dirichlet_alpha_dict[8] == self.dirichlet_alpha_dict[11] == self.dirichlet_alpha_dict[
                        12], "Distribution on the third level are not the same"
         elif self.update_rule == "individual":
-            print("Individual update rule")
             observed_value = self.env.ground_truth[self.env.present_trial_num][action]
             self.dirichlet_alpha_dict[action][int(observed_value)] += self.click_weight
             old_distributions = frozenset(self.node_distributions.items())

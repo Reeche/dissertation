@@ -9,7 +9,17 @@ import pickle
 import sys
 from pathlib import Path
 
+"""
+List of models: 
 
+no assumption: Beta(1,1) for all nodes
+uniform assumption: Beta(alpha, beta) for all nodes
+level assumption: Beta(alpha_level, beta_level) for all nodes of the same level    
+
+ways of update: 
+individual node: update every node
+level update: update all nodes of the same level
+"""
 
 def plot_score(res, participant, pid, exp_name):
     plt.plot(np.mean(res["rewards"], axis=0), color="r", label="Model")
@@ -66,18 +76,6 @@ if __name__ == "__main__":
     pid = int(sys.argv[3])
     node_assumption = sys.argv[4]
     update_rule = sys.argv[5]
-
-    """
-    List of models: 
-    
-    no assumption: Beta(1,1) for all nodes
-    uniform assumption: Beta(alpha, beta) for all nodes
-    level assumption: Beta(alpha_level, beta_level) for all nodes of the same level    
-    
-    ways of update: 
-    individual node: update every node
-    level update: update all nodes of the same level
-    """
 
     # exp_name = "high_variance_low_cost"  # "strategy_discovery
     # criterion = "likelihood"  # "number_of_clicks_likelihood"
@@ -212,7 +210,7 @@ if __name__ == "__main__":
     if not Path(f"results_mb_test13/mcrl/{exp_name}_mb").exists():
         Path(f"results_mb_test13/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_test13/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}.pkl', 'wb')
+    output = open(f'results_mb_test13/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}_{update_rule}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 
