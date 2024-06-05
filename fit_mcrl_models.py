@@ -28,7 +28,7 @@ def fit_model(
     exp_attributes=None,
     sim_params=None,
     simulate=True,
-    plotting=False,
+    plotting=True,
     data_path="results/cm",
     save_path=None,
 ):
@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_rl_variants_hybrid/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_sd_test3/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -94,16 +94,16 @@ if __name__ == "__main__":
     # optimization_criterion = sys.argv[3]
     # pid = int(sys.argv[4])
     # number_of_trials = int(sys.argv[5])
-    # other_params = {"plotting": False}
+    # other_params = {"plotting": True}
     # if len(sys.argv) > 6:
     #     other_params = ast.literal_eval(sys.argv[6])
     # else:
     #     other_params = {}
 
-    exp_name = "v1.0"
+    exp_name = "strategy_discovery"
     model_index = 491
     optimization_criterion = "likelihood"
-    pid = 5
+    pid = 4
     other_params = {"plotting": True}
 
     if exp_name != "strategy_discovery":
@@ -115,11 +115,11 @@ if __name__ == "__main__":
         if depth == 0:
             return 0
         if depth == 1:
-            return 1
+            return -1
         if depth == 2:
-            return 3
+            return -3
         if depth == 3:
-            return 30
+            return -30
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -142,13 +142,13 @@ if __name__ == "__main__":
     if optimization_criterion == "likelihood":
         num_sim = 1
     else:
-        num_sim = 30
+        num_sim = 10
 
     if "optimization_params" not in other_params:
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 2000,
+            "max_evals": 4000,
             "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params
@@ -164,3 +164,4 @@ if __name__ == "__main__":
     )
 
     # print(r_data)
+    # print(sim_data)

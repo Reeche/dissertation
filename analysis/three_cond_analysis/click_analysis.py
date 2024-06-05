@@ -1,14 +1,5 @@
 import pandas as pd
-import numpy as np
 import ast
-import matplotlib.pyplot as plt
-import pymannkendall as mk
-from scipy import stats
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-import statsmodels.formula.api as smf
-from collections import Counter
-from scipy.stats import chisquare
 
 def create_click_df(data):
     """

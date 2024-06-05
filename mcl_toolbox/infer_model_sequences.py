@@ -3,7 +3,7 @@ import ast
 import sys
 
 from mcl_toolbox.computational_microscope.computational_microscope import ComputationalMicroscope
-from mcl_toolbox.global_vars import strategies, features, structure
+from mcl_toolbox.global_vars import strategies, features, structure, assign_model_names
 from mcl_toolbox.utils import learning_utils
 from mcl_toolbox.utils.experiment_utils import Experiment
 
@@ -11,27 +11,6 @@ from mcl_toolbox.utils.experiment_utils import Experiment
 Infer the planning strategy used by the model via their click sequences
 
 """
-
-
-def assign_model_names(row):
-    if row['class'] == 'hybrid' and row['model_index'] == "491":
-        return 'hybrid Reinforce'
-    elif row['class'] == 'hybrid' and row['model_index'] == "479":
-        return 'hybrid LVOC'
-    elif row['class'] == 'pure' and row['model_index'] == "491":
-        return 'pure Reinforce'
-    elif row['class'] == 'pure' and row['model_index'] == "479":
-        return 'pure LVOC'
-    elif row['model_index'] == "1743":
-        return 'Habitual'
-    elif row['model_index'] == "1756":
-        return 'Non-learning'
-    elif row['model_index'] == "522":
-        return 'SSL'
-    elif row['model_index'] == "full":
-        return 'Model-based'
-    else:
-        raise ValueError("Model class combination not found")
 
 
 def infer_model_sequences(data, env, num_trials, max_evals):
@@ -84,22 +63,22 @@ def infer_model_sequences(data, env, num_trials, max_evals):
 
 if __name__ == "__main__":
     exp_name = str(sys.argv[1])
-    model_name = int(sys.argv[2])
+    model_name = str(sys.argv[2])
 
-    # exp_name = "strategy_discovery"
-    # model_name = 490
+    # exp_name = "low_variance_high_cost"
+    # model_name = "level_level"
 
-    number_of_trials = 120
+    number_of_trials = 35
 
     ## Get the data
-    data = pd.read_csv(f"../final_results/rl_hybrid_variants/{exp_name}.csv")
+    data = pd.read_csv(f"../final_results/aggregated_data/{exp_name}.csv")
     # filter by model_name
     data = data[data['model_index'] == model_name]
     # assign model names
     # data['model'] = data.apply(assign_model_names, axis=1)
 
     # drop irrelevant information
-    data = data[["pid", "model_index", "model_clicks"]]
+    data = data[["pid", "class", "model_index", "model_clicks"]]
     # get model clicks
     data['model_clicks'] = data['model_clicks'].apply(ast.literal_eval)
 
@@ -129,4 +108,4 @@ if __name__ == "__main__":
     data['pid_strategies'] = data['pid'].map(lambda x: pid_strategies[x])
 
     # save as csv
-    data.to_csv(f"{exp_name}_{model_name}.csv", index=False)
+    data.to_csv(f"{exp_name}_{model_name}_100.csv", index=False)

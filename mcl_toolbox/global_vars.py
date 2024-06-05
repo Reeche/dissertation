@@ -83,18 +83,19 @@ class structure:
     }
     strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
-    level_values_decreasing = [
-        [0],
-        [-6, -3, 3, 6],
-        [-11, -6, 6, 11],
-        [-67, -34, 34, 67],
-    ]
-    const_var_values = [[-30, -15, 15, 30]]
+    # level_values_decreasing = [
+    #     [0],
+    #     [-6, -3, 3, 6],
+    #     [-11, -6, 6, 11],
+    #     [-67, -34, 34, 67],
+    # ]
+    # const_var_values = [[-30, -15, 15, 30]]
+    const_var_values = [[-10, -5, 5, 10]]
     high_variance_values = [[-1000, -50, -50, -50, -20, -20, 50, 50, 50, 100, 100]]
     low_variance_values = [[-6, -4, -2, 2, 4, 6]]
     reward_levels = {
         "high_increasing": level_values_increasing[1:],
-        "high_decreasing": level_values_decreasing[1:][::-1],
+        "high_decreasing": level_values_increasing[1:][::-1],
         "low_constant": const_var_values * 3,
         "large_increasing": list(zip(np.zeros(5), [1, 2, 4, 8, 32])),
         "low_variance_high_cost": low_variance_values * 3,
@@ -339,3 +340,33 @@ class hierarchical_params:
 
 class plotting:
     sns.set_style("whitegrid")
+
+def assign_model_names(row):
+    if row['class'] == 'hybrid' and row['model_index'] == "491":
+        return 'hybrid Reinforce'
+    elif row['class'] == 'hybrid' and row['model_index'] == "479":
+        return 'hybrid LVOC'
+    elif row['class'] == 'pure' and row['model_index'] == "491":
+        return 'pure Reinforce'
+    elif row['class'] == 'pure' and row['model_index'] == "479":
+        return 'pure LVOC'
+    elif row['model_index'] == "1743":
+        return 'Habitual'
+    elif row['model_index'] == "1756":
+        return 'Non-learning'
+    elif row['model_index'] == "522":
+        return 'SSL'
+    elif row['model_index'] == "no_assumption_level":
+        return 'MB - No assumption, grouped'
+    elif row['model_index'] == "no_assumption_individual":
+        return 'MB - No assumption, individual'
+    elif row['model_index'] == "uniform_individual":
+        return 'MB - Uniform, individual'
+    elif row['model_index'] == "uniform_level":
+        return 'MB - Uniform, grouped'
+    elif row['model_index'] == "level_level":
+        return 'MB - Level, grouped'
+    elif row['model_index'] == "level_individual":
+        return 'MB - Level, individual'
+    else:
+        raise ValueError("Model class combination not found")

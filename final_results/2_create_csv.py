@@ -103,15 +103,20 @@ def number_of_parameters(model, criterion):
             return 4
         else:
             return 5
-    else:
-        if criterion == "likelihood":
-            return 8
+    elif model in ["level_individual", "level_level"]:
+        return 8
+    elif model in ["no_assumption_individual", "no_assumption_level"]:
+        return 2
+    elif model in ["uniform_individual", "uniform_level"]:
+        return 4
 
 
 def get_all_combinations(model_class, condition):
-    # mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479],
-    #            "mb": ["full"]}
-    mapping = {"rl_hybrid_variants": [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]}
+    # combines all pids with all models
+    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479],
+               "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
+                      "uniform_individual", "uniform_level"]}
+    # mapping = {"rl_hybrid_variants": [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]}
     model_index = mapping[model_class]
     combinations = list(itertools.product([*pid_dict[condition]], [*model_index]))
     return combinations
@@ -126,24 +131,23 @@ exp_attributes = {
 
 if __name__ == "__main__":
     root_folder = os.getcwd()
-    # folder_list = ["habitual", "hybrid", "non_learning", "pure", "ssl", "mb"]
-    # folder_list = ["non_learning", "pure", "ssl", "mb"]
+    folder_list = ["habitual", "hybrid", "non_learning", "pure", "ssl", "mb"]
     # conditions = ["v1.0", "c2.1", "c1.1",
     #               "high_variance_high_cost", "high_variance_low_cost",
     #               "low_variance_high_cost", "low_variance_low_cost",
     #               "strategy_discovery"]
-    # conditions = ["v1.0", "c2.1", "c1.1"]
-    folder_list = ["rl_hybrid_variants"]
     conditions = ["strategy_discovery"]
+    # folder_list = ["pure"]
 
     for condition in conditions:
-
+        print(condition)
         if condition == "strategy_discovery":
             num_trials = 120
         else:
             num_trials = 35
 
         for model_class in folder_list:
+            print(model_class)
             combinations = get_all_combinations(model_class, condition)
 
             # create new dataframe with the columns "pid", "class", model_index"
@@ -160,13 +164,16 @@ if __name__ == "__main__":
             for index, row in df.iterrows():
                 pid = row["pid"]
                 model = row["model_index"]
-                print(pid, model)
+                # print(pid, model)
                 if model_class != "mb":
-                    data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_data/{pid}_{model}_1.pkl')
-                    model_params = pd.read_pickle(
-                        f'{root_folder}/{model_class}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                    try:
+                        data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_data/{pid}_{model}_1.pkl')
+                        model_params = pd.read_pickle(
+                            f'{root_folder}/{model_class}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                    except:
+                        print("pid not found", pid)
                 elif model_class == "mb":
-                    data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_mb/{pid}_likelihood_full.pkl')
+                    data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_mb/{pid}_likelihood_{model}.pkl')
                 else:  # print warning that model class is not recognized
                     print("Model class not recognized")
 

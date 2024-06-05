@@ -34,23 +34,31 @@ def individual_scores(exp):
 
 def lme():
     df_inc = pd.read_csv(f"../../data/human/v1.0/mouselab-mdp.csv")
-    df_inc['condition'] = [1] * df_inc.shape[0]
+    df_inc['condition'] = ["increasing"] * df_inc.shape[0]
     df_inc['potential_improv'] = df_inc['score'] - 39.95
 
     df_dec = pd.read_csv(f"../../data/human/c2.1/mouselab-mdp.csv")
-    df_dec['condition'] = [0] * df_dec.shape[0]
+    df_dec['condition'] = ["decreasing"] * df_dec.shape[0]
     df_inc['potential_improv'] = df_inc['score'] - 28.55
 
     df_con = pd.read_csv(f"../../data/human/c1.1/mouselab-mdp.csv")
-    df_con['condition'] = [2] * df_con.shape[0]
+    df_con['condition'] = ["constant"] * df_con.shape[0]
     df_inc['potential_improv'] = df_inc['score'] - 6.57
 
     df = pd.concat([df_inc, df_dec, df_con], ignore_index=True)
     df = df[["pid", "trial_index", "score", "condition", "potential_improv"]]
     # formula_ = "score ~ trial_index*C(condition)"
-    formula_ = "score ~ trial_index:C(condition)"
-    gamma_model = smf.mixedlm(formula=formula_, data=df, groups=df["pid"]).fit()
-    print(gamma_model.summary())
+    # formula_ = "score ~ trial_index:C(condition)"
+    formula_ = "score ~ trial_index"
+
+    for condition in ["increasing", "decreasing", "constant"]:
+        temp_df = df[df['condition'] == condition]
+        gamma_model = smf.mixedlm(formula=formula_, data=temp_df, groups=temp_df["pid"]).fit()
+        print(condition, gamma_model.summary())
+
+
+    # gamma_model = smf.mixedlm(formula=formula_, data=df, groups=df["pid"]).fit()
+    # print(gamma_model.summary())
     return None
 
 
@@ -182,23 +190,27 @@ def lme_expected_score(data):
         new_df = df.stack().reset_index()
         new_df.columns = ['pid', 'trial_index', 'expected_score']
         if exp_name == "v1.0":
-            new_df['condition'] = 0
-            new_df['potential_improvement'] = 39.95 - new_df['expected_score']
+            new_df['condition'] = "increasing"
+            # new_df['potential_improvement'] = 39.95 - new_df['expected_score']
         elif exp_name == "c2.1":
-            new_df['condition'] = 1
-            new_df['potential_improvement'] = 28.55 - new_df['expected_score']
+            new_df['condition'] = "decreasing"
+            # new_df['potential_improvement'] = 28.55 - new_df['expected_score']
         elif exp_name == "c1.1":
-            new_df['condition'] = 2
-            new_df['potential_improvement'] = 6.57 - new_df['expected_score']
+            new_df['condition'] = "constant"
+            # new_df['potential_improvement'] = 6.57 - new_df['expected_score']
         temp_list.append(new_df)
 
     concat_data = pd.concat(temp_list, ignore_index=True)
 
-    formula_ = "expected_score ~ trial_index*C(condition)"  # adding improvement does not work
-    gamma_model = smf.mixedlm(formula=formula_, data=concat_data).fit()
+    # formula_ = "expected_score ~ trial_index*C(condition)"  # adding improvement does not work
+    formula_ = "expected_score ~ trial_index"  # adding improvement does not work
+    for condition in ["increasing", "decreasing", "constant"]:
+        temp_df = concat_data[concat_data['condition'] == condition]
+        gamma_model = smf.mixedlm(formula=formula_, data=temp_df, groups=temp_df["pid"]).fit()
+        print(condition, gamma_model.summary())
+    # gamma_model = smf.mixedlm(formula=formula_, data=concat_data).fit()
     # gamma_model = smf.mixedlm(formula=formula_, data=concat_data, groups=concat_data["pid"]).fit()
-    print(gamma_model.summary())
-    # somehow the slope for increasing variance is decreasing
+    # print(gamma_model.summary())
     return None
 
 
@@ -239,15 +251,15 @@ def distance_between_strategies(exp_list):
     return None
 
 if __name__ == "__main__":
-    participants_starting_optimally = {
-        "v1.0": [85, 140],
-        "c2.1": [0, 8, 39, 41, 58, 72, 99, 130, 152, 172],
-        "c1.1": [2, 7, 36, 37, 42, 89, 91, 92, 157, 168]
-    }
+    # participants_starting_optimally = {
+    #     "v1.0": [85, 140],
+    #     "c2.1": [0, 8, 39, 41, 58, 72, 99, 130, 152, 172],
+    #     "c1.1": [2, 7, 36, 37, 42, 89, 91, 92, 157, 168]
+    # }
 
     exp_list = ["v1.0", "c2.1", "c1.1"]
     # lme()
-    distance_between_strategies(exp_list)
+    # distance_between_strategies(exp_list)
 
     all_data = {}
 
@@ -280,4 +292,4 @@ if __name__ == "__main__":
 
     ### test if potential improvement is different across conditions
     # improv_data = potential_improvement(all_data)
-    # lme_expected_score(all_data)
+    lme_expected_score(all_data)

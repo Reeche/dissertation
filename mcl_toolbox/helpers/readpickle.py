@@ -5,9 +5,9 @@ import pandas as pd
 # sys.modules["learning_utils"] = learning_utils
 # sys.modules["distributions"] = distributions
 
-# object1 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_491.pkl")
-# object2 = pd.read_pickle(f"../../final_results/pure/high_variance_high_cost_priors/0_likelihood_1743.pkl")
-object = pd.read_pickle(f"../../results_pure_missing_jobs/mcrl/v1.0_priors/158_likelihood_479.pkl")
-
+object3 = pd.read_pickle(f"../../results_new_constant/mcrl/c1.1_data/2_491_1.pkl")
+# object1 = pd.read_pickle(f"../../final_results/habitual/c1.1_priors/100_likelihood_1743.pkl")
+# object = pd.read_pickle(f"../../final_results/non_learning/c1.1_priors/100_likelihood_1756.pkl")
+# object2 = pd.read_pickle(f"../../final_results/pure/c1.1_priors/100_likelihood_491.pkl")
 
 print(object)

@@ -14,8 +14,8 @@ from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
     feature based representation of the Mouselab-MDP. This assumes that
     the environment structure is a tree symmetric in its branches
 """
-# distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
-distribution_by_level = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
+distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
+# distribution_by_level = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
 decreasing_dist_by_level = {1: [-48, -24, 24, 48], 2: [-8, -4, 4, 8], 3: [-4, -2, 2, 4]}
 
 constant_list = [-10, -5, 5, 10]
@@ -154,7 +154,7 @@ class TrialSequence:
                 init.append(reward_function(d))
                 children = []
                 tree.append(children)
-                for _ in range(get(d, branching, 0)):
+                for _ in range(get(d, branching, 0)): #get position d from list branching, if not found return 0
                     child_idx = expand(d + 1)
                     children.append(child_idx)
                 return my_idx

@@ -1,6 +1,6 @@
 executable = /lustre/fast/fast/rhe/venv/bin/python
 arguments = infer_model_sequences.py $(Arg1) $(Arg2)
-error = errs/cm/$(Arg1)/$(Arg2).err
+#error = errs/cm/$(Arg1)/$(Arg2).err
 getenv = True
 request_memory = 8000
 request_cpus = 1

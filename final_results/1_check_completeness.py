@@ -7,11 +7,15 @@ Iterate through all the result pickles and create one csv for each condition
 Also create one csv for each condition for BMS for Matlab
 """
 
+
 def get_all_combinations(model_class, condition):
-    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479], "mb": ["full"]}
+    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479],
+               "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
+                      "uniform_individual", "uniform_level"]}
     model_type = mapping[model_class]
     combinations = list(itertools.product([*pid_dict[condition]], [*model_type]))
     return combinations
+
 
 def check_pickle_files(root_folder, folder_list):
     for target_folder in folder_list:
@@ -42,11 +46,13 @@ def check_pickle_files(root_folder, folder_list):
 
                         # Check if there are missing items and raise an alert
                         if missing_items:
-                            print(f"Alert: The following items are missing for {model_class} and condition {condition}:")
+                            print(
+                                f"Alert: The following items are missing for {model_class} and condition {condition}:")
                             for item in missing_items:
                                 print(item)
                         else:
-                            print(f"All items found! For folder for model_class {model_class} and condition {condition}")
+                            print(
+                                f"All items found! For folder for model_class {model_class} and condition {condition}")
         elif target_folder == "mb":
             for foldername, subfolders, filenames in os.walk(root_folder):
                 if target_folder in foldername:
@@ -62,7 +68,8 @@ def check_pickle_files(root_folder, folder_list):
                         for filename in filenames:
                             if filename.endswith('.pkl'):
                                 pid_id = filename.split('_')[0]
-                                combinations_found.append((int(pid_id), "full"))
+                                model = filename.split('likelihood_', 1)[1].rsplit('.', 1)[0]
+                                combinations_found.append((int(pid_id), model))
                         # print(combinations_found)
 
                         # Find missing items
@@ -70,11 +77,14 @@ def check_pickle_files(root_folder, folder_list):
 
                         # Check if there are missing items and raise an alert
                         if missing_items:
-                            print(f"Alert: The following items are missing for {model_class} and condition {condition}:")
+                            print(
+                                f"Alert: The following items are missing for {model_class} and condition {condition}:")
                             for item in missing_items:
                                 print(item)
                         else:
-                            print(f"All items found! For folder for model_class {model_class} and condition {condition}")
+                            print(
+                                f"All items found! For folder for model_class {model_class} and condition {condition}")
+
 
 if __name__ == "__main__":
     root_folder = os.getcwd()

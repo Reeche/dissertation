@@ -63,11 +63,11 @@ def cost_function(depth):
     if depth == 0:
         return 0
     if depth == 1:
-        return 1
+        return -1
     if depth == 2:
-        return 3
+        return -3
     if depth == 3:
-        return 30
+        return -30
 
 
 if __name__ == "__main__":
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # node_assumption = "uniform" #"uniform", "level", "no_assumption"
     # update_rule = "individual"  # "individual", "level"
 
-    E = Experiment(exp_name, data_path=f"results_mb_test13/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_test14/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_test13/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_test14/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -149,7 +149,7 @@ if __name__ == "__main__":
             'dist_beta': hp.uniform('dist_beta', 0, 5),
         }
     else:
-        min_value = 1
+        min_value = 0.01
         max_value = 10
         if node_assumption == "uniform":
             fspace = {
@@ -207,10 +207,10 @@ if __name__ == "__main__":
     res.update(best_params)
 
     ## check if dir exist
-    if not Path(f"results_mb_test13/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_test13/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_test14/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_test14/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_test13/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}_{update_rule}.pkl', 'wb')
+    output = open(f'results_mb_test14/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}_{update_rule}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 

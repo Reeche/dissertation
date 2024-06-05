@@ -19,8 +19,9 @@ from mcl_toolbox.utils.learning_utils import (
 from mcl_toolbox.utils.sequence_utils import compute_log_likelihood
 
 """
-Reinforce/LVOC: MF + habitual features
-Habitual: MF + MB + habitual features
+MF Reinforce/LVOC: MF + habitual features
+Hybrid Reinforce/LVOC: MF + MB + habitual features
+Habitual: MF + habitual features
 SSL: MF + MB + habitual features
 Non-learning: MF + MB (without trial std that carries information from previous trials)
 """
@@ -123,6 +124,7 @@ class ModelFitter:
             self.normalized_features = get_normalized_features(
                 structure.exp_reward_structures[self.exp_name]
             )
+
         self.branching = self.pipeline[0][0]
         self.num_actions = get_number_of_actions_from_branching(
             self.branching

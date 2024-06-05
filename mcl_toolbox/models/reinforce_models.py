@@ -155,15 +155,15 @@ class REINFORCE(Learner):
         if self.path_learn:
             # because every third reward is an external reward (because of third node)
             offset = 3
-        # for i, r in enumerate(self.policy.rewards[:: -1 - offset]):
+        # for i, r in enumerate(self.policy.rewards[:: -1 - offset]): # first and last one
         # I think it should be everything except the last 4 items and then reverse the order
         for i, r in enumerate(self.policy.rewards[:-(1+offset)][::-1]):
             pr = 0
             if self.use_pseudo_rewards:
                 pr = self.pseudo_rewards[::-1][i]
             R = (r + pr) + self.gamma * R
-            returns.insert(0, R) #includes both external reward and the click costs [-1, -1, .. +50]
-        if self.path_learn:
+            returns.insert(0, R) #includes both external final reward and the click costs [-1, -1, .. +50]
+        if self.path_learn: # add the last 3 values from policy.reward
             # the last 3 values from policy.reward are the actual values underneath the nodes
             # for example [-1, -1, -1, -1, -1, 24, 0.0, 4, -4, 24], participant clicked 5 times,
             # received 24 (without click cost), the values underneath the path is 0 -> 4 -> -4 -> 24
@@ -174,11 +174,6 @@ class REINFORCE(Learner):
         """
         Computing gradients and updating parameters.
         """
-        # if not self.is_null:
-        #     self.policy.train(True)
-        # elif self.is_null:
-        #     self.policy.train(False)
-        #     self.lr = 0
 
         policy_loss = []
         returns = self.get_end_episode_returns()

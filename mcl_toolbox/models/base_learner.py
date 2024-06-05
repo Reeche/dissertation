@@ -118,7 +118,7 @@ class Learner(ABC):
 
         """
         # Attach 51/56 features (implemented.pkl or microscope.pkl) to the environment
-        env.attach_features(self.features, self.normalized_features)
+        env.attach_features(features=self.features, normalized_features=self.normalized_features)
         env.reset()
         if compute_likelihood and not participant:
             raise ValueError(
@@ -129,11 +129,12 @@ class Learner(ABC):
             trials_data = self.simulate(
                 env, compute_likelihood=compute_likelihood, participant=participant
             )
-            for param in ["r", "w", "a", "loss", "decision_params", "s", "info"]:
+            for param in ["r", "w", "a", "loss", "decision_params", "s", "info", "envs"]:
                 if param in trials_data:
                     simulations_data[param].append(trials_data[param])
             # reset participant, needed for likelihood object fxn
-            participant.reset()
+            if participant:
+                participant.reset()
         total_m_mers = []
         for i in range(len(simulations_data["a"])):
             m_mers = get_termination_mers(

@@ -136,8 +136,10 @@ class GenericMouselabEnv(gym.Env):
         info = {}
         # if self.cost is a function
         if hasattr(self.cost, '__call__'):
-            click_cost = self.cost(self.present_trial.node_map[action].depth)
-            reward = -1 * click_cost
+            reward = self.cost(self.present_trial.node_map[action].depth)
+            # click_cost = self.cost(self.present_trial.node_map[action].depth)
+            # todo: it turned out that this made the reward positive because it was negated above
+            # reward = -1 * click_cost #todo: does it make sense to change here?
         else:
             reward = self.cost(self.present_trial.node_map[action].depth)
         done = False

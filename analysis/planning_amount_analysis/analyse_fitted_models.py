@@ -6,12 +6,12 @@ import statsmodels.formula.api as smf
 
 
 def model_clicks(model, condition):
-    data = pd.read_csv(f"../likelihood_vanilla_model_comparison/{condition}_491.csv")
+    data = pd.read_csv(f"../../final_results/pure_{condition}.csv")
     # filter for model
-    data = data[data['model'] == model]
+    data = data[data['model_index'] == model]
 
     # keep only pid, model, model_clicks columns
-    data = data[["pid", "model", "model_clicks", "pid_clicks"]]
+    data = data[["pid", "model_index", "model_clicks", "pid_clicks"]]
 
     # get model clicks
     data['model_clicks'] = data['model_clicks'].apply(ast.literal_eval)
@@ -56,10 +56,10 @@ def model_clicks(model, condition):
 if __name__ == "__main__":
     # conditions = ["high_variance_low_cost", "high_variance_high_cost", "low_variance_low_cost",
     #                "low_variance_high_cost"]
-    conditions = ["high_variance_low_cost"]
+    conditions = ["low_variance_high_cost"]
 
     # models = [522, 491, 479, 1743, 1756]
-    models = [491]
+    models = [479]
     for condition in conditions:
         for model in models:
             model_clicks(model, condition)

@@ -9,3 +9,33 @@ clicking_pid = {
              91, 92, 100, 102, 105, 109, 111, 114, 116, 120, 125, 127, 129, 131, 135, 139, 143, 147, 151, 153, 157, 159,
              161, 163, 167, 168, 171]
 }
+
+def assign_model_names(row):
+    if row['class'] == 'hybrid' and row['model_index'] == "491":
+        return 'hybrid Reinforce'
+    elif row['class'] == 'hybrid' and row['model_index'] == "479":
+        return 'hybrid LVOC'
+    elif row['class'] == 'pure' and str(row['model_index']) == "491":
+        return 'MF - Reinforce'
+    elif row['class'] == 'pure' and str(row['model_index']) == "479":
+        return 'MF - LVOC'
+    elif row['model_index'] == "1743":
+        return 'Habitual'
+    elif row['model_index'] == "1756":
+        return 'Non-learning'
+    elif row['model_index'] == "522":
+        return 'SSL'
+    elif row['model_index'] == "no_assumption_level":
+        return 'MB - No assump., grouped'
+    elif row['model_index'] == "no_assumption_individual":
+        return 'MB - No assump., ind.'
+    elif row['model_index'] == "uniform_individual":
+        return 'MB - Uniform, ind.'
+    elif row['model_index'] == "uniform_level":
+        return 'MB - Uniform, grouped'
+    elif row['model_index'] == "level_level":
+        return 'MB - Level, grouped'
+    elif row['model_index'] == "level_individual":
+        return 'MB - Level, ind.'
+    else:
+        raise ValueError("Model class combination not found")

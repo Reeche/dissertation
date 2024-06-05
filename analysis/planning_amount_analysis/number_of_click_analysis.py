@@ -85,28 +85,56 @@ def create_click_df(data, experiment):
     return click_df
 
 
-def plot_clicks(average_clicks):
-    ci = 1.96 * np.std(average_clicks) / np.sqrt(len(average_clicks))
-    plt.plot(average_clicks)
-    plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
-                     alpha=.1)
-    plt.ylim(top=9)
+def plot_clicks(clicks_df):
+
+    # pivot table by pid and trial with number of clicks as content
+    pid = clicks_df.pivot(index="pid", columns="trial", values="number_of_clicks")
+
+    pid_average = np.mean(pid, axis=0)
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(pid, axis=0)
+    n = len(pid)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, len(pid_average))
+
+    # plot model_mer and pid_mer
+    plt.plot(pid_average, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
+
+
+    # ci = 1.96 * np.std(average_clicks) / np.sqrt(len(average_clicks))
+    # plt.plot(average_clicks)
+    # plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
+    #                  alpha=.1)
+    plt.ylim(top=13)
     plt.ylim(bottom=-1)
     plt.xlabel("Trial Number", size=15)
     plt.xticks(fontsize=13)
     plt.yticks(fontsize=13)
     if experiment == "high_variance_low_cost":
         label = "HVLC"
-        plt.axhline(y=7.10, color='r', linestyle='-')
+        # plt.axhline(y=9.09, color='r', linestyle='-')
+        # plt.axhline(y=7.1, color='g', linestyle='-')
+        # plt.fill_between(range(0, len(average_clicks)), 9.09 - 2.26, 9.09 + 2.26, color="r", alpha=.1)
     elif experiment == "high_variance_high_cost":
         label = "HVHC"
-        plt.axhline(y=6.32, color='r', linestyle='-')
+        # plt.axhline(y=6.72, color='r', linestyle='-')
+        # plt.axhline(y=6.32, color='g', linestyle='-')
+        # plt.fill_between(range(0, len(average_clicks)), 6.72 - 2.90, 6.72 + 2.90, color="r", alpha=.1)
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
-        plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
+        # plt.axhline(y=0, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
     else:
         label = "LVLC"
-        plt.axhline(y=5.82, color='r', linestyle='-')
+        # plt.axhline(y=3.96, color='r', linestyle='-')
+        # plt.axhline(y=5.82, color='g', linestyle='-')
+        # plt.fill_between(range(0, len(average_clicks)), 3.96 - 2.36, 3.96 + 2.36, color="r", alpha=.1)
     plt.ylabel(f"Average number of clicks for {label}", fontsize=15)
     plt.savefig(f"plots/{experiment}_average_clicks.png")
     # plt.show()
@@ -361,10 +389,10 @@ if __name__ == "__main__":
         # plot_individual_clicks(click_df, experiment)
 
         # group click_df by trial and get the average clicks
-        average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
+        # average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
-        # plot_clicks(average_clicks)
+        plot_clicks(click_df)
 
         ##trend test
         # trend_test(average_clicks)
@@ -377,18 +405,18 @@ if __name__ == "__main__":
 
         ###optimal number of clicks vs. actual number of clicks
         ##get clicks of last trial
-        if experiment == "high_variance_low_cost":
-            chi2, p = chisquare([average_clicks.values[-1], 7.1])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
-        elif experiment == "high_variance_high_cost":
-            chi2, p  = chisquare([average_clicks.values[-1], 6.32])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        elif experiment == "low_variance_high_cost":
-            chi2, p  = chisquare([average_clicks.values[-1], 0])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
-        else:
-            chi2, p  = chisquare([average_clicks.values[-1], 5.82])
-            print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # if experiment == "high_variance_low_cost":
+        #     chi2, p = chisquare([average_clicks.values[-1], 9.09])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
+        # elif experiment == "high_variance_high_cost":
+        #     chi2, p  = chisquare([average_clicks.values[-1], 6.72])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # elif experiment == "low_variance_high_cost":
+        #     chi2, p  = chisquare([average_clicks.values[-1], 0])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
+        # else:
+        #     chi2, p  = chisquare([average_clicks.values[-1], 3.96])
+        #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
     # result_df = pd.concat(click_df_all_conditions, ignore_index=True)

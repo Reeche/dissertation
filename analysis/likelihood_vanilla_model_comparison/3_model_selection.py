@@ -1,14 +1,12 @@
 import pandas as pd
 import numpy as np
 import os
-from vars import clicking_participants, learning_participants, discovered_participants
+from vars import clicking_participants, learning_participants, assign_model_names
 import matplotlib.pyplot as plt
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, kruskal
 import pymannkendall as mk
 import ast
-import statsmodels.api as sm
 from statsmodels.formula.api import ols
-
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -78,12 +76,14 @@ def bms(model_bic):
 
 def create_csv_for_matlab(data, exp):
     # create csv for matlab; filter for required models
-    # data = data[data["model"].isin(["1743", "1756", "479", "491", "522", "full"])]
-    # data = data[data["model"].isin([1743, 1756, 479, 491, 522])]
-    # create pivot table with pid as y and model as x and fill the values with BIC
-    data = data.pivot(index="model", columns="pid", values="BIC")
     # habitual, MB, non-learning, SSL, hybrid LVOC, hybrid Reinforce, pure LVOC, pure Reinforce
-    data.to_csv(f"{exp}.csv", index=False, header=False)
+    # create pivot table with pid as y and model as x and fill the values with BIC
+    data = data.pivot(index="model", columns="pid", values="BIC").T
+    data = data[['Habitual', 'MB - Level, grouped', 'MB - Level, ind.',
+                 'MB - No assump., grouped', 'MB - No assump., ind.',
+                 'MB - Uniform, grouped', 'MB - Uniform, ind.',
+                 'Non-learning', 'SSL', 'hybrid LVOC', 'hybrid Reinforce', 'MF - LVOC', 'MF - Reinforce']]
+    data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
 
 
 def group_pid_by_bic(data):
@@ -114,7 +114,7 @@ def plot_pid_score_grouped_by_model(data, condition=None):
     for model in models:
         # filter for the model in data
         filtered_data = data[data["model"] == model]
-        print(len(filtered_data), "unique pid are best explained by the model", model)
+        # print(len(filtered_data), "unique pid are best explained by the model", model)
         if len(filtered_data) == 0:
             continue
         filtered_data['pid_rewards'] = filtered_data['pid_rewards'].apply(
@@ -123,6 +123,10 @@ def plot_pid_score_grouped_by_model(data, condition=None):
         # calculate the average of the pid_rewards
         pid_rewards = np.array(filtered_data["pid_rewards"].to_list())
         pid_rewards_average = np.mean(pid_rewards, axis=0)
+
+        # Mann Kendall test of trend
+        mk_results = mk.original_test(pid_rewards_average)
+        print(f"{condition}, {model}: {mk_results}")
 
         # plot the average
         plt.plot(pid_rewards_average, label=f"{model}, N={len(filtered_data)}")
@@ -133,14 +137,14 @@ def plot_pid_score_grouped_by_model(data, condition=None):
 
         plt.xlabel("Trial")
         plt.ylabel("Average score")
-        plt.legend()
+        plt.legend(fontsize=9, ncol=2)
 
     # save the plot
     # plt.show()
 
     ##if no dir, create dir
-    if not os.path.exists(f"plots/{exp}"):
-        os.makedirs(f"plots/{exp}")
+    # if not os.path.exists(f"plots/{exp}"):
+    #     os.makedirs(f"plots/{exp}")
 
     plt.savefig(f"plots/{condition}/score_grouped.png")
     plt.close()
@@ -154,7 +158,8 @@ def plot_pid_clicks_grouped_by_model(data, condition):
     # get unique models
     models = list(data["model"].unique())
 
-    # for model_type, models in model_dict.items():
+    plt.figure(figsize=(8, 6))
+
     for model in models:
         # filter for the model in data
         filtered_data = data[data["model"] == model]
@@ -170,41 +175,41 @@ def plot_pid_clicks_grouped_by_model(data, condition):
         pid_clicks_average = np.mean(result_array, axis=0)
 
         # Mann Kendall test of trend
-        # mk_results = mk.original_test(pid_clicks_average)
-        # print(f"{condition}, {model}: {mk_results}")
+        mk_results = mk.original_test(pid_clicks_average)
+        print(f"{condition}, {model}: {mk_results}")
 
         # plot the average
         plt.plot(pid_clicks_average, label=f"{model}, N={len(filtered_data)}")
 
         if condition == "high_variance_low_cost":
-            label = "High variance low cost"
-            plt.axhline(y=7.10, color='r', linestyle='-')
+            # plt.axhline(y=7.10, color='r', linestyle='-')
+            plt.ylim(-8, 13)
         elif condition == "high_variance_high_cost":
-            label = "High variance high cost"
-            plt.axhline(y=6.32, color='r', linestyle='-')
+            # plt.axhline(y=6.32, color='r', linestyle='-')
+            plt.ylim(-8, 13)
         elif condition == "low_variance_high_cost":
-            label = "Low variance high cost"
-            plt.axhline(y=0.01, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
+            # plt.axhline(y=0, color='r', linestyle='-')
+            plt.ylim(-1, 10)
         else:
-            label = "Low variance low cost"
-            plt.axhline(y=5.82, color='r', linestyle='-')
+            # plt.axhline(y=5.82, color='r', linestyle='-')
+            plt.ylim(-1, 10)
 
         # add 95% confidence interval
         # plt.fill_between(np.arange(1, 36), pid_clicks_average - 1.96 * np.std(result_array, axis=0),
         #                  pid_clicks_average + 1.96 * np.std(result_array, axis=0), alpha=0.2)
 
-        plt.title(label)
-        plt.xlabel("Trial")
-        plt.ylabel("Average number of clicks")
-        plt.legend()
+        # plt.title(label)
+        plt.xlabel("Trial", fontsize=12)
+        plt.ylabel("Average number of clicks", fontsize=12)
+        plt.legend(fontsize=11, ncol=2)
 
-    plt.show()
+    # plt.show()
 
-    # if no dir, create dir
-    # if not os.path.exists(f"plots/{exp}"):
-    #     os.makedirs(f"plots/{exp}")
+    ##if no dir, create dir
+    if not os.path.exists(f"plots/{exp}"):
+        os.makedirs(f"plots/{exp}")
 
-    # plt.savefig(f"plots/{exp}/clicks_grouped.png")
+    plt.savefig(f"plots/{exp}/clicks_grouped.png")
     plt.close()
 
     return None
@@ -217,11 +222,16 @@ def kruskal_rewards(exp, data):
     # convert pid_rewards to list
     data['pid_rewards'] = data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
 
-    # for each pid_rewards, calculate the average of the last 60 trials
     if exp == "strategy_discovery":
-        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-60:]))
+        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-60:])
     else:
-        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-10:]))
+        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-10:])
+
+    # for each pid_rewards, calculate the average of the last 60 trials
+    # if exp == "strategy_discovery":
+    #     data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-60:]))
+    # else:
+    #     data["pid_rewards"] = data["pid_rewards"].apply(lambda x: np.mean(x[-10:]))
 
     # groupby model and conduct anova using statsmodel
     # import statsmodels.api as sm
@@ -231,48 +241,31 @@ def kruskal_rewards(exp, data):
     # anova_table = sm.stats.anova_lm(model, typ=2)
     # print(anova_table)
 
-    ## Kruskal-Wallis H-test
-    habitual = data[data["model"] == "Habitual"]["pid_rewards"]
-    pure_reinforce = data[data["model"] == "pure Reinforce"]["pid_rewards"]
-    pure_lvoc = data[data["model"] == "pure LVOC"]["pid_rewards"]
-    hybrid_reinforce = data[data["model"] == "hybrid Reinforce"]["pid_rewards"]
-    hybrid_lvoc = data[data["model"] == "hybrid LVOC"]["pid_rewards"]
-    # from scipy import stats
-    # res = stats.kruskal(q, x, y, z, a)
-    # print(res)
+    # group the MB models and MF models together
+    data["model"] = data["model"].apply(lambda x: "MB" if "MB" in x else x)
+    data["model"] = data["model"].apply(lambda x: "MF" if "Reinforce" in x else x)
+    data["model"] = data["model"].apply(lambda x: "MF" if "LVOC" in x else x)
+    # data["model"] = data["model"].apply(lambda x: "Hybrid" if "hybrid" in x else x)
 
-    # combine the pure_reinforce and pure_lvoc
-    pure_models = np.concatenate((pure_reinforce, pure_lvoc))
-    hybrid_models = np.concatenate((hybrid_reinforce, hybrid_lvoc))
-    reinforce_models = np.concatenate((pure_reinforce, hybrid_reinforce))
-    lvoc_models = np.concatenate((pure_lvoc, hybrid_lvoc))
+    # group by model and get the pid_rewards
+    grouped = data.groupby("model")["pid_rewards"].apply(list)
+    grouped = [item for sublist in grouped for item in sublist]
+    res = kruskal(*grouped)
+    print(f"Kruskal between all the models for {exp}: {res}")
 
-    from scipy import stats
-    res = stats.kruskal(pure_models, hybrid_models, habitual)
-    print("Kruskal pure, hybrid, habitual: ", res)
+    model_list = data["model"].unique()
+    for model in model_list:
+        model_data = data[data["model"] == model]["pid_rewards"]
+        for model2 in model_list:
+            if model == model2:
+                print(f"{model}: {np.mean(list(model_data))}")
+                continue
+            model2_data = data[data["model"] == model2]["pid_rewards"]
 
-    res = mannwhitneyu(pure_models, habitual, alternative="two-sided")
-    print("Pure models vs habitual: ", res)
-
-    res = mannwhitneyu(hybrid_models, habitual, alternative="two-sided")
-    print("Hybrid models vs habitual: ", res)
-
-    res = mannwhitneyu(hybrid_models, pure_models, alternative="two-sided")
-    print("Hybrid models vs pure model: ", res)
-
-    ## between reinforce, lvoc, habitual
-    res = stats.kruskal(reinforce_models, lvoc_models, habitual)
-    print("Kruskal between reinforce, lvoc, habitual: ", res)
-
-    res = mannwhitneyu(reinforce_models, habitual, alternative="two-sided")
-    print("Reinforce models vs habitual: ", res)
-
-    res = mannwhitneyu(lvoc_models, habitual, alternative="two-sided")
-    print("LVOC models vs habitual: ", res)
-
-    res = mannwhitneyu(reinforce_models, lvoc_models, alternative="two-sided")
-    print("Reinforce vs LVOC: ", res)
-
+            # res = mannwhitneyu(model_data, model2_data, alternative="two-sided")
+            res = mannwhitneyu([item for sublist in list(model_data) for item in sublist],
+                               [item for sublist in list(model2_data) for item in sublist],  alternative="two-sided")
+            print(f"Mann Whitney U {model}, {model2}: ", res)
     return None
 
 
@@ -285,72 +278,43 @@ def kruskal_clicks(exp, data):
     # get length of each list
     data['pid_clicks'] = data['pid_clicks'].apply(lambda x: [len(cell) - 1 for cell in x])
 
-    # for each pid_rewards, calculate the average of the last 60 trials
+    # for each pid_rewards, keep only the last 10 trials
     if exp == "strategy_discovery":
-        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: np.mean(x[-60:]))
+        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-60:])
     else:
-        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: np.mean(x[-10:]))
+        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-10:])
 
-    ## Kruskal-Wallis H-test
-    habitual = data[data["model"] == "Habitual"]["pid_clicks"]
-    pure_reinforce = data[data["model"] == "pure Reinforce"]["pid_clicks"]
-    pure_lvoc = data[data["model"] == "pure LVOC"]["pid_clicks"]
-    hybrid_reinforce = data[data["model"] == "hybrid Reinforce"]["pid_clicks"]
-    hybrid_lvoc = data[data["model"] == "hybrid LVOC"]["pid_clicks"]
-    # non_learning = data[data["model"] == "Non-learning"]["pid_clicks"]
+    # for each pid_rewards, calculate the average of the last 60 trials
+    # if exp == "strategy_discovery":
+    #     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: np.mean(x[-60:]))
+    # else:
+    #     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: np.mean(x[-10:]))
 
-    # combine the pure_reinforce and pure_lvoc
-    pure_models = np.concatenate((pure_reinforce, pure_lvoc))
-    hybrid_models = np.concatenate((hybrid_reinforce, hybrid_lvoc))
-    reinforce_models = np.concatenate((pure_reinforce, hybrid_reinforce))
-    lvoc_models = np.concatenate((pure_lvoc, hybrid_lvoc))
+    # group the MB models and MF models together
+    data["model"] = data["model"].apply(lambda x: "MB" if "MB" in x else x)
+    data["model"] = data["model"].apply(lambda x: "MF" if "Reinforce" in x else x)
+    data["model"] = data["model"].apply(lambda x: "MF" if "LVOC" in x else x)
 
-    from scipy import stats
-    res = stats.kruskal(pure_models, hybrid_models, habitual)
-    print("Kruskal pure, hybrid, habitual: ", res)
+    # group by model and get the pid_rewards
+    grouped = data.groupby("model")["pid_clicks"].apply(list)
+    # flatten the list
+    grouped = [item for sublist in grouped for item in sublist]
+    res = kruskal(*grouped)
+    print(f"Kruskal between all the models for {exp}: {res}")
 
-    res = mannwhitneyu(pure_models, habitual, alternative="two-sided")
-    print("Pure models vs habitual: ", res)
+    model_list = data["model"].unique()
+    for model in model_list:
+        model_data = data[data["model"] == model]["pid_clicks"]
+        for model2 in model_list:
+            if model == model2:
+                # calculate the average
+                print(f"{model}: {np.mean(list(model_data))}")
+                continue
+            model2_data = data[data["model"] == model2]["pid_clicks"]
 
-    res = mannwhitneyu(hybrid_models, habitual, alternative="two-sided")
-    print("Hybrid models vs habitual: ", res)
-
-    res = mannwhitneyu(hybrid_models, pure_models, alternative="two-sided")
-    print("Hybrid models vs pure model: ", res)
-
-    # res = mannwhitneyu(non_learning, pure_models, alternative="two-sided")
-    # print("Hybrid models vs pure model: ", res)
-
-    # res = mannwhitneyu(non_learning, hybrid_models, alternative="two-sided")
-    # print("Hybrid models vs pure model: ", res)
-
-    # res = mannwhitneyu(non_learning, habitual, alternative="two-sided")
-    # print("Hybrid models vs pure model: ", res)
-
-    ## between reinforce, lvoc, habitual
-    # res = stats.kruskal(reinforce_models, lvoc_models, habitual, non_learning)
-    res = stats.kruskal(reinforce_models, lvoc_models, habitual)
-    print("Kruskal between reinforce, lvoc, habitual: ", res)
-
-    res = mannwhitneyu(reinforce_models, habitual, alternative="two-sided")
-    print("Reinforce models vs habitual: ", res)
-
-    res = mannwhitneyu(lvoc_models, habitual, alternative="two-sided")
-    print("LVOC models vs habitual: ", res)
-
-    res = mannwhitneyu(reinforce_models, lvoc_models, alternative="two-sided")
-    print("Reinforce vs LVOC: ", res)
-
-    # res = mannwhitneyu(non_learning, lvoc_models, alternative="two-sided")
-    # print("Non_learning vs LVOC: ", res)
-
-    # res = mannwhitneyu(non_learning, reinforce_models, alternative="two-sided")
-    # print("Non_learning vs Reinforce: ", res)
-
-    # res = mannwhitneyu(non_learning, habitual, alternative="two-sided")
-    # print("Non_learning vs Habitual: ", res)
-
-    print("-------------------")
+            res = mannwhitneyu([item for sublist in list(model_data) for item in sublist],
+                               [item for sublist in list(model2_data) for item in sublist],  alternative="two-sided")
+            print(f"Mann Whitney U {model}, {model2}: ", res)
 
     return None
 
@@ -386,34 +350,13 @@ def linear_regression_clicks(data, exp):
     return None
 
 
-def assign_model_names(row):
-    if row['class'] == 'hybrid' and row['model_index'] == "491":
-        return 'hybrid Reinforce'
-    elif row['class'] == 'hybrid' and row['model_index'] == "479":
-        return 'hybrid LVOC'
-    elif row['class'] == 'pure' and row['model_index'] == "491":
-        return 'pure Reinforce'
-    elif row['class'] == 'pure' and row['model_index'] == "479":
-        return 'pure LVOC'
-    elif row['model_index'] == "1743":
-        return 'Habitual'
-    elif row['model_index'] == "1756":
-        return 'Non-learning'
-    elif row['model_index'] == "522":
-        return 'SSL'
-    elif row['model_index'] == "full":
-        return 'Model-based'
-    else:
-        raise ValueError("Model class combination not found")
-
-
 if __name__ == "__main__":
     experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    # experiment = ["c1.1"]
+    # experiment = ["high_variance_low_cost"]
     # df_all = []
     for exp in experiment:
         df_all = []
@@ -444,13 +387,14 @@ if __name__ == "__main__":
 
         res = group_pid_by_bic(result_df)  # get BIC for only selected models
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            # plot_pid_score_grouped_by_model(res, exp)
-            kruskal_rewards(exp, res)
+            plot_pid_score_grouped_by_model(res, exp)
+            # kruskal_rewards(exp, res)
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
-            # plot_pid_clicks_grouped_by_model(res, exp)
+            plot_pid_clicks_grouped_by_model(res, exp)
             # linear_regression_clicks(res, exp)
-            kruskal_clicks(exp, res)
+            # kruskal_rewards(exp, res)
+            # kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

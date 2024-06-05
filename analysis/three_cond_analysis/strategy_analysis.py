@@ -4,19 +4,21 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.stats import chisquare
 import statsmodels.api as sm
-from vars import clicking_pid
+from vars import clicking_pid, assign_model_names
 import pymannkendall as mk
 import ast
+import numpy as np
 
 
-def plot_strategy_proportions(data, model, mapping: dict):
+def plot_all_strategy_proportions(data, model, mapping: dict):
     df = data.replace(mapping)
-
+    # figure size
+    plt.figure(figsize=(8, 6))
     frequencies = pd.DataFrame(columns=["Adaptive", "Mod. adaptive", "Maladaptive"])
     for columns in df:
         frequencies = frequencies._append({'Adaptive': Counter(df[columns])["adaptive"] / len(df),
-                                          'Mod. adaptive': Counter(df[columns])["mod"] / len(df),
-                                          'Maladaptive': Counter(df[columns])["mal"] / len(df)}, ignore_index=True)
+                                           'Mod. adaptive': Counter(df[columns])["mod"] / len(df),
+                                           'Maladaptive': Counter(df[columns])["mal"] / len(df)}, ignore_index=True)
 
     # trend_test(frequencies)
     plt.plot(frequencies, label=["Adaptive", "Mod. adaptive", "Maladaptive"])
@@ -29,10 +31,10 @@ def plot_strategy_proportions(data, model, mapping: dict):
         plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
                          frequencies[column] + error_margin[column], alpha=0.2)
     plt.ylim(-0.1, 1)
-    plt.xlabel("Trials")
-    plt.ylabel("Proportion")
-    plt.title(f"Strategy proportions for {model}")
-    plt.legend()
+    plt.xlabel("Trials", fontsize=12)
+    plt.ylabel("Proportion", fontsize=12)
+    # plt.title(f"Strategy proportions for {model}")
+    plt.legend(fontsize=12)
     plt.savefig(f"plots/CM_all_strategies/{experiment}_{model}_cm.png")
     # plt.show()
     plt.close()
@@ -67,7 +69,7 @@ def clustering_kmeans(strategy_scores):
     return strategy_scores
 
 
-def clustering_participants(strategies, experiment):
+def classify_strategies(strategies, experiment):
     # clustering of all available strategies, not only used ones
 
     if experiment == "v1.0":
@@ -79,19 +81,18 @@ def clustering_participants(strategies, experiment):
             "mod": [74, 66, 22, 28, 70, 53, 30, 23, 39]}
     elif experiment == "c2.1":
         mapping_dict = {
-            "adaptive": [70, 23, 69, 65, 32, 33, 81, 37, 25, 79, 53, 22, 34, 31, 47, 64, 49, 80, 63, 48, 62, 84, 13, 54,
-                         10, 11, 14, 71, 3, 82, 36, 1, 5, 2, 7, 15, 6, 72, 12, 8, 9, 4, 46, 45, 60],
-            "mal": [75, 68, 19, 20, 18, 17, 28, 61, 35, 44, 59],
-            "mod": [74, 66, 78, 21, 86, 26, 89, 27, 73, 52, 77, 30, 56, 55, 67, 58, 88, 87, 85, 41, 57, 16, 29, 38, 76,
-                    50, 24, 40, 51, 43, 42, 83, 39]}
+            "adaptive": [70, 23, 69, 65, 32, 33, 81, 37, 25, 79, 53, 22, 34, 31, 47, 64, 49, 80, 63, 48, 62, 84, 13, 54, 10, 11, 14, 71, 3, 82, 36, 1, 5, 2, 7, 15, 6, 72, 12, 8, 9, 4, 46, 45, 60],
+            "mal": [74, 66, 78, 21, 86, 26, 89, 27, 73, 52, 77, 30, 56, 55, 67, 58, 88, 87, 85, 41, 57, 16, 29, 38, 76, 50, 24, 40, 51, 43, 42, 83, 39],
+            "mod": [75, 68, 19, 20, 18, 17, 28, 61, 35, 44, 59]}
     elif experiment == "c1.1":
         mapping_dict = {
-            "mod": [19, 17, 18, 20, 68, 67, 75, 55, 56, 70, 22, 43, 58, 76, 53, 87, 62, 85, 48, 73, 61, 44, 60, 41,
-                         31, 23, 89, 74, 7, 6, 11, 12, 72, 10, 14, 36, 9, 71, 2, 1, 13, 3, 5, 8, 15, 46, 4, 54, 42, 24,
-                         27, 28, 66, 30],
-            "mal": [39],
-            "adaptive": [65, 33, 81, 34, 21, 69, 64, 63, 25, 32, 88, 79, 16, 37, 29, 86, 26, 49, 83, 80, 51, 38, 50, 35, 52,
-                    77, 78, 40, 84, 47, 57, 59, 82, 45]}
+            "adaptive": [65, 33, 81, 34, 21, 69, 64, 63, 25, 32, 88, 79, 16, 37, 29, 86, 26, 49, 83, 80, 51, 38, 50, 35,
+                         52, 77, 78, 40, 84, 47, 57, 59, 82, 45],
+            "mod": [19, 17, 18, 20, 68, 67, 75, 55, 56, 70, 22, 43, 58, 76, 53, 87, 62, 85, 48, 73, 61, 44, 60, 41, 31,
+                    23, 89, 74, 7, 6, 11, 12, 72, 10, 14, 36, 9, 71, 2, 1, 13, 3, 5, 8, 15, 46, 4, 54, 42, 24, 27, 28,
+                    66, 30],
+            "mal": [39]}
+
 
     # Iterate over each key-value pair in the mapping dictionary
     for replacement, values in mapping_dict.items():
@@ -155,6 +156,146 @@ def trend_test(data):
     return None
 
 
+def plot_adaptive_proportion(data, experiment, pid_mapping):
+    data['model'] = data.apply(assign_model_names, axis=1)
+    data = data[["model", "model_strategies", "pid_strategies"]]
+
+    data['model_strategies'] = data['model_strategies'].apply(ast.literal_eval)
+    data['pid_strategies'] = data['pid_strategies'].apply(ast.literal_eval)
+
+    plt.figure(figsize=(8, 6))
+    x = np.arange(0, 35)
+
+    for model_name in ["Non-learning", "SSL", "Habitual"]:
+        data_filtered = data[data["model"] == model_name]
+        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+        ##clustering based on clusters used for participants
+        data_temp = classify_strategies(data_temp, experiment)
+
+        # for each column count how often "adaptive" appears divided by total length of the column
+        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+        plt.plot(x, adaptive_proportion, label=model_name)
+
+        result = mk.original_test(adaptive_proportion)
+        # print(f"{model_name}:", adaptive_proportion)
+        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+
+    ### PID data
+    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(adaptive_proportion_pid, axis=0)
+    n = len(adaptive_proportion_pid)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, len(adaptive_proportion_pid))
+
+    # plot model_mer and pid_mer
+    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+                     alpha=0.1,
+                     label='95% CI')
+
+    plt.xlabel("Trial", fontsize=12)
+    plt.ylim(0, 1)
+    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+    plt.legend(fontsize=12, ncol=2)
+    plt.savefig(f"plots/{experiment}/alternatives_proportions.png")
+    # plt.show()
+    plt.close()
+
+    plt.figure(figsize=(8, 6))
+
+    for model_name in ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]:
+        data_filtered = data[data["model"] == model_name]
+        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+        ##clustering based on clusters used for participants
+        data_temp = classify_strategies(data_temp, experiment)
+
+        # for each column count how often "adaptive" appears divided by total length of the column
+        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+        plt.plot(x, adaptive_proportion, label=model_name)
+
+        result = mk.original_test(adaptive_proportion)
+        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+
+    ### PID data
+    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(adaptive_proportion_pid, axis=0)
+    n = len(adaptive_proportion_pid)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, len(adaptive_proportion_pid))
+
+    # plot model_mer and pid_mer
+    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+                     alpha=0.1,
+                     label='95% CI')
+
+    plt.xlabel("Trial", fontsize=12)
+    plt.ylim(0, 1)
+    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+    plt.legend(fontsize=12, ncol=2)
+    plt.savefig(f"plots/{experiment}/MF_proportions.png")
+    # plt.show()
+    plt.close()
+
+    plt.figure(figsize=(8, 6))
+    #
+    for model_name in ["MB - No assump., grouped", "MB - No assump., ind.",
+                       "MB - Uniform, ind.", "MB - Uniform, grouped",
+                       "MB - Level, grouped", "MB - Level, ind."]:
+        data_filtered = data[data["model"] == model_name]
+        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+        ##clustering based on clusters used for participants
+        data_temp = classify_strategies(data_temp, experiment)
+
+        # for each column count how often "adaptive" appears divided by total length of the column
+        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+        plt.plot(x, adaptive_proportion, label=model_name)
+
+        result = mk.original_test(adaptive_proportion)
+        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+
+        ### PID data
+
+
+    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+
+    # Calculate mean and standard error for each data point
+    std_dev = np.std(adaptive_proportion_pid, axis=0)
+    n = len(adaptive_proportion_pid)
+    std_err = std_dev / np.sqrt(n)
+
+    # Calculate the confidence interval
+    conf_interval = 1.96 * std_err
+
+    x = np.arange(0, len(adaptive_proportion_pid))
+
+    # plot model_mer and pid_mer
+    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+                     alpha=0.1,
+                     label='95% CI')
+
+    plt.xlabel("Trial", fontsize=12)
+    plt.ylim(0, 1)
+    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+    plt.legend(fontsize=12, ncol=2)
+    plt.savefig(f"plots/{experiment}/MB_proportions.png")
+    # plt.show()
+    plt.close()
+
+
 if __name__ == "__main__":
     experiments = ["v1.0", "c2.1", "c1.1"]
     # experiments = ["c2.1"]
@@ -170,59 +311,40 @@ if __name__ == "__main__":
         # # filter for clicking participants
         participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
+
         # ## get only used strategies
         # unique_used_strategies = pd.unique(participants_df.values.flatten())
-        #
+
         # ##plot strategy proportions for participants
         # # k means based on used strategy scores
         # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
         # # strategy_labels = clustering_kmeans(used_strategy_score)
         # # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
         #
+
         # ### clustering by using all strategies
-        mapping = clustering_participants(participants_df, experiment)
+        pid_mapping = classify_strategies(participants_df, experiment)
         # plot_strategy_proportions(participants_df, "pid", mapping)
 
-       #  ## load CM model data
-       #  model_data = pd.read_csv(f"../../final_results/model_cm/{experiment}.csv")
-       # ## filter for clicking participants
-       #  model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
-       #
-       #  ##get list of unique models
-       #  unique_models = pd.unique(model_data["model"])
-       #
-       #  for model in unique_models:
-       #      ##model = "hybrid LVOC"
-       #      filtered_model_data = model_data[model_data["model"] == model]
-       #      filtered_model_data['model_strategies'] = filtered_model_data['model_strategies'].apply(ast.literal_eval)
-       #
-       #      filtered_model_data = pd.DataFrame(filtered_model_data['model_strategies'].tolist(),
-       #                                         columns=[f'{i + 1}' for i in range(35)])
-       #
-       #      unique_used_strategies = pd.unique(filtered_model_data.values.flatten())
-       #
-       #      ##clustering based on clusters used for participants
-       #      mapping = clustering_participants(filtered_model_data, experiment)
-       #
-       #      # k means based on used strategy scores
-       #      # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
-       #      # strategy_labels = clustering_kmeans(used_strategy_score)
-       #      # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-       #
-       #      # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
-       #      plot_strategy_proportions(filtered_model_data, model, mapping)
+        #  ## load CM model data
+        model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
+        # filter for clicking participants
+        model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+
+        # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+        plot_adaptive_proportion(model_data, experiment, pid_mapping)
 
         ### reshape df for logisitic regression
-        df = participants_df.transpose()
-        df = pd.melt(df)
-        df.columns = ["pid", "strategy"]
-        df["trial"] = df.groupby("pid").cumcount() + 1
-        df["condition"] = experiment
-
-        logistic_regression(df, mapping)
-
-        all_pid = all_pid._append(df)
-        mapping_dict[experiment] = mapping
+        # df = participants_df.transpose()
+        # df = pd.melt(df)
+        # df.columns = ["pid", "strategy"]
+        # df["trial"] = df.groupby("pid").cumcount() + 1
+        # df["condition"] = experiment
+        #
+        # logistic_regression(df, mapping)
+        #
+        # all_pid = all_pid._append(df)
+        # mapping_dict[experiment] = mapping
 
     # logistic_regression(all_pid, mapping_dict)
     #
