@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import random
 import numpy as np
+from collections import OrderedDict
 
 from mcl_toolbox.models.reinforce_models import REINFORCE
 from mcl_toolbox.env.conditional_mouselab import ConditionalMouselabEnv
@@ -105,7 +106,8 @@ def create_attributes(model_index):
     model_attributes_dict["strategy_space"] = strategies.strategy_spaces["microscope"]
 
     if type == "hybrid":
-        model_attributes_dict["features"] = features.implemented
+        # model_attributes_dict["features"] = features.implemented
+        model_attributes_dict["features"] = features.strategy_discovery
     else:
         model_attributes_dict["features"] = features.model_free_habitual
 
@@ -113,34 +115,68 @@ def create_attributes(model_index):
 
 
 def load_attributes(parameters, condition, model_index, pid):
-    data = pd.read_pickle(f"../results_sd_test2/mcrl/{condition}_priors/{pid}_likelihood_{model_index}.pkl")
+    data = pd.read_pickle(f"../results_sd_test16/mcrl/{condition}_priors/{pid}_likelihood_{model_index}.pkl")
+    prior_list = pd.read_pickle(f"data/strategy_discovery_features.pkl")
 
-    # get all prior_x in a list
-    # todo: do the prior need to be sorted like 1, 2, 3 or rather like 1, 11, 12, ... 2, 21, 22, ...
-    sorted_prior_keys = sorted([key for key in data[0][0].keys() if key.startswith('prior')],
-                               key=lambda x: int(x.split('_')[1]))
+    # get all the key, value pair from dictionary that start with "prior"
+    priors = {k: v for k, v in data[0][0].items() if k.startswith('prior')}
 
-    # Getting the values in the sorted order of keys
-    sorted_prior_values = [data[0][0][key] for key in sorted_prior_keys]
+    new_priors = OrderedDict()
 
-    # parameters["priors"] = sorted_prior_values
+    for name in prior_list:
+        # Create the corresponding key with 'prior_' prefix
+        prior_key = f'prior_{name}'
+        if prior_key in priors:
+            new_priors[name] = priors[prior_key]
 
-    # create lsit with zeros and 1 at position 12
-    prior_list = [1] * 56
-    # prior_list = [random.randint(-5000, 5000) / 1000 for _ in range(56)]
-    prior_list[28] = 99999 # is_leaf_and_positive_ancestor, in pkl: 'is_pos_ancestor_leaf' feature 28, starting 0
-    parameters["priors"] = prior_list
+    # replace all priors with 0
+    for key in new_priors.keys():
+        new_priors[key] = 0
 
-    parameters["gamma"] = data[0][0]["gamma"]
-    parameters["inverse_temperature"] = data[0][0]["inverse_temperature"]
-    parameters["lr"] = data[0][0]["lr"]
+    # replace selected priors
+    # new_priors["prior_is_pos_ancestor_leaf"] = 1
+    # # new_priors["prior_all_roots_observed"] = 10
+    # new_priors["prior_is_leaf"] = 1
+    # new_priors["prior_is_positive_observed"] = 1
+    # # # new_priors["prior_is_previous_successor_negative"] = 1
+    # new_priors["prior_parent_observed"] = 1
+    # new_priors["prior_parent_value"] = 1
+
+    # todo: why do those values need to be negated to be effective?
+    # need to tell the model what to do before this termination condition is met
+    # need to make it favour first level list
+    new_priors["first_level"] = 100
+    # new_priors["avoid_second_level"] = 100
+    new_priors["third_level"] = 5
+    new_priors["is_pos_ancestor_leaf"] = 100
+    new_priors["termination_after_observing_positive_inner_and_one_outer"] = 1000
+    # new_priors["num_clicks_adaptive"] = -100
+    # new_priors["ancestor_count"] = 10
+
+
+
+    # parameters["gamma"] = data[0][0]["gamma"]
+    # parameters["inverse_temperature"] = data[0][0]["inverse_temperature"]
+    # parameters["lr"] = data[0][0]["lr"]
+    parameters["gamma"] = np.log(1)  # irrelevant if learning rate is 0
+    parameters["inverse_temperature"] = np.log(
+        1)  # the higher, the random, so the inverse, the higher the more deterministic
+    parameters["lr"] = 0  # set to 0
 
     # if model is HR, SC, TD
-    parameters["pr_weight"] = data[0][0]["pr_weight"]
-    parameters["tau"] = data[0][0]["tau"]
-    parameters["a"] = data[0][0]["a"]
-    parameters["b"] = data[0][0]["b"]
-    parameters["subjective_cost"] = data[0][0]["subjective_cost"]
+    # parameters["pr_weight"] = data[0][0]["pr_weight"]
+    # parameters["tau"] = data[0][0]["tau"]
+    # parameters["a"] = data[0][0]["a"]
+    # parameters["b"] = data[0][0]["b"]
+    # parameters["subjective_cost"] = data[0][0]["subjective_cost"]
+
+    # create a list with 0 anywhere but 100 on position 49
+    # ls = [0] * 64
+    # ls[60] = 100
+    # parameters["priors"] = ls
+
+    parameters["priors"] = list(new_priors.values())
+
     return parameters
 
 
@@ -148,8 +184,8 @@ if __name__ == "__main__":
     condition = "strategy_discovery"
     model_index = 491
     type = "hybrid"
-    num_trials = 1000
-    load_attribute = False
+    num_trials = 10
+    load_attribute = True
     if load_attribute:
         pid = 172
 
@@ -191,10 +227,12 @@ if __name__ == "__main__":
 
         # todo: somehow the weights keep changing at the first trial
         reward = simulation_data["r"]
-        # print(simulation_data["a"])
+        print(simulation_data["a"])
+        print(reward)
+
         # print("weights", agent.get_current_weights())
-        plot_score(simulation_data)
-        plot_clicks(simulation_data)
+        # plot_score(simulation_data)
+        # plot_clicks(simulation_data)
         # if all(value in [13, 14, 15] for sublist in reward for value in sublist):
         #     print("Model is successful. Reward: ", np.mean(reward))
         #     print("Parameters: ", parameters)

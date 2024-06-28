@@ -31,12 +31,17 @@ class Policy(nn.Module):
     def forward(self, x, term_reward=None, termination=True):
         # x has size 13 x 1 x 51 with values between 0 and 1
         # y has size 13 x 1 x 1 with values -inf to + inf
+
+        # add assertion check to see if x has nan values
+        assert not torch.isnan(x).any(), f"feature matrix has nan values {x}"
+        assert not torch.isinf(x).any(), f"feature matrix has inf values {x}"
+
         y = self.weighted_preference(x)
         if term_reward:
             y[0][0] = torch.Tensor([term_reward])
         if not termination:
             y[0][0] = torch.Tensor([-np.inf])
-        action_scores = self.beta * y
+        action_scores = self.beta * y #beta should be high to be deterministic
 
         softmax_vals = F.log_softmax(action_scores, dim=0)
         # softmax_vals is tensor with length 13
@@ -76,6 +81,7 @@ class REINFORCE(Learner):
         self.gamma = np.exp(params["gamma"])
         self.beta = np.exp(params["inverse_temperature"])
         self.init_weights = np.array(params["priors"])
+        # self.init_weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1000, 100, 0, 5, 0, 0, 0])
         self.num_actions = attributes["num_actions"]
         self.no_term = attributes["no_term"]
         self.termination_value_known = attributes["termination_value_known"]
@@ -85,6 +91,7 @@ class REINFORCE(Learner):
         self.action_log_probs = []
         self.term_rewards = []
         self.pseudo_rewards = []
+
 
     def init_model_params(self):
         # Initializing the parameters with people's priors.
@@ -112,6 +119,10 @@ class REINFORCE(Learner):
         else:
             # calls the forward method in Policy class
             probs = self.policy(X_new, termination=not self.no_term)
+        assert not torch.isnan(
+            probs).any(), f"get_action_probs: feature matrix has nan values {probs}"
+        assert not torch.isinf(
+            probs).any(), f"get_action_probs: feature matrix has inf values {probs}"
 
         complete_probs = torch.zeros(self.num_actions)
         for index, action in enumerate(available_actions):
@@ -125,6 +136,8 @@ class REINFORCE(Learner):
             env {Gym env} -- Representation of the environment.
         """
         complete_probs, _ = self.get_action_probs(env)
+        assert not torch.isnan(complete_probs).any(), f"get_action_details: feature matrix has nan values {complete_probs}"
+        assert not torch.isinf(complete_probs).any(), f"get_action_details: feature matrix has inf values {complete_probs}"
         m = Categorical(complete_probs)
         return m
 

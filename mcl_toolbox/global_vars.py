@@ -81,7 +81,8 @@ class structure:
         "mf": [3, 1, 2],
         "stroop": [3, 1, 2],
     }
-    strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
+    # strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
+    strategy_discovery = [[0], [-1, 1], [-5], [-5, -50, 50]]
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     # level_values_decreasing = [
     #     [0],
@@ -327,11 +328,18 @@ class strategies:
 
 
 class features:
-    microscope = pickle_load(file_location.joinpath("data/microscope_features.pkl"))  # this is 51 features
-    implemented = pickle_load(file_location.joinpath("data/implemented_features.pkl"))  # this is 56 features
-    non_learning = pickle_load(file_location.joinpath("data/non_learning_features.pkl")) # 50 features
-    model_free_habitual = pickle_load(file_location.joinpath("data/model_free_features.pkl")) # without MB features
+    hybrid_ssl_features = pickle_load(file_location.joinpath("data/hybrid_ssl_features.pkl"))  # 56 features
+    model_free_habitual_features = pickle_load(
+        file_location.joinpath("data/model_free_habitual_features.pkl"))  # 51 features
+    non_learning_features = pickle_load(file_location.joinpath("data/non_learning_features.pkl"))  # 46 features
 
+    # strategy discovery has 7 additional features
+    sd_hybrid_ssl_features = pickle_load(
+        file_location.joinpath("data/strategy_discovery_features_hybrid_ssl.pkl"))  # 63 features
+    sd_model_free_habitual_features = pickle_load(
+        file_location.joinpath("data/strategy_discovery_features_mf_habitual.pkl"))  # 58 features
+    sd_non_learning_features = pickle_load(
+        file_location.joinpath("data/strategy_discovery_features_non_learning.pkl"))  # 53 features
 
 
 class hierarchical_params:
@@ -340,6 +348,7 @@ class hierarchical_params:
 
 class plotting:
     sns.set_style("whitegrid")
+
 
 def assign_model_names(row):
     if row['class'] == 'hybrid' and row['model_index'] == "491":

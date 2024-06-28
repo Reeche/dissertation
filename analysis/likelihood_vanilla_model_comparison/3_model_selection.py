@@ -249,8 +249,9 @@ def kruskal_rewards(exp, data):
 
     # group by model and get the pid_rewards
     grouped = data.groupby("model")["pid_rewards"].apply(list)
-    grouped = [item for sublist in grouped for item in sublist]
-    res = kruskal(*grouped)
+    res = kruskal([item for sublist in grouped[0] for item in sublist],
+                  [item for sublist in grouped[1] for item in sublist],
+                  [item for sublist in grouped[2] for item in sublist])
     print(f"Kruskal between all the models for {exp}: {res}")
 
     model_list = data["model"].unique()
@@ -298,8 +299,9 @@ def kruskal_clicks(exp, data):
     # group by model and get the pid_rewards
     grouped = data.groupby("model")["pid_clicks"].apply(list)
     # flatten the list
-    grouped = [item for sublist in grouped for item in sublist]
-    res = kruskal(*grouped)
+    res = kruskal([item for sublist in grouped[0] for item in sublist],
+                  [item for sublist in grouped[1] for item in sublist],
+                  [item for sublist in grouped[2] for item in sublist])
     print(f"Kruskal between all the models for {exp}: {res}")
 
     model_list = data["model"].unique()
@@ -387,14 +389,14 @@ if __name__ == "__main__":
 
         res = group_pid_by_bic(result_df)  # get BIC for only selected models
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            plot_pid_score_grouped_by_model(res, exp)
-            # kruskal_rewards(exp, res)
+            # plot_pid_score_grouped_by_model(res, exp)
+            kruskal_rewards(exp, res)
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
-            plot_pid_clicks_grouped_by_model(res, exp)
+            # plot_pid_clicks_grouped_by_model(res, exp)
             # linear_regression_clicks(res, exp)
             # kruskal_rewards(exp, res)
-            # kruskal_clicks(exp, res)
+            kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

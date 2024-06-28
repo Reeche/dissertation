@@ -26,13 +26,17 @@ SSL: MF + MB + habitual features
 Non-learning: MF + MB (without trial std that carries information from previous trials)
 """
 
-all_features = features.implemented
-non_habitual_features = features.microscope #contains both model free and model based features
-non_learning_features = features.non_learning # no habitual but has model free and model based features
-model_free_habitual_features = features.model_free_habitual # model free and habitual features
+hybrid_ssl_features = features.hybrid_ssl_features
+model_free_habitual_features = features.model_free_habitual_features
+non_learning_features = features.non_learning_features
+
+# strategy discovery has 7 additional features
+sd_hybrid_ssl_features = features.sd_hybrid_ssl_features
+sd_model_free_habitual_features = features.sd_model_free_habitual_features
+sd_non_learning_features = features.sd_non_learning_features
+
 model_attributes = model.model_attributes
 strategy_spaces = strategies.strategy_spaces
-
 
 def get_strategy_probs(env, participant, features, normalized_features, w):
     strategy_probs = {}
@@ -187,7 +191,7 @@ class ModelFitter:
         return participant, env
 
 
-    def construct_model(self, model_index):
+    def construct_model(self, model_index, hybrid: bool):
         """
         1. Get model attributes from the rl_models.csv
         2. Attach selected features (if habitual, then full set of features (implemented_features.pkl; if not habitual,
@@ -213,16 +217,24 @@ class ModelFitter:
             strategy_space_type if strategy_space_type else "microscope"
         )
         strategy_space = strategy_spaces[strategy_space_type]
-        if learner_attributes["is_null"]:
-            feature_space = non_learning_features # for non learning model
-            if learner_attributes["habitual_features"] == "habitual":
-                feature_space = model_free_habitual_features #for habitual model
+        if self.exp_name == "strategy_discovery":
+            if hybrid:
+                feature_space = sd_hybrid_ssl_features # hybrid, SSL
+            else:
+                feature_space = sd_model_free_habitual_features # model-free model
+            if learner_attributes["is_null"] and learner_attributes["habitual_features"] == "habitual":
+                feature_space = sd_model_free_habitual_features # habitual model
+            if learner_attributes["is_null"]:
+                feature_space = sd_non_learning_features # non learning model
         else:
-            if learner_attributes["habitual_features"] == "habitual":
-                feature_space = model_free_habitual_features #for pure reinforce/LVOC
-            # else: # for the model not using habitual features
-            #     feature_space = non_habitual_features # MF + MB features (no habitual)
-        feature_space = all_features # for hybrid models
+            if hybrid:
+                feature_space = hybrid_ssl_features # hybrid, SSL
+            else:
+                feature_space = model_free_habitual_features # model-free model
+            if learner_attributes["is_null"] and learner_attributes["habitual_features"] == "habitual":
+                feature_space = model_free_habitual_features # habitual model
+            if learner_attributes["is_null"]:
+                feature_space = non_learning_features # non learning model
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:
@@ -242,9 +254,9 @@ class ModelFitter:
         del learner_attributes["term"]  # todo: why is term deleted?
         return learner, learner_attributes
 
-    def construct_optimizer(self, model_index, pid, optimization_criterion):
+    def construct_optimizer(self, model_index, pid, optimization_criterion, hybrid):
         # load experiment specific info
-        learner, learner_attributes = self.construct_model(model_index)
+        learner, learner_attributes = self.construct_model(model_index, hybrid)
         self.participant, self.env = self.get_participant_context(pid)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
@@ -265,13 +277,14 @@ class ModelFitter:
     def fit_model(
             self,
             model_index,
+            hybrid,
             pid,
             optimization_criterion,
             optimization_params,
             params_dir=None,
     ):
         self.model_index = model_index
-        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
+        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion, hybrid)
         res, prior, obj_fn = optimizer.optimize(
             optimization_criterion, **optimization_params
         )
@@ -290,6 +303,7 @@ class ModelFitter:
     def simulate_params(
             self,
             model_index,
+            hybrid,
             params,
             sim_params=None,
             env=None,
@@ -310,7 +324,7 @@ class ModelFitter:
             q_fn, participant = self.get_q_fn(participant)
             env = self.construct_env(participant, q_fn=q_fn)
         self.update_attributes(env)
-        learner, learner_attributes = self.construct_model(model_index)
+        learner, learner_attributes = self.construct_model(model_index, hybrid)
         optimizer = ParameterOptimizer(
             learner, learner_attributes, participant=participant, env=env
         )

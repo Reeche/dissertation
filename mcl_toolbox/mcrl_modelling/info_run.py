@@ -185,7 +185,7 @@ control_pids = [
 def main():
     exp_pipelines = pickle_load("../data/exp_pipelines.pkl")
     exp_reward_structures = pickle_load("../data/exp_reward_structures.pkl")
-    features = pickle_load("../data/implemented_features.pkl")
+    features = pickle_load("../data/hybrid_ssl_features.pkl")
 
     exp_num = sys.argv[1]
     normalized_features = get_normalized_features(exp_reward_structures[exp_num])

@@ -2,6 +2,7 @@ import json
 import os
 import logging
 from pathlib import Path
+from collections import OrderedDict
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 
@@ -135,15 +136,25 @@ def make_constant(constant_value):
     return {"type": "constant", "range": constant_value}
 
 
-def make_prior(param_dict, num_priors, bandit_prior=False):
+def make_prior(param_dict, num_priors, list_of_priors, bandit_prior=False):
     params_list = []
-    t = "prior"
+    # t = "prior"
     if bandit_prior:
-        t = "bandit_prior"
-    for i in range(num_priors):
-        params_list.append(param_info(param_dict, f"{t}_{i}"))
+        # t = "bandit_prior" #todo: double check this
+        prior_name = "bandit_prior"
+    for prior_name in list_of_priors:
+        params_list.append(param_info(param_dict, f"prior_{prior_name}"))
     return params_list
 
+# Yash old implementation
+# def make_prior(param_dict, num_priors, bandit_prior=False):
+#     params_list = []
+#     t = "prior"
+#     if bandit_prior:
+#         t = "bandit_prior"
+#     for i in range(num_priors):
+#         params_list.append(param_info(param_dict, f"{t}_{i}"))
+#     return params_list
 
 def parse_config(
     learner, learner_attributes, hierarchical=False, hybrid=False, general_params=False
@@ -189,8 +200,9 @@ def parse_config(
             if "prior" in learner_attributes:
                 prior = learner_attributes["prior"]
                 num_priors = learner_attributes["num_priors"]
+                list_of_priors = learner_attributes["features"]
                 param_dict = param_models[prior]
-                params_list += make_prior(param_dict, num_priors, False)
+                params_list += make_prior(param_dict, num_priors, list_of_priors, False)
                 if prior == "gaussian_prior":
                     param = "gaussian_var"
                     params_list.append(
@@ -277,11 +289,17 @@ def estimate_pyabc_posterior(
 
 
 def combine_priors(params, num_priors, prefix="prior"):
-    init_weights = np.zeros(num_priors)
-    for i in range(num_priors):
-        init_weights[i] = params[f"{prefix}_{i}"]
+    # get all the key, value pairs where key start with "prior" from params
+    priors = OrderedDict({k: v for k, v in params.items() if k.startswith(prefix)})
+    init_weights = np.array(list(priors.values()))
     return init_weights
 
+# Yash old code
+# def combine_priors(params, num_priors, prefix="prior"):
+#     init_weights = np.zeros(num_priors)
+#     for i in range(num_priors):
+#         init_weights[i] = params[f"{prefix}_{i}"]
+#     return init_weights
 
 class ParameterOptimizer:
     def __init__(self, learner, learner_attributes, participant, env):

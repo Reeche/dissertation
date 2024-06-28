@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 import ast
 import matplotlib.pyplot as plt
 import pymannkendall as mk
@@ -11,6 +12,7 @@ from collections import Counter
 from scipy.stats import chisquare, chi2_contingency
 import os
 from vars import clicking_pid, learning_pid
+
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects.numpy2ri
@@ -85,6 +87,23 @@ def create_click_df(data, experiment):
     return click_df
 
 
+def calculate_confidence_interval(mean, std_dev, sample_size):
+    # Z-score for 95% confidence level
+    Z = 1.96
+
+    # Standard error
+    standard_error = std_dev / math.sqrt(sample_size)
+
+    # Margin of error
+    margin_of_error = Z * standard_error
+
+    # Confidence interval
+    lower_bound = mean - margin_of_error
+    upper_bound = mean + margin_of_error
+
+    return lower_bound, upper_bound
+
+
 def plot_clicks(clicks_df):
 
     # pivot table by pid and trial with number of clicks as content
@@ -112,6 +131,7 @@ def plot_clicks(clicks_df):
     # plt.plot(average_clicks)
     # plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
     #                  alpha=.1)
+
     plt.ylim(top=13)
     plt.ylim(bottom=-1)
     plt.xlabel("Trial Number", size=15)
@@ -120,21 +140,24 @@ def plot_clicks(clicks_df):
     if experiment == "high_variance_low_cost":
         label = "HVLC"
         # plt.axhline(y=9.09, color='r', linestyle='-')
-        # plt.axhline(y=7.1, color='g', linestyle='-')
-        # plt.fill_between(range(0, len(average_clicks)), 9.09 - 2.26, 9.09 + 2.26, color="r", alpha=.1)
+        plt.axhline(y=7.1, color='r', linestyle='-')
+        # lower, upper = calculate_confidence_interval(7.1, 3.20, 100000)
+        # plt.fill_between(x, lower, upper, color="r", alpha=.1)
     elif experiment == "high_variance_high_cost":
         label = "HVHC"
         # plt.axhline(y=6.72, color='r', linestyle='-')
-        # plt.axhline(y=6.32, color='g', linestyle='-')
-        # plt.fill_between(range(0, len(average_clicks)), 6.72 - 2.90, 6.72 + 2.90, color="r", alpha=.1)
+        plt.axhline(y=6.32, color='r', linestyle='-')
+        # lower, upper = calculate_confidence_interval(6.32, 2.89, 100000)
+        # plt.fill_between(x, lower, upper, color="r", alpha=.1)
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
-        # plt.axhline(y=0, color='r', linestyle='-')  # it is actually 0 but needs to show on plot, therefore 0.01
+        plt.axhline(y=0, color='r', linestyle='-')
     else:
         label = "LVLC"
         # plt.axhline(y=3.96, color='r', linestyle='-')
-        # plt.axhline(y=5.82, color='g', linestyle='-')
-        # plt.fill_between(range(0, len(average_clicks)), 3.96 - 2.36, 3.96 + 2.36, color="r", alpha=.1)
+        plt.axhline(y=5.82, color='r', linestyle='-')
+        # lower, upper = calculate_confidence_interval(5.82, 3.40, 100000) #due to large sample size, the confidence interval is very small
+        # plt.fill_between(x, lower, upper, color="r", alpha=.1)
     plt.ylabel(f"Average number of clicks for {label}", fontsize=15)
     plt.savefig(f"plots/{experiment}_average_clicks.png")
     # plt.show()

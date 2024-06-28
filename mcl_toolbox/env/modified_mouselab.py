@@ -1,5 +1,5 @@
 import random
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from functools import lru_cache
 from statistics import mean
 from typing import List
@@ -7,20 +7,23 @@ from typing import List
 import numpy as np
 from toolz import get
 
-from mcl_toolbox.utils import distributions 
+from mcl_toolbox.utils import distributions
 from mcl_toolbox.utils.learning_utils import get_normalized_feature_values
 
 """ This file defines the node, trial and trial sequence class for the
     feature based representation of the Mouselab-MDP. This assumes that
     the environment structure is a tree symmetric in its branches
 """
-distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
+# distribution_by_level = {1: [-4, -2, 2, 4], 2: [-8, -4, 4, 8], 3: [-48, -24, 24, 48]}
+distribution_by_level = {1: [-1, 1], 2: [-5], 3: [-5, -50, 50]}  # todo: does this make sense for strategy discovery?
+
+
 # distribution_by_level = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
-decreasing_dist_by_level = {1: [-48, -24, 24, 48], 2: [-8, -4, 4, 8], 3: [-4, -2, 2, 4]}
+# decreasing_dist_by_level = {1: [-48, -24, 24, 48], 2: [-8, -4, 4, 8], 3: [-4, -2, 2, 4]}
 
-constant_list = [-10, -5, 5, 10]
+# constant_list = [-10, -5, 5, 10]
 
-constant_dist_by_level = {k: constant_list for k in range(5)}
+# constant_dist_by_level = {k: constant_list for k in range(5)}
 
 
 def key_with_max_val(best_map):
@@ -44,6 +47,8 @@ def reward_val(depth):
         return distributions.Categorical(distribution_by_level[depth])
     return 0.0
 
+
+# todo: does this make sense for strategy discovery?
 
 def constant_reward_val(depth):
     if depth > 0:
@@ -87,11 +92,13 @@ def approx_max(dist, position=0):
         else:
             return dist.mu + dist.sigma
     else:
-        if position == 0:
+        if position == 0:  # todo: position is always 0? check for non sd conditions
             return max(dist.vals)
         else:
-            # return sorted(dist.vals)[-(position + 1)] #todo: remove this for strategy discovery and SSL 527; not sure what it does or why the +1 is there
-            return sorted(dist.vals)[-(position)] #I guess this is for choosing the largest option by sorting and then the last one in the que
+            # return sorted(dist.vals)[-(position + 1)] #todo: I actually think this previous implementation is wrong as it chooses the second best one instead of the best one
+            # return sorted(dist.vals)[-(position)] #I guess this is for choosing the largest option by sorting and then the last one in the que
+            return sorted(dist.vals)[
+                -1]  # I guess this is for choosing the largest option by sorting and then the last one in the que
 
 
 def approx_min(dist, position=0):
@@ -115,7 +122,7 @@ def get_termination_mers(envs, trial_actions, pipeline):
 
 class TrialSequence:
     def __init__(
-        self, num_trials: int, pipeline: dict, ground_truth: List[List[float]] = None
+            self, num_trials: int, pipeline: dict, ground_truth: List[List[float]] = None
     ) -> None:
         self.num_trials = num_trials
         self.pipeline = pipeline
@@ -154,7 +161,7 @@ class TrialSequence:
                 init.append(reward_function(d))
                 children = []
                 tree.append(children)
-                for _ in range(get(d, branching, 0)): #get position d from list branching, if not found return 0
+                for _ in range(get(d, branching, 0)):  # get position d from list branching, if not found return 0
                     child_idx = expand(d + 1)
                     children.append(child_idx)
                 return my_idx
@@ -228,7 +235,7 @@ class TrialSequence:
 
 class Trial:
     def __init__(
-        self, ground_truth, structure_map, max_depth=None, reward_function=None
+            self, ground_truth, structure_map, max_depth=None, reward_function=None
     ):
         self.sequence = None
         self.construct_trial(ground_truth, structure_map)
@@ -249,7 +256,8 @@ class Trial:
         self.unobserved_nodes = list(self.node_map.values())
         self.num_nodes = len(self.node_map)
         self.max_values_by_depth = {
-            d: approx_max(self.reward_function(d)) for d in range(1, self.max_depth + 1)
+            # d: approx_max(self.reward_function(d)) for d in range(1, self.max_depth + 1)
+            d: approx_max(self.reward_function(d), position=d) for d in range(1, self.max_depth + 1)
         }
         self.min_values_by_depth = {
             d: approx_min(self.reward_function(d)) for d in range(1, self.max_depth + 1)
@@ -346,7 +354,8 @@ class Trial:
         num_features = len(features)
         feature_values = np.zeros((len(nodes), num_features))
         for i, node in enumerate(nodes):
-            feature_values[i] = node.compute_termination_feature_values(features)
+            # for each node, get feature_values as list
+            feature_values[i] = list(node.compute_termination_feature_values(features).values())
             if normalized_features:
                 feature_values[i] = get_normalized_feature_values(
                     feature_values[i], features, normalized_features
@@ -515,7 +524,7 @@ class Trial:
             path = self.branch_map[i]
             ev = 0
             for node_num in path:
-                node = self.node_map[node_num] #node object
+                node = self.node_map[node_num]  # node object
                 if node.observed:
                     ev += node.value
                 else:
@@ -610,12 +619,15 @@ class Trial:
                 return -1
         return 0
 
+    # negative value if it should not terminate and 0 if it should
+    # swapping signs is okay, the weights can be adjusted
+
     def termination_first_node(self):
         if self.previous_observed:
             return 0
         return -1
 
-    def termination_postive_root_leaves(self):
+    def termination_positive_root_leaves(self):
         root_nodes = self.level_map[1]
         pos_node_list = []
         for node in root_nodes:
@@ -725,6 +737,21 @@ class Trial:
             reward += self.node_map[node].value
         return taken_path, reward
 
+    def termination_after_observing_positive_inner_and_one_outer(self):
+        root_nodes = self.level_map[1]
+        leaf_nodes = self.level_map[self.max_depth]
+        observed_nodes = self.get_observed_nodes()
+
+        leaf_count = sum(1 for node in observed_nodes if node in leaf_nodes)
+        root_count = sum(1 for node in observed_nodes if node in root_nodes)
+
+        # make sure that there is only 1 leaf node observed and all other observed nodes are level 1 nodes
+        if leaf_count == 1 and root_count == len(observed_nodes) - 1:
+            # is the last observed node a leaf: is the order correct?
+            if observed_nodes[-1] in leaf_nodes:
+                return 1
+        return -1
+
 
 class Node:
     def __init__(self, trial):
@@ -736,7 +763,7 @@ class Node:
         self.depth = 0  # Will be initialized when a trial is created
         self.label = 0
         self.trial = trial
-        self.feature_function_map = {
+        self.feature_function_map = OrderedDict({
             "siblings_count": self.get_observed_siblings_count,
             "depth_count": self.get_observed_same_depth_count,
             "ancestor_count": self.get_observed_ancestor_count,
@@ -789,27 +816,63 @@ class Node:
             "value": self.get_value,
             "is_observed": self.is_observed,
             "return_if_terminating": self.max_expected_if_terminal,
-            "is_traversed": self.is_traversed,
-        }
+            "first_level": self.first_level,
+            "second_level": self.second_level,
+            "third_level": self.third_level,
+            "avoid_first_level": self.avoid_first_level,
+            "avoid_second_level": self.avoid_second_level,
+            "avoid_third_level": self.avoid_third_level,
+        })
 
-        self.termination_map = {
-            "is_max_path_observed": self.trial.termination_max_observed,
-            "are_max_paths_observed": self.trial.termination_max_paths_observed,
-            "is_previous_max": self.trial.termination_previous_max,
-            "is_positive_observed": self.trial.termination_positive,
-            "all_roots_observed": self.trial.termination_roots_observed,
-            "all_leaf_nodes_observed": self.trial.termination_leaves_observed,
-            "immediate_termination": self.trial.immediate_termination,
-            "positive_root_leaves_termination": self.trial.termination_postive_root_leaves,
-            "single_path_completion": self.trial.termination_single_path,
-            "first_observed": self.trial.termination_first_node,
-            "max_expected_return": self.calculate_max_expected_return,
-            "soft_satisficing": self.trial.soft_satisficing,
-            "constant": self.constant_feature,
-        }
+        self.termination_map = OrderedDict({
+            "is_max_path_observed": self.trial.termination_max_observed,  # is a feature
+            "are_max_paths_observed": self.trial.termination_max_paths_observed,  # is a feature
+            "is_previous_max": self.trial.termination_previous_max,  # is a feature
+            "is_positive_observed": self.trial.termination_positive,  # is a feature
+            "all_roots_observed": self.trial.termination_roots_observed,  # is a feature
+            "all_leaf_nodes_observed": self.trial.termination_leaves_observed,  # is a feature
+            "immediate_termination": self.trial.immediate_termination,  # NOT a feature
+            "positive_root_leaves_termination": self.trial.termination_positive_root_leaves,
+            "single_path_completion": self.trial.termination_single_path,  # is a feature
+            "first_observed": self.trial.termination_first_node,  # NOT a feature
+            "max_expected_return": self.calculate_max_expected_return,  # is a feature
+            "soft_satisficing": self.trial.soft_satisficing,  # is a feature
+            "constant": self.constant_feature,  # somehow there twice
+            "termination_after_observing_positive_inner_and_one_outer": self.trial.termination_after_observing_positive_inner_and_one_outer
+        })
+
+    def first_level(self):
+        if self.depth == 1:
+            return 1
+        return 0
+
+    def second_level(self):
+        if self.depth == 2:
+            return 1
+        return 0
+
+    def third_level(self):
+        if self.depth == 3:
+            return 1
+        return 0
+
+    def avoid_first_level(self):
+        if self.depth == 1:
+            return 0
+        return 1
+
+    def avoid_second_level(self):
+        if self.depth == 2:
+            return 0
+        return 1
+
+    def avoid_third_level(self):
+        if self.depth == 3:
+            return 0
+        return 1
 
     def is_traversed(self):
-        return None #todo: how to label as traversed?
+        return None  # todo: how to label as traversed?
 
     def observe(self):
         self.observed = True
@@ -1284,9 +1347,9 @@ class Node:
         evaluated_features = [1]
         for feature in features:
             if (
-                feature[:2] != "hp"
-                and feature[:2] != "hs"
-                and feature != "num_clicks_adaptive"
+                    feature[:2] != "hp"
+                    and feature[:2] != "hs"
+                    and feature != "num_clicks_adaptive"
             ):
                 evaluated_features.append(self.feature_function_map[feature]())
             elif feature[:2] == "hp":
@@ -1332,11 +1395,11 @@ class Node:
         for feature in features:
             # if feature is neither hard-pruned or satisficed and not one of these "special ones"
             if (
-                feature[:2] != "hp"
-                and feature[:2] != "hs"
-                and feature != "num_clicks_adaptive"
-                and feature != "soft_satisficing"
-                and feature not in features_regardless_terminal
+                    feature[:2] != "hp"
+                    and feature[:2] != "hs"
+                    and feature != "num_clicks_adaptive"
+                    and feature != "soft_satisficing"
+                    and feature not in features_regardless_terminal
             ):
                 # if we're not in a terminal state
                 if not (self == self.root):
@@ -1383,8 +1446,8 @@ class Node:
                             self.calculate_max_expected_return()
                             - adaptive_satisficing["a"]
                             + (
-                                adaptive_satisficing["b"]
-                                * self.feature_function_map[feature]()
+                                    adaptive_satisficing["b"]
+                                    * self.feature_function_map[feature]()
                             )
                         )
                         evaluated_features.append(-1 * as_value)
