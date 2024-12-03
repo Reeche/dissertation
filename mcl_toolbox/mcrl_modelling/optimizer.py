@@ -449,7 +449,8 @@ class ParameterOptimizer:
         data = self.objective_fn(params, get_sim_data=True)
         return data, p_data
 
-    def run_hp_model_nop(self, params, objective, num_simulations=1):
+    def run_hp_model_nop(self, params, objective, num_simulations=1, click_cost=1):
+        self.click_cost = click_cost
         self.objective = objective
         self.num_simulations = num_simulations
         # p_data = construct_p_data(self.participant, self.pipeline)

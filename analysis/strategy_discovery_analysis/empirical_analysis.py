@@ -8,7 +8,7 @@ import random
 import statsmodels.formula.api as smf
 import os
 import statsmodels.api as sm
-from vars import clicked_pid
+from vars import clicked_pid, assign_model_names
 
 
 ### create df
@@ -129,7 +129,7 @@ def plot_confidence_interval(actual_count, prop_counts, model, participant=None)
     plt.yticks(fontsize=12)
     plt.legend(fontsize=12, loc='lower right')
 
-    plt.savefig(f"plots/proportion.png")
+    # plt.savefig(f"plots/proportion.png")
     plt.show()
     plt.close()
 
@@ -190,6 +190,13 @@ def score_trend(click_df):
     click_df = click_df[['pid', 'trial', 'score']].copy()
     reshaped_score_df = click_df.pivot(index="trial", columns="pid", values="score")
     reshaped_score_df.columns = reshaped_score_df.columns.map(str)
+
+    ### mean trend
+    # calculate the mean score for each trial
+    mean_score = reshaped_score_df.mean(axis=1)
+    # mk test of trend
+    result = mk.original_test(mean_score)
+    print("Mean score", result)
 
     count = 0
     for pid in reshaped_score_df:
@@ -356,27 +363,6 @@ def infer_fitted_model_strategy_local_via_click_sequence(model):
     return data
 
 
-def assign_model_names(row):
-    if row['class'] == 'hybrid' and row['model_index'] == "491":
-        return 'hybrid Reinforce'
-    elif row['class'] == 'hybrid' and row['model_index'] == "479":
-        return 'hybrid LVOC'
-    elif row['class'] == 'pure' and row['model_index'] == "491":
-        return 'pure Reinforce'
-    elif row['class'] == 'pure' and row['model_index'] == "479":
-        return 'pure LVOC'
-    elif row['model_index'] == "1743":
-        return 'Habitual'
-    elif row['model_index'] == "1756":
-        return 'Non-learning'
-    elif row['model_index'] == "522":
-        return 'SSL'
-    elif row['model_index'] == "full":
-        return 'Model-based'
-    else:
-        raise ValueError("Model class combination not found")
-
-
 def infer_fitted_model_strategy_local_score():
     data = pd.read_csv(f"../../final_results/aggregated_data/strategy_discovery.csv")
     data['model'] = data.apply(assign_model_names, axis=1)
@@ -454,32 +440,89 @@ def plot_score(click_df):
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.legend(fontsize=12, loc='lower right')
-    plt.savefig("plots/score.png")
-    # plt.show()
+    # plt.savefig("plots/score.png")
+    plt.show()
     plt.close()
     return None
+
+
+def plot_combined(click_df, actual_count, prop_counts, model, participant=None):
+    # Plot the score development across trials on the primary y-axis
+    fig, ax1 = plt.subplots(figsize=(7, 5))
+
+    # Average score per trial
+    pid_average = click_df.groupby('trial')['score'].mean()
+    std_dev = np.std(click_df["score"], axis=0)
+    n = len(pid_average)
+    std_err = std_dev / np.sqrt(n)
+    conf_interval = 1.96 * std_err
+    x = click_df.groupby('trial')['score'].mean().index
+
+    ax1.set_xlabel('Trial', fontsize=14)
+    ax1.set_ylabel('Average Score', color='blue', fontsize=14)
+    ax1.plot(x, pid_average, label="Average Score", color='blue')
+    ax1.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # Plot the proportion of adaptive strategies on the secondary y-axis
+    ax2 = ax1.twinx()
+    ci = 1.96 * np.std(prop_counts) / np.sqrt(len(prop_counts))
+    x = np.arange(len(prop_counts))
+
+
+    ax2.set_ylabel('Proportion of adaptive strategies', color='green', fontsize=14)
+    ax2.plot(x, prop_counts, label="Proportion", color='green')
+    ax2.fill_between(x, prop_counts - ci, prop_counts + ci, color='green', alpha=0.3, label='95% CI')
+    ax2.tick_params(axis='y', labelcolor='green')
+    ax2.set_ylim(-0.01, 0.5)
+
+    # If participant data is provided, plot it as well; might not need but kept it nonetheless (chatgpt wrote this)
+    # if participant:
+    #     ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
+    #     ax2.plot(x, participant[1]["optimal_strategy"], label='Participant', color='green')
+    #     ax2.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid,
+    #                      color='green', alpha=0.3, label='95% CI')
+
+    # Legends and title
+    fig.tight_layout()
+
+    # legend for ax1 and ax2 in the same box
+    # Get handles and labels from each axis
+    handles1, labels1 = ax1.get_legend_handles_labels()
+    handles2, labels2 = ax2.get_legend_handles_labels()
+
+    # Combine the handles and labels
+    handles = handles1 + handles2
+    labels = labels1 + labels2
+
+    # Place a combined legend on ax1 (or fig if you want it outside the axes)
+    ax1.legend(handles, labels, loc='lower right', fontsize=14)
+
+    plt.savefig(f"plots/cogsci2025/score_proportion.png")
+    plt.show()
+    plt.close()
 
 if __name__ == "__main__":
     data = pd.read_csv(f"../../data/human/strategy_discovery/mouselab-mdp.csv")
 
     # pid_with_adaptive_strategy_in_last_trials = pid_with_adaptive_strategy(data)
 
-    # pid_list, click_df = create_df(data)
-
-    # clicked_pid = clicking_pid(click_df)
+    pid_list, click_df = create_df(data)
 
     ## filter for clicked_pid
-    # click_df = click_df[click_df["pid"].isin(clicked_pid)]
+    click_df = click_df[click_df["pid"].isin(clicked_pid)]
 
     ### analysis
     # linear_regression(click_df)
     # logistic_regression(click_df)
     # score_trend(click_df)
 
-    # count_prop = classify_via_score(click_df)
+    count_prop = classify_via_score(click_df)
 
     # plot_score(click_df)
     # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
+    plot_combined(click_df, count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant", count_prop)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend(count_prop)
@@ -488,4 +531,4 @@ if __name__ == "__main__":
 
     ### classify model strategy
     # test = infer_fitted_model_strategy_local_via_click_sequence()
-    infer_fitted_model_strategy_local_score()
+    # infer_fitted_model_strategy_local_score()

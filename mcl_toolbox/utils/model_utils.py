@@ -191,7 +191,7 @@ class ModelFitter:
         return participant, env
 
 
-    def construct_model(self, model_index, hybrid: bool):
+    def construct_model(self, model_index):
         """
         1. Get model attributes from the rl_models.csv
         2. Attach selected features (if habitual, then full set of features (implemented_features.pkl; if not habitual,
@@ -218,23 +218,23 @@ class ModelFitter:
         )
         strategy_space = strategy_spaces[strategy_space_type]
         if self.exp_name == "strategy_discovery":
-            if hybrid:
+            if learner_attributes["hybrid"]:
                 feature_space = sd_hybrid_ssl_features # hybrid, SSL
             else:
                 feature_space = sd_model_free_habitual_features # model-free model
-            if learner_attributes["is_null"] and learner_attributes["habitual_features"] == "habitual":
-                feature_space = sd_model_free_habitual_features # habitual model
             if learner_attributes["is_null"]:
                 feature_space = sd_non_learning_features # non learning model
+                if learner_attributes["habitual_features"] == "habitual":
+                    feature_space = sd_model_free_habitual_features # habitual model
         else:
-            if hybrid:
+            if learner_attributes["hybrid"]:
                 feature_space = hybrid_ssl_features # hybrid, SSL
             else:
                 feature_space = model_free_habitual_features # model-free model
-            if learner_attributes["is_null"] and learner_attributes["habitual_features"] == "habitual":
-                feature_space = model_free_habitual_features # habitual model
             if learner_attributes["is_null"]:
                 feature_space = non_learning_features # non learning model
+                if learner_attributes["habitual_features"] == "habitual":
+                    feature_space = model_free_habitual_features # habitual model
         if learner == "rssl":
             num_priors = 2 * len(strategy_space)
         else:
@@ -254,9 +254,9 @@ class ModelFitter:
         del learner_attributes["term"]  # todo: why is term deleted?
         return learner, learner_attributes
 
-    def construct_optimizer(self, model_index, pid, optimization_criterion, hybrid):
+    def construct_optimizer(self, model_index, pid, optimization_criterion):
         # load experiment specific info
-        learner, learner_attributes = self.construct_model(model_index, hybrid)
+        learner, learner_attributes = self.construct_model(model_index)
         self.participant, self.env = self.get_participant_context(pid)
         # For likelihood fitting in case of RSSL models
         if optimization_criterion == "likelihood" and learner == "rssl":
@@ -277,14 +277,13 @@ class ModelFitter:
     def fit_model(
             self,
             model_index,
-            hybrid,
             pid,
             optimization_criterion,
             optimization_params,
             params_dir=None,
     ):
         self.model_index = model_index
-        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion, hybrid)
+        optimizer = self.construct_optimizer(model_index, pid, optimization_criterion)
         res, prior, obj_fn = optimizer.optimize(
             optimization_criterion, **optimization_params
         )
@@ -303,7 +302,6 @@ class ModelFitter:
     def simulate_params(
             self,
             model_index,
-            hybrid,
             params,
             sim_params=None,
             env=None,
@@ -324,13 +322,13 @@ class ModelFitter:
             q_fn, participant = self.get_q_fn(participant)
             env = self.construct_env(participant, q_fn=q_fn)
         self.update_attributes(env)
-        learner, learner_attributes = self.construct_model(model_index, hybrid)
+        learner, learner_attributes = self.construct_model(model_index)
         optimizer = ParameterOptimizer(
             learner, learner_attributes, participant=participant, env=env
         )
         if participant is None:
             (r_data, sim_data), p_data = optimizer.run_hp_model_nop(
-                params, "reward", num_simulations=num_simulations
+                params, "reward", num_simulations=num_simulations, click_cost=click_cost
             )
             plot_file = f"{model_index}_{num_simulations}.png"
         else:

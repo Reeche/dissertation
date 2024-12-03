@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import os
-from vars import clicking_participants, learning_participants, assign_model_names
+from vars import (clicking_participants, learning_participants, assign_model_names, not_examined_all_pid,
+                  adaptive_pid, mod_adaptive_pid, maladaptive_pid, examined_all_pid, habitual_examined_all_pid)
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, kruskal
 import pymannkendall as mk
@@ -79,21 +80,34 @@ def create_csv_for_matlab(data, exp):
     # habitual, MB, non-learning, SSL, hybrid LVOC, hybrid Reinforce, pure LVOC, pure Reinforce
     # create pivot table with pid as y and model as x and fill the values with BIC
     data = data.pivot(index="model", columns="pid", values="BIC").T
-    data = data[['Habitual', 'MB - Level, grouped', 'MB - Level, ind.',
-                 'MB - No assump., grouped', 'MB - No assump., ind.',
-                 'MB - Uniform, grouped', 'MB - Uniform, ind.',
-                 'Non-learning', 'SSL', 'hybrid LVOC', 'hybrid Reinforce', 'MF - LVOC', 'MF - Reinforce']]
-    data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
+    if exp != "strategy_discovery":
+        data = data[['Habitual', 'MB - Level, grouped', 'MB - Level, ind.',
+                     'MB - No assump., grouped', 'MB - No assump., ind.',
+                     'MB - Uniform, grouped', 'MB - Uniform, ind.',
+                     'Non-learning', 'SSL', 'hybrid LVOC', 'hybrid Reinforce', 'MF - LVOC', 'MF - Reinforce']]
+    else:
+        data = data[['Habitual', 'MB - Level, grouped', 'MB - Level, ind.',
+                     'MB - No assump., grouped', 'MB - No assump., ind.',
+                     'MB - Uniform, grouped', 'MB - Uniform, ind.',
+                     'Non-learning', 'SSL', 'hybrid Reinforce', 'MF - Reinforce']]
+    data.to_csv(f"matlab/{exp}_notexaminedall.csv", index=False, header=False)
 
 
-def group_pid_by_bic(data):
+def group_pid_by_bic(data, exp):
     # which model explains which participant best
-    # data = data[data["class"].isin(["ssl", "hybrid", "pure", "habitual", "mb", "non_learning"])]
-    data = data[data["class"].isin(["ssl", "hybrid", "pure", "habitual", "mb"])]
+    if exp != "strategy_discovery":
+        data = data[data["class"].isin(["ssl", "hybrid", "pure", "habitual", "mb", "non_learning"])]
+    else:
+        # data = data[data["class"].isin(["ssl", "hybrid", "mf", "habitual", "mb"])] #todo: for thesis
+        data = data[data["class"].isin(["ssl", "hybrid", "mf", "habitual"])] #todo: for CogSci
 
     # for each pid, find the model with the lowest BIC
     min_bic_idx = data.groupby('pid')['BIC'].idxmin()
     res = data.loc[min_bic_idx]
+
+    # for each class, get the list of unique pids
+    for model in data["class"].unique():
+        print(f"{model}: {res[res['class'] == model]['pid'].unique()}")
     return res
 
 
@@ -140,13 +154,13 @@ def plot_pid_score_grouped_by_model(data, condition=None):
         plt.legend(fontsize=9, ncol=2)
 
     # save the plot
-    # plt.show()
+    plt.show()
 
     ##if no dir, create dir
     # if not os.path.exists(f"plots/{exp}"):
     #     os.makedirs(f"plots/{exp}")
 
-    plt.savefig(f"plots/{condition}/score_grouped.png")
+    # plt.savefig(f"plots/{condition}/score_grouped.png")
     plt.close()
 
     return None
@@ -222,10 +236,10 @@ def kruskal_rewards(exp, data):
     # convert pid_rewards to list
     data['pid_rewards'] = data['pid_rewards'].apply(lambda s: [int(num) for num in s.strip('[]').split()])
 
-    if exp == "strategy_discovery":
-        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-60:])
-    else:
-        data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-10:])
+    # if exp == "strategy_discovery":
+    #     data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-60:])
+    # else:
+    #     data["pid_rewards"] = data["pid_rewards"].apply(lambda x: x[-10:])
 
     # for each pid_rewards, calculate the average of the last 60 trials
     # if exp == "strategy_discovery":
@@ -241,11 +255,14 @@ def kruskal_rewards(exp, data):
     # anova_table = sm.stats.anova_lm(model, typ=2)
     # print(anova_table)
 
-    # group the MB models and MF models together
-    data["model"] = data["model"].apply(lambda x: "MB" if "MB" in x else x)
-    data["model"] = data["model"].apply(lambda x: "MF" if "Reinforce" in x else x)
-    data["model"] = data["model"].apply(lambda x: "MF" if "LVOC" in x else x)
-    # data["model"] = data["model"].apply(lambda x: "Hybrid" if "hybrid" in x else x)
+    # remove all the model that does not contain Reinforce or Habitual
+    # data = data[data["model"].str.contains("Reinforce") | data["model"].str.contains("Habitual")]
+
+    # group the MB models and MF models together; hybrid and MF are grouped together as "MF"
+    # data["model"] = data["model"].apply(lambda x: "MB" if "MB" in x else x)
+    # data["model"] = data["model"].apply(lambda x: "Reinforce" if "MF" in x else x)
+    # data["model"] = data["model"].apply(lambda x: "MF" if "LVOC" in x else x)
+    # data["model"] = data["model"].apply(lambda x: "Reinforce" if "hybrid" in x else x)
 
     # group by model and get the pid_rewards
     grouped = data.groupby("model")["pid_rewards"].apply(list)
@@ -259,7 +276,8 @@ def kruskal_rewards(exp, data):
         model_data = data[data["model"] == model]["pid_rewards"]
         for model2 in model_list:
             if model == model2:
-                print(f"{model}: {np.mean(list(model_data))}")
+                print(f"{model} Mean: {np.mean(list(model_data))}")
+                print(f"{model} Std: {np.std(list(model_data))}")
                 continue
             model2_data = data[data["model"] == model2]["pid_rewards"]
 
@@ -280,10 +298,10 @@ def kruskal_clicks(exp, data):
     data['pid_clicks'] = data['pid_clicks'].apply(lambda x: [len(cell) - 1 for cell in x])
 
     # for each pid_rewards, keep only the last 10 trials
-    if exp == "strategy_discovery":
-        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-60:])
-    else:
-        data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-10:])
+    # if exp == "strategy_discovery":
+    #     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-60:])
+    # else:
+    #     data["pid_clicks"] = data["pid_clicks"].apply(lambda x: x[-10:])
 
     # for each pid_rewards, calculate the average of the last 60 trials
     # if exp == "strategy_discovery":
@@ -353,25 +371,31 @@ def linear_regression_clicks(data, exp):
 
 
 if __name__ == "__main__":
-    experiment = ["v1.0", "c2.1", "c1.1"]
+    # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    # experiment = ["high_variance_low_cost"]
-    # df_all = []
+    experiment = ["strategy_discovery"]
+
     for exp in experiment:
         df_all = []
         data = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv", index_col=0)
 
-        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+        if exp in ["v1.0", "c1.1", "c2.1"]:
             data = data[data["pid"].isin(clicking_participants[exp])]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]
+        elif exp == "strategy_discovery":
+            # data = data[data["pid"].isin(clicking_participants[exp])]
+            data = data[data["pid"].isin(not_examined_all_pid)]
 
         # create a new column. If column "class" = "hybrid" and "model_index" = 491, then "model" = "pure Reinforce"
         data['model'] = data.apply(assign_model_names, axis=1)
+
+        # remove all the MB models
+        # data = data[~data["model"].str.contains("MB")]
 
         # calculate_score_loss(data)
 
@@ -385,18 +409,18 @@ if __name__ == "__main__":
         ### for individual analysis
         result_df = pd.concat(df_all, ignore_index=True)
 
-        # create_csv_for_matlab(result_df, exp)
+        create_csv_for_matlab(result_df, exp)
 
-        res = group_pid_by_bic(result_df)  # get BIC for only selected models
-        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+        # res = group_pid_by_bic(result_df, exp)  # get BIC for only selected models
+        # if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
             # plot_pid_score_grouped_by_model(res, exp)
-            kruskal_rewards(exp, res)
-        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-                     "low_variance_low_cost"]:
-            # plot_pid_clicks_grouped_by_model(res, exp)
-            # linear_regression_clicks(res, exp)
             # kruskal_rewards(exp, res)
-            kruskal_clicks(exp, res)
+        # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+        #              "low_variance_low_cost"]:
+        #     # plot_pid_clicks_grouped_by_model(res, exp)
+        #     # linear_regression_clicks(res, exp)
+        #     kruskal_rewards(exp, res)
+        #     # kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

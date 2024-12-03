@@ -17,9 +17,9 @@ bid = 25
 node_assumptions = ["level"]
 update_rules = ["individual"]
 
-exp_num = ['v1.0']
-pid_dict = {'v1.0': [117]}
-#
+exp_num = ['strategy_discovery']
+pid_dict = {'strategy_discovery': [59]}
+
 # pid_dict = {
 #     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
 #              80, 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 121, 124, 126, 132, 137, 140, 141, 144, 146,
@@ -56,7 +56,7 @@ with open("parameters_mb.txt", "w") as parameters:
 
 submit_sub_file("sub_multiple_model_based.sub", bid)
 
-### for missing pid
+## for missing pid
 # missing_dict = {"strategy_discovery": [127, 249, 3]}
 #
 # with open("parameters_mb.txt", "a") as parameters:

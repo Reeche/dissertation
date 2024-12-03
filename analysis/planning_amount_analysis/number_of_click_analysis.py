@@ -9,10 +9,9 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import statsmodels.formula.api as smf
 from collections import Counter
-from scipy.stats import chisquare, chi2_contingency
+from scipy.stats import chisquare, chi2_contingency, wilcoxon
 import os
 from vars import clicking_pid, learning_pid
-
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects.numpy2ri
@@ -88,14 +87,11 @@ def create_click_df(data, experiment):
 
 
 def calculate_confidence_interval(mean, std_dev, sample_size):
-    # Z-score for 95% confidence level
-    Z = 1.96
-
     # Standard error
     standard_error = std_dev / math.sqrt(sample_size)
 
     # Margin of error
-    margin_of_error = Z * standard_error
+    margin_of_error = 1.96 * standard_error
 
     # Confidence interval
     lower_bound = mean - margin_of_error
@@ -105,7 +101,6 @@ def calculate_confidence_interval(mean, std_dev, sample_size):
 
 
 def plot_clicks(clicks_df):
-
     # pivot table by pid and trial with number of clicks as content
     pid = clicks_df.pivot(index="pid", columns="trial", values="number_of_clicks")
 
@@ -125,12 +120,6 @@ def plot_clicks(clicks_df):
     plt.plot(pid_average, label="Participant", color="blue", linewidth=3)
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
                      label='95% CI')
-
-
-    # ci = 1.96 * np.std(average_clicks) / np.sqrt(len(average_clicks))
-    # plt.plot(average_clicks)
-    # plt.fill_between(range(len(average_clicks)), average_clicks - ci, average_clicks + ci, color="b",
-    #                  alpha=.1)
 
     plt.ylim(top=13)
     plt.ylim(bottom=-1)
@@ -159,8 +148,8 @@ def plot_clicks(clicks_df):
         # lower, upper = calculate_confidence_interval(5.82, 3.40, 100000) #due to large sample size, the confidence interval is very small
         # plt.fill_between(x, lower, upper, color="r", alpha=.1)
     plt.ylabel(f"Average number of clicks for {label}", fontsize=15)
-    plt.savefig(f"plots/{experiment}_average_clicks.png")
-    # plt.show()
+    # plt.savefig(f"plots/{experiment}_average_clicks.png")
+    plt.show()
     plt.close()
     return None
 
@@ -412,7 +401,7 @@ if __name__ == "__main__":
         # plot_individual_clicks(click_df, experiment)
 
         # group click_df by trial and get the average clicks
-        # average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
+        average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
         plot_clicks(click_df)
@@ -426,19 +415,36 @@ if __name__ == "__main__":
         ##append all 4 conditions into one df
         # click_df_all_conditions.append(click_df)
 
-        ###optimal number of clicks vs. actual number of clicks
-        ##get clicks of last trial
+        # get number of clicks of last trial
+        # last_clicks = click_df[click_df["trial"] == 34]["number_of_clicks"]
+        #
+        # # compare whether last clicks sig differ from 0 using Wilcoxon test
         # if experiment == "high_variance_low_cost":
-        #     chi2, p = chisquare([average_clicks.values[-1], 9.09])
+        #     stat, p_value = wilcoxon([x - 7.1 for x in last_clicks])
+        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
+        # elif experiment == "high_variance_high_cost":
+        #     stat, p_value = wilcoxon([x - 6.32 for x in last_clicks])
+        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
+        # elif experiment == "low_variance_high_cost":
+        #     stat, p_value = wilcoxon([x - 0 for x in last_clicks])
+        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
+        # else:
+        #     stat, p_value = wilcoxon([x - 3.96 for x in last_clicks])
+        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
+
+
+        ##optimal number of clicks vs. actual number of clicks
+        # if experiment == "high_variance_low_cost":
+        #     chi2, p = chisquare([average_clicks.values[-1], 7.1])
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p}")
         # elif experiment == "high_variance_high_cost":
-        #     chi2, p  = chisquare([average_clicks.values[-1], 6.72])
+        #     chi2, p = chisquare([average_clicks.values[-1], 6.32])
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
         # elif experiment == "low_variance_high_cost":
-        #     chi2, p  = chisquare([average_clicks.values[-1], 0])
+        #     chi2, p = chisquare([average_clicks.values[-1], 0])
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
         # else:
-        #     chi2, p  = chisquare([average_clicks.values[-1], 3.96])
+        #     chi2, p = chisquare([average_clicks.values[-1], 3.96])
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)

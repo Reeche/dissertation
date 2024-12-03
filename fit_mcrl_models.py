@@ -23,7 +23,6 @@ def fit_model(
     pid,
     number_of_trials,
     model_index,
-    hybrid,
     optimization_criterion,
     optimization_params=None,
     exp_attributes=None,
@@ -45,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_sd_test25_{hybrid}/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_sd_variant3/mcrl")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +70,6 @@ def fit_model(
     )
     res, prior, obj_fn = mf.fit_model(
         model_index,
-        hybrid,
         pid,
         optimization_criterion,
         optimization_params,
@@ -80,7 +78,6 @@ def fit_model(
     if simulate:
         r_data, sim_data = mf.simulate_params(
             model_index,
-            hybrid,
             res[0],
             pid=pid,
             sim_dir=model_info_directory,
@@ -92,33 +89,27 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # hybrid_bool = sys.argv[3]
-    # optimization_criterion = sys.argv[4]
-    # pid = int(sys.argv[5])
-    # number_of_trials = int(sys.argv[6])
-    # other_params = {"plotting": False}
-    # if len(sys.argv) > 7:
-    #     other_params = ast.literal_eval(sys.argv[7])
-    # else:
-    #     other_params = {}
-
-    exp_name = "strategy_discovery"
-    model_index = 479 #36, 37
-    hybrid_bool = False #only applicable for Reinforce and LVOC models
-    optimization_criterion = "likelihood"
-    pid = 172
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
     other_params = {"plotting": False}
-
-    # if model_index is not 480, 481, 491, 479, then hybrid_bool should be False
-    if model_index not in [480, 481, 491, 479]:
-        hybrid_bool = False
-
-    if exp_name != "strategy_discovery":
-        number_of_trials = 35
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
     else:
-        number_of_trials = 120
+        other_params = {}
+
+    # exp_name = "strategy_discovery"
+    # model_index = 1756 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    # optimization_criterion = "likelihood"
+    # pid = 172
+    # other_params = {"plotting": False}
+    #
+    # if exp_name != "strategy_discovery":
+    #     number_of_trials = 35
+    # else:
+    #     number_of_trials = 120
 
     def cost_function(depth):
         if depth == 0:
@@ -157,7 +148,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 2,
+            "max_evals": 60000,
             "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params
@@ -167,11 +158,10 @@ if __name__ == "__main__":
         pid=pid,
         number_of_trials=number_of_trials,
         model_index=model_index,
-        hybrid=hybrid_bool,
         optimization_criterion=optimization_criterion,
         data_path=f"results/cm/{exp_name}",
         **other_params,
     )
 
-    print(r_data)
+    # print(r_data)
     # print(sim_data)

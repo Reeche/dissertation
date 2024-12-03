@@ -4,30 +4,13 @@ bid = 25
 script = 'fit_mcrl_models.py'  # The file that you want to run on the cluster.
 
 ## for testing
-exp_num = ["strategy_discovery"]
-# models = [32, 33, 36, 37, 176, 177, 180, 181, 320, 321, 324, 325, 480, 481]
-# models = [32, 33, 176, 177, 320, 321, 480, 481, 491]
-models = [491, 480, 481]
+exp_num = ['strategy_discovery']
+
+models = [3315, 3316, 3317, 3318, 3323, 3324, 3325] #3326 is vanilla
+
 # pid_dict = {
 #     'strategy_discovery': [172]}
-    # 'strategy_discovery': [28, 35, 38, 39, 48, 59, 63, 75, 89, 103, 166, 172, 195, 215, 234, 320, 335]}
-
-# vanilla models only
-# models = [522, 491, 479, 1743, 1756]
-# models = [490]
-
-# reinforce variants with PR, SC, TD and hierarchies
-# models = [32, 36, 176, 180, 320, 324]
-# models = [32, 33, 36, 37, 176, 177, 180, 181, 320, 321, 324, 325]
-
-# reinforce variants
-# models = [32, 33, 34, 35, 36, 37, 38, 39, 80, 81, 82, 83, 84, 85, 86, 87, 128, 129, 130, 131, 132, 133, 134, 135, 176,
-#           177, 178, 179, 180, 181, 182, 18, 22, 225, 226, 227, 228, 229, 230, 231, 272, 273, 274, 275, 276, 277, 278,
-#           279, 320, 321, 322, 323, 324, 325, 326, 327, 368, 369, 370, 371, 372, 373, 374, 375, 416, 417, 418, 419, 420,
-#           421, 422, 423, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]
-
-# reinforce variants without hierarchical models
-# models = [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]
+    #'strategy_discovery': [28, 35, 38, 39, 48, 59, 63, 75, 89, 103, 166, 172, 195, 215, 234, 320, 335]}
 
 
 # exp_num = ['v1.0', 'c2.1', 'c1.1',
@@ -35,8 +18,8 @@ models = [491, 480, 481]
 #            'high_variance_low_cost',
 #            'low_variance_high_cost',
 #            'low_variance_low_cost',
-#            'strategy_discovery'
-#            ]
+           # 'strategy_discovery'
+           # ]
 
 
 

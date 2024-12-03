@@ -11,14 +11,14 @@ Create csv files with the parameters of the fitted models
 
 # model-free
 def model_free(data_dir, exp):
-    df = pd.DataFrame(
-        columns=["exp", "pid", "model", "parameters"])
+    df = pd.DataFrame(columns=["exp", "pid", "model", "parameters"])
 
     for files in os.listdir(f"{data_dir}/{exp}_priors"):
         pid = int(files.split("_")[0])
         # model = int(files[-1].split('.')[0])
         model = int(files.split("_")[2].split('.')[0])
-        if model in [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]:
+        # if model in [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]:
+        if model in [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]:
             data = pd.read_pickle(f'{data_dir}/{exp}_priors/{pid}_likelihood_{model}.pkl')
             no_prior_data = {key: value for key, value in data[0][0].items() if not key.startswith('prior')}
             df.loc[len(df)] = [exp, pid, model, no_prior_data]
@@ -50,14 +50,15 @@ def analyse_parameters(exp):
 
 if __name__ == "__main__":
     ## create df
-    exp_list = ['v1.0', 'c2.1', 'c1.1',
-                'high_variance_high_cost',
-                'high_variance_low_cost',
-                'low_variance_high_cost',
-                ]
+    # exp_list = ['v1.0', 'c2.1', 'c1.1',
+    #             'high_variance_high_cost',
+    #             'high_variance_low_cost',
+    #             'low_variance_high_cost',
+    #             ]
 
-    # exp_list = ["low_variance_low_cost"]
+    exp_list = ["low_variance_low_cost"]
 
     for exp in exp_list:
-        # model_free("../../results_rl_variants_8000/mcrl", exp)
-        analyse_parameters(exp)
+        print(exp)
+        model_free("../../results_variants_test1/mcrl", exp)
+        # analyse_parameters(exp)

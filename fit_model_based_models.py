@@ -77,13 +77,13 @@ if __name__ == "__main__":
     node_assumption = sys.argv[4]
     update_rule = sys.argv[5]
 
-    # exp_name = "high_variance_low_cost"  # "strategy_discovery
+    # exp_name = "strategy_discovery"  # "strategy_discovery
     # criterion = "likelihood"  # "number_of_clicks_likelihood"
-    # pid = 4
-    # node_assumption = "uniform" #"uniform", "level", "no_assumption"
-    # update_rule = "individual"  # "individual", "level"
+    # pid = 1
+    # node_assumption = "no_assumption" #"uniform", "level", "no_assumption"
+    # update_rule = "level"  # "individual", "level"
 
-    E = Experiment(exp_name, data_path=f"results_mb_test14/mcrl/{exp_name}_mb")
+    E = Experiment(exp_name, data_path=f"results_mb_test15/mcrl/{exp_name}_mb")
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
         click_cost = 5
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     mf = ModelFitter(
         exp_name=exp_name,
         exp_attributes=exp_attributes,
-        data_path=f"results_mb_test14/mcrl/{exp_name}_mb",
+        data_path=f"results_mb_test15/mcrl/{exp_name}_mb",
         number_of_trials=number_of_trials)
 
     pid_context, env = mf.get_participant_context(pid)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     best_params = fmin(fn=model.run_multiple_simulations,
                        space=fspace,
                        algo=tpe.suggest,
-                       max_evals=4000,
+                       max_evals=60000,
                        show_progressbar=True)
 
     ## simulate using the best parameters
@@ -207,10 +207,10 @@ if __name__ == "__main__":
     res.update(best_params)
 
     ## check if dir exist
-    if not Path(f"results_mb_test14/mcrl/{exp_name}_mb").exists():
-        Path(f"results_mb_test14/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
+    if not Path(f"results_mb_test15/mcrl/{exp_name}_mb").exists():
+        Path(f"results_mb_test15/mcrl/{exp_name}_mb").mkdir(parents=True, exist_ok=True)
 
-    output = open(f'results_mb_test14/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}_{update_rule}.pkl', 'wb')
+    output = open(f'results_mb_test15/mcrl/{exp_name}_mb/{pid}_{criterion}_{node_assumption}_{update_rule}.pkl', 'wb')
     pickle.dump(res, output)
     output.close()
 

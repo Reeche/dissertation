@@ -69,6 +69,23 @@ def plot_score(simulation_data):
     plt.close()
     pass
 
+def plot_strategy(simulation_data):
+    # simulation data is a list
+    reward_list = [d['r'][0] for d in simulation_data if 'r' in d]
+    strategy_list = [[1 if value in [13, 14, 15] else 0 for value in sublist] for sublist in reward_list]
+
+    # Sum across the lists and then divide by the number of lists
+    strategy_proportion = [sum(values) / len(strategy_list) for values in zip(*strategy_list)]
+
+    # plot proportion of strategy
+    plt.plot(strategy_proportion, label="Strategy")
+    plt.ylabel("Strategy")
+    plt.xlabel("Trials")
+    plt.legend()
+    plt.show()
+    # plt.savefig("strategy.png")
+    plt.close()
+    pass
 
 def plot_clicks(simulation_data):
     """
@@ -85,7 +102,7 @@ def plot_clicks(simulation_data):
     pass
 
 
-def create_attributes(model_index):
+def create_attributes(model_index, type):
     ###create attributes of the model
     model_list = pd.read_csv("models/rl_models.csv")
     model_attributes = model_list.loc[model_list["index"] == model_index]
@@ -100,23 +117,34 @@ def create_attributes(model_index):
     model_attributes_dict["normalized_features"] = (pd.read_pickle(
         "data/normalized_values/strategy_discovery/max.pkl"), pd.read_pickle(
         "data/normalized_values/strategy_discovery/min.pkl"))
-    model_attributes_dict["num_priors"] = len(features.implemented)
     model_attributes_dict["num_actions"] = 13
     model_attributes_dict["no_term"] = False
     model_attributes_dict["strategy_space"] = strategies.strategy_spaces["microscope"]
 
     if type == "hybrid":
-        # model_attributes_dict["features"] = features.implemented
-        model_attributes_dict["features"] = features.strategy_discovery
-    else:
-        model_attributes_dict["features"] = features.model_free_habitual
+        model_attributes_dict["features"] = features.sd_hybrid_ssl_features
+        model_attributes_dict["num_priors"] = len(features.sd_hybrid_ssl_features)
+    elif type == "model_free":
+        model_attributes_dict["features"] = features.sd_model_free_habitual_features
+        model_attributes_dict["num_priors"] = len(features.sd_model_free_habitual_features)
+    elif type == "nonlearning":
+        model_attributes_dict["features"] = features.sd_non_learning_features
+        model_attributes_dict["num_priors"] = len(features.sd_non_learning_features)
 
     return model_attributes_dict, model_name
 
 
-def load_attributes(parameters, condition, model_index, pid):
-    data = pd.read_pickle(f"../results_sd_test16/mcrl/{condition}_priors/{pid}_likelihood_{model_index}.pkl")
-    prior_list = pd.read_pickle(f"data/strategy_discovery_features.pkl")
+def load_attributes(parameters, condition, model_index, pid, type):
+    # data = pd.read_pickle(f"../results_sd_test16/mcrl/{condition}_priors/{pid}_likelihood_{model_index}.pkl") #this contains the optiomal 172?
+
+    if type == "hybrid":
+        data = pd.read_pickle(f"../final_results/hybrid/{condition}_priors/{pid}_likelihood_{model_index}.pkl")
+        prior_list = features.sd_hybrid_ssl_features
+    elif type == "model_free":
+        data = pd.read_pickle(f"../final_results/mf/{condition}_priors/{pid}_likelihood_{model_index}.pkl")
+        prior_list = features.sd_model_free_habitual_features
+    elif type == "nonlearning":
+        prior_list = features.sd_non_learning_features
 
     # get all the key, value pair from dictionary that start with "prior"
     priors = {k: v for k, v in data[0][0].items() if k.startswith('prior')}
@@ -129,35 +157,21 @@ def load_attributes(parameters, condition, model_index, pid):
         if prior_key in priors:
             new_priors[name] = priors[prior_key]
 
-    # replace all priors with 0
+    # parameters["gamma"] = data[0][0]["gamma"]
+    # parameters["inverse_temperature"] = data[0][0]["inverse_temperature"]
+    # parameters["lr"] = data[0][0]["lr"]
+
+    ### replace all priors with 0
     for key in new_priors.keys():
         new_priors[key] = 0
 
-    # replace selected priors
-    # new_priors["prior_is_pos_ancestor_leaf"] = 1
-    # # new_priors["prior_all_roots_observed"] = 10
-    # new_priors["prior_is_leaf"] = 1
-    # new_priors["prior_is_positive_observed"] = 1
-    # # # new_priors["prior_is_previous_successor_negative"] = 1
-    # new_priors["prior_parent_observed"] = 1
-    # new_priors["prior_parent_value"] = 1
-
-    # todo: why do those values need to be negated to be effective?
-    # need to tell the model what to do before this termination condition is met
-    # need to make it favour first level list
+    # # todo: this is set of features values that represents the optimal strategy
     new_priors["first_level"] = 100
     # new_priors["avoid_second_level"] = 100
     new_priors["third_level"] = 5
     new_priors["is_pos_ancestor_leaf"] = 100
     new_priors["termination_after_observing_positive_inner_and_one_outer"] = 1000
-    # new_priors["num_clicks_adaptive"] = -100
-    # new_priors["ancestor_count"] = 10
 
-
-
-    # parameters["gamma"] = data[0][0]["gamma"]
-    # parameters["inverse_temperature"] = data[0][0]["inverse_temperature"]
-    # parameters["lr"] = data[0][0]["lr"]
     parameters["gamma"] = np.log(1)  # irrelevant if learning rate is 0
     parameters["inverse_temperature"] = np.log(
         1)  # the higher, the random, so the inverse, the higher the more deterministic
@@ -170,11 +184,6 @@ def load_attributes(parameters, condition, model_index, pid):
     # parameters["b"] = data[0][0]["b"]
     # parameters["subjective_cost"] = data[0][0]["subjective_cost"]
 
-    # create a list with 0 anywhere but 100 on position 49
-    # ls = [0] * 64
-    # ls[60] = 100
-    # parameters["priors"] = ls
-
     parameters["priors"] = list(new_priors.values())
 
     return parameters
@@ -182,14 +191,20 @@ def load_attributes(parameters, condition, model_index, pid):
 
 if __name__ == "__main__":
     condition = "strategy_discovery"
-    model_index = 491
-    type = "hybrid"
+
+    type = "model_free"
+
+    if type == "hybrid":
+        model_index = 3326
+    elif type == "model_free":
+        model_index = 491
+
     num_trials = 10
-    load_attribute = True
+    load_attribute = False
     if load_attribute:
         pid = 172
 
-    model_attributes_dict, model_name = create_attributes(model_index)
+    model_attributes_dict, model_name = create_attributes(model_index, type)
 
     parameters = {}
     parameters["pr_weight"] = 1
@@ -197,42 +212,33 @@ if __name__ == "__main__":
 
     env = create_env(condition, num_trials)
 
-    for _ in range(1):  # number of simulations to run
-        if model_attributes_dict["is_null"]:
-            if load_attribute:
-                parameters = load_attributes(parameters, condition, model_index, pid)
-            else:
-                parameters["priors"] = [random.randint(-5000, 5000) / 1000 for _ in range(56)]
-                parameters["gamma"] = 1
-                parameters["inverse_temperature"] = 1
-                parameters["lr"] = 1
+    simulation_data = []
+    for _ in range(1):
+        if load_attribute:
+            parameters = load_attributes(parameters, condition, model_index, pid, type)
         else:
-            if load_attribute:
-                parameters = load_attributes(parameters, condition, model_index, pid)
-            else:
-                parameters["priors"] = [random.randint(-5000, 5000) / 1000 for _ in range(56)]
-                parameters["gamma"] = random.randint(0, 1000) / 1000
-                parameters["inverse_temperature"] = random.randint(0, 1000) / 1000
-                parameters["lr"] = random.randint(0, 1000) / 1000
-
-        # elif model_name == "lvoc":
-        #     parameters["standard_dev"] = random.randint(0, 1000)/1000
-        #     parameters["num_samples"] = random.randint(0, 10000)/1000
-        #     parameters["eps"] = random.randint(0, 1000)/1000
-        #     parameters["priors"] = [random.randint(-5000, 5000)/1000 for _ in range(56)]
+            parameters["priors"] = [random.randint(-100, 100) / 100 for _ in range(len(model_attributes_dict["features"]))]
+            # parameters["gamma"] = random.randint(0, 1000) / 1000
+            parameters["gamma"] = 1
+            parameters["inverse_temperature"] = random.randint(0, 1000) / 1000
+            parameters["lr"] = random.randint(0, 1000) / 1000
 
         agent = REINFORCE(parameters, model_attributes_dict)
-        simulation_data = agent.run_multiple_simulations(env=env, num_simulations=1, compute_likelihood=False,
+        simulation_data_ = agent.run_multiple_simulations(env=env, num_simulations=1, compute_likelihood=False,
                                                          participant=None)
 
-        # todo: somehow the weights keep changing at the first trial
-        reward = simulation_data["r"]
-        print(simulation_data["a"])
-        print(reward)
+        reward = simulation_data_["r"]
+
+        # print last 10 simulation_data["a"]
+        print(simulation_data_["a"][-10:])
+        print(reward[-10:])
 
         # print("weights", agent.get_current_weights())
         # plot_score(simulation_data)
         # plot_clicks(simulation_data)
+        # simulation_data.append(simulation_data_)
+    # plot_strategy(simulation_data)
+
         # if all(value in [13, 14, 15] for sublist in reward for value in sublist):
         #     print("Model is successful. Reward: ", np.mean(reward))
         #     print("Parameters: ", parameters)

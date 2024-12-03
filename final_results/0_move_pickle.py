@@ -10,10 +10,14 @@ def move_pickle_files(root_folder, folder_list):
                     source_path = os.path.join(foldername, filename)
 
                     foldername_save = foldername.split('/')[-1]
-                    if '522' in filename:
-                        destination_folder = os.path.join(root_folder, 'ssl', foldername_save)
-                    # elif '1756' in filename:
-                    #     destination_folder = os.path.join(root_folder, 'non_learning', foldername_save)
+                    if '491' in filename:
+                        destination_folder = os.path.join('mf', foldername_save)
+                    elif '1756' in filename:
+                        destination_folder = os.path.join('non_learning', foldername_save)
+                    elif '1743' in filename:
+                        destination_folder = os.path.join('habitual', foldername_save)
+                    elif '3326' in filename:
+                        destination_folder = os.path.join('hybrid', foldername_save)
                     else:
                         continue
                     # Create the destination folder if it doesn't exist
@@ -28,7 +32,7 @@ def move_pickle_files(root_folder, folder_list):
 
 
 if __name__ == "__main__":
-    root_folder = "rl_hybrid_variants"  # Replace with the path to your root folder
+    root_folder = "../results_sd_test28/mcrl"  # Replace with the path to your root folder
     # folder_list = ["v1.0_data", "v1.0_priors", "c2.1_data", "c2.1_priors", "c1.1_data", "c1.1_priors",
     #                "high_variance_high_cost_data", "high_variance_high_cost_priors",
     #                "high_variance_low_cost_data", "high_variance_low_cost_priors",

@@ -9,7 +9,11 @@ Also create one csv for each condition for BMS for Matlab
 
 
 def get_all_combinations(model_class, condition):
-    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "pure": [491, 479],
+    # mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479, 3326], "ssl": [522], "mf": [491, 479],
+    #            "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
+    #                   "uniform_individual", "uniform_level"]}
+    # for SD
+    mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [3326], "ssl": [522], "mf": [491],
                "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
                       "uniform_individual", "uniform_level"]}
     model_type = mapping[model_class]
@@ -88,6 +92,6 @@ def check_pickle_files(root_folder, folder_list):
 
 if __name__ == "__main__":
     root_folder = os.getcwd()
-    folder_list = ["habitual", "hybrid", "non_learning", "pure", "ssl", "mb"]  # Add other folders if needed
-    # folder_list = ["mb"]  # Add other folders if needed
+    # folder_list = ["habitual", "hybrid", "non_learning", "mf", "ssl", "mb"]  # Add other folders if needed
+    folder_list = ["mb"]  # Add other folders if needed
     check_pickle_files(root_folder, folder_list)

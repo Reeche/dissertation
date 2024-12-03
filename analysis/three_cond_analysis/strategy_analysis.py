@@ -31,10 +31,10 @@ def plot_all_strategy_proportions(data, model, mapping: dict):
         plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
                          frequencies[column] + error_margin[column], alpha=0.2)
     plt.ylim(-0.1, 1)
-    plt.xlabel("Trials", fontsize=12)
-    plt.ylabel("Proportion", fontsize=12)
+    plt.xlabel("Trials", fontsize=14)
+    plt.ylabel("Proportion", fontsize=14)
     # plt.title(f"Strategy proportions for {model}")
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=14)
     plt.savefig(f"plots/CM_all_strategies/{experiment}_{model}_cm.png")
     # plt.show()
     plt.close()
@@ -163,7 +163,7 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     data['model_strategies'] = data['model_strategies'].apply(ast.literal_eval)
     data['pid_strategies'] = data['pid_strategies'].apply(ast.literal_eval)
 
-    plt.figure(figsize=(8, 6))
+    # plt.figure(figsize=(8, 6))
     x = np.arange(0, 35)
 
     for model_name in ["Non-learning", "SSL", "Habitual"]:
@@ -193,7 +193,6 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
 
     x = np.arange(0, len(adaptive_proportion_pid))
 
-    # plot model_mer and pid_mer
     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
                      alpha=0.1,
@@ -202,12 +201,10 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     plt.xlabel("Trial", fontsize=12)
     plt.ylim(0, 1)
     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=12, ncol=2)
+    plt.legend(fontsize=11, ncol=2)
     plt.savefig(f"plots/{experiment}/alternatives_proportions.png")
     # plt.show()
     plt.close()
-
-    plt.figure(figsize=(8, 6))
 
     for model_name in ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]:
         data_filtered = data[data["model"] == model_name]
@@ -235,7 +232,6 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
 
     x = np.arange(0, len(adaptive_proportion_pid))
 
-    # plot model_mer and pid_mer
     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
                      alpha=0.1,
@@ -244,13 +240,11 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     plt.xlabel("Trial", fontsize=12)
     plt.ylim(0, 1)
     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=12, ncol=2)
+    plt.legend(fontsize=11, ncol=2)
     plt.savefig(f"plots/{experiment}/MF_proportions.png")
     # plt.show()
     plt.close()
 
-    plt.figure(figsize=(8, 6))
-    #
     for model_name in ["MB - No assump., grouped", "MB - No assump., ind.",
                        "MB - Uniform, ind.", "MB - Uniform, grouped",
                        "MB - Level, grouped", "MB - Level, ind."]:
@@ -281,7 +275,6 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
 
     x = np.arange(0, len(adaptive_proportion_pid))
 
-    # plot model_mer and pid_mer
     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
                      alpha=0.1,
@@ -290,7 +283,7 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     plt.xlabel("Trial", fontsize=12)
     plt.ylim(0, 1)
     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=12, ncol=2)
+    plt.legend(fontsize=11, ncol=2)
     plt.savefig(f"plots/{experiment}/MB_proportions.png")
     # plt.show()
     plt.close()
@@ -313,26 +306,26 @@ if __name__ == "__main__":
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
 
         # ## get only used strategies
-        # unique_used_strategies = pd.unique(participants_df.values.flatten())
+        unique_used_strategies = pd.unique(participants_df.values.flatten())
 
         # ##plot strategy proportions for participants
         # # k means based on used strategy scores
-        # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
-        # # strategy_labels = clustering_kmeans(used_strategy_score)
-        # # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-        #
+        used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+        strategy_labels = clustering_kmeans(used_strategy_score)
+        mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+
 
         # ### clustering by using all strategies
         pid_mapping = classify_strategies(participants_df, experiment)
-        # plot_strategy_proportions(participants_df, "pid", mapping)
+        plot_all_strategy_proportions(participants_df, "pid", mapping)
 
         #  ## load CM model data
-        model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
-        # filter for clicking participants
-        model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
-
-        # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
-        plot_adaptive_proportion(model_data, experiment, pid_mapping)
+        # model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
+        # # filter for clicking participants
+        # model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+        #
+        # # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+        # plot_adaptive_proportion(model_data, experiment, pid_mapping)
 
         ### reshape df for logisitic regression
         # df = participants_df.transpose()
