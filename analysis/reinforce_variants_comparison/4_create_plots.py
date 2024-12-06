@@ -7,9 +7,11 @@ from vars import learning_participants, clicking_participants, model_dict, model
 
 # turn off user warnings
 import warnings
+
 warnings.filterwarnings("ignore")
 
-def plot_mer(condition, data, model_name):
+
+def plot_mer(condition, data):
     # get the model_mer and pid_mer
     data = data[["model", "model_mer", "pid_mer"]]
     data["pid_mer"] = data["pid_mer"].apply(lambda x: ast.literal_eval(x))
@@ -17,6 +19,8 @@ def plot_mer(condition, data, model_name):
 
     # convert series to np array
     # model = np.array(data["model_mer"].to_list())
+
+    linear_regression(data, "mer")
 
     # for each unique model in "model" column, calculate the average of the model_mer
     for variant_type in data["model"].unique():
@@ -31,7 +35,7 @@ def plot_mer(condition, data, model_name):
 
     # Calculate mean and standard error for each data point
     std_dev = np.std(pid, axis=0)
-    n = len(pid) #todo:check
+    n = len(pid)  # todo:check
     std_err = std_dev / np.sqrt(n)
 
     # Calculate the confidence interval
@@ -40,38 +44,35 @@ def plot_mer(condition, data, model_name):
     x = np.arange(0, len(model_average))
 
     # plot model_mer and pid_mer
-    plt.plot(pid_average, label="Participant", color="blue")
-    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1, label='95% CI')
+    plt.plot(pid_average, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
 
-    # replace model name using the model_names
-    model_name = model_names[model_name]
-    plt.plot(model_average, label=model_name, color="orange")
+    # plt.xlabel("Trial")
+    # # plt.ylim(0, 50)
+    # plt.ylabel("Average expected score")
+    # plt.legend()
+    # # plt.savefig(f"plots/{condition}/{model_name}_mer.png")
+    # plt.show()
+    # plt.close()
 
-    plt.xlabel("Trial")
-    # plt.ylim(0, 50)
-    plt.ylabel("Average expected score")
-    plt.legend()
-    # plt.savefig(f"plots/{condition}/{model_name}_mer.png")
-    plt.show()
-    plt.close()
 
-def plot_rewards(condition, data, model_name):
-    # get the model_mer and pid_mer
-    data = data[["model_rewards", "pid_rewards"]]
+def plot_rewards(condition, data):
+    data = data[["model", "model_rewards", "pid_rewards"]]
     # data["pid_rewards"] = data["pid_rewards"].apply(lambda x: list(ast.literal_eval(x)))
     data['pid_rewards'] = data['pid_rewards'].apply(lambda x: [int(num) for num in x[1:-1].split()])
+    data['model_rewards'] = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
 
-    model_rewards = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
+    linear_regression(data, "rewards")
 
     # convert series to np array
-    model_average = np.mean(model_rewards.to_list(), axis=0)
+    model_average = np.mean(data['model_rewards'].to_list(), axis=0)
     pid = np.array(data["pid_rewards"].to_list())
     pid_average = np.mean(pid, axis=0)
 
-
     # Calculate mean and standard error for each data point
     std_dev = np.std(pid, axis=0)
-    n = len(pid) #todo:check
+    n = len(pid)  # todo:check
     std_err = std_dev / np.sqrt(n)
 
     # Calculate the confidence interval
@@ -79,20 +80,27 @@ def plot_rewards(condition, data, model_name):
 
     x = np.arange(0, len(model_average))
 
-    # plot model_mer and pid_mer
+    ## plot model_mer and pid_mer
     plt.plot(pid_average, label="Participant", color="blue")
-    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1, label='95% CI')
+    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+                     label='95% CI')
 
-    model_name = model_names[model_name]
-    plt.plot(model_average, label=model_name, color="orange")
+    for variant_type in model_names.keys():
+        data_model = data[data["model"] == variant_type]
+        model_average = np.mean(data_model[f"model_rewards"].to_list(), axis=0)
 
-    plt.xlabel("Trial")
-    # plt.ylim(0, 50)
-    plt.ylabel("Average actual score")
-    plt.legend()
-    # plt.savefig(f"plots/{condition}/{model_name}_rewards.png")
-    plt.show()
-    plt.close()
+        # replace model name using the model_names
+        variant_type = model_names[variant_type]
+        plt.plot(model_average, label=variant_type)
+
+    # plt.xlabel("Trial")
+    # # plt.ylim(0, 50)
+    # plt.ylabel("Average actual score")
+    # plt.legend()
+    # # plt.savefig(f"plots/{condition}/{model_name}_rewards.png")
+    # plt.show()
+    # plt.close()
+
 
 def plot_clicks(condition, data):
     data = data[["model", "model_clicks", "pid_clicks"]]
@@ -110,12 +118,9 @@ def plot_clicks(condition, data):
 
     linear_regression(data, "clicks")
 
-    for variant_type in model_names.keys():
+    for variant_type in data["model"].unique():
         data_model = data[data["model"] == variant_type]
-        model_average = np.mean(data_model["model_clicks"].to_list(), axis=0)
-
-        # replace model name using the model_names
-        variant_type = model_names[variant_type]
+        model_average = np.mean(data_model[f"model_clicks"].to_list(), axis=0)
         plt.plot(model_average, label=variant_type)
 
     # convert series to np array
@@ -151,7 +156,6 @@ def plot_clicks(condition, data):
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
                      label='95% CI')
 
-
     # plt.savefig(f"plots/{condition}/{model_name}_clicks.png")
     # plt.show()
     # plt.close()
@@ -174,13 +178,15 @@ def linear_regression(data, criteria):
     data["model"] = data["model"].replace(model_names)
 
     # explode both model_clicks and pid_clicks at the same time
-    # data = data.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=True)
     data = data.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=True)
 
     # add column "trial" to the data that counts from 1-35 and repeats it for each model and pid
     times = len(data) / 35
     data["trial"] = np.tile(np.arange(0, 35), int(times))
 
+    # make sure model_criteria and pid_criteria are integers
+    data[f"model_{criteria}"] = data[f"model_{criteria}"].apply(lambda x: int(x))
+    data[f"pid_{criteria}"] = data[f"pid_{criteria}"].apply(lambda x: int(x))
 
     # Reshape the DataFrame
     long_df = data.melt(
@@ -199,28 +205,17 @@ def linear_regression(data, criteria):
     # Drop the "model" column as it's no longer needed
     long_df = long_df.drop(columns=["model"])
 
-    # Filter to keep only one row per trial for "pid"
-    filtered_df = pd.concat([
-        long_df[long_df["model_pid"] != "pid"],  # Keep all rows for models
-        long_df[long_df["model_pid"] == "pid"].drop_duplicates(subset="trial")  # Keep one "pid" per trial
-    ])
-
-    # transform all clicks into integers
-    filtered_df["clicks"] = filtered_df["clicks"].apply(lambda x: int(x))
-    filtered_df["trial"] = filtered_df["trial"].apply(lambda x: int(x))
-
-    # model = smf.ols(f"clicks ~ C(model_pid, Treatment('pid')) * trial", data=filtered_df).fit()
+    # model = smf.ols(f"{criteria} ~ C(model_pid, Treatment('pid')) * trial", data=long_df).fit()
     # print(model.summary())
 
-    ### pairwise comparison
-    # filter df for vanilla model and one variant
+    ## pairwise comparison
+    ##filter df for vanilla model and one variant
     for variant in model_dict.keys():
         print(variant)
-        filtered_df_pairwise = filtered_df[filtered_df["model_pid"].isin(["Vanilla", variant])]
-        model_pairwise = smf.ols(f"clicks ~ C(model_pid, Treatment('Vanilla')) * trial", data=filtered_df_pairwise).fit()
+        filtered_df_pairwise = long_df[long_df["model_pid"].isin(["Vanilla", variant])]
+        model_pairwise = smf.ols(f"{criteria} ~ C(model_pid, Treatment('Vanilla')) * trial",
+                                 data=filtered_df_pairwise).fit()
         print(model_pairwise.summary())
-
-
 
 
 def group_pid_according_to_bic(data):
@@ -232,15 +227,13 @@ def group_pid_according_to_bic(data):
         # the smaller BIC the better
         print(sorted_df)
         return sorted_df
+
     return None
 
 
 # conditions = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-conditions = ["low_variance_low_cost"]
+conditions = ["v1.0", "c1.1", "c2.1"]
 model_name = [3315, 3316, 3317, 3318, 3323, 3324, 3325]
-
-# group by models
-# variants = ["PR"]
 
 for condition in conditions:
     print(condition)
@@ -269,12 +262,14 @@ for condition in conditions:
     #
     #     # plot_mer(condition, data, model)
     #     # plot_rewards(condition, data, model)
-    plot_clicks(condition, data) #regression analysis in this function
+    plot_mer(condition, data)
+    # plot_rewards(condition, data)
+    # plot_clicks(condition, data) #regression analysis in this function
 
     # plt.xlabel("Trial", fontsize=12)
-    # plt.ylim(0, 12)
-    # plt.ylabel("Average clicks", fontsize=12)
-    # plt.legend(fontsize=11, ncol=3)
-    # plt.savefig(f"plots/{condition}/variant_clicks.png")
+    # plt.ylim(-4, 44)
+    # plt.ylabel("Average most expected reward", fontsize=12)
+    # plt.legend(fontsize=11, ncol=3, loc='lower left')
+    # plt.savefig(f"plots/{condition}/variant_mer.png")
     # plt.show()
     # plt.close()

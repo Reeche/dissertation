@@ -27,7 +27,7 @@ def replace_values(r_list):
     return [1 if x in {13.0, 14.0, 15.0} else 0 for x in r_list]
 
 
-def linear_regression(data, baseline="pid_strategy"):
+def linear_regression(data):
     # this regression analysis uses the calculated proportion of the optimal strategy instead of the booleans
     model_proportions = []
     for model in data['model'].unique():
@@ -56,6 +56,7 @@ def linear_regression(data, baseline="pid_strategy"):
     long_df = long_df.drop(columns=["model"])
 
     # Filter to keep only one row per trial for "pid"
+    # Because we look at the aggregated proportion of all pid, so only one entry is needed
     filtered_df = pd.concat([
         long_df[long_df["model_pid"] != "pid"],  # Keep all rows for models
         long_df[long_df["model_pid"] == "pid"].drop_duplicates(subset="trial")  # Keep one "pid" per trial
@@ -64,7 +65,7 @@ def linear_regression(data, baseline="pid_strategy"):
     # drop pid data if comparing between the models
     # filtered_df = filtered_df[filtered_df["model_pid"] != "pid"]
 
-    model = smf.ols(f"proportion ~ C(model_pid, Treatment('Vanilla')) * trial", data=filtered_df).fit()
+    model = smf.ols(f"proportion ~ C(model_pid, Treatment('pid')) * trial", data=filtered_df).fit()
     print(model.summary())
 
 def plotting(model_data, model_index, criteria="model_strategy"):
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     ## pid analysis
     # linear_mixed_regression(data, criteria="pid_rewards")
     # logistic_regression(data, criteria="pid_strategy")
-    linear_regression(data, baseline="Vanilla")
+    linear_regression(data)
 
     # ### Plotting
     # plt.figure(figsize=(8, 6))

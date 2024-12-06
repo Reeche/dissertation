@@ -19,7 +19,9 @@ def process_data(data, model_col, pid_col, exp):
             lambda x: ast.literal_eval(re.sub(r'(?<=\d|\-)\s+(?=\d|\-)', ', ', x.replace('\n', ' '))) if isinstance(x,
                                                                                                                     str) else x)
         data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-    else:
+    elif pid_col == "pid_rewards":
+        data[pid_col] = data[pid_col].apply(lambda x: [int(i) for i in x.strip("[]").split()])
+    elif pid_col == "pid_mer":
         data[pid_col] = data[pid_col].apply(lambda x: ast.literal_eval(x))
         data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x))
     return data
@@ -138,9 +140,6 @@ def plot_rewards(data, exp):
 def plot_clicks(data, exp):
     data = process_data(data, "model_clicks", "pid_clicks", exp)
 
-    def process_clicks(row):
-        return [len(sublist) - 1 for sublist in row]
-
     data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
     data["model_clicks"] = data["model_clicks"].apply(process_clicks)
 
@@ -151,48 +150,51 @@ def plot_clicks(data, exp):
     plot_models(data, mb_models, "mb", "model_clicks", "pid_clicks", exp, (0, 12),
                 "Average number of clicks")
 
+def process_clicks(row):
+    return [len(sublist) - 1 for sublist in row]
 
-def compare_model_to_pid_clicks(model_name, data):
-    # how much variability in the pid data is explained by the model
-    # explode together "model_clicks" and "pid_clicks" to get a row for each trial
-    data_ = data.explode(['model_clicks', 'pid_clicks']).reset_index(drop=False)
+def compare_model_to_pid(data, exp, criteria="clicks"):
+    data = process_data(data, f"model_{criteria}", f"pid_{criteria}", exp)
+    if criteria == "clicks":
+        data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
+        data["model_clicks"] = data["model_clicks"].apply(process_clicks)
 
-    # make sure all columns are integers
-    data_["model_clicks"] = data_["model_clicks"].apply(lambda x: int(x))
-    data_["pid_clicks"] = data_["pid_clicks"].apply(lambda x: int(x))
-    data_["index"] = data_["index"].apply(lambda x: int(x))
+    data = data[["model", "pid", f"model_{criteria}", f"pid_{criteria}"]]
 
-    results = smf.ols(formula="pid_clicks ~ index*model_clicks",
-                      data=data_).fit()  # Fit model for first regression line
-    print(model_name)
-    # print(results.summary())
-    r_squared = results.rsquared
-    print("R-squared:", r_squared)
-    print("-" * 50)
+    for model in data["model"].unique():
+        print(model)
+        data_filtered = data[data["model"] == model]
+
+        # explode together "model_clicks" and "pid_clicks" to get a row for each trial
+        data_filtered = data_filtered.explode([f'model_{criteria}', f'pid_{criteria}']).reset_index(drop=False)
+
+        # add trials
+        data_filtered["trial"] = data_filtered.groupby("pid").cumcount()
+
+        # make sure all columns are integers
+        data_filtered[f"model_{criteria}"] = data_filtered[f"model_{criteria}"].apply(lambda x: int(x))
+        data_filtered[f"pid_{criteria}"] = data_filtered[f"pid_{criteria}"].apply(lambda x: int(x))
+        data_filtered["trial"] = data_filtered["trial"].apply(lambda x: int(x))
+
+        # create long_df with columns "trial", "clicks", "model_or_pid"
+        long_df = data_filtered.melt(
+            id_vars=["trial"],  # Keep "model" and "trial" as identifiers
+            value_vars=[f"model_{criteria}", f"pid_{criteria}"],  # Columns to unpivot
+            var_name="model_pid",  # Temporary column name
+            value_name=f"{criteria}"  # Column for the proportions
+        )
+
+        results = smf.ols(formula=f"{criteria} ~ C(model_pid, Treatment('pid_{criteria}')) * trial", data=long_df).fit()
+        print(results.summary())
     return None
 
 
-def compare_model_to_pid_rewards(model_name, data):
-    # explode together "model_clicks" and "pid_clicks" to get a row for each trial
-    data_ = data.explode(['model_rewards', 'pid_rewards']).reset_index(drop=False)
-
-    # make sure all columns are integers
-    data_["model_rewards"] = data_["model_rewards"].apply(lambda x: int(x))
-    data_["pid_rewards"] = data_["pid_rewards"].apply(lambda x: int(x))
-    data_["index"] = data_["index"].apply(lambda x: int(x))
-
-    # results = smf.ols(formula="pid_rewards ~ index*model_rewards", data=data_).fit()  # Fit model for first regression line
-    # print(model_name)
-    # print(results.summary())
-    # r_squared = results.rsquared
-    # print("R-squared:", r_squared)
-    # print("-" * 50)
-    return None
 
 
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
-experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost","low_variance_low_cost"]
+# experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost","low_variance_low_cost"]
+experiment = ["v1.0"]
 
 for exp in experiment:
     print(exp)
@@ -206,26 +208,23 @@ for exp in experiment:
                  "low_variance_low_cost"]:
         data = data[data["pid"].isin(learning_participants[exp])]
 
-    ### for debugging filter for model-based models
-    # data = data[data["model_index"] == "full"]
-
     # create a new column. If column "class" = "hybrid" and "model_index" = 491, then "model" = "pure Reinforce"
     data['model'] = data.apply(assign_model_names, axis=1)
 
-    # filter for hybrid Reinforce and SSL models
-    # data = data[dmerata["model"].isin(["hybrid Reinforce"])]
-
     if exp in ["c1.1", "c2.1", "v1.0"]:
-        plot_mer(data, exp)
+        # plot_mer(data, exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
+        compare_model_to_pid(data, exp, "mer")
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)
-        plot_clicks(data, exp)
+        # plot_clicks(data, exp)
+        compare_model_to_pid(data, exp, "clicks")
     elif exp in ["strategy_discovery"]:
         plot_rewards(data, exp)
         # plot_clicks(data, exp)
+        compare_model_to_pid(data, exp, "rewards")
 
     # plt.ylabel("Performance", fontsize=14)
     # # text size

@@ -205,7 +205,7 @@ mf_reinforce = ["MF - Reinforce"]
 mb_models = ["MB - No assump., grouped", "MB - No assump., ind.", "MB - Uniform, ind.",
              "MB - Uniform, grouped", "MB - Level, grouped", "MB - Level, ind."]
 # variants = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
-# variants = ["PR + SC + TD", "PR + SC", "PR + TD", "PR", "SC + TD", "SC", "TD", "Vanilla"]
-variants = ["SC + TD", "Vanilla"]
+variants = ["PR + SC + TD", "PR + SC", "PR + TD", "PR", "SC + TD", "SC", "TD", "Vanilla"]
+# variants = ["SC + TD", "Vanilla"]
 
 all_models = alternative_models + mcrl_models + mb_models
