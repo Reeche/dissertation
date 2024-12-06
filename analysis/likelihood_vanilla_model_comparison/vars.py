@@ -1,3 +1,7 @@
+import re
+import ast
+
+
 # filter for adpative participants
 # these are participants whose actual score or number of clicks Mann kendall test S > 0 (or S < 0 for low variance)
 learning_participants = {
@@ -178,3 +182,20 @@ mcrl_models = ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]
 
 mb_models = ["No assump., grouped", "No assump., ind.", "Uniform, ind.",
              "Uniform, grouped", "Level, grouped", "Level, ind."]
+
+
+def process_clicks(row):
+    return [len(sublist) - 1 for sublist in row]
+
+def process_data(data, model_col, pid_col, exp):
+    if exp == "strategy_discovery":
+        data[pid_col] = data[pid_col].apply(
+            lambda x: ast.literal_eval(re.sub(r'(?<=\d|\-)\s+(?=\d|\-)', ', ', x.replace('\n', ' '))) if isinstance(x,
+                                                                                                                    str) else x)
+        data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    elif pid_col == "pid_rewards":
+        data[pid_col] = data[pid_col].apply(lambda x: [int(i) for i in x.strip("[]").split()])
+    else:
+        data[pid_col] = data[pid_col].apply(lambda x: ast.literal_eval(x))
+        data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x))
+    return data

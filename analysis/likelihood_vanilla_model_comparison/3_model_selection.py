@@ -1,14 +1,17 @@
 import pandas as pd
 import numpy as np
 import os
-from vars import (clicking_participants, learning_participants, assign_model_names, not_examined_all_pid,
-                  adaptive_pid, mod_adaptive_pid, maladaptive_pid, examined_all_pid, habitual_examined_all_pid)
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, kruskal
 import pymannkendall as mk
 import ast
 from statsmodels.formula.api import ols
 import warnings
+
+from vars import (process_data, process_clicks,
+    clicking_participants, learning_participants, assign_model_names, not_examined_all_pid,
+                  adaptive_pid, mod_adaptive_pid, maladaptive_pid, examined_all_pid, habitual_examined_all_pid)
+
 
 warnings.filterwarnings("ignore")
 
@@ -54,25 +57,6 @@ def sort_by_BIC(data):
     print(sorted_df)
     return sorted_df
 
-
-def bms(model_bic):
-    # Step 1: Calculate BIC for each model
-    # Assume bic_values is a list of pre-calculated BIC values for different models
-
-    # Step 2: Compute the BIC differences
-    delta_bic = np.array(model_bic["BIC"]) - min(model_bic["BIC"])
-
-    # Step 3: Calculate exceedance probabilities
-    exceedance_probs = np.exp(-0.5 * delta_bic) / np.sum(np.exp(-0.5 * delta_bic))
-
-    # Step 4: Calculate φ (phi)
-    phi = 1 / (1 + np.exp(delta_bic / 2))
-
-    # Print results
-    rounded_probs = [round(prob, 4) for prob in exceedance_probs]
-    phi = [round(value, 4) for value in phi]
-    print("Exceedance Probabilities:", rounded_probs)
-    print("Phi Values:", phi)
 
 
 def create_csv_for_matlab(data, exp):
@@ -139,8 +123,8 @@ def plot_pid_score_grouped_by_model(data, condition=None):
         pid_rewards_average = np.mean(pid_rewards, axis=0)
 
         # Mann Kendall test of trend
-        mk_results = mk.original_test(pid_rewards_average)
-        print(f"{condition}, {model}: {mk_results}")
+        # mk_results = mk.original_test(pid_rewards_average)
+        # print(f"{condition}, {model}: {mk_results}")
 
         # plot the average
         plt.plot(pid_rewards_average, label=f"{model}, N={len(filtered_data)}")
@@ -189,8 +173,8 @@ def plot_pid_clicks_grouped_by_model(data, condition):
         pid_clicks_average = np.mean(result_array, axis=0)
 
         # Mann Kendall test of trend
-        mk_results = mk.original_test(pid_clicks_average)
-        print(f"{condition}, {model}: {mk_results}")
+        # mk_results = mk.original_test(pid_clicks_average)
+        # print(f"{condition}, {model}: {mk_results}")
 
         # plot the average
         plt.plot(pid_clicks_average, label=f"{model}, N={len(filtered_data)}")
@@ -217,16 +201,56 @@ def plot_pid_clicks_grouped_by_model(data, condition):
         plt.ylabel("Average number of clicks", fontsize=12)
         plt.legend(fontsize=11, ncol=2)
 
-    # plt.show()
+
 
     ##if no dir, create dir
-    if not os.path.exists(f"plots/{exp}"):
-        os.makedirs(f"plots/{exp}")
+    # if not os.path.exists(f"plots/{exp}"):
+    #     os.makedirs(f"plots/{exp}")
 
-    plt.savefig(f"plots/{exp}/clicks_grouped.png")
+    # plt.savefig(f"plots/{exp}/clicks_grouped.png")
+    plt.show()
     plt.close()
 
     return None
+
+def plot_model_simulation_of_pid_with_lowest_BIC(data, criteria):
+    for model in data["model_index"].unique():
+        filtered_data = data[data["model_index"] == model]
+        filtered_data = process_data(filtered_data, f"model_{criteria}", f"pid_{criteria}", exp)
+
+        if criteria == "rewards":
+            filtered_data[f'pid_{criteria}'] = filtered_data[f'pid_{criteria}'].apply(lambda s: [float(num) for num in s.strip('[]').split()])
+            filtered_data[f'model_{criteria}'] = filtered_data[f'model_{criteria}'].apply(lambda x: ast.literal_eval(x))
+        elif criteria == "clicks":
+            filtered_data["pid_clicks"] = filtered_data["pid_clicks"].apply(process_clicks)
+            filtered_data["model_clicks"] = filtered_data["model_clicks"].apply(process_clicks)
+
+        ### PID data
+        pid_values = np.array(filtered_data[f"pid_{criteria}"].to_list())
+        pid_values_average = np.mean(pid_values, axis=0)
+
+        plt.plot(pid_values_average, label=f"Participant, N={len(filtered_data)}")
+        # add 95%CI
+        plt.fill_between(np.arange(0, 35), pid_values_average - 1.96 * np.std(pid_values, axis=0),
+                            pid_values_average + 1.96 * np.std(pid_values, axis=0), alpha=0.2)
+
+        ### model data
+        model_data = np.array(filtered_data[f"model_{criteria}"].to_list())
+        model_data_average = np.mean(model_data, axis=0)
+
+        # rename model_index to model
+        model = filtered_data["model"].unique()[0]
+        plt.plot(model_data_average, label=f"{model}, N={len(filtered_data)}")
+
+        plt.xlabel("Trial")
+        plt.ylabel(f"Average {criteria}")
+        plt.legend(fontsize=12)
+
+        plt.show()
+        plt.close()
+
+    return None
+
 
 
 def kruskal_rewards(exp, data):
@@ -376,7 +400,7 @@ if __name__ == "__main__":
     #               "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    experiment = ["v1.0"]
 
     for exp in experiment:
         df_all = []
@@ -388,8 +412,8 @@ if __name__ == "__main__":
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]
         elif exp == "strategy_discovery":
-            # data = data[data["pid"].isin(clicking_participants[exp])]
-            data = data[data["pid"].isin(not_examined_all_pid)]
+            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(not_examined_all_pid)]
 
         # create a new column. If column "class" = "hybrid" and "model_index" = 491, then "model" = "pure Reinforce"
         data['model'] = data.apply(assign_model_names, axis=1)
@@ -409,18 +433,20 @@ if __name__ == "__main__":
         ### for individual analysis
         result_df = pd.concat(df_all, ignore_index=True)
 
-        create_csv_for_matlab(result_df, exp)
+        # create_csv_for_matlab(result_df, exp)
 
-        # res = group_pid_by_bic(result_df, exp)  # get BIC for only selected models
-        # if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+        res = group_pid_by_bic(result_df, exp)  # get BIC for only selected models
+        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+            plot_model_simulation_of_pid_with_lowest_BIC(res, "mer")
             # plot_pid_score_grouped_by_model(res, exp)
             # kruskal_rewards(exp, res)
-        # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-        #              "low_variance_low_cost"]:
-        #     # plot_pid_clicks_grouped_by_model(res, exp)
-        #     # linear_regression_clicks(res, exp)
-        #     kruskal_rewards(exp, res)
-        #     # kruskal_clicks(exp, res)
+        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+                     "low_variance_low_cost"]:
+            plot_model_simulation_of_pid_with_lowest_BIC(res, "clicks")
+            # plot_pid_clicks_grouped_by_model(res, exp)
+            # linear_regression_clicks(res, exp)
+            # kruskal_rewards(exp, res)
+            # kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

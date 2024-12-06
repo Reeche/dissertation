@@ -2,8 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import ast
 import numpy as np
-from vars import learning_participants, clicking_participants, assign_model_names, alternative_models, mcrl_models, \
-    mb_models
+from vars import (process_data, process_clicks,
+    learning_participants, clicking_participants, assign_model_names, alternative_models, mcrl_models, \
+    mb_models)
 import pymannkendall as mk
 import statsmodels.formula.api as smf
 import warnings
@@ -11,20 +12,6 @@ import re
 
 # Set the warning filter to "ignore"
 warnings.filterwarnings("ignore")
-
-
-def process_data(data, model_col, pid_col, exp):
-    if exp == "strategy_discovery":
-        data[pid_col] = data[pid_col].apply(
-            lambda x: ast.literal_eval(re.sub(r'(?<=\d|\-)\s+(?=\d|\-)', ', ', x.replace('\n', ' '))) if isinstance(x,
-                                                                                                                    str) else x)
-        data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-    elif pid_col == "pid_rewards":
-        data[pid_col] = data[pid_col].apply(lambda x: [int(i) for i in x.strip("[]").split()])
-    else:
-        data[pid_col] = data[pid_col].apply(lambda x: ast.literal_eval(x))
-        data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x))
-    return data
 
 
 def plot_confidence_interval(x, pid_average, conf_interval, color, label):
@@ -150,10 +137,6 @@ def plot_clicks(data, exp):
                 "Average number of clicks")
 
 
-def process_clicks(row):
-    return [len(sublist) - 1 for sublist in row]
-
-
 def linear_regression(data, exp, criteria="clicks"):
     data = process_data(data, f"model_{criteria}", f"pid_{criteria}", exp)
     if criteria == "clicks":
@@ -189,11 +172,10 @@ def linear_regression(data, exp, criteria="clicks"):
         print(results.summary())
     return None
 
-
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
-experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-# experiment = ["v1.0"]
+# experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
+experiment = ["v1.0", "c2.1", "c1.1"]
 
 for exp in experiment:
     print(exp)
