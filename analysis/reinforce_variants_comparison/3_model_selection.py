@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import ast
 import pymannkendall as mk
-from vars import learning_participants, clicking_participants, model_dict, model_grouped
+from vars import learning_participants, clicking_participants, model_dict, model_grouped, model_names
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, kruskal, wilcoxon
 import warnings
@@ -66,7 +66,7 @@ def plot_pid_grouped_by_model(exp, data, criteria):
         # filter for the model in data
         filtered_data = data[data["model"].isin(models)]
         print(len(filtered_data), "unique pid are best explained by the the model", model_type)
-
+        print(filtered_data["pid"].unique())
         if criteria == "pid_mer":
             filtered_data[criteria] = filtered_data[criteria].apply(
                 lambda x: [int(float(i)) for i in ast.literal_eval(x)])
@@ -340,10 +340,16 @@ def analyse_subjective_cost(res, exp=None):
     for exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
         sample_data = df[df["exp_x"] == exp]["subjective_cost"]
         print(exp, wilcoxon(sample_data, alternative="greater"))
-
-
     return None
 
+
+def list_pid_lowest_bic(res):
+    # for each unique model, get list of pid
+    for model in res["model"].unique():
+        print(model_names[model])
+        print(res[res["model"] == model]["pid"].unique())
+        print("Number of participants:", len(res[res["model"] == model]["pid"].unique()))
+    return None
 
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
@@ -390,8 +396,12 @@ if __name__ == "__main__":
         # create_csv_for_matlab(result_df, exp)
 
         res = group_pid_by_bic(result_df)
+
+        # get the list of pid who are best explained by a variant
+        list_pid_lowest_bic(res)
+
         # plot_pid_grouped_by_model(exp, res, "pid_rewards")
-        statistical_test(exp, res, "pid_clicks")
+        # statistical_test(exp, res, "pid_clicks")
         # analyse_subjective_cost(exp, res)
         # parameters_analysis(res, exp)
 

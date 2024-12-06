@@ -21,7 +21,7 @@ def process_data(data, model_col, pid_col, exp):
         data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
     elif pid_col == "pid_rewards":
         data[pid_col] = data[pid_col].apply(lambda x: [int(i) for i in x.strip("[]").split()])
-    elif pid_col == "pid_mer":
+    else:
         data[pid_col] = data[pid_col].apply(lambda x: ast.literal_eval(x))
         data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x))
     return data
@@ -47,7 +47,6 @@ def calculate_statistics(data_filtered, model_col):
 
 
 def plot_models(data, model_names, model_type_name, model_col, pid_col, exp, y_limits, ylabel):
-
     plt.figure(figsize=(8, 6))
     for model_name in model_names:
         data_filtered = data[data["model"] == model_name]
@@ -150,10 +149,12 @@ def plot_clicks(data, exp):
     plot_models(data, mb_models, "mb", "model_clicks", "pid_clicks", exp, (0, 12),
                 "Average number of clicks")
 
+
 def process_clicks(row):
     return [len(sublist) - 1 for sublist in row]
 
-def compare_model_to_pid(data, exp, criteria="clicks"):
+
+def linear_regression(data, exp, criteria="clicks"):
     data = process_data(data, f"model_{criteria}", f"pid_{criteria}", exp)
     if criteria == "clicks":
         data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
@@ -189,12 +190,10 @@ def compare_model_to_pid(data, exp, criteria="clicks"):
     return None
 
 
-
-
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
-# experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost","low_variance_low_cost"]
-experiment = ["v1.0"]
+experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
+# experiment = ["v1.0"]
 
 for exp in experiment:
     print(exp)
@@ -215,16 +214,16 @@ for exp in experiment:
         # plot_mer(data, exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
-        compare_model_to_pid(data, exp, "mer")
+        linear_regression(data, exp, "mer")
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
-        compare_model_to_pid(data, exp, "clicks")
+        linear_regression(data, exp, "clicks")
     elif exp in ["strategy_discovery"]:
         plot_rewards(data, exp)
         # plot_clicks(data, exp)
-        compare_model_to_pid(data, exp, "rewards")
+        linear_regression(data, exp, "rewards")
 
     # plt.ylabel("Performance", fontsize=14)
     # # text size

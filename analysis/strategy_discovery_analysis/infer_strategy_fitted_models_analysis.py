@@ -11,7 +11,8 @@ from vars import (adaptive_pid, mod_adaptive_pid, maladaptive_pid, clicked_pid, 
                   hybrid_pid, habitual_pid, assign_model_names, assign_variant_names, variants, all_models,
                   habitual_not_examined_all_pid, hybrid_reinforce, mf_reinforce, not_examined_all_pid,
                   found_optimal_once_pid, found_optimal_twice_pid_not_examined_all,
-                  alternative_models, mcrl_models, mb_models, optimal_pid, optimal_nonhabitual_pid)
+                  alternative_models, mcrl_models, mb_models, optimal_pid, optimal_nonhabitual_pid,
+                  vanilla_pid, sc_pid, pr_pid, pr_sc_pid, td_pid, td_sc_pid, pr_sc_td_pid, pr_td_pid, variant_pids)
 
 
 def process_data(data, model_col, pid_col):
@@ -67,6 +68,7 @@ def linear_regression(data):
 
     model = smf.ols(f"proportion ~ C(model_pid, Treatment('pid')) * trial", data=filtered_df).fit()
     print(model.summary())
+
 
 def plotting(model_data, model_index, criteria="model_strategy"):
     model_proportion = np.sum(list(model_data[criteria]), axis=0) / len(model_data)
@@ -134,11 +136,12 @@ def logistic_regression(data, criteria="pid_strategy"):
     # model = smf.ols(f"{criteria} ~  model_strategy * trial", data=data).fit()
     # print(f"For the criteria {criteria}: ", model.summary())
 
-def load_process_data(pid_filter=None, model_type=None):
-    # if name of variable is "variants", load the data from the variants folder
-    model_type_name = [var_name for var_name in globals() if globals()[var_name] is model_type][0]
 
-    if model_type_name == "variants":
+def load_process_data(pid_filter=None, model_type=None, variant=False):
+    # if name of variable is "variants", load the data from the variants folder
+    # model_type_name = [var_name for var_name in globals() if globals()[var_name] is model_type][0]
+
+    if variant:
         data = pd.read_csv("../../analysis/reinforce_variants_comparison/data/strategy_discovery.csv")
 
         # add the vanilla model
@@ -180,50 +183,52 @@ def load_process_data(pid_filter=None, model_type=None):
 
 if __name__ == "__main__":
     ### configs
-    pid = clicked_pid
-    models = variants
+    # pid = pr_pid
+    # models = variants
+    variant = True
 
-    data = load_process_data(pid, models)
+    for model, pid in variant_pids.items():
+        data = load_process_data(pid, [model], variant)
 
-    ## pid analysis
-    # linear_mixed_regression(data, criteria="pid_rewards")
-    # logistic_regression(data, criteria="pid_strategy")
-    linear_regression(data)
+        ## pid analysis
+        # linear_mixed_regression(data, criteria="pid_rewards")
+        # logistic_regression(data, criteria="pid_strategy")
+        linear_regression(data)
 
-    # ### Plotting
-    # plt.figure(figsize=(8, 6))
-    # # Score analysis
-    # for model_index in models:
-    #     print("Model: ", model_index)
-    #     model_data = data[data['model'] == model_index]
-    #
-    #     # mk_test(model_data, model_index, criteria="model_strategy")
-    #     # plotting(model_data, model_index, criteria="model_strategy")
-    #
-    # ## Add pid proportion
-    # average_score = np.sum(list(model_data['pid_strategy']), axis=0) / len(model_data)
-    #
-    # # first_value = round(average_score[0] * 100)
-    # # last_value = round(average_score[-1] * 100)
-    #
-    # plt.plot(list(range(1, 121)), average_score, label=f'Participant, n={len(model_data)}', color="blue", linewidth=3)
-    # # plt.plot(list(range(1, 121)), average_score, label=f'Participant, {first_value}% to {last_value}%', color="blue", linewidth=3)
-    #
-    # # add 95% CI for participants
-    # conf_interval = 1.96 * np.std(list(model_data['pid_strategy'])) / np.sqrt(len(list(model_data['pid_strategy'])))
-    # plt.fill_between(list(range(1, 121)), average_score - conf_interval, average_score + conf_interval, alpha=0.2,
-    #                  label='95% CI')
-    #
-    #
-    # plt.ylim(-0.03, 0.5)
-    # plt.legend(fontsize=12, ncol=2, loc='upper left')
-    # # use the name of the variable to save the plot
-    # pid_name = [var_name for var_name in globals() if globals()[var_name] is pid][0]
-    # model_name = [var_name for var_name in globals() if globals()[var_name] is models][0]
-    #
-    # # plt.savefig(f"plots/rldm/{pid_name}_{model_name}_proportion.png")
-    # # plt.show()
-    # # plt.close()
+        ### Plotting
+        plt.figure(figsize=(8, 6))
+        # Score analysis
+        # for model_index in models:
+        print("Model: ", model)
+        # model_data = data[data['model'] == model_index]
+
+        # mk_test(model_data, model_index, criteria="model_strategy")
+        plotting(data, model, criteria="model_strategy")
+
+        ## Add pid proportion
+        average_pid = np.sum(list(data['pid_strategy']), axis=0) / len(data)
+
+        first_value = round(average_pid[0] * 100, 1)
+        last_value = round(average_pid[-1] * 100, 1)
+
+        # plt.plot(list(range(1, 121)), average_score, label=f'Participant, n={len(data)}', color="blue",
+        #          linewidth=3)
+        plt.plot(list(range(1, 121)), average_pid, label=f'Participant, n={len(data)}, {first_value}% to {last_value}%', color="blue", linewidth=3)
+
+        # add 95% CI for participants
+        conf_interval = 1.96 * np.std(list(data['pid_strategy'])) / np.sqrt(len(list(data['pid_strategy'])))
+        plt.fill_between(list(range(1, 121)), average_pid - conf_interval, average_pid + conf_interval, alpha=0.2,
+                         label='95% CI')
+
+        plt.ylim(-0.03, 1)
+        plt.legend(fontsize=14, ncol=2, loc='upper left')
+        # use the name of the variable to save the plot
+        pid_name = [var_name for var_name in globals() if globals()[var_name] is pid][0]
+        model_name = [var_name for var_name in globals() if globals()[var_name] is model][0]
+
+        plt.savefig(f"plots/rldm/{pid_name}_{model_name}_proportion.png")
+        plt.show()
+        plt.close()
 
     # ### Proportion analysis, regression
     # for model_index in models:
@@ -234,7 +239,6 @@ if __name__ == "__main__":
     #     # logistic_regression(model_data, criteria="pid_strategy")
     #     linear_regression(model_data, criteria="pid_strategy")
     #     # plotting(model_data, model_index)
-
 
     # # Add pid proportion
     # proportions = np.sum(list(model_data['pid_strategy']), axis=0) / len(model_data)
