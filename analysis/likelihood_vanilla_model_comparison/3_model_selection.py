@@ -400,7 +400,7 @@ if __name__ == "__main__":
     #               "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    experiment = ["v1.0"]
+    experiment = ["high_variance_high_cost"]
 
     for exp in experiment:
         df_all = []

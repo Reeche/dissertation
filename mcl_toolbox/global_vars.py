@@ -81,7 +81,6 @@ class structure:
         "mf": [3, 1, 2],
         "stroop": [3, 1, 2],
     }
-    # strategy_discovery = [[0], [-1, 1], [-5, 5], [-5, 5, -50, 50]]
     strategy_discovery = [[0], [-1, 1], [-5], [-5, -50, 50]]
     level_values_increasing = [[0], [-4, -2, 2, 4], [-8, -4, 4, 8], [-48, -24, 24, 48]]
     # level_values_decreasing = [

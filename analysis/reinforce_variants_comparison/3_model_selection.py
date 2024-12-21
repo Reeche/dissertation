@@ -354,19 +354,20 @@ def list_pid_lowest_bic(res):
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    experiment = ["high_variance_high_cost"]
     df_all = []
     for exp in experiment:
 
         data = pd.read_csv(f"data/{exp}.csv", index_col=0)
 
-        ## add vanilla model
-        vanilla_data = pd.read_csv(f"../../final_results/aggregated_data/strategy_discovery.csv")
-        vanilla_data = vanilla_data[vanilla_data["model_index"] == "3326"]
-        vanilla_data["model"] = 3326
-        vanilla_data["exp"] = "strategy_discovery"
-        vanilla_data = vanilla_data.drop(columns=["class", "model_index", "condition", "Unnamed: 0.1", "Unnamed: 0"])
-        data = pd.concat([data, vanilla_data], ignore_index=True)
+        ## add vanilla model; only relevant for SD?
+        if exp == "strategy_discovery":
+            vanilla_data = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv")
+            vanilla_data = vanilla_data[vanilla_data["model_index"] == "3326"]
+            vanilla_data["model"] = 3326
+            vanilla_data["exp"] = "strategy_discovery"
+            vanilla_data = vanilla_data.drop(columns=["class", "model_index", "condition", "Unnamed: 0.1", "Unnamed: 0"])
+            data = pd.concat([data, vanilla_data], ignore_index=True)
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
             data = data[data["pid"].isin(clicking_participants[exp])]
@@ -398,10 +399,10 @@ if __name__ == "__main__":
         res = group_pid_by_bic(result_df)
 
         # get the list of pid who are best explained by a variant
-        list_pid_lowest_bic(res)
+        # list_pid_lowest_bic(res)
 
         # plot_pid_grouped_by_model(exp, res, "pid_rewards")
-        # statistical_test(exp, res, "pid_clicks")
+        statistical_test(exp, res, "pid_clicks")
         # analyse_subjective_cost(exp, res)
         # parameters_analysis(res, exp)
 

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import ast
 import numpy as np
 import statsmodels.formula.api as smf
-from vars import learning_participants, clicking_participants, model_dict, model_names
+from vars import learning_participants, clicking_participants, model_dict, model_names, process_clicks, process_data
 
 # turn off user warnings
 import warnings
@@ -19,8 +19,6 @@ def plot_mer(condition, data):
 
     # convert series to np array
     # model = np.array(data["model_mer"].to_list())
-
-    linear_regression(data, "mer")
 
     # for each unique model in "model" column, calculate the average of the model_mer
     for variant_type in data["model"].unique():
@@ -63,7 +61,6 @@ def plot_rewards(condition, data):
     data['pid_rewards'] = data['pid_rewards'].apply(lambda x: [int(num) for num in x[1:-1].split()])
     data['model_rewards'] = data["model_rewards"].apply(lambda x: ast.literal_eval(x))
 
-    linear_regression(data, "rewards")
 
     # convert series to np array
     model_average = np.mean(data['model_rewards'].to_list(), axis=0)
@@ -116,52 +113,51 @@ def plot_clicks(condition, data):
     data["model_clicks"] = lengths_model
     data["pid_clicks"] = lengths_pid
 
-    linear_regression(data, "clicks")
 
-    for variant_type in data["model"].unique():
-        data_model = data[data["model"] == variant_type]
-        model_average = np.mean(data_model[f"model_clicks"].to_list(), axis=0)
-        plt.plot(model_average, label=variant_type)
+    # for variant_type in data["model"].unique():
+    #     data_model = data[data["model"] == variant_type]
+    #     model_average = np.mean(data_model[f"model_clicks"].to_list(), axis=0)
+    #     plt.plot(model_average, label=variant_type)
+    #
+    # # convert series to np array
+    # # model = np.array(data["model_clicks"].to_list())
+    # # model_average = np.mean(model, axis=0)
+    #
+    # ### PID data
+    # # keep only unique lists in the column "pid_clicks"
+    # # Convert lists to tuples to use them in a set
+    # data['pid_clicks_tuple'] = data['pid_clicks'].apply(tuple)
+    #
+    # # Remove duplicates by converting the column to a set and back to a list
+    # unique_pid_clicks = list(set(data['pid_clicks_tuple']))
+    #
+    # # Convert tuples back to lists if necessary
+    # pid = [list(x) for x in unique_pid_clicks]
+    #
+    # # pid = np.array(data_unique_pid["pid_clicks"].to_list())
+    # pid_average = np.mean(pid, axis=0)
+    #
+    # # Calculate mean and standard error for each data point
+    # std_dev = np.std(pid, axis=0)
+    # n = len(pid)
+    # std_err = std_dev / np.sqrt(n)
+    #
+    # # Calculate the confidence interval
+    # conf_interval = 1.96 * std_err
+    #
+    # x = np.arange(0, len(pid_average))
+    #
+    # # plot model_mer and pid_mer
+    # plt.plot(pid_average, label="Participant", color="blue", linewidth=3)
+    # plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
+    #                  label='95% CI')
+    #
+    # # plt.savefig(f"plots/{condition}/{model_name}_clicks.png")
+    # # plt.show()
+    # # plt.close()
 
-    # convert series to np array
-    # model = np.array(data["model_clicks"].to_list())
-    # model_average = np.mean(model, axis=0)
 
-    ### PID data
-    # keep only unique lists in the column "pid_clicks"
-    # Convert lists to tuples to use them in a set
-    data['pid_clicks_tuple'] = data['pid_clicks'].apply(tuple)
-
-    # Remove duplicates by converting the column to a set and back to a list
-    unique_pid_clicks = list(set(data['pid_clicks_tuple']))
-
-    # Convert tuples back to lists if necessary
-    pid = [list(x) for x in unique_pid_clicks]
-
-    # pid = np.array(data_unique_pid["pid_clicks"].to_list())
-    pid_average = np.mean(pid, axis=0)
-
-    # Calculate mean and standard error for each data point
-    std_dev = np.std(pid, axis=0)
-    n = len(pid)
-    std_err = std_dev / np.sqrt(n)
-
-    # Calculate the confidence interval
-    conf_interval = 1.96 * std_err
-
-    x = np.arange(0, len(pid_average))
-
-    # plot model_mer and pid_mer
-    plt.plot(pid_average, label="Participant", color="blue", linewidth=3)
-    plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
-                     label='95% CI')
-
-    # plt.savefig(f"plots/{condition}/{model_name}_clicks.png")
-    # plt.show()
-    # plt.close()
-
-
-def linear_regression(data, criteria):
+def linear_regression(exp, data, criteria):
     """
     This function performs a linear regression on the data based on the criteria provided.
     The data format need to be reshaped into a long format with "criteria", "clicks", "trial", "model_or_pid" as columns.
@@ -174,48 +170,69 @@ def linear_regression(data, criteria):
     Returns:
 
     """
-    # replace model names
-    data["model"] = data["model"].replace(model_names)
+    data = process_data(data, f"model_{criteria}", f"pid_{criteria}", exp)
+    if criteria == "clicks":
+        data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
+        data["model_clicks"] = data["model_clicks"].apply(process_clicks)
 
-    # explode both model_clicks and pid_clicks at the same time
-    data = data.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=True)
+    data = data[["model", "pid", f"model_{criteria}", f"pid_{criteria}"]]
 
-    # add column "trial" to the data that counts from 1-35 and repeats it for each model and pid
-    times = len(data) / 35
-    data["trial"] = np.tile(np.arange(0, 35), int(times))
+    # for model in data["model"].unique():
+    # todo: somehow ols over all models at the same time give insignificant results, whereas individiual model with PID give significant results
+    # print(model)
+    # data_filtered = data[data["model"] == model]
 
-    # make sure model_criteria and pid_criteria are integers
-    data[f"model_{criteria}"] = data[f"model_{criteria}"].apply(lambda x: int(x))
-    data[f"pid_{criteria}"] = data[f"pid_{criteria}"].apply(lambda x: int(x))
+    # replace model name using the model_names
+    data["model"] = data["model"].apply(lambda x: model_names[x])
 
-    # Reshape the DataFrame
-    long_df = data.melt(
-        id_vars=["model", "trial"],  # Keep "model" and "trial" as identifiers
-        value_vars=[f"model_{criteria}", f"pid_{criteria}"],  # Columns to unpivot
+    # explode together "model_clicks" and "pid_clicks" to get a row for each trial
+    data_filtered = data.explode([f'model_{criteria}', f'pid_{criteria}']).reset_index(drop=False)
+
+    # add trials by multiplying range 0 - 35
+    if exp != "strategy_discovery":
+        data_filtered["trial"] = [i % 35 for i in range(len(data_filtered))]
+    else:
+        data_filtered["trial"] = [i % 120 for i in range(len(data_filtered))]
+
+    # make sure all columns are integers
+    data_filtered[f"model_{criteria}"] = data_filtered[f"model_{criteria}"].apply(lambda x: int(x))
+    data_filtered[f"pid_{criteria}"] = data_filtered[f"pid_{criteria}"].apply(lambda x: int(x))
+    data_filtered["trial"] = data_filtered["trial"].apply(lambda x: int(x))
+
+    # create one long dataframe for all the clicks of the models with the columns "trial", "model_or_pid", "clicks"
+    long_df_model = data_filtered.melt(
+        id_vars=["trial", "model"],  # Keep "model" and "trial" as identifiers
+        value_vars=[f"model_{criteria}"],  # Columns to unpivot
         var_name="model_pid",  # Temporary column name
         value_name=f"{criteria}"  # Column for the proportions
     )
 
     # Modify the "model_pid" column to include the model name where appropriate
-    long_df["model_pid"] = long_df.apply(
-        lambda row: row["model"] if row["model_pid"] == f"model_{criteria}" else "pid",
+    long_df_model["model_pid"] = long_df_model.apply(
+        lambda row: row["model"] if row["model_pid"] == f"model_{criteria}" else "Not found",
         axis=1
     )
+    # rename columns to "trial", "model", "model_or_pid", "clicks"
+    long_df_model = long_df_model.rename(columns={"model": "model", "model_pid": "model_pid"})
 
-    # Drop the "model" column as it's no longer needed
-    long_df = long_df.drop(columns=["model"])
+    # filter data_filtered for unique pid and trial
+    data_filtered_pid = data_filtered.drop_duplicates(subset=["pid", "trial"])
 
-    # model = smf.ols(f"{criteria} ~ C(model_pid, Treatment('pid')) * trial", data=long_df).fit()
-    # print(model.summary())
+    long_df_pid = data_filtered_pid.melt(
+        id_vars=["trial", "pid"],  # Keep "model" and "trial" as identifiers
+        value_vars=[f"pid_{criteria}"],  # Columns to unpivot
+        var_name="model_pid",  # Temporary column name
+        value_name=f"{criteria}"  # Column for the proportions
+    )
 
-    ## pairwise comparison
-    ##filter df for vanilla model and one variant
-    for variant in model_dict.keys():
-        print(variant)
-        filtered_df_pairwise = long_df[long_df["model_pid"].isin(["Vanilla", variant])]
-        model_pairwise = smf.ols(f"{criteria} ~ C(model_pid, Treatment('Vanilla')) * trial",
-                                 data=filtered_df_pairwise).fit()
-        print(model_pairwise.summary())
+    # rename columns to "trial", "model", "model_or_pid", "clicks"
+    long_df_pid = long_df_pid.rename(columns={"pid": "model", "model_pid": "model_pid"})
+
+    # merge the two dataframes
+    long_df = pd.concat([long_df_model, long_df_pid])
+
+    results = smf.ols(formula=f"{criteria} ~ C(model_pid, Treatment('pid_{criteria}')) * trial", data=long_df).fit()
+    print(results.summary())
 
 
 def group_pid_according_to_bic(data):
@@ -262,9 +279,14 @@ for condition in conditions:
     #
     #     # plot_mer(condition, data, model)
     #     # plot_rewards(condition, data, model)
-    plot_mer(condition, data)
+    # plot_mer(condition, data)
     # plot_rewards(condition, data)
     # plot_clicks(condition, data) #regression analysis in this function
+
+    # linear regression
+    # linear_regression(condition, data, "clicks")
+    linear_regression(condition, data, "mer")
+    # linear_regression(condition, data, "reward")
 
     # plt.xlabel("Trial", fontsize=12)
     # plt.ylim(-4, 44)

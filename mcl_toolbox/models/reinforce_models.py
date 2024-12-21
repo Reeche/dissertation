@@ -37,9 +37,9 @@ class Policy(nn.Module):
         assert not torch.isinf(x).any(), f"feature matrix has inf values {x}"
 
         y = self.weighted_preference(x)
-        if term_reward:
+        if term_reward: #if TD, then append the estimated term_reward; else the value is learned like the other actions
             y[0][0] = torch.Tensor([term_reward])
-        if not termination:
+        if not termination: #this one is independent of TD
             y[0][0] = torch.Tensor([-np.inf])
         action_scores = self.beta * y #beta should be high to be deterministic
 
@@ -116,6 +116,12 @@ class REINFORCE(Learner):
         if self.termination_value_known:
             term_reward = self.get_term_reward(env)
             probs = self.policy(X_new, term_reward, termination=not self.no_term)
+            # IF term_reward is used, then the difference of prob between the term action and the other actions are much smaller
+            # todo: why?
+            # e.g. pid 24, strategy discovery with TD model 3325: 0.0723 for term, 0.077 for other actions
+            # For same pid, 0.0008 for term and 0.0315 for action 1 using the PR model (3318)
+            # term_reward is correctly implemented, e.g. in the beginning is it -5 because of env structure (check global vars).
+            # after discoverin +1, term_reward becomes -4
         else:
             # calls the forward method in Policy class
             probs = self.policy(X_new, termination=not self.no_term)
@@ -261,13 +267,16 @@ class REINFORCE(Learner):
             end_episode = trial_info["end_episode"]
         policy_loss = 0
         if not end_episode:
-            # get MER based on observed nodess
+            # get MER based on observed nodes
             term_reward = self.get_term_reward(env)
             self.term_rewards.append(term_reward)
             self.store_best_paths(env)
             # reward is the click cost
             action, reward, done, taken_path, delay = self.take_action(env, trial_info)
-            self.pseudo_rewards.append(self.get_pseudo_reward(env)) # always appended but only used if pr is true
+            # always appended but only used if pr is true
+            # self.pseudo_reward is a list that is as long as number of clicks done because it reflects the PR for each clicking operation in sequence,
+            # for example clicked 12, 5, 9, then PR is list of 3 reflecting how good 12, 5 and 9 was
+            self.pseudo_rewards.append(self.get_pseudo_reward(env))
             self.policy.rewards.append(
                 reward - self.subjective_cost - self.delay_scale * delay
             )

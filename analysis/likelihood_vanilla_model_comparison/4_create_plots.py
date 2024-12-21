@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import ast
 import numpy as np
 from vars import (process_data, process_clicks,
-    learning_participants, clicking_participants, assign_model_names, alternative_models, mcrl_models, \
-    mb_models)
+                  learning_participants, clicking_participants, assign_model_names, alternative_models, mcrl_models, \
+                  mb_models)
 import pymannkendall as mk
 import statsmodels.formula.api as smf
 import warnings
@@ -145,32 +145,62 @@ def linear_regression(data, exp, criteria="clicks"):
 
     data = data[["model", "pid", f"model_{criteria}", f"pid_{criteria}"]]
 
-    for model in data["model"].unique():
-        print(model)
-        data_filtered = data[data["model"] == model]
+    # for model in data["model"].unique():
+    # todo: somehow ols over all models at the same time give insignificant results, whereas individiual model with PID give significant results
+    # print(model)
+    # data_filtered = data[data["model"] == model]
 
-        # explode together "model_clicks" and "pid_clicks" to get a row for each trial
-        data_filtered = data_filtered.explode([f'model_{criteria}', f'pid_{criteria}']).reset_index(drop=False)
+    # explode together "model_clicks" and "pid_clicks" to get a row for each trial
+    data_filtered = data.explode([f'model_{criteria}', f'pid_{criteria}']).reset_index(drop=False)
 
-        # add trials
-        data_filtered["trial"] = data_filtered.groupby("pid").cumcount()
+    # add trials by multiplying range 0 - 35
+    if exp != "strategy_discovery":
+        data_filtered["trial"] = [i % 35 for i in range(len(data_filtered))]
+    else:
+        data_filtered["trial"] = [i % 120 for i in range(len(data_filtered))]
 
-        # make sure all columns are integers
-        data_filtered[f"model_{criteria}"] = data_filtered[f"model_{criteria}"].apply(lambda x: int(x))
-        data_filtered[f"pid_{criteria}"] = data_filtered[f"pid_{criteria}"].apply(lambda x: int(x))
-        data_filtered["trial"] = data_filtered["trial"].apply(lambda x: int(x))
+    # make sure all columns are integers
+    data_filtered[f"model_{criteria}"] = data_filtered[f"model_{criteria}"].apply(lambda x: int(x))
+    data_filtered[f"pid_{criteria}"] = data_filtered[f"pid_{criteria}"].apply(lambda x: int(x))
+    data_filtered["trial"] = data_filtered["trial"].apply(lambda x: int(x))
 
-        # create long_df with columns "trial", "clicks", "model_or_pid"
-        long_df = data_filtered.melt(
-            id_vars=["trial"],  # Keep "model" and "trial" as identifiers
-            value_vars=[f"model_{criteria}", f"pid_{criteria}"],  # Columns to unpivot
-            var_name="model_pid",  # Temporary column name
-            value_name=f"{criteria}"  # Column for the proportions
-        )
+    # create one long dataframe for all the clicks of the models with the columns "trial", "model_or_pid", "clicks"
+    long_df_model = data_filtered.melt(
+        id_vars=["trial", "model"],  # Keep "model" and "trial" as identifiers
+        value_vars=[f"model_{criteria}"],  # Columns to unpivot
+        var_name="model_pid",  # Temporary column name
+        value_name=f"{criteria}"  # Column for the proportions
+    )
 
-        results = smf.ols(formula=f"{criteria} ~ C(model_pid, Treatment('pid_{criteria}')) * trial", data=long_df).fit()
-        print(results.summary())
+    # Modify the "model_pid" column to include the model name where appropriate
+    long_df_model["model_pid"] = long_df_model.apply(
+        lambda row: row["model"] if row["model_pid"] == f"model_{criteria}" else "Not found",
+        axis=1
+    )
+    # rename columns to "trial", "model", "model_or_pid", "clicks"
+    long_df_model = long_df_model.rename(columns={"model": "model", "model_pid": "model_pid"})
+
+
+    # filter data_filtered for unique pid and trial
+    data_filtered_pid = data_filtered.drop_duplicates(subset=["pid", "trial"])
+
+    long_df_pid = data_filtered_pid.melt(
+        id_vars=["trial", "pid"],  # Keep "model" and "trial" as identifiers
+        value_vars=[f"pid_{criteria}"],  # Columns to unpivot
+        var_name="model_pid",  # Temporary column name
+        value_name=f"{criteria}"  # Column for the proportions
+    )
+
+    # rename columns to "trial", "model", "model_or_pid", "clicks"
+    long_df_pid = long_df_pid.rename(columns={"pid": "model", "model_pid": "model_pid"})
+
+    # merge the two dataframes
+    long_df = pd.concat([long_df_model, long_df_pid])
+
+    results = smf.ols(formula=f"{criteria} ~ C(model_pid, Treatment('pid_{criteria}')) * trial", data=long_df).fit()
+    print(results.summary())
     return None
+
 
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]

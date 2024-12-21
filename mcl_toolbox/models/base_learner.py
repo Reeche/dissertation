@@ -94,6 +94,7 @@ class Learner(ABC):
         self.previous_best_paths = best_paths
 
     def get_pseudo_reward(self, env):
+        # always positive
         pr = 0
         if self.use_pseudo_rewards:
             # maximum expected reward from previous belief state

@@ -12,6 +12,41 @@ import numpy as np
 
 def plot_all_strategy_proportions(data, model, mapping: dict):
     df = data.replace(mapping)
+
+    ### new code to verify that the old code is correct, but the coloring in the new one is a bit off, so stick to the old plotting
+    # # for each column, count how often each unique value appears as count
+    # value_counts = df.apply(lambda x: x.value_counts()).fillna(0).astype(int)
+    #
+    # # reshape so df has the columns "trial", "adaptive", "mod", "mal"
+    # value_counts = value_counts.transpose()
+    #
+    # # for each column, get the proportion as well as 95% CI as proportion of the column
+    # for column in value_counts:
+    #     value_counts[column] = value_counts[column] / len(df)
+    #     std_dev = np.std(value_counts[column], axis=0)
+    #     n = len(value_counts[column])
+    #     std_err = std_dev / np.sqrt(n)
+    #     conf_interval = 1.96 * std_err
+    #     value_counts[column + "_CI"] = conf_interval
+    #
+    # # plot the proportions
+    # plt.figure(figsize=(8, 6))
+    # plt.plot(value_counts[["adaptive", "mod", "mal"]], label=["Adaptive", "Mod. adaptive", "Maladaptive"])
+    # # plot the confidence intervals
+    # for column in value_counts:
+    #     if "CI" in column:
+    #         plt.fill_between(value_counts.index, value_counts[column.replace("_CI", "")] - value_counts[column],
+    #                          value_counts[column.replace("_CI", "")] + value_counts[column], alpha=0.2)
+    # plt.ylim(-0.1, 1)
+    # plt.xlabel("Trials", fontsize=14)
+    # plt.ylabel("Proportion", fontsize=14)
+    # plt.title(f"Strategy proportions for {model}")
+    # plt.legend(fontsize=14)
+    # # plt.savefig(f"plots/CM_all_strategies/{model}_cm.png")
+    # plt.show()
+    # plt.close()
+    # return None
+
     # figure size
     plt.figure(figsize=(8, 6))
     frequencies = pd.DataFrame(columns=["Adaptive", "Mod. adaptive", "Maladaptive"])
@@ -21,7 +56,15 @@ def plot_all_strategy_proportions(data, model, mapping: dict):
                                            'Maladaptive': Counter(df[columns])["mal"] / len(df)}, ignore_index=True)
 
     # trend_test(frequencies)
-    plt.plot(frequencies, label=["Adaptive", "Mod. adaptive", "Maladaptive"])
+
+    # translate proportions to percentages
+    frequencies = frequencies * 100
+
+    # add the frequency of each strategy to the plot
+    plt.plot(frequencies, label=[
+        f"Adaptive, {frequencies['Adaptive'].iloc[0].round(2)}% to {frequencies['Adaptive'].iloc[-1].round(2)}%",
+        f"Mod. adaptive, {frequencies['Mod. adaptive'].iloc[1].round(2)}% to {frequencies['Mod. adaptive'].iloc[-1].round(2)}%",
+        f"Maladaptive, {frequencies['Maladaptive'].iloc[2].round(2)}% to {frequencies['Maladaptive'].iloc[-1].round(2)}%"])
 
     # get the std error for each column
     std_err = frequencies.std() / (len(frequencies) ** 0.5)
@@ -30,13 +73,13 @@ def plot_all_strategy_proportions(data, model, mapping: dict):
     for column in frequencies:
         plt.fill_between(frequencies.index, frequencies[column] - error_margin[column],
                          frequencies[column] + error_margin[column], alpha=0.2)
-    plt.ylim(-0.1, 1)
+    plt.ylim(-10, 100)
     plt.xlabel("Trials", fontsize=14)
     plt.ylabel("Proportion", fontsize=14)
     # plt.title(f"Strategy proportions for {model}")
     plt.legend(fontsize=14)
-    plt.savefig(f"plots/CM_all_strategies/{experiment}_{model}_cm.png")
-    # plt.show()
+    plt.savefig(f"plots/CM_pid/{experiment}_{model}_cm.png")
+    plt.show()
     plt.close()
     return None
 
@@ -81,8 +124,10 @@ def classify_strategies(strategies, experiment):
             "mod": [74, 66, 22, 28, 70, 53, 30, 23, 39]}
     elif experiment == "c2.1":
         mapping_dict = {
-            "adaptive": [70, 23, 69, 65, 32, 33, 81, 37, 25, 79, 53, 22, 34, 31, 47, 64, 49, 80, 63, 48, 62, 84, 13, 54, 10, 11, 14, 71, 3, 82, 36, 1, 5, 2, 7, 15, 6, 72, 12, 8, 9, 4, 46, 45, 60],
-            "mal": [74, 66, 78, 21, 86, 26, 89, 27, 73, 52, 77, 30, 56, 55, 67, 58, 88, 87, 85, 41, 57, 16, 29, 38, 76, 50, 24, 40, 51, 43, 42, 83, 39],
+            "adaptive": [70, 23, 69, 65, 32, 33, 81, 37, 25, 79, 53, 22, 34, 31, 47, 64, 49, 80, 63, 48, 62, 84, 13, 54,
+                         10, 11, 14, 71, 3, 82, 36, 1, 5, 2, 7, 15, 6, 72, 12, 8, 9, 4, 46, 45, 60],
+            "mal": [74, 66, 78, 21, 86, 26, 89, 27, 73, 52, 77, 30, 56, 55, 67, 58, 88, 87, 85, 41, 57, 16, 29, 38, 76,
+                    50, 24, 40, 51, 43, 42, 83, 39],
             "mod": [75, 68, 19, 20, 18, 17, 28, 61, 35, 44, 59]}
     elif experiment == "c1.1":
         mapping_dict = {
@@ -92,7 +137,6 @@ def classify_strategies(strategies, experiment):
                     23, 89, 74, 7, 6, 11, 12, 72, 10, 14, 36, 9, 71, 2, 1, 13, 3, 5, 8, 15, 46, 4, 54, 42, 24, 27, 28,
                     66, 30],
             "mal": [39]}
-
 
     # Iterate over each key-value pair in the mapping dictionary
     for replacement, values in mapping_dict.items():
@@ -262,7 +306,6 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
 
         ### PID data
 
-
     adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
 
     # Calculate mean and standard error for each data point
@@ -313,7 +356,6 @@ if __name__ == "__main__":
         used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
         strategy_labels = clustering_kmeans(used_strategy_score)
         mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-
 
         # ### clustering by using all strategies
         pid_mapping = classify_strategies(participants_df, experiment)
