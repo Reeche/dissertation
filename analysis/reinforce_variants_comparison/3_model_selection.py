@@ -176,6 +176,14 @@ def statistical_test(exp, data, criteria):
                    + data[data["model"] == 3325][criteria].to_list()
                    + data[data["model"] == 3326][criteria].to_list())
 
+    # count how many participants are in each group
+    print("PR", len(model_pr))
+    print("No PR", len(model_no_pr))
+    print("TD", len(model_td))
+    print("No TD", len(model_no_td))
+    print("SC", len(model_sc))
+    print("No SC", len(model_no_sc))
+
     # print mean and std of each
     print(f"PR mean: {np.mean([item for sublist in model_pr for item in sublist])}")
     print(f"PR std: {np.std([item for sublist in model_pr for item in sublist])}")
@@ -357,6 +365,7 @@ if __name__ == "__main__":
     experiment = ["high_variance_high_cost"]
     df_all = []
     for exp in experiment:
+        print(exp)
 
         data = pd.read_csv(f"data/{exp}.csv", index_col=0)
 

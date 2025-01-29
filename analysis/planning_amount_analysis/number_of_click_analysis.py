@@ -404,7 +404,7 @@ if __name__ == "__main__":
         average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
-        plot_clicks(click_df)
+        # plot_clicks(click_df)
 
         ##trend test
         # trend_test(average_clicks)
@@ -416,21 +416,23 @@ if __name__ == "__main__":
         # click_df_all_conditions.append(click_df)
 
         # get number of clicks of last trial
-        # last_clicks = click_df[click_df["trial"] == 34]["number_of_clicks"]
-        #
-        # # compare whether last clicks sig differ from 0 using Wilcoxon test
-        # if experiment == "high_variance_low_cost":
-        #     stat, p_value = wilcoxon([x - 7.1 for x in last_clicks])
-        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
-        # elif experiment == "high_variance_high_cost":
-        #     stat, p_value = wilcoxon([x - 6.32 for x in last_clicks])
-        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
-        # elif experiment == "low_variance_high_cost":
-        #     stat, p_value = wilcoxon([x - 0 for x in last_clicks])
-        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
-        # else:
-        #     stat, p_value = wilcoxon([x - 3.96 for x in last_clicks])
-        #     print(f"Wilcoxon test for {experiment}: p={p_value}")
+        last_clicks = click_df[click_df["trial"] == 34]["number_of_clicks"]
+        print(f"Average number of clicks for {experiment}: {last_clicks.mean()}")
+        print(f"Standard deviation for {experiment}: {last_clicks.std()}")
+
+        # compare whether last clicks sig differ from 0 using Wilcoxon test
+        if experiment == "high_variance_low_cost":
+            stat, p_value = wilcoxon([x - 7.1 for x in last_clicks])
+            print(f"Wilcoxon test for {experiment}: p={p_value}")
+        elif experiment == "high_variance_high_cost":
+            stat, p_value = wilcoxon([x - 6.32 for x in last_clicks])
+            print(f"Wilcoxon test for {experiment}: p={p_value}")
+        elif experiment == "low_variance_high_cost":
+            stat, p_value = wilcoxon([x - 0 for x in last_clicks])
+            print(f"Wilcoxon test for {experiment}: p={p_value}")
+        else:
+            stat, p_value = wilcoxon([x - 3.96 for x in last_clicks])
+            print(f"Wilcoxon test for {experiment}: p={p_value}")
 
 
         ##optimal number of clicks vs. actual number of clicks

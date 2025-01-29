@@ -33,7 +33,7 @@ def calculate_statistics(data_filtered, model_col):
     return model_average, result
 
 
-def plot_models(data, model_names, model_type_name, model_col, pid_col, exp, y_limits, ylabel):
+def plot_models(data, model_names, model_col, pid_col, y_limits, ylabel):
     plt.figure(figsize=(8, 6))
     for model_name in model_names:
         data_filtered = data[data["model"] == model_name]
@@ -41,10 +41,10 @@ def plot_models(data, model_names, model_type_name, model_col, pid_col, exp, y_l
             model_average, result = calculate_statistics(data_filtered, model_col)
 
             # add first and last trial to the label of the plot
-            model_name = f"{model_name}: {model_average[0]:.1f} to {model_average[-1]:.1f}"
+            model_name = f"{model_name}: {model_average[0]:.0f} to {model_average[-1]:.0f}"
 
             plt.plot(model_average, label=model_name)
-            print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+            # print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
 
     # remove the row if the row contains nan values
     data_filtered = data.dropna(subset=[pid_col])
@@ -86,9 +86,10 @@ def plot_models(data, model_names, model_type_name, model_col, pid_col, exp, y_l
     plt.xlabel("Trial", fontsize=14)
     plt.ylim(y_limits)
     plt.ylabel(ylabel, fontsize=14)
-    plt.legend(fontsize=11, ncol=2)
-    plt.savefig(f"plots/{exp}/{model_type_name}_clicks.png")
-    # plt.show()
+    plt.legend(fontsize=12, ncol=2, loc="lower left")
+
+    plt.savefig(f"plots/{exp}/{model_names}_mer.png")
+    plt.show()
     plt.close()
 
 
@@ -96,11 +97,12 @@ def plot_mer(data, exp):
     data = process_data(data, "model_mer", "pid_mer", exp)
 
     y_limits = (0, 15) if exp == "c1.1" else (-5, 45) if exp == "c2.1" else (0, 50)
-
-    plot_models(data, alternative_models, "model_mer", "pid_mer", exp, "alternatives_mer", y_limits,
-                "Average most expected reward")
-    plot_models(data, mcrl_models, "model_mer", "pid_mer", exp, "MF_mer", y_limits, "Average most expected reward")
-    plot_models(data, mb_models, "model_mer", "pid_mer", exp, "MB_mer", y_limits, "Average most expected reward")
+    plot_models(data=data, model_names=alternative_models,  model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
+    plot_models(data=data, model_names=mcrl_models, model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
+    plot_models(data=data, model_names=mb_models, model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
 
 
 def plot_rewards(data, exp):
@@ -180,7 +182,6 @@ def linear_regression(data, exp, criteria="clicks"):
     # rename columns to "trial", "model", "model_or_pid", "clicks"
     long_df_model = long_df_model.rename(columns={"model": "model", "model_pid": "model_pid"})
 
-
     # filter data_filtered for unique pid and trial
     data_filtered_pid = data_filtered.drop_duplicates(subset=["pid", "trial"])
 
@@ -205,7 +206,7 @@ def linear_regression(data, exp, criteria="clicks"):
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
 # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-experiment = ["v1.0", "c2.1", "c1.1"]
+experiment = ["v1.0"]
 
 for exp in experiment:
     print(exp)
@@ -223,10 +224,10 @@ for exp in experiment:
     data['model'] = data.apply(assign_model_names, axis=1)
 
     if exp in ["c1.1", "c2.1", "v1.0"]:
-        # plot_mer(data, exp)
+        plot_mer(data, exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
-        linear_regression(data, exp, "mer")
+        # linear_regression(data, exp, "mer")
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)

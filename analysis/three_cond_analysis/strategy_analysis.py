@@ -200,141 +200,203 @@ def trend_test(data):
     return None
 
 
+# def plot_adaptive_proportion(data, experiment, pid_mapping):
+#     data['model'] = data.apply(assign_model_names, axis=1)
+#     data = data[["model", "model_strategies", "pid_strategies"]]
+#
+#     data['model_strategies'] = data['model_strategies'].apply(ast.literal_eval)
+#     data['pid_strategies'] = data['pid_strategies'].apply(ast.literal_eval)
+#
+#     # plt.figure(figsize=(8, 6))
+#     x = np.arange(0, 35)
+#
+#     for model_name in ["Non-learning", "SSL", "Habitual"]:
+#         data_filtered = data[data["model"] == model_name]
+#         data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+#         ##clustering based on clusters used for participants
+#         data_temp = classify_strategies(data_temp, experiment)
+#
+#         # for each column count how often "adaptive" appears divided by total length of the column
+#         adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#         plt.plot(x, adaptive_proportion, label=model_name)
+#
+#         result = mk.original_test(adaptive_proportion)
+#         # print(f"{model_name}:", adaptive_proportion)
+#         print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+#
+#     ### PID data
+#     adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#
+#     # Calculate mean and standard error for each data point
+#     std_dev = np.std(adaptive_proportion_pid, axis=0)
+#     n = len(adaptive_proportion_pid)
+#     std_err = std_dev / np.sqrt(n)
+#
+#     # Calculate the confidence interval
+#     conf_interval = 1.96 * std_err
+#
+#     x = np.arange(0, len(adaptive_proportion_pid))
+#
+#     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+#     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+#                      alpha=0.1,
+#                      label='95% CI')
+#
+#     plt.xlabel("Trial", fontsize=12)
+#     plt.ylim(0, 1)
+#     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+#     plt.legend(fontsize=11, ncol=2)
+#     # plt.savefig(f"plots/{experiment}/alternatives_proportions.png")
+#     plt.show()
+#     plt.close()
+#
+#     for model_name in ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]:
+#         data_filtered = data[data["model"] == model_name]
+#         data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+#         ##clustering based on clusters used for participants
+#         data_temp = classify_strategies(data_temp, experiment)
+#
+#         # for each column count how often "adaptive" appears divided by total length of the column
+#         adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#         plt.plot(x, adaptive_proportion, label=model_name)
+#
+#         result = mk.original_test(adaptive_proportion)
+#         print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+#
+#     ### PID data
+#     adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#
+#     # Calculate mean and standard error for each data point
+#     std_dev = np.std(adaptive_proportion_pid, axis=0)
+#     n = len(adaptive_proportion_pid)
+#     std_err = std_dev / np.sqrt(n)
+#
+#     # Calculate the confidence interval
+#     conf_interval = 1.96 * std_err
+#
+#     x = np.arange(0, len(adaptive_proportion_pid))
+#
+#     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+#     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+#                      alpha=0.1,
+#                      label='95% CI')
+#
+#     plt.xlabel("Trial", fontsize=12)
+#     plt.ylim(0, 1)
+#     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+#     plt.legend(fontsize=11, ncol=2)
+#     # plt.savefig(f"plots/{experiment}/MF_proportions.png")
+#     plt.show()
+#     plt.close()
+#
+#     for model_name in ["MB - No assump., grouped", "MB - No assump., ind.",
+#                        "MB - Uniform, ind.", "MB - Uniform, grouped",
+#                        "MB - Level, grouped", "MB - Level, ind."]:
+#         data_filtered = data[data["model"] == model_name]
+#         data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+#         ##clustering based on clusters used for participants
+#         data_temp = classify_strategies(data_temp, experiment)
+#
+#         # for each column count how often "adaptive" appears divided by total length of the column
+#         adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#         plt.plot(x, adaptive_proportion, label=model_name)
+#
+#         result = mk.original_test(adaptive_proportion)
+#         print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+#
+#         ### PID data
+#
+#     adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+#
+#     # Calculate mean and standard error for each data point
+#     std_dev = np.std(adaptive_proportion_pid, axis=0)
+#     n = len(adaptive_proportion_pid)
+#     std_err = std_dev / np.sqrt(n)
+#
+#     # Calculate the confidence interval
+#     conf_interval = 1.96 * std_err
+#
+#     x = np.arange(0, len(adaptive_proportion_pid))
+#
+#     plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+#     plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
+#                      alpha=0.1,
+#                      label='95% CI')
+#
+#     plt.xlabel("Trial", fontsize=12)
+#     plt.ylim(0, 1)
+#     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+#     plt.legend(fontsize=11, ncol=2)
+#     # plt.savefig(f"plots/{experiment}/MB_proportions.png")
+#     plt.show()
+#     plt.close()
+
+def calculate_and_plot(data, model_names, experiment, pid_mapping):
+    """Calculate adaptive proportions and plot for the given model names."""
+    x = np.arange(0, 35)
+    for model_name in model_names:
+        data_filtered = data[data["model"] == model_name]
+        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
+        data_temp = classify_strategies(data_temp, experiment)
+
+        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+
+        ## trend test
+        result = mk.original_test(adaptive_proportion)
+        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+
+        # add proportion of the first and last trial as percentage rounded to 2 decimals to the label
+        first_trial = round(adaptive_proportion.iloc[0] * 100, 2)
+        last_trial = round(adaptive_proportion.iloc[-1] * 100, 2)
+        label = f"{model_name}, {first_trial}% to {last_trial}%"
+        label = f"{model_name}"
+        plt.plot(x, adaptive_proportion, label=label)
+
+    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
+
+    std_dev = np.std(adaptive_proportion_pid, axis=0)
+    n = len(adaptive_proportion_pid)
+    std_err = std_dev / np.sqrt(n)
+    conf_interval = 1.96 * std_err
+
+    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
+    plt.fill_between(np.arange(0, len(adaptive_proportion_pid)),
+                     adaptive_proportion_pid - conf_interval,
+                     adaptive_proportion_pid + conf_interval,
+                     color='blue', alpha=0.1, label='95% CI')
+
+    plt.xlabel("Trial", fontsize=12)
+    plt.ylim(0, 1)
+    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
+    plt.legend(fontsize=10, ncol=2)
+    plt.savefig(f"plots/CM/{experiment}_{model_names}_adaptive_proportions.png")
+    plt.show()
+    plt.close()
+
+
 def plot_adaptive_proportion(data, experiment, pid_mapping):
+    """Main function to plot adaptive proportions for all models."""
     data['model'] = data.apply(assign_model_names, axis=1)
     data = data[["model", "model_strategies", "pid_strategies"]]
 
     data['model_strategies'] = data['model_strategies'].apply(ast.literal_eval)
     data['pid_strategies'] = data['pid_strategies'].apply(ast.literal_eval)
 
-    # plt.figure(figsize=(8, 6))
-    x = np.arange(0, 35)
+    model_groups = {
+        "Alternatives": ["Non-learning", "SSL", "Habitual"],
+        "MF": ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"],
+        "MB": ["MB - No assump., grouped", "MB - No assump., ind.",
+               "MB - Uniform, ind.", "MB - Uniform, grouped",
+               "MB - Level, grouped", "MB - Level, ind."]
+    }
 
-    for model_name in ["Non-learning", "SSL", "Habitual"]:
-        data_filtered = data[data["model"] == model_name]
-        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
-        ##clustering based on clusters used for participants
-        data_temp = classify_strategies(data_temp, experiment)
-
-        # for each column count how often "adaptive" appears divided by total length of the column
-        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-        plt.plot(x, adaptive_proportion, label=model_name)
-
-        result = mk.original_test(adaptive_proportion)
-        # print(f"{model_name}:", adaptive_proportion)
-        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
-
-    ### PID data
-    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-
-    # Calculate mean and standard error for each data point
-    std_dev = np.std(adaptive_proportion_pid, axis=0)
-    n = len(adaptive_proportion_pid)
-    std_err = std_dev / np.sqrt(n)
-
-    # Calculate the confidence interval
-    conf_interval = 1.96 * std_err
-
-    x = np.arange(0, len(adaptive_proportion_pid))
-
-    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
-    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
-                     alpha=0.1,
-                     label='95% CI')
-
-    plt.xlabel("Trial", fontsize=12)
-    plt.ylim(0, 1)
-    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=11, ncol=2)
-    plt.savefig(f"plots/{experiment}/alternatives_proportions.png")
-    # plt.show()
-    plt.close()
-
-    for model_name in ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]:
-        data_filtered = data[data["model"] == model_name]
-        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
-        ##clustering based on clusters used for participants
-        data_temp = classify_strategies(data_temp, experiment)
-
-        # for each column count how often "adaptive" appears divided by total length of the column
-        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-        plt.plot(x, adaptive_proportion, label=model_name)
-
-        result = mk.original_test(adaptive_proportion)
-        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
-
-    ### PID data
-    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-
-    # Calculate mean and standard error for each data point
-    std_dev = np.std(adaptive_proportion_pid, axis=0)
-    n = len(adaptive_proportion_pid)
-    std_err = std_dev / np.sqrt(n)
-
-    # Calculate the confidence interval
-    conf_interval = 1.96 * std_err
-
-    x = np.arange(0, len(adaptive_proportion_pid))
-
-    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
-    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
-                     alpha=0.1,
-                     label='95% CI')
-
-    plt.xlabel("Trial", fontsize=12)
-    plt.ylim(0, 1)
-    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=11, ncol=2)
-    plt.savefig(f"plots/{experiment}/MF_proportions.png")
-    # plt.show()
-    plt.close()
-
-    for model_name in ["MB - No assump., grouped", "MB - No assump., ind.",
-                       "MB - Uniform, ind.", "MB - Uniform, grouped",
-                       "MB - Level, grouped", "MB - Level, ind."]:
-        data_filtered = data[data["model"] == model_name]
-        data_temp = pd.DataFrame(data_filtered['model_strategies'].tolist(), columns=[f'{i + 1}' for i in range(35)])
-        ##clustering based on clusters used for participants
-        data_temp = classify_strategies(data_temp, experiment)
-
-        # for each column count how often "adaptive" appears divided by total length of the column
-        adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-        plt.plot(x, adaptive_proportion, label=model_name)
-
-        result = mk.original_test(adaptive_proportion)
-        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
-
-        ### PID data
-
-    adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
-
-    # Calculate mean and standard error for each data point
-    std_dev = np.std(adaptive_proportion_pid, axis=0)
-    n = len(adaptive_proportion_pid)
-    std_err = std_dev / np.sqrt(n)
-
-    # Calculate the confidence interval
-    conf_interval = 1.96 * std_err
-
-    x = np.arange(0, len(adaptive_proportion_pid))
-
-    plt.plot(adaptive_proportion_pid, label="Participant", color="blue", linewidth=3)
-    plt.fill_between(x, adaptive_proportion_pid - conf_interval, adaptive_proportion_pid + conf_interval, color='blue',
-                     alpha=0.1,
-                     label='95% CI')
-
-    plt.xlabel("Trial", fontsize=12)
-    plt.ylim(0, 1)
-    plt.ylabel("Proportion of adaptive strategies", fontsize=12)
-    plt.legend(fontsize=11, ncol=2)
-    plt.savefig(f"plots/{experiment}/MB_proportions.png")
-    # plt.show()
-    plt.close()
+    for group, models in model_groups.items():
+        calculate_and_plot(data, models, experiment, pid_mapping)
 
 
 if __name__ == "__main__":
-    experiments = ["v1.0", "c2.1", "c1.1"]
-    # experiments = ["c2.1"]
+    # experiments = ["v1.0", "c2.1", "c1.1"]
+    experiments = ["v1.0"]
     all_pid = pd.DataFrame()
     mapping_dict = {}
     for experiment in experiments:
@@ -359,15 +421,15 @@ if __name__ == "__main__":
 
         # ### clustering by using all strategies
         pid_mapping = classify_strategies(participants_df, experiment)
-        plot_all_strategy_proportions(participants_df, "pid", mapping)
+        # plot_all_strategy_proportions(participants_df, "pid", mapping)
 
         #  ## load CM model data
-        # model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
+        model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
         # # filter for clicking participants
-        # model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+        model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
         #
         # # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
-        # plot_adaptive_proportion(model_data, experiment, pid_mapping)
+        plot_adaptive_proportion(model_data, experiment, pid_mapping)
 
         ### reshape df for logisitic regression
         # df = participants_df.transpose()
