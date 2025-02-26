@@ -12,7 +12,9 @@ from vars import (adaptive_pid, mod_adaptive_pid, maladaptive_pid, clicked_pid, 
                   habitual_not_examined_all_pid, hybrid_reinforce, mf_reinforce, not_examined_all_pid,
                   found_optimal_once_pid, found_optimal_twice_pid_not_examined_all,
                   alternative_models, mcrl_models, mb_models, optimal_pid, optimal_nonhabitual_pid,
-                  vanilla_pid, se_pid, pr_pid, pr_se_pid, td_pid, td_se_pid, pr_se_td_pid, pr_td_pid, variant_pids)
+                  # vanilla_pid, se_pid, pr_pid, pr_se_pid, td_pid, td_se_pid, pr_se_td_pid, pr_td_pid, variant_pids,
+                  variant_hybrids, diss_hybrid, diss_mf, diss_habitual, habitual_model, diss_non_learning, diss_mb,
+                  non_learning_model)
 
 
 def process_data(data, model_col, pid_col):
@@ -185,79 +187,86 @@ def load_process_data(pid_filter=None, model_type=None, variant=False):
 
 if __name__ == "__main__":
     ### configs
-    pid = clicked_pid
+    pid = diss_mb
     models = variants
     variant = True
 
-    # for model, pid in variant_pids.items():
-    # data = load_process_data(pid, [model], variant)
+    # for model, pids in variant_hybrids.items():
+    #     data = load_process_data(pids, [model], variant)
 
-    data = load_process_data(pid, models, variant)
+    model_data = load_process_data(pid, models, variant)
 
     ## pid analysis
     # linear_mixed_regression(data, criteria="pid_rewards")
     # logistic_regression(data, criteria="pid_strategy")
-    # linear_regression(data)
+    linear_regression(model_data)
 
-    ## Plotting
-    plt.figure(figsize=(8, 6))
-    for model in models:
-        print("Model: ", model)
-        model_data = data[data['model'] == model]
+    ##### Plotting
+    # # plt.figure(figsize=(8, 6))
+    # # for model in models:
+    #     print("Model: ", model)
+    #     model_data = data[data['model'] == model]
+    #
+    #     # mk_test(model_data, model, criteria="model_rewards")
+    #     plotting(model_data, model, criteria="model_strategy")
+    #
+    #
+    #
+    #     ## Add pid proportion
+    #     # data = load_process_data(pid, models, variant)
+    #     number_unique_participants = len(data['pid'].unique())
+    #     average_pid = np.sum(list(data['pid_strategy']), axis=0) / len(data)
+    #
+    #     first_value = round(average_pid[0] * 100, 1)
+    #     last_value = round(average_pid[-1] * 100, 1)
+    #
+    #     plt.plot(list(range(1, 121)), average_pid, label=f'Participant, n={number_unique_participants}', color="blue",
+    #              linewidth=3)
+    #     # plt.plot(list(range(1, 121)), average_pid, label=f'Participant, n={number_unique_participants}, {first_value}% to {last_value}%', color="blue", linewidth=3)
+    #
+    #     # add 95% CI for participants
+    #     conf_interval = 1.96 * np.std(list(data['pid_strategy'])) / np.sqrt(len(list(data['pid_strategy'])))
+    #     plt.fill_between(list(range(1, 121)), average_pid - conf_interval, average_pid + conf_interval, alpha=0.2,
+    #                      label='95% CI')
+    #
+    #     plt.ylim(-0.03, 1)
+    #     plt.legend(fontsize=10, ncol=2, loc='upper left')
+    #     # use the name of the variable to save the plot
+    #     pid_name = [var_name for var_name in globals() if globals()[var_name] is pid][0]
+    #     model_name = [var_name for var_name in globals() if globals()[var_name] is model][0]
+    #
+    #     plt.savefig(f"plots/variants/{pid_name}_{model}.png")
+    #     plt.show()
+    #     plt.close()
 
-        # mk_test(model_data, model_index, criteria="model_strategy")
-        plotting(model_data, model, criteria="model_strategy")
-
-    ## Add pid proportion
-    average_pid = np.sum(list(model_data['pid_strategy']), axis=0) / len(model_data)
-
-    # first_value = round(average_pid[0] * 100, 1)
-    # last_value = round(average_pid[-1] * 100, 1)
-
-    plt.plot(list(range(1, 121)), average_pid, label=f'Participant, n={len(model_data)}', color="blue",
-             linewidth=3)
-    # plt.plot(list(range(1, 121)), average_pid, label=f'Participant, n={len(model_data)}, {first_value}% to {last_value}%', color="blue", linewidth=3)
-
-    # add 95% CI for participants
-    conf_interval = 1.96 * np.std(list(model_data['pid_strategy'])) / np.sqrt(len(list(model_data['pid_strategy'])))
-    plt.fill_between(list(range(1, 121)), average_pid - conf_interval, average_pid + conf_interval, alpha=0.2,
-                     label='95% CI')
-
-    plt.ylim(-0.03, 0.5)
-    plt.legend(fontsize=12, ncol=2, loc='upper left')
-    # use the name of the variable to save the plot
-    pid_name = [var_name for var_name in globals() if globals()[var_name] is pid][0]
-    model_name = [var_name for var_name in globals() if globals()[var_name] is model][0]
-
-    plt.savefig(f"plots/rldm/{pid_name}_{model_name}_proportion.png")
-    plt.show()
-    plt.close()
-
-    # ### Proportion analysis, regression
+    ## Proportion analysis, regression
     # for model_index in models:
     #     print("Model: ", model_index)
     #     model_data = data[data['model'] == model_index]
-    #
-    #     # mk_test(model_data, model_index, criteria="model_strategy")
-    #     # logistic_regression(model_data, criteria="pid_strategy")
-    #     linear_regression(model_data, criteria="pid_strategy")
-    #     # plotting(model_data, model_index)
+
+    # mk_test(model_data, model_index, criteria="model_strategy")
+    # logistic_regression(model_data, criteria="pid_strategy")
+    # linear_regression(model_data)
+    plotting(model_data, model_index="MB models")
+
+    # filter model_data for unique pid; keep only one entry per unique pid
+    # model_data = model_data.drop_duplicates(subset="pid")
 
     # # Add pid proportion
     # proportions = np.sum(list(model_data['pid_strategy']), axis=0) / len(model_data)
     # # add number of participants in label
-    # plt.plot(list(range(1, 121)), proportions, label=f'Participant, n={len(model_data)}', color="blue", linewidth=3)
+    # plt.plot(list(range(1, 121)), proportions, label=f'MB participant, n={len(model_data)}', color="blue", linewidth=3)
     #
     # # add 95% CI for participants
     # conf_interval = 1.96 * np.std(list(model_data['pid_strategy'])) / np.sqrt(len(list(model_data['pid_strategy'])))
     # plt.fill_between(list(range(1, 121)), proportions - conf_interval, proportions + conf_interval, alpha=0.2, label='95% CI')
     #
-    # plt.ylim(-0.1, 0.4)
-    # plt.legend(fontsize=10, ncol=2, loc='upper left')
+    # plt.ylim(-0.1, 1.1)
+    # plt.legend(fontsize=14, ncol=1, loc='upper left')
     # # use the name of the variable to save the plot
     # pid_name = [var_name for var_name in globals() if globals()[var_name] is pid][0]
-    # model_name = [var_name for var_name in globals() if globals()[var_name] is models][0]
+    # # model_name = [var_name for var_name in globals() if globals()[var_name] is model_index][0]
     #
-    # plt.savefig(f"plots/cogsci2025/{pid_name}_{model_name}_strict.png")
+    # # plt.savefig(f"plots/MB models.png")
     # plt.show()
     # plt.close()

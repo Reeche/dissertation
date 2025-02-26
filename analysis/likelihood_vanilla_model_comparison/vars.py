@@ -111,36 +111,6 @@ habitual_examined_all_pid = [1, 129, 257, 135, 142, 20, 148, 22, 151, 276, 282, 
                              234, 363, 111, 370]
 
 
-# def assign_model_names(row):
-#     if row['class'] == 'hybrid' and str(row['model_index']) in ["491", "3326"]:
-#         return 'hybrid Reinforce'
-#     elif row['class'] == 'hybrid' and str(row['model_index']) == "479":
-#         return 'hybrid LVOC'
-#     elif row['class'] in ['pure', 'mf'] and str(row['model_index']) == "491":
-#         return 'MF - Reinforce'
-#     elif row['class'] in ['pure', 'mf'] and str(row['model_index']) == "479":
-#         return 'MF - LVOC'
-#     elif str(row['model_index']) == "1743":
-#         return 'Habitual'
-#     elif str(row['model_index']) == "1756":
-#         return 'Non-learning'
-#     elif str(row['model_index']) == "522":
-#         return 'SSL'
-#     elif row['model_index'] == "no_assumption_level":
-#         return 'MB - No assump., grouped'
-#     elif row['model_index'] == "no_assumption_individual":
-#         return 'MB - No assump., ind.'
-#     elif row['model_index'] == "uniform_individual":
-#         return 'MB - Uniform, ind.'
-#     elif row['model_index'] == "uniform_level":
-#         return 'MB - Uniform, grouped'
-#     elif row['model_index'] == "level_level":
-#         return 'MB - Level, grouped'
-#     elif row['model_index'] == "level_individual":
-#         return 'MB - Level, ind.'
-#     else:
-#         raise ValueError("Model class combination not found")
-
 def assign_model_names(row):
     if row['class'] == 'hybrid' and str(row['model_index']) in ["491", "3326"]:
         return 'hybrid Reinforce'
@@ -157,17 +127,17 @@ def assign_model_names(row):
     elif str(row['model_index']) == "522":
         return 'SSL'
     elif row['model_index'] == "no_assumption_level":
-        return 'No assump., grouped'
+        return 'MB - Uniform, grouped'
     elif row['model_index'] == "no_assumption_individual":
-        return 'No assump., ind.'
+        return 'MB - Uniform, ind.'
     elif row['model_index'] == "uniform_individual":
-        return 'Uniform, ind.'
+        return 'MB - Equal, ind.'
     elif row['model_index'] == "uniform_level":
-        return 'Uniform, grouped'
+        return 'MB - Equal, grouped'
     elif row['model_index'] == "level_level":
-        return 'Level, grouped'
+        return 'MB - Level, grouped'
     elif row['model_index'] == "level_individual":
-        return 'Level, ind.'
+        return 'MB - Level, ind.'
     else:
         raise ValueError("Model class combination not found")
 
@@ -194,11 +164,11 @@ maladaptive_pid = [4, 9, 10, 18, 19, 22, 50, 52, 56, 61, 65, 66, 76, 83, 85, 87,
 
 alternative_models = ["Non-learning", "SSL", "Habitual"]
 mcrl_models = ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]
-# mb_models = ["MB - No assump., grouped", "MB - No assump., ind.", "MB - Uniform, ind.",
-#              "MB - Uniform, grouped", "MB - Level, grouped", "MB - Level, ind."]
+# mb_models = ["MB - Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
+#              "MB - Equal, grouped", "MB - Level, grouped", "MB - Level, ind."]
 
-mb_models = ["No assump., grouped", "No assump., ind.", "Uniform, ind.",
-             "Uniform, grouped", "Level, grouped", "Level, ind."]
+mb_models = ["MB - No Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
+             "MB - Equal, grouped", "MB - Level, grouped", "MB - Level, ind."]
 
 
 def process_clicks(row):
@@ -246,8 +216,45 @@ planningamount_mcrl = {
              80, 100, 107, 128, 132, 160, 163, 166, 174, 206],
     "lvlc": [85, 91, 106, 186, 115, 137, 143, 165, 170, 3, 42, 66, 110, 172, 176]
 }
-#
-# ### Three conditions pid groups
-# planningamount_habitual =
-# planningamount_mcrl =
-# planningamount_rssl =
+
+threecond_learners = [5, 35, 43, 82, 117, 137, 154, 1, 17, 29, 34, 38, 45, 62, 66, 80, 85, 90, 110, 155, 15, 104, 112,
+                      119, 148, 150, 158, 21, 40, 55, 59, 73, 75, 77, 98, 101, 124, 132, 140, 160, 169, 0, 13, 78, 166,
+                      25, 31, 64, 96, 123, 128, 133, 136, 142, 26, 84, 99, 113, 145, 152, 162, 33, 47, 79, 103, 118, 4,
+                      32, 63, 76, 91, 120, 127, 129, 153, 157, 161, 2, 14, 125, 171, 7, 9, 27, 28, 42, 44, 48, 57, 139,
+                      163, 12, 23, 83, 111, 116, 147]
+threecond_nonlearners = [6, 10, 18, 24, 56, 68, 69, 94, 106, 144, 146, 165, 173, 8, 16, 20, 22, 30, 39, 41, 49, 52, 53,
+                         58, 60, 61, 67, 72, 86, 88, 93, 95, 107, 108, 115, 122, 130, 134, 138, 149, 156, 164, 170, 172,
+                         19, 36, 37, 50, 54, 65, 70, 71, 74, 81, 89, 92, 100, 102, 105, 109, 114, 131, 135, 143, 151,
+                         159, 167, 168]
+
+discovery_nonlearners = [18, 28, 32, 38, 56, 63, 72, 77, 82, 90, 103, 109, 122, 152, 173, 196,
+                         239, 256, 275, 278, 309, 311, 315, 335, 336, 342, 346, 352, 353, 354, 371]
+discovery_learners = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21,
+                      22, 23, 24, 25, 26, 27, 29, 30, 33, 34, 35, 36, 37, 39, 40, 41, 42, 44,
+                      45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 57, 58, 59, 61, 62, 65, 66,
+                      67, 68, 69, 70, 71, 73, 74, 75, 76, 78, 79, 80, 81, 83, 84, 85, 86, 87,
+                      88, 89, 91, 92, 93, 95, 96, 98, 99, 101, 102, 104, 105, 106, 107, 110,
+                      111, 112, 113, 115, 116, 117, 118, 119, 120, 123, 124, 125, 126, 127,
+                      128, 129, 130, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
+                      143, 144, 145, 146, 147, 148, 149, 151, 153, 154, 155, 156, 159, 160,
+                      161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 174, 175,
+                      176, 177, 178, 180, 181, 182, 183, 184, 185, 186, 187, 189, 190, 192,
+                      193, 194, 195, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+                      209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 223,
+                      224, 225, 226, 228, 229, 231, 232, 233, 234, 235, 236, 237, 238, 240,
+                      241, 242, 244, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 257,
+                      258, 259, 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 271, 272,
+                      273, 274, 276, 277, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288,
+                      289, 290, 291, 292, 293, 294, 295, 296, 298, 299, 300, 301, 302, 303,
+                      304, 305, 306, 308, 310, 312, 313, 314, 316, 317, 318, 319, 320, 321,
+                      322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 337,
+                      339, 340, 341, 343, 344, 345, 347, 348, 349, 350, 351, 355, 356, 357,
+                      358, 359, 360, 361, 362, 363, 364, 365, 367, 369, 370, 372, 373, 374,
+                      375, 376, 377, 378]
+
+discovery_hybrid = [3, 4, 6, 7, 9, 16, 17, 19, 23, 30, 34, 35, 41, 45, 53, 57, 58, 67, 71, 76,
+                    78, 83, 86, 92, 106, 128, 133, 138, 139, 141, 143, 146, 155, 161, 164, 165,
+                    167, 174, 175, 177, 184, 189, 194, 195, 201, 203, 206, 211, 216, 218, 219, 223,
+                    228, 231, 232, 236, 238, 250, 255, 259, 260, 262, 267, 280, 281, 291, 292, 293,
+                    299, 305, 310, 316, 317, 318, 320, 324, 327, 328, 341, 344, 347, 349, 350, 355,
+                    356, 357, 359, 360, 361, 362, 373, 374, 375, 377]

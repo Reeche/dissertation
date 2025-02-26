@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import ast
 import pymannkendall as mk
-from vars import learning_participants, clicking_participants, model_dict, model_grouped, model_names
+from vars import learning_participants, clicking_participants, model_dict, model_grouped, model_names, discovery_hybrid
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, kruskal, wilcoxon
 import warnings
@@ -40,16 +40,17 @@ def sort_by_BIC(data):
 
 def create_csv_for_matlab(data, exp):
     data = data.pivot(index="model", columns="pid", values="BIC").T
-    # add 491 model from data_old; load the csv from data_old
-    data_old = pd.read_csv(f"../likelihood_vanilla_model_comparison/matlab/{exp}.csv", header=None)
-    ##get the last column from data_old
-    vanilla_model = list(data_old.iloc[:,-2])
+    if exp != "strategy_discovery":
+        # add 491 model from data_old; load the csv from data_old
+        data_old = pd.read_csv(f"../likelihood_vanilla_model_comparison/matlab/{exp}.csv", header=None)
+        ##get the last column from data_old
+        vanilla_model = list(data_old.iloc[:,-2])
 
-    ##append vanilla_model as the last column
-    data["Vanilla"] = vanilla_model
+        ##append vanilla_model as the last column
+        data["Vanilla"] = vanilla_model
 
     data.columns = ['PR + SC + TD', 'PR + SC', 'PR + TD', 'PR', 'SC + TD', 'SC', 'TD', 'Vanilla']
-    data.to_csv(f"matlab/{exp}.csv", index=False, header=False)
+    data.to_csv(f"matlab/{exp}_hybrid.csv", index=False, header=False)
 
 
 def group_pid_by_bic(data):
@@ -122,15 +123,13 @@ def statistical_test(exp, data, criteria):
     # get only relevant columns model, pid_rewards
     data = data[["model", criteria]]
 
-    # convert pid_rewards to list
+    # convert pid_rewards from strings to list
     if criteria == "pid_mer":
-        data[criteria] = data[criteria].apply(
-            lambda x: [int(float(i)) for i in ast.literal_eval(x)])
+        data[criteria] = data[criteria].apply(lambda x: [int(float(i)) for i in ast.literal_eval(x)])
+        # data[criteria] = data[criteria].apply(lambda s: [int(num) for num in s.strip('[]').split()])
+    elif criteria == "pid_rewards":
         data[criteria] = data[criteria].apply(lambda s: [int(num) for num in s.strip('[]').split()])
-    elif criteria == "pid_reward":
-        data[criteria] = data[criteria].apply(
-            lambda s: [int(num) for num in s.strip('[]').split()])
-        data[criteria] = data[criteria].apply(lambda s: [int(num) for num in s.strip('[]').split()])
+        # data[criteria] = data[criteria].apply(lambda s: [int(num) for num in s.strip('[]').split()])
     elif criteria == "pid_clicks":
         data[criteria] = data[criteria].apply(lambda x: ast.literal_eval(x))
         pid_clicks = np.array(data[criteria].to_list())
@@ -138,7 +137,6 @@ def statistical_test(exp, data, criteria):
         # make this array into a list
         data[criteria] = result_array.tolist()
 
-    #
 
     if exp == "strategy_discovery":
         data[criteria] = data[criteria].apply(lambda x: x[-60:])
@@ -362,7 +360,7 @@ def list_pid_lowest_bic(res):
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["high_variance_high_cost"]
+    experiment = ["strategy_discovery"]
     df_all = []
     for exp in experiment:
         print(exp)
@@ -379,7 +377,8 @@ if __name__ == "__main__":
             data = pd.concat([data, vanilla_data], ignore_index=True)
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(clicking_participants[exp])]
+            data = data[data["pid"].isin(discovery_hybrid)]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]
