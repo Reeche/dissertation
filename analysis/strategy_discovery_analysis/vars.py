@@ -216,7 +216,7 @@ def assign_variant_names(row):
     elif str(row['model']) == "3325":
         return "TD"
     elif str(row['model']) == "3326":
-        return "Vanilla"
+        return "Plain"
     else:
         raise ValueError("Model class combination not found")
 
@@ -235,11 +235,11 @@ mb_models = ["MB - Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
              "MB - Equal, grouped", "MB - Level, grouped", "MB - Level, ind."]
 
 # variants = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
-variants = ["PR + SE + TD", "PR + SE", "PR + TD", "PR", "SE + TD", "SE", "TD", "Vanilla"]
+variants = ["PR + SE + TD", "PR + SE", "PR + TD", "PR", "SE + TD", "SE", "TD", "Plain"]
 # variants = ["PR"]
 
 # variant_pids = {"PR + SE + TD": pr_se_td_pid, "PR + SE": pr_se_pid, "PR + TD": pr_td_pid, "PR": pr_pid,
-#                 "SE + TD": td_se_pid, "SE": se_pid, "TD": td_pid, "Vanilla": vanilla_pid}
+#                 "SE + TD": td_se_pid, "SE": se_pid, "TD": td_pid, "Plain": vanilla_pid}
 all_models = alternative_models + mcrl_models + mb_models
 
 ### for dissertation, participant classificaiton; no one was classified as SSL learner
@@ -302,4 +302,4 @@ se_pid = [53, 57, 76, 184, 189, 255, 327, 356]
 pr_pid = [78, 164, 175, 203, 216, 219, 231, 259, 293, 317, 320, 355]
 pr_se_pid = [58, 86, 238]
 td_pid = [41, 45, 133, 194, 305]
-variant_hybrids = {"PR + SE": pr_se_pid, "PR": pr_pid, "SE": se_pid, "TD": td_pid, "Vanilla": vanilla_hybrid}
+variant_hybrids = {"PR + SE": pr_se_pid, "PR": pr_pid, "SE": se_pid, "TD": td_pid, "Plain": vanilla_hybrid}

@@ -342,14 +342,14 @@ def calculate_and_plot(data, model_names, experiment, pid_mapping):
         adaptive_proportion = data_temp.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
 
         ## trend test
-        result = mk.original_test(adaptive_proportion)
-        print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+        # result = mk.original_test(adaptive_proportion)
+        # print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
 
         # add proportion of the first and last trial as percentage rounded to 2 decimals to the label
         first_trial = round(adaptive_proportion.iloc[0] * 100, 2)
         last_trial = round(adaptive_proportion.iloc[-1] * 100, 2)
         label = f"{model_name}, {first_trial}% to {last_trial}%"
-        label = f"{model_name}"
+        # label = f"{model_name}"
         plt.plot(x, adaptive_proportion, label=label)
 
     adaptive_proportion_pid = pid_mapping.apply(lambda x: x.value_counts(normalize=True).get("adaptive", 0), axis=0)
@@ -370,7 +370,7 @@ def calculate_and_plot(data, model_names, experiment, pid_mapping):
     plt.ylabel("Proportion of adaptive strategies", fontsize=12)
     plt.legend(fontsize=10, ncol=2)
     plt.savefig(f"plots/CM/{experiment}_{model_names}_adaptive_proportions.png")
-    plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -385,8 +385,8 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     model_groups = {
         "Alternatives": ["Non-learning", "SSL", "Habitual"],
         "MF": ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"],
-        "MB": ["MB - No assump., grouped", "MB - No assump., ind.",
-               "MB - Uniform, ind.", "MB - Uniform, grouped",
+        "MB": ["MB - Uniform, grouped", "MB - Uniform, ind.",
+               "MB - Equal, ind.", "MB - Equal, grouped",
                "MB - Level, grouped", "MB - Level, ind."]
     }
 

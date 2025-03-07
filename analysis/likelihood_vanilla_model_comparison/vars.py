@@ -164,10 +164,7 @@ maladaptive_pid = [4, 9, 10, 18, 19, 22, 50, 52, 56, 61, 65, 66, 76, 83, 85, 87,
 
 alternative_models = ["Non-learning", "SSL", "Habitual"]
 mcrl_models = ["hybrid LVOC", "hybrid Reinforce", "MF - LVOC", "MF - Reinforce"]
-# mb_models = ["MB - Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
-#              "MB - Equal, grouped", "MB - Level, grouped", "MB - Level, ind."]
-
-mb_models = ["MB - No Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
+mb_models = ["MB - Uniform, grouped", "MB - Uniform, ind.", "MB - Equal, ind.",
              "MB - Equal, grouped", "MB - Level, grouped", "MB - Level, ind."]
 
 

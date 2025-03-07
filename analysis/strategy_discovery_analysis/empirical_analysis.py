@@ -76,62 +76,7 @@ def trend(count_prop):
     return None
 
 
-def plot_proportion(count_prop):
-    # this was used for the participants but I think something is wrong here, CI goes negative
 
-
-    # reindex count_prop
-    count_prop = count_prop.reset_index(drop=True)
-    ci = 0.1 * np.std(count_prop) / np.mean(count_prop)
-    plt.plot(count_prop[1]["optimal_strategy"], label="Participant", color='red')
-    x = list(range(0, len(count_prop)))
-    plt.fill_between(x, (count_prop - ci), (count_prop + ci), color='blue', alpha=0.1)
-
-    # font size
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    # legend font size
-    plt.legend(fontsize=12, loc='lower right')
-    plt.ylabel("Proportion of optimal strategy")
-    plt.xlabel("Trials")
-
-    plt.savefig("plots/strategy_discovery.png")
-
-    # plt.show()
-    plt.close()
-    return None
-
-
-def plot_confidence_interval(actual_count, prop_counts, model, participant=None):
-    # turn prop_copunt into percentages
-    # prop_counts = prop_counts * 100
-
-    # Calculate mean and standard deviation of counts
-    ci = 1.96 * np.std(prop_counts) / np.sqrt(len(prop_counts))
-
-    # Plot the counts as a line plot
-    x = np.arange(len(prop_counts))
-    plt.plot(x, prop_counts, label=model, color='blue')
-    plt.fill_between(x, prop_counts - ci, prop_counts + ci, alpha=0.3, label=f'95% Confidence Interval')
-
-    if participant:
-        ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
-        plt.plot(x, participant[1]["optimal_strategy"], label='Participant', color='red')
-        plt.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid,
-                         alpha=0.3, label=f'95% Confidence Interval')
-
-    # Set plot labels and legend
-    plt.xlabel('Trial', fontsize=12)
-    plt.ylabel('Proportion of adaptive strategy', fontsize=12)
-    plt.legend()
-
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.legend(fontsize=12, loc='lower right')
-
-    # plt.savefig(f"plots/proportion.png")
-    plt.show()
-    plt.close()
 
 
 def classify_via_score(click_df):
@@ -429,22 +374,52 @@ def plot_score(click_df):
 
     x = click_df.groupby('trial')['score'].mean().index
 
-    # plot model_mer and pid_mer
-    plt.plot(pid_average, label="Participant", color="blue")
+    # plot model_score and pid_score
+    plt.plot(pid_average, label=f"Participant: {pid_average.values[0]:.1f} to {pid_average.values[-1]:.1f}", color="blue")
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
                      label='95% CI')
 
-    plt.xlabel("Trials")
-    plt.ylabel("Average score")
+    plt.xlabel("Trials", fontsize=12)
+    plt.ylabel("Average score", fontsize=12)
 
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.legend(fontsize=12, loc='lower right')
-    # plt.savefig("plots/score.png")
-    plt.show()
+    plt.savefig("plots/score.png")
+    # plt.show()
     plt.close()
     return None
 
+def plot_confidence_interval(actual_count, prop_counts, model, participant=None):
+    # turn prop_copunt into percentages
+    # prop_counts = prop_counts * 100
+
+    # Calculate mean and standard deviation of counts
+    ci = 1.96 * np.std(prop_counts) / np.sqrt(len(prop_counts))
+
+    # Plot the counts as a line plot
+    x = np.arange(len(prop_counts))
+    plt.plot(x, prop_counts, label=f"Participant: {prop_counts.values[0]:.1f} to {prop_counts.values[-1]:.1f}", color='blue')
+    plt.fill_between(x, prop_counts - ci, prop_counts + ci, alpha=0.3, label=f'95% Confidence Interval')
+
+    if participant:
+        ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
+        plt.plot(x, participant[1]["optimal_strategy"], label=f"Participant: {count_prop[1]['optimal_strategy'][0]:.1f} to {count_prop[1]['optimal_strategy'][-1]:.1f}", color='red')
+        plt.fill_between(x, participant[1]["optimal_strategy"] - ci_pid, participant[1]["optimal_strategy"] + ci_pid,
+                         alpha=0.3, label=f'95% Confidence Interval')
+
+    # Set plot labels and legend
+    plt.xlabel('Trial', fontsize=12)
+    plt.ylabel('Proportion of adaptive strategy', fontsize=12)
+    plt.legend()
+
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(fontsize=14, loc='lower right')
+
+    plt.savefig(f"plots/proportion.png")
+    # plt.show()
+    plt.close()
 
 def plot_combined(click_df, actual_count, prop_counts, model, participant=None):
     # Plot the score development across trials on the primary y-axis
@@ -520,14 +495,13 @@ if __name__ == "__main__":
 
     count_prop = classify_via_score(click_df)
 
-    # plot_score(click_df)
+    plot_score(click_df)
     # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
-    plot_combined(click_df, count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant", count_prop)
+    # plot_combined(click_df, count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant", count_prop)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend(count_prop)
     # chi_square_test(count_prop)
-    # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
 
     ### classify model strategy
     # test = infer_fitted_model_strategy_local_via_click_sequence()

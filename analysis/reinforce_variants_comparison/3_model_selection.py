@@ -107,13 +107,13 @@ def plot_pid_grouped_by_model(exp, data, criteria):
         if criteria == "pid_clicks":
             plt.ylabel("Average clicks", fontsize=12)
         elif criteria == "pid_mer":
-            plt.ylabel("Average expected reward", fontsize=12)
+            plt.ylabel("Average maximum expected return", fontsize=12)
         elif criteria == "pid_rewards":
             plt.ylabel("Average score", fontsize=12)
-        plt.legend(fontsize=12, ncol=2, loc='lower right')
+        plt.legend(fontsize=12, ncol=2, loc='upper left')
 
     # save the plot
-    plt.savefig(f"plots/{exp}_grouped_{criteria}.png")
+    plt.savefig(f"plots/{exp}/grouped_{criteria}.png")
     plt.show()
     plt.close()
 
@@ -293,7 +293,7 @@ def compare_parameters_adaptive(exp, data):
 
     return None
 
-def analyse_subjective_cost(res, exp=None):
+def analyse_subjective_effort(res, exp=None):
     if exp:
         df = pd.read_csv(f"parameters/{exp}_parameters.csv", index_col=0)
     else:
@@ -306,7 +306,7 @@ def analyse_subjective_cost(res, exp=None):
 
 
     # filter for models in the model_dict for sc
-    filtered_pid = res[res["model"].isin(model_dict["SC"])]
+    filtered_pid = res[res["model"].isin(model_dict["SE"])]
     merged_df = pd.merge(df, filtered_pid, on=['pid', 'model'], how='inner')
     df = merged_df
 
@@ -327,9 +327,10 @@ def analyse_subjective_cost(res, exp=None):
     # add the points as data next to each of the box
     for i, exp in enumerate(["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]):
         plt.scatter([i+1]*len(df[df["exp_x"] == exp]), df[df["exp_x"] == exp]["subjective_cost"], alpha=0.3, color="black")
-    plt.ylabel("Subjective cost", fontsize=14)
-    # plt.show()
-    plt.savefig("plots/subjective_cost.png")
+    plt.ylabel("Subjective value of effort", fontsize=14)
+
+    plt.savefig("plots/subjective_effort.png")
+    plt.show()
     plt.close()
 
     # for each exp print mean and std of subjective cost
@@ -360,7 +361,7 @@ def list_pid_lowest_bic(res):
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    experiment = ["low_variance_low_cost"]
     df_all = []
     for exp in experiment:
         print(exp)
@@ -377,8 +378,8 @@ if __name__ == "__main__":
             data = pd.concat([data, vanilla_data], ignore_index=True)
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            # data = data[data["pid"].isin(clicking_participants[exp])]
-            data = data[data["pid"].isin(discovery_hybrid)]
+            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(discovery_hybrid)]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]
@@ -409,10 +410,10 @@ if __name__ == "__main__":
         # get the list of pid who are best explained by a variant
         # list_pid_lowest_bic(res)
 
-        # plot_pid_grouped_by_model(exp, res, "pid_rewards")
-        statistical_test(exp, res, "pid_clicks")
-        # analyse_subjective_cost(exp, res)
+        plot_pid_grouped_by_model(exp, res, "pid_clicks")
+        # statistical_test(exp, res, "pid_clicks")
+        # analyse_subjective_effort(exp, res)
         # parameters_analysis(res, exp)
 
-    # analyse_subjective_cost(res)
+    # analyse_subjective_effort(res)
     # model_bic = sort_by_BIC(result_df)

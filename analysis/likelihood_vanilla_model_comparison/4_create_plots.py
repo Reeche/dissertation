@@ -15,6 +15,8 @@ warnings.filterwarnings("ignore")
 
 
 def plot_confidence_interval(x, pid_average, conf_interval, color, label):
+
+    # plt.plot(pid_average, label=f"Participant: {pid_average[0]:.1f} to {pid_average[-1]:.1f}", color=color, linewidth=3)
     plt.plot(pid_average, label=label, color=color, linewidth=3)
 
     # transform pid_averages to a numpy array with floats
@@ -33,18 +35,18 @@ def calculate_statistics(data_filtered, model_col):
     return model_average, result
 
 
-def plot_models(data, model_names, model_col, pid_col, y_limits, ylabel):
+def plot_models(data, model_name, model_types, model_col, pid_col, y_limits, ylabel):
     plt.figure(figsize=(8, 6))
-    for model_name in model_names:
-        data_filtered = data[data["model"] == model_name]
+    for model in model_types:
+        data_filtered = data[data["model"] == model]
         if len(data_filtered) != 0:
             model_average, result = calculate_statistics(data_filtered, model_col)
 
             # add first and last trial to the label of the plot
-            model_name = f"{model_name}: {model_average[0]:.0f} to {model_average[-1]:.0f}"
+            model_label = f"{model}: {model_average[0]:.1f} to {model_average[-1]:.1f}"
 
-            plt.plot(model_average, label=model_name)
-            # print(f"{model_name}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
+            plt.plot(model_average, label=model_label)
+            # print(f"{model_label}: trend={result[0]}, p={result[2]}, statistic={result[5]}")
 
     # remove the row if the row contains nan values
     data_filtered = data.dropna(subset=[pid_col])
@@ -86,10 +88,11 @@ def plot_models(data, model_names, model_col, pid_col, y_limits, ylabel):
     plt.xlabel("Trial", fontsize=14)
     plt.ylim(y_limits)
     plt.ylabel(ylabel, fontsize=14)
-    plt.legend(fontsize=12, ncol=2, loc="lower left")
+    plt.legend(fontsize=14, ncol=2, loc="lower right")
 
-    plt.savefig(f"plots/{exp}/{model_names}_mer.png")
-    plt.show()
+    # plt.savefig(f"plots/{exp}/{model_name}_mer.png")
+    plt.savefig(f"plots/{exp}/Participant_mer.png")
+    # plt.show()
     plt.close()
 
 
@@ -97,21 +100,19 @@ def plot_mer(data, exp):
     data = process_data(data, "model_mer", "pid_mer", exp)
 
     y_limits = (0, 15) if exp == "c1.1" else (-5, 45) if exp == "c2.1" else (0, 50)
-    plot_models(data=data, model_names=alternative_models,  model_col="model_mer",
-                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
-    plot_models(data=data, model_names=mcrl_models, model_col="model_mer",
-                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
-    plot_models(data=data, model_names=mb_models, model_col="model_mer",
-                pid_col="pid_mer", y_limits=y_limits, ylabel="Average most expected reward")
+    plot_models(data=data, model_name="alternatives", model_types=alternative_models,  model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
+    plot_models(data=data,model_name="MF",  model_types=mcrl_models, model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
+    plot_models(data=data, model_name="MB", model_types=mb_models, model_col="model_mer",
+                pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
 
 
 def plot_rewards(data, exp):
     data = process_data(data, "model_rewards", "pid_rewards", exp)
     # data['pid_rewards'] = data['pid_rewards'].apply(lambda x: [int(num) for num in x[1:-1].split()])
 
-    if exp == "strategy_discovery":
-        y_limits = (-50, 10)
-    elif exp == "c1.1":
+    if exp == "c1.1":
         y_limits = (-10, 45)
     else:
         y_limits = (-7, 12)
@@ -119,10 +120,11 @@ def plot_rewards(data, exp):
     if exp == "strategy_discovery":
         mcrl_models = ["hybrid Reinforce", "MF - Reinforce"]
 
-    plot_models(data, alternative_models, "alternatives", "model_rewards", "pid_rewards", exp, y_limits,
+    ## for strategy discovery y_limits
+    plot_models(data, "alternatives", alternative_models,  "model_rewards", "pid_rewards", (-100, 10),
                 "Average score")
-    plot_models(data, mcrl_models, "mcrl", "model_rewards", "pid_rewards", exp, y_limits, "Average score")
-    plot_models(data, mb_models, "mb", "model_rewards", "pid_rewards", exp, y_limits, "Average score")
+    plot_models(data, "mcrl", mcrl_models,  "model_rewards", "pid_rewards", (-50, 10), "Average score")
+    plot_models(data, "mb", mb_models,  "model_rewards", "pid_rewards", (-50, 10), "Average score")
 
 
 def plot_clicks(data, exp):
@@ -131,12 +133,9 @@ def plot_clicks(data, exp):
     data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
     data["model_clicks"] = data["model_clicks"].apply(process_clicks)
 
-    plot_models(data, alternative_models, "alternatives", "model_clicks", "pid_clicks", exp,
-                (0, 12), "Average number of clicks")
-    plot_models(data, mcrl_models, "mcrl", "model_clicks", "pid_clicks", exp, (0, 12),
-                "Average number of clicks")
-    plot_models(data, mb_models, "mb", "model_clicks", "pid_clicks", exp, (0, 12),
-                "Average number of clicks")
+    plot_models(data, "alternatives", alternative_models, "model_clicks", "pid_clicks", (0, 12), "Average number of clicks")
+    plot_models(data, "mcrl", mcrl_models, "model_clicks", "pid_clicks",  (0, 12),"Average number of clicks")
+    plot_models(data, "mb", mb_models, "model_clicks", "pid_clicks", (0, 12), "Average number of clicks")
 
 
 def linear_regression(data, exp, criteria="clicks"):
@@ -206,7 +205,7 @@ def linear_regression(data, exp, criteria="clicks"):
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
 # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-experiment = ["v1.0"]
+experiment = ["v1.0", "c2.1", "c1.1"]
 
 for exp in experiment:
     print(exp)
@@ -231,12 +230,12 @@ for exp in experiment:
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)
-        # plot_clicks(data, exp)
-        linear_regression(data, exp, "clicks")
+        plot_clicks(data, exp)
+        # linear_regression(data, exp, "clicks")
     elif exp in ["strategy_discovery"]:
         plot_rewards(data, exp)
         # plot_clicks(data, exp)
-        linear_regression(data, exp, "rewards")
+        # linear_regression(data, exp, "rewards")
 
     # plt.ylabel("Performance", fontsize=14)
     # # text size

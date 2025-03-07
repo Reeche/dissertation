@@ -101,10 +101,10 @@ if __name__ == "__main__":
     #     other_params = {}
 
     exp_name = "v1.0"
-    model_index = 3326 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
     optimization_criterion = "likelihood"
-    pid = 43
-    other_params = {"plotting": False}
+    pid = 106
+    other_params = {"plotting": True}
 
     if exp_name != "strategy_discovery":
         number_of_trials = 35
@@ -163,5 +163,5 @@ if __name__ == "__main__":
         **other_params,
     )
 
-    # print(r_data)
-    # print(sim_data)
+    print(r_data)
+    print(sim_data)

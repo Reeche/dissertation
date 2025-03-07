@@ -146,14 +146,13 @@ def plot_pid_score_grouped_by_model(data, condition=None):
         plt.ylabel("Average score")
         plt.legend(fontsize=9, ncol=2)
 
-    # save the plot
-    plt.show()
 
     ##if no dir, create dir
     # if not os.path.exists(f"plots/{exp}"):
     #     os.makedirs(f"plots/{exp}")
 
-    # plt.savefig(f"plots/{condition}/score_grouped.png")
+    plt.savefig(f"plots/{condition}/score_grouped.png")
+    plt.show()
     plt.close()
 
     return None
@@ -182,8 +181,8 @@ def plot_pid_clicks_grouped_by_model(data, condition):
         pid_clicks_average = np.mean(result_array, axis=0)
 
         # print the average number of clicks and std
-        print(f"{model} pid mean: {np.mean(pid_clicks_average)}")
-        print(f"{model} pid std: {np.std(pid_clicks_average)}")
+        # print(f"{model} pid mean: {np.mean(pid_clicks_average)}")
+        # print(f"{model} pid std: {np.std(pid_clicks_average)}")
 
         # Mann Kendall test of trend
         # mk_results = mk.original_test(pid_clicks_average)
@@ -218,9 +217,9 @@ def plot_pid_clicks_grouped_by_model(data, condition):
     # if not os.path.exists(f"plots/{exp}"):
     #     os.makedirs(f"plots/{exp}")
 
-    # plt.savefig(f"plots/{exp}/clicks_grouped.png")
-    # plt.show()
-    # plt.close()
+    plt.savefig(f"plots/{exp}/clicks_grouped.png")
+    plt.show()
+    plt.close()
 
     return None
 
@@ -418,12 +417,12 @@ def linear_regression_clicks(data, exp):
 
 
 if __name__ == "__main__":
-    # experiment = ["v1.0", "c2.1", "c1.1"]
+    experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    # experiment = ["high_variance_high_cost"]
 
     for exp in experiment:
         print(exp)
@@ -469,15 +468,15 @@ if __name__ == "__main__":
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
             # plot_model_simulation_of_pid_with_lowest_BIC(res, "mer")
-            # plot_pid_score_grouped_by_model(res, exp)
-            kruskal_rewards(exp, res)
+            plot_pid_score_grouped_by_model(res, exp)
+            # kruskal_rewards(exp, res)
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             # plot_model_simulation_of_pid_with_lowest_BIC(res, "clicks")
-            # plot_pid_clicks_grouped_by_model(res, exp)
+            plot_pid_clicks_grouped_by_model(res, exp)
             # linear_regression_clicks(res, exp)
             # kruskal_rewards(exp, res)
-            kruskal_clicks(exp, res)
+            # kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")
