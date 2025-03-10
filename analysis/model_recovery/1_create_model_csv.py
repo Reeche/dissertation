@@ -4,25 +4,26 @@ from pathlib import Path
 
 """
 This file to to create csv that mimic the structure of participants' mouselab-mdp data. 
-So the csv can be used for fitting the models again. 
+So the csv can be used for fitting the models again and treat the model simulations as if they were participants.
 
 The input are the simulation data of the models.
+
+The resulting csv files should be uploaded to the server and treated as pid to be fitted using fit_mcrl_models.py
 """
 
 # create csv with the columns: pid, trial_index, block, path, queries, state_rewards, score
 df = pd.DataFrame(columns=["pid", "trial_index", "block", "path", "queries", "state_rewards", "score"])
 
 # load pkl file for selected model
-model = 479
-exp = "v1.0"
-data_path = Path(f"../../final_results/hybrid/{exp}_data")
+model = 1756 #note that tehre is no 3326 for threecond and planningamount because it was fitted before reindexing the rl_model.csv
+exp = "c1.1"
+dir = "non_learning"
+data_path = Path(f"../../final_results/{dir}/{exp}_data")
 
 # for each pkl in dir, check whether it contains "model" in the name
 for pkl in data_path.glob("*.pkl"):
     df_temp = pd.DataFrame(columns=["pid", "trial_index", "block", "path", "queries", "state_rewards", "score"])
     if str(model) in pkl.name:
-        print(pkl)
-
         pkl_file = pd.read_pickle(pkl)
 
         # for each pkl file, take the first integer before the first _ as the pid
@@ -46,6 +47,13 @@ for pkl in data_path.glob("*.pkl"):
         # append to the final dataframe
         df = df._append(df_temp)
 
-    # save as csv
-    df.to_csv(f"../../data/model/hybrid/{exp}/{model}.csv", index=False)
+    # if not directory, create directory
+    if not Path(f"../../data/model/{dir}/{exp}").exists():
+        Path(f"../../data/model/{dir}/{exp}").mkdir()
+
+    # save as csv next to "human" and data folder
+    df.to_csv(f"../../data/model/{dir}/{exp}/mouselab-mdp.csv", index=False)
+
+
+
 

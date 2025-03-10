@@ -417,11 +417,11 @@ def linear_regression_clicks(data, exp):
 
 
 if __name__ == "__main__":
-    experiment = ["v1.0", "c2.1", "c1.1"]
+    # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-    #               "low_variance_low_cost"]
+    experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+                  "low_variance_low_cost"]
     # experiment = ["high_variance_high_cost"]
 
     for exp in experiment:
@@ -430,12 +430,12 @@ if __name__ == "__main__":
         data = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv", index_col=0)
 
         if exp in ["v1.0", "c1.1", "c2.1"]:
-            # data = data[data["pid"].isin(clicking_participants[exp])]
-            data = data[data["pid"].isin(threecond_learners)]
+            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(threecond_learners)]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
-            # data = data[data["pid"].isin(learning_participants[exp])]
-            data = data[data["pid"].isin(planningamount_learners)]
+            data = data[data["pid"].isin(learning_participants[exp])]
+            # data = data[data["pid"].isin(planningamount_learners)]
         elif exp == "strategy_discovery":
             # data = data[data["pid"].isin(clicking_participants[exp])]
             data = data[data["pid"].isin(discovery_learners)]
@@ -463,20 +463,20 @@ if __name__ == "__main__":
         res = group_pid_by_bic(result_df, exp)
 
         # print which of the pid is best explained by which model
-        # for model in res["model"].unique():
-        #     print(f"{model}: {res[res['model'] == model]['pid'].unique()}")
+        for model in res["model"].unique():
+            print(f"{model}: {res[res['model'] == model]['pid'].unique()}")
 
-        if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            # plot_model_simulation_of_pid_with_lowest_BIC(res, "mer")
-            plot_pid_score_grouped_by_model(res, exp)
-            # kruskal_rewards(exp, res)
-        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-                     "low_variance_low_cost"]:
-            # plot_model_simulation_of_pid_with_lowest_BIC(res, "clicks")
-            plot_pid_clicks_grouped_by_model(res, exp)
-            # linear_regression_clicks(res, exp)
-            # kruskal_rewards(exp, res)
-            # kruskal_clicks(exp, res)
+        # if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
+        #     # plot_model_simulation_of_pid_with_lowest_BIC(res, "mer")
+        #     plot_pid_score_grouped_by_model(res, exp)
+        #     # kruskal_rewards(exp, res)
+        # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+        #              "low_variance_low_cost"]:
+        #     # plot_model_simulation_of_pid_with_lowest_BIC(res, "clicks")
+        #     plot_pid_clicks_grouped_by_model(res, exp)
+        #     # linear_regression_clicks(res, exp)
+        #     # kruskal_rewards(exp, res)
+        #     # kruskal_clicks(exp, res)
 
     # result_df = pd.concat(df_all, ignore_index=True)
     # create_csv_for_matlab(result_df, "strategy_discovery_discovered_pid")

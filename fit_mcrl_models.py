@@ -44,7 +44,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results/mcrl")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_model_recovery/mf_reinforce")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -89,22 +89,22 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # number_of_trials = int(sys.argv[5])
-    # other_params = {"plotting": False}
-    # if len(sys.argv) > 6:
-    #     other_params = ast.literal_eval(sys.argv[6])
-    # else:
-    #     other_params = {}
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
+    other_params = {"plotting": False}
+    if len(sys.argv) > 6:
+        other_params = ast.literal_eval(sys.argv[6])
+    else:
+        other_params = {}
 
-    exp_name = "v1.0"
-    model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
-    optimization_criterion = "likelihood"
-    pid = 106
-    other_params = {"plotting": True}
+    # exp_name = "v1.0"
+    # model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    # optimization_criterion = "likelihood"
+    # pid = 106
+    # other_params = {"plotting": True}
 
     if exp_name != "strategy_discovery":
         number_of_trials = 35
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 2,
+            "max_evals": 4000,
             "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params
@@ -163,5 +163,5 @@ if __name__ == "__main__":
         **other_params,
     )
 
-    print(r_data)
-    print(sim_data)
+    # print(r_data)
+    # print(sim_data)
