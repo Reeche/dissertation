@@ -1,12 +1,11 @@
 import os
-import itertools
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from vars import pid_dict
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
-import sys
+from vars import pid_dict, get_all_combinations, cost_function, number_of_parameters
+
 
 """
 This script created csv for each condition and each model. 
@@ -78,106 +77,34 @@ def click_sequence_loss(prior_data):
     return min(np.absolute(losses))
 
 
-def number_of_parameters(model, criterion):
-    if model in [1756, 1743]:  # no learning and habitual
-        if criterion == "likelihood":
-            return 3
-        else:
-            return 4
-    elif model in [527, 522]:  # RSSL
-        if criterion == "likelihood":
-            return 1
-        else:
-            return 2
-    elif model in [479, 486, 487, 490, 491, 3325, 3326]:  # reinforce and lvoc
-        if criterion == "likelihood":
-            return 3
-        else:
-            return 4
-    elif model in [480, 481, 3315, 3316]:
-        if criterion == "likelihood":
-            return 5
-        else:
-            return 6
-    elif model in [482, 483, 484, 485, 488, 489, 3317, 3318, 3323, 3324]:
-        if criterion == "likelihood":
-            return 4
-        else:
-            return 5
-    elif model in ["level_individual", "level_level"]:
-        return 8
-    elif model in ["no_assumption_individual", "no_assumption_level"]:
-        return 2
-    elif model in ["uniform_individual", "uniform_level"]:
-        return 4
 
-def get_all_combinations(model_class, condition):
-    # combines all pids with all models
-    # mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [491, 479], "ssl": [522], "mf": [491, 479],
-    #            "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
-    #                   "uniform_individual", "uniform_level"]}
-    # SD has no LVOC
-    # mapping = {"habitual": [1743], "non_learning": [1756], "hybrid": [3326], "ssl": [522], "mf": [491],
-    #            "mb": ["level_individual", "level_level", "no_assumption_individual", "no_assumption_level",
-    #                   "uniform_individual", "uniform_level"]}
-    # mapping = {"rl_hybrid_variants": [3315, 3316, 3317, 3318, 3323, 3324, 3325]}
-    # mapping = {"rl_hybrid_variants": [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]}
-    # model_index = mapping[model_class]
-
-    # combinations = list(itertools.product([*pid_dict[condition]], [*model_index]))
-    combinations = list(itertools.product([*pid_dict[condition]], [model_class]))
-
-    return combinations
-
-
-def cost_function(depth):
-    if depth == 0:
-        return 0
-    if depth == 1:
-        return -1
-    if depth == 2:
-        return -3
-    if depth == 3:
-        return -30
 
 
 if __name__ == "__main__":
     root_folder = os.getcwd()
 
-    # folder_list = ["habitual", "non_learning", "mf" ]
-    # # conditions = ["v1.0", "c2.1", "c1.1",
-    # #               "high_variance_high_cost", "high_variance_low_cost",
-    # #               "low_variance_high_cost", "low_variance_low_cost",
-    # #               "strategy_discovery"]
-    # conditions = ["strategy_discovery"]
-    # # folder_list = ["hybrid"]
+    # model_class = str(sys.argv[1])
+    # condition = str(sys.argv[2])
 
-    model_class = str(sys.argv[1])
-    condition = str(sys.argv[2])
+    model_class = 491
+    type = "hybrid"
+    condition = "v1.0"
 
-    # model_class = 3315
-    # condition = "strategy_discovery"
-
-    # for condition in conditions:
-    # print(condition)
     if condition == "strategy_discovery":
         num_trials = 120
     else:
         num_trials = 35
 
-    # for model_class in folder_list:
-
-    print("model class and condition", model_class, condition)
-    combinations = get_all_combinations(model_class, condition)
+    combinations = get_all_combinations(pid_dict, model_class, condition)
 
     # create new dataframe with the columns "pid", "class", model_index"
-    df = pd.DataFrame(columns=["pid", "class", "model_index"])
+    df = pd.DataFrame(columns=["pid", "class", "model_index", "model_params"])
     # class column are the second elements of the combinations
     df["model_index"] = [x[1] for x in combinations]
     # pid column are the first elements of the combinations
     df["pid"] = [x[0] for x in combinations]
 
-    df["class"] = "hybrid_variant"
+    df["class"] = type
     df["condition"] = condition
 
     ## setup up config for mouselap
@@ -190,7 +117,7 @@ if __name__ == "__main__":
 
     exp_attributes = {
         "exclude_trials": None,
-        "block": None,
+        "block": "training",
         "experiment": None,
         "click_cost": click_cost
     }
@@ -199,18 +126,18 @@ if __name__ == "__main__":
     for index, row in df.iterrows():
         pid = row["pid"]
         model = row["model_index"]
-        # print(pid, model)
         if model_class != "mb":
             try:
-                data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_data/{pid}_{model}_1.pkl')
+                data = pd.read_pickle(f'{root_folder}/{type}/{condition}_data/{pid}_{model}_1.pkl')
                 model_params = pd.read_pickle(
-                    f'{root_folder}/{model_class}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                    f'{root_folder}/{type}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+
             except:
                 print("pid not found", pid)
                 continue
         elif model_class == "mb":
-            data = pd.read_pickle(f'{root_folder}/{model_class}/{condition}_mb/{pid}_likelihood_{model}.pkl')
-        else:  # print warning that model class is not recognized
+            data = pd.read_pickle(f'{root_folder}/{type}/{condition}_mb/{pid}_likelihood_{model}.pkl')
+        else:
             print("Model class not recognized")
 
         # add loss to the row
@@ -233,7 +160,7 @@ if __name__ == "__main__":
         mf = ModelFitter(
             exp_name=condition,
             exp_attributes=exp_attributes,
-            data_path=f"{model_class}/{condition}",
+            data_path=f"../results",  # where the inferred strategies are
             number_of_trials=num_trials)
 
         pid_context, env = mf.get_participant_context(pid)
@@ -242,6 +169,7 @@ if __name__ == "__main__":
         df.at[index, "pid_clicks"] = str(pid_context.clicks)
         df.at[index, "pid_mer"] = str(get_termination_mers(pid_context.envs, pid_context.clicks, env.pipeline))
         df.at[index, "pid_rewards"] = str(pid_context.score)
+        # df.at[index, "model_params"] = model_params[0][0]
 
         if model_class != "mb":
             df.at[index, "click_loss"] = click_loss(pid_context.clicks, data["a"], criterion="likelihood",

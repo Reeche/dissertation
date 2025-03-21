@@ -3,7 +3,7 @@ import itertools
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from vars import pid_dict, hybrid_reinforce_pid_dict
+from vars import pid_dict, hybrid_reinforce_pid_dict, mf_reinforce_pid_dict, habitual_pid_dict, non_learning_pid_dict
 from mcl_toolbox.utils.model_utils import ModelFitter
 from mcl_toolbox.env.modified_mouselab import get_termination_mers
 import sys
@@ -143,16 +143,11 @@ def mapping(model_class):
 
 
 if __name__ == "__main__":
-    folder_list = ["hybrid_reinforce"]
+    folder_list = ["non_learning"]
     conditions = ["v1.0", "c2.1", "c1.1",
                   "high_variance_high_cost", "high_variance_low_cost",
                   "low_variance_high_cost", "low_variance_low_cost"]
     # conditions = ["low_variance_low_cost"]
-
-    # model_class = str(sys.argv[1])
-    # condition = str(sys.argv[2])
-
-
 
     for condition in conditions:
         if condition == "strategy_discovery":
@@ -165,8 +160,14 @@ if __name__ == "__main__":
 
             if folder == "hybrid_reinforce":
                 pid_dict_list = hybrid_reinforce_pid_dict
+            elif folder == "mf_reinforce":
+                pid_dict_list = mf_reinforce_pid_dict
+            elif folder == "habitual":
+                pid_dict_list = habitual_pid_dict
+            elif folder == "non_learning":
+                pid_dict_list = non_learning_pid_dict
             else:
-                pid_dict_list = pid_dict
+                raise ValueError("Model class not found")
 
             combinations = get_all_combinations([491, 1743, 1756, 3326], condition, pid_dict_list)
 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 
             exp_attributes = {
                 "exclude_trials": None,
-                "block": None,
+                "block": "training",
                 "experiment": None,
                 "click_cost": click_cost
             }
@@ -221,7 +222,7 @@ if __name__ == "__main__":
                 mf = ModelFitter(
                     exp_name=condition,
                     exp_attributes=exp_attributes,
-                    data_path=f"{folder}/{condition}",
+                    data_path=f"../../results/",
                     number_of_trials=num_trials)
 
                 pid_context, env = mf.get_participant_context(pid)

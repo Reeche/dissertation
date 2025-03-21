@@ -8,14 +8,13 @@ from mcl_toolbox.utils.learning_utils import create_dir
 from mcl_toolbox.utils.model_utils import ModelFitter
 
 """
+This file is for performing model recovery; that is fittin the models to simulated data in the directory data/model/{model_type}
+
 Run this using:
 python3 fit_mcrl_models.py <exp_name> <model_index> <optimization_criterion> <pid> <number_of_trials> <string of other parameters>
 <optimization_criterion> can be ["pseudo_likelihood", "mer_performance_error", "performance_error", "clicks_overlap"]
 Example: python3 mcl_toolbox/fit_mcrl_models.py v1.0 1 pseudo_likelihood 1 35 "{\"plotting\":True, \"optimization_params\" :{\"optimizer\":\"hyperopt\", \"num_simulations\": 2, \"max_evals\": 2}}"
 """
-
-
-# Likelihood computation is currently available for all reinforce and lvoc models but not for RSSL
 
 
 def fit_model(
@@ -44,7 +43,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_model_recovery/non_learning")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_model_recovery_sd/{recovered_model_type}")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -89,22 +88,25 @@ def fit_model(
 
 
 if __name__ == "__main__":
-    # exp_name = sys.argv[1]
-    # model_index = int(sys.argv[2])
-    # optimization_criterion = sys.argv[3]
-    # pid = int(sys.argv[4])
-    # number_of_trials = int(sys.argv[5])
-    # other_params = {"plotting": False}
-    # if len(sys.argv) > 6:
-    #     other_params = ast.literal_eval(sys.argv[6])
-    # else:
-    #     other_params = {}
+    exp_name = sys.argv[1]
+    model_index = int(sys.argv[2])
+    optimization_criterion = sys.argv[3]
+    pid = int(sys.argv[4])
+    number_of_trials = int(sys.argv[5])
+    other_params = {"plotting": False}
+    recovered_model_type = str(sys.argv[6])
+    if len(sys.argv) > 7:
+        other_params = ast.literal_eval(sys.argv[7])
+    else:
+        other_params = {}
 
-    exp_name = "v1.0"
-    model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
-    optimization_criterion = "likelihood"
-    pid = 106
-    other_params = {"plotting": True}
+    # exp_name = "v1.0"
+    # model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    # optimization_criterion = "likelihood"
+    # pid = 106
+    # other_params = {"plotting": True}
+    # # if not recovering a model, set to None
+    # recovered_model_type = "non_learning"
 
     if exp_name != "strategy_discovery":
         number_of_trials = 35
@@ -135,7 +137,9 @@ if __name__ == "__main__":
             "block": "training",  # Block of the experiment
             "experiment": None,  # Experiment object can be passed directly with
             # Experiment object can be passed directly with pipeline and normalized features attached
-            "click_cost": click_cost
+            "click_cost": click_cost,
+            # if fitting for real pid, set to None; if fitting to simulated data, add data path
+            "model_recovery_data_path": Path(__file__).parents[0].joinpath(f"data/model/{recovered_model_type}")
         }
         other_params["exp_attributes"] = exp_attributes
 
@@ -148,7 +152,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 2,
+            "max_evals": 60000,
             "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params

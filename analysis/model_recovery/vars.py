@@ -88,11 +88,30 @@ def assign_model_names(row):
     else:
         raise ValueError("Model class combination not found")
 
+rename_index = {
+    3326: 'hybrid Reinforce',
+    491: 'MF - Reinforce',
+    1743: 'Habitual',
+    1756: 'Non-learning'
+}
 
 rename_map = {
     'hybrid_reinforce': 'hybrid Reinforce',
-    'mf_reinforce': 'MF - Reinforce'
+    'mf_reinforce': 'MF - Reinforce',
+    'habitual': 'Habitual',
+    'non_learning': 'Non-learning'
 }
+
+def assign_pid_dict(recovered_model):
+    if recovered_model == "hybrid_reinforce":
+        return hybrid_reinforce_pid_dict
+    elif recovered_model == "mf_reinforce":
+        return mf_reinforce_pid_dict
+    elif recovered_model == "habitual":
+        return habitual_pid_dict
+    elif recovered_model == "non_learning":
+        return non_learning_pid_dict
+
 
 def process_clicks(row):
     return [len(sublist) - 1 for sublist in row]

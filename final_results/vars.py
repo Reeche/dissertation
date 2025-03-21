@@ -1,3 +1,5 @@
+import itertools
+
 pid_dict = {
     'v1.0': [1, 5, 6, 10, 15, 17, 18, 21, 24, 29, 34, 35, 38, 40, 43, 45, 51, 55, 56, 59, 62, 66, 68, 69, 73, 75, 77,
              80, 82, 85, 90, 94, 98, 101, 104, 106, 110, 112, 117, 119, 121, 124, 126, 132, 137, 140, 141, 144, 146,
@@ -21,3 +23,50 @@ pid_dict = {
                               99, 104, 105, 106, 110, 113, 115, 121, 123, 127, 130, 137, 142, 143, 148, 152, 155, 159,
                               165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207],
     'strategy_discovery': list(range(1, 379))}
+
+def get_all_combinations(pid_dict, model_class, condition):
+    combinations = list(itertools.product([*pid_dict[condition]], [model_class]))
+    return combinations
+
+def cost_function(depth):
+    if depth == 0:
+        return 0
+    if depth == 1:
+        return -1
+    if depth == 2:
+        return -3
+    if depth == 3:
+        return -30
+
+def number_of_parameters(model, criterion):
+    if model in [1756, 1743]:  # no learning and habitual
+        if criterion == "likelihood":
+            return 3
+        else:
+            return 4
+    elif model in [527, 522]:  # RSSL
+        if criterion == "likelihood":
+            return 1
+        else:
+            return 2
+    elif model in [479, 486, 487, 490, 491, 3325, 3326]:  # reinforce and lvoc
+        if criterion == "likelihood":
+            return 3
+        else:
+            return 4
+    elif model in [480, 481, 3315, 3316]:
+        if criterion == "likelihood":
+            return 5
+        else:
+            return 6
+    elif model in [482, 483, 484, 485, 488, 489, 3317, 3318, 3323, 3324]:
+        if criterion == "likelihood":
+            return 4
+        else:
+            return 5
+    elif model in ["level_individual", "level_level"]:
+        return 8
+    elif model in ["no_assumption_individual", "no_assumption_level"]:
+        return 2
+    elif model in ["uniform_individual", "uniform_level"]:
+        return 4

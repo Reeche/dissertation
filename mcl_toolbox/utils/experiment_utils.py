@@ -124,7 +124,10 @@ class Experiment:
         :param kwargs: any odditional constraints to the participant data (#TODO)
         """
         self.exp_num = exp_num
-        self.data = get_data(exp_num)
+        if "model_recovery_data_path" in kwargs:
+            self.data = get_data(exp_num, data_path=kwargs["model_recovery_data_path"])
+        else:
+            self.data = get_data(exp_num)
         self.cm = cm
         self.data_path = data_path
         # self.block = None
@@ -162,8 +165,6 @@ class Experiment:
         self.participant_temperatures = {}
         self.init_participants()
         self.init_planning_data()
-        # self.participant_strategies = {}
-        # self.participant_temperatures = {}
 
     def init_participants(self):
         participants_data = self.data["participants"]
@@ -202,21 +203,18 @@ class Experiment:
             self.participants[pid] = p
 
         path = Path(__file__).parents[2]
-        word_list = self.data_path.split('/')
-        f_path = path.joinpath(f"{word_list[0]}/cm/inferred_strategies")
-        # f_path = path.joinpath(f"{self.data_path}/inferred_strategies")
+        # word_list = self.data_path.split('/')
+        # f_path = path.joinpath(f"{word_list[0]}/cm/inferred_strategies")
+        f_path = path.joinpath(f"{self.data_path}/cm/inferred_strategies")
         if self.block is not None:
             prefix = f"{self.exp_num}_{self.block}"
         else:
             prefix = f"{self.exp_num}"
         # this assumes that the strategies were supplied for blocked experiment
         # (meaning excluded trials are also included)
-        # if os.path.exists(f_path.joinpath(f"{prefix}_strategies.pkl")):
         if os.path.exists(f_path.joinpath(f"{prefix}/strategies.pkl")):
-            # strategies = pickle_load(f_path.joinpath(f"{prefix}_strategies.pkl"))
             strategies = pickle_load(f_path.joinpath(f"{prefix}/strategies.pkl"))
-            # temperatures = pickle_load(f_path.joinpath(f"{prefix}_temperatures.pkl"))
-            temperatures = pickle_load(f_path.joinpath(f"{prefix}/temperatures.pkl"))
+            temperatures = pickle_load(f_path.joinpath(f"{prefix}_temperatures.pkl"))
             self.infer_strategies(
                 precomputed_strategies=strategies,
                 precomputed_temperatures=temperatures,

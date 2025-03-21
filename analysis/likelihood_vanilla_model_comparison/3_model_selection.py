@@ -420,9 +420,9 @@ if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
-    experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-                  "low_variance_low_cost"]
-    # experiment = ["high_variance_high_cost"]
+    # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+    #               "low_variance_low_cost"]
+    experiment = ["strategy_discovery"]
 
     for exp in experiment:
         print(exp)
@@ -437,8 +437,8 @@ if __name__ == "__main__":
             data = data[data["pid"].isin(learning_participants[exp])]
             # data = data[data["pid"].isin(planningamount_learners)]
         elif exp == "strategy_discovery":
-            # data = data[data["pid"].isin(clicking_participants[exp])]
-            data = data[data["pid"].isin(discovery_learners)]
+            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(discovery_learners)]
 
         # create a new column. If column "class" = "hybrid" and "model_index" = 491, then "model" = "pure Reinforce"
         data['model'] = data.apply(assign_model_names, axis=1)
