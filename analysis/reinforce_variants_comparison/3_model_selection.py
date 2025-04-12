@@ -44,7 +44,7 @@ def create_csv_for_matlab(data, exp):
         # add 491 model from data_old; load the csv from data_old
         data_old = pd.read_csv(f"../likelihood_vanilla_model_comparison/matlab/{exp}.csv", header=None)
         ##get the last column from data_old
-        vanilla_model = list(data_old.iloc[:,-2])
+        vanilla_model = list(data_old.iloc[:, -2])
 
         ##append vanilla_model as the last column
         data["Vanilla"] = vanilla_model
@@ -119,6 +119,7 @@ def plot_pid_grouped_by_model(exp, data, criteria):
 
     return None
 
+
 def statistical_test(exp, data, criteria):
     # get only relevant columns model, pid_rewards
     data = data[["model", criteria]]
@@ -136,7 +137,6 @@ def statistical_test(exp, data, criteria):
         result_array = np.array([[len(cell) - 1 for cell in row] for row in pid_clicks])
         # make this array into a list
         data[criteria] = result_array.tolist()
-
 
     if exp == "strategy_discovery":
         data[criteria] = data[criteria].apply(lambda x: x[-60:])
@@ -293,6 +293,7 @@ def compare_parameters_adaptive(exp, data):
 
     return None
 
+
 def analyse_subjective_effort(res, exp=None):
     if exp:
         df = pd.read_csv(f"parameters/{exp}_parameters.csv", index_col=0)
@@ -303,7 +304,6 @@ def analyse_subjective_effort(res, exp=None):
         df4 = pd.read_csv(f"parameters/low_variance_low_cost_parameters.csv", index_col=0)
         # concatenate all the dataframes and keep information about the experiment
         df = pd.concat([df1, df2, df3, df4], ignore_index=True)
-
 
     # filter for models in the model_dict for sc
     filtered_pid = res[res["model"].isin(model_dict["SE"])]
@@ -316,17 +316,18 @@ def analyse_subjective_effort(res, exp=None):
     for index, row in df.iterrows():
         df.loc[index, "subjective_cost"] = row["parameters"]["subjective_cost"]
 
-
     # create one boxplot for each experiment all in one plot and add mean
     plt.figure(figsize=(10, 6))
     plt.boxplot([df[df["exp_x"] == "high_variance_high_cost"]["subjective_cost"],
-                    df[df["exp_x"] == "high_variance_low_cost"]["subjective_cost"],
-                    df[df["exp_x"] == "low_variance_high_cost"]["subjective_cost"],
-                    df[df["exp_x"] == "low_variance_low_cost"]["subjective_cost"]], showmeans=True)
+                 df[df["exp_x"] == "high_variance_low_cost"]["subjective_cost"],
+                 df[df["exp_x"] == "low_variance_high_cost"]["subjective_cost"],
+                 df[df["exp_x"] == "low_variance_low_cost"]["subjective_cost"]], showmeans=True)
     plt.xticks([1, 2, 3, 4], ["HVHC", "HVLC", "LVHC", "LVLC"], fontsize=14)
     # add the points as data next to each of the box
-    for i, exp in enumerate(["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]):
-        plt.scatter([i+1]*len(df[df["exp_x"] == exp]), df[df["exp_x"] == exp]["subjective_cost"], alpha=0.3, color="black")
+    for i, exp in enumerate(
+            ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]):
+        plt.scatter([i + 1] * len(df[df["exp_x"] == exp]), df[df["exp_x"] == exp]["subjective_cost"], alpha=0.3,
+                    color="black")
     plt.ylabel("Subjective value of effort", fontsize=14)
 
     plt.savefig("plots/subjective_effort.png")
@@ -358,12 +359,42 @@ def list_pid_lowest_bic(res):
         print("Number of participants:", len(res[res["model"] == model]["pid"].unique()))
     return None
 
+def bic_difference(exp, result_df):
+    # calculate the difference in BIC between the vanilla model and the best fitting variant
+    # get the BIC of the vanilla model for each pid
+    vanilla_bic = result_df[result_df["model"] == 3326][["pid", "BIC"]]
+
+    # get the BIC of the best fitting variant for each pid
+    best_bic = result_df[result_df["model"] != 3326][["pid", "model", "BIC"]]
+    # for each unique pid keep only the model with lowest bic
+    best_bic = best_bic.loc[best_bic.groupby("pid")["BIC"].idxmin()]
+
+    # for each pid, calculate the difference between the best fitting variant and the vanilla model
+    bic_diff = pd.merge(vanilla_bic, best_bic, on="pid", suffixes=("_vanilla", "_best"))
+    bic_diff["bic_difference"] = bic_diff["BIC_best"] - bic_diff["BIC_vanilla"]
+    bic_diff = bic_diff[["pid", "bic_difference"]]
+
+    # count how many of the absolute difference values are larger than 3
+    count = len(bic_diff[abs(bic_diff["bic_difference"]) > 3])
+    print("Number of participants with a difference larger than 3:", count, "out of ", len(bic_diff))
+    print("Percentage of participants with a difference larger than 3:", count / len(bic_diff) * 100)
+
+    # plot a histogram of the bic difference
+    plt.hist(bic_diff["bic_difference"], bins=10)
+    plt.ylabel("Number of participants")
+    # plt.title("BIC difference between best fitting variant and vanilla model")
+    plt.savefig(f"bic_difference.png")
+    plt.show()
+    plt.close()
+    return None
+
 if __name__ == "__main__":
     # experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["low_variance_low_cost"]
+    experiment = ["strategy_discovery"]
     df_all = []
     for exp in experiment:
+        # df_all = []
         print(exp)
 
         data = pd.read_csv(f"data/{exp}.csv", index_col=0)
@@ -374,12 +405,13 @@ if __name__ == "__main__":
             vanilla_data = vanilla_data[vanilla_data["model_index"] == "3326"]
             vanilla_data["model"] = 3326
             vanilla_data["exp"] = "strategy_discovery"
-            vanilla_data = vanilla_data.drop(columns=["class", "model_index", "condition", "Unnamed: 0.1", "Unnamed: 0"])
+            vanilla_data = vanilla_data.drop(
+                columns=["class", "model_index", "condition", "Unnamed: 0.1", "Unnamed: 0"])
             data = pd.concat([data, vanilla_data], ignore_index=True)
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            data = data[data["pid"].isin(clicking_participants[exp])]
-            # data = data[data["pid"].isin(discovery_hybrid)]
+            # data = data[data["pid"].isin(clicking_participants[exp])]
+            data = data[data["pid"].isin(discovery_hybrid)]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]
@@ -407,10 +439,13 @@ if __name__ == "__main__":
 
         res = group_pid_by_bic(result_df)
 
-        # get the list of pid who are best explained by a variant
-        # list_pid_lowest_bic(res)
+        ### get the list of pid who are best explained by a variant
+        list_pid_lowest_bic(res)
 
-        plot_pid_grouped_by_model(exp, res, "pid_clicks")
+        ### calculate the BIC difference between the vanilla model 3326 and the other models
+        # bic_difference(exp, result_df)
+
+        # plot_pid_grouped_by_model(exp, res, "pid_clicks")
         # statistical_test(exp, res, "pid_clicks")
         # analyse_subjective_effort(exp, res)
         # parameters_analysis(res, exp)

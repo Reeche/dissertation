@@ -423,10 +423,8 @@ if __name__ == "__main__":
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
     #               "low_variance_low_cost"]
     experiment = ["strategy_discovery"]
-
+    df_all = []
     for exp in experiment:
-        print(exp)
-        df_all = []
         data = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv", index_col=0)
 
         if exp in ["v1.0", "c1.1", "c2.1"]:
@@ -462,7 +460,7 @@ if __name__ == "__main__":
 
         res = group_pid_by_bic(result_df, exp)
 
-        # print which of the pid is best explained by which model
+        ### print which of the pid is best explained by which model
         for model in res["model"].unique():
             print(f"{model}: {res[res['model'] == model]['pid'].unique()}")
 

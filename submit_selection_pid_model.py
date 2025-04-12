@@ -6,7 +6,7 @@ bid = 25
 
 exp_num = 'strategy_discovery'
 # recovered_model_type = "non_learning", "habitual", "mf", "hybrid"]
-recovered_model_type = "hybrid"
+recovered_model_type = "non_learning"
 
 data = pd.read_csv(f'missing_{recovered_model_type}.csv')
 # data = [[147, 491], [28, 491], [368, 491]]

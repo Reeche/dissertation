@@ -43,7 +43,7 @@ def fit_model(
 
     # create directory to save priors in
     if save_path is None:
-        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_model_recovery_sd/{recovered_model_type}")
+        save_path = Path(__file__).resolve().parents[0].joinpath(f"results_model_recovery_variants/{recovered_model_type}")
     else:
         save_path.mkdir(parents=True, exist_ok=True)
 
@@ -95,18 +95,14 @@ if __name__ == "__main__":
     number_of_trials = int(sys.argv[5])
     other_params = {"plotting": False}
     recovered_model_type = str(sys.argv[6])
-    if len(sys.argv) > 7:
-        other_params = ast.literal_eval(sys.argv[7])
-    else:
-        other_params = {}
 
     # exp_name = "v1.0"
-    # model_index = 491 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    # model_index = 3324 #models = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
     # optimization_criterion = "likelihood"
     # pid = 106
     # other_params = {"plotting": True}
     # # if not recovering a model, set to None
-    # recovered_model_type = "non_learning"
+    # recovered_model_type = f"variants/3326"
 
     if exp_name != "strategy_discovery":
         number_of_trials = 35
@@ -152,7 +148,7 @@ if __name__ == "__main__":
         optimization_params = {
             "optimizer": "hyperopt",
             "num_simulations": num_sim,
-            "max_evals": 60000,
+            "max_evals": 8000,
             "click_cost": click_cost
         }
         other_params["optimization_params"] = optimization_params

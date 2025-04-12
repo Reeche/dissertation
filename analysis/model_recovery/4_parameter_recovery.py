@@ -33,6 +33,8 @@ def load_simulated_data(exp, recovered_model):
 
 def extract_parameters(df, parameter):
     """Extracts and converts the parameter of interest from 'model_params'."""
+    # remove rows containing nan; these are some missing pid's
+    df = df.dropna(subset=["model_params"])
     return df["model_params"].apply(lambda x: ast.literal_eval(x)[parameter])
 
 
@@ -92,7 +94,7 @@ def create_scatter_plots(parameter):
     - parameter: The parameter name (e.g., "inverse_temperature") to compare.
     """
     # load csv as df
-    df = pd.read_csv(f"{parameter}.csv")
+    df = pd.read_csv(f"results/sd_{parameter}.csv")
 
     # Extract columns corresponding to the models and the parameter
     models = df['recovered_model'].unique()  # Unique models
@@ -155,31 +157,34 @@ def create_scatter_plots(parameter):
     plt.tight_layout()
 
     # Save or show the plot
-    # plt.savefig(f"{parameter}_scatter_plots.png")
-    # plt.show()
-    # plt.close()
+    plt.savefig(f"sd_{parameter}_scatter_plots.png")
+    plt.show()
+    plt.close()
 
 
 
 if __name__ == "__main__":
     ### Define constants inside main block
-    EXPS = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost",
-            "low_variance_high_cost", "low_variance_low_cost"]
+    # EXPS = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost",
+    #         "low_variance_high_cost", "low_variance_low_cost"]
+    # RECOVERED_MODELS = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
+    EXPS = ["c2.1"]
     RECOVERED_MODELS = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
     PARAMETERS_OF_INTEREST = ["gamma", "lr", "inverse_temperature"]
     MODEL_INDICES = [491, 3326, 1743, 1756]
 
     ### Create the csv
-    # for parameter in PARAMETERS_OF_INTEREST:
-    #     comparison_df = pd.DataFrame(columns=["exp", "pid", parameter, "recovered_model", *MODEL_INDICES])
-    #     for exp in EXPS:
-    #         for recovered_model in RECOVERED_MODELS:
-    #             comparison_df = process_experiment(exp, recovered_model, comparison_df, parameter,
-    #                                                MODEL_INDICES)
-    #
-    #     # save csv after renaming
-    #     comparison_df = rename(comparison_df)
-    #     comparison_df.to_csv(f"{parameter}.csv", index=False)
-
     for parameter in PARAMETERS_OF_INTEREST:
-        create_scatter_plots(parameter)
+        comparison_df = pd.DataFrame(columns=["exp", "pid", parameter, "recovered_model", *MODEL_INDICES])
+        for exp in EXPS:
+            for recovered_model in RECOVERED_MODELS:
+                comparison_df = process_experiment(exp, recovered_model, comparison_df, parameter,
+                                                   MODEL_INDICES)
+
+        # save csv after renaming
+        comparison_df = rename(comparison_df)
+        comparison_df.to_csv(f"results/sd_{parameter}.csv", index=False)
+
+    ### Create scatter plots
+    # for parameter in PARAMETERS_OF_INTEREST:
+    #     create_scatter_plots(parameter)

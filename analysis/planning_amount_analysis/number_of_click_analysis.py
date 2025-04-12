@@ -117,7 +117,8 @@ def plot_clicks(clicks_df):
     x = np.arange(0, len(pid_average))
 
     # plot model_mer and pid_mer
-    plt.plot(pid_average, label=f"Participant, {pid_average.values[0]:.1f} to {pid_average.values[-1]:.1f} clicks", color="blue", linewidth=3)
+    plt.plot(pid_average, label=f"Participant, {pid_average.values[0]:.1f} to {pid_average.values[-1]:.1f} clicks",
+             color="blue", linewidth=3)
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
                      label='95% CI')
 
@@ -128,30 +129,45 @@ def plot_clicks(clicks_df):
     plt.yticks(fontsize=12)
     if experiment == "high_variance_low_cost":
         label = "HVLC"
-        # plt.axhline(y=9.09, color='r', linestyle='-')
-        plt.axhline(y=7.1, color='r', linestyle='-')
+        # plt.axhline(y=7.1, color='r', linestyle='-')
         # lower, upper = calculate_confidence_interval(7.1, 3.20, 100000)
         # plt.fill_between(x, lower, upper, color="r", alpha=.1)
+
+        ### this is only containing positive score DP results
+        plt.axhline(y=9.09, color='r', linestyle='-')
+        lower, upper = calculate_confidence_interval(9.09, 2.26, 100000)
+        plt.fill_between(x, lower, upper, color="r", alpha=.1)
+
     elif experiment == "high_variance_high_cost":
         label = "HVHC"
-        # plt.axhline(y=6.72, color='r', linestyle='-')
-        plt.axhline(y=6.32, color='r', linestyle='-')
+        # plt.axhline(y=6.32, color='r', linestyle='-')
         # lower, upper = calculate_confidence_interval(6.32, 2.89, 100000)
         # plt.fill_between(x, lower, upper, color="r", alpha=.1)
+
+        ### this is only containing positive score DP results
+        plt.axhline(y=6.73, color='r', linestyle='-')
+        lower, upper = calculate_confidence_interval(6.73, 2.89, 100000)
+        plt.fill_between(x, lower, upper, color="r", alpha=.1)
+
+
     elif experiment == "low_variance_high_cost":
         label = "LVHC"
         plt.axhline(y=0, color='r', linestyle='-')
     else:
         label = "LVLC"
-        # plt.axhline(y=3.96, color='r', linestyle='-')
-        plt.axhline(y=5.82, color='r', linestyle='-')
-        # lower, upper = calculate_confidence_interval(5.82, 3.40, 100000) #due to large sample size, the confidence interval is very small
+        # plt.axhline(y=5.82, color='r', linestyle='-')
+        # lower, upper = calculate_confidence_interval(5.82, 3.40, 100000)
         # plt.fill_between(x, lower, upper, color="r", alpha=.1)
+
+        ## this is only containing positive score DP results
+        plt.axhline(y=3.96, color='r', linestyle='-')
+        lower, upper = calculate_confidence_interval(3.96, 2.37, 100000)
+        plt.fill_between(x, lower, upper, color="r", alpha=.1)
 
     plt.legend(fontsize=12)
     plt.ylabel(f"Average number of clicks for {label}", fontsize=14)
-    plt.savefig(f"plots/{experiment}_average_clicks.png")
-    # plt.show()
+    # plt.savefig(f"plots/{experiment}_average_clicks.png")
+    plt.show()
     plt.close()
     return None
 
@@ -435,7 +451,6 @@ if __name__ == "__main__":
         # else:
         #     stat, p_value = wilcoxon([x - 3.96 for x in last_clicks])
         #     print(f"Wilcoxon test for {experiment}: p={p_value}")
-
 
         ##optimal number of clicks vs. actual number of clicks
         # if experiment == "high_variance_low_cost":

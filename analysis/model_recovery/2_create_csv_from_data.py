@@ -9,6 +9,9 @@ from mcl_toolbox.env.modified_mouselab import get_termination_mers
 import sys
 
 """
+After having fitted the model to the models again, we want to create a csv file to store the results.
+Probably need to download the results from server first
+
 This script created csv for each condition and each model. 
 Each csv contains the following columns:
 - pid: participant id
@@ -143,11 +146,11 @@ def mapping(model_class):
 
 
 if __name__ == "__main__":
-    folder_list = ["non_learning"]
+    folder_list = ["variants/3326"]
     conditions = ["v1.0", "c2.1", "c1.1",
                   "high_variance_high_cost", "high_variance_low_cost",
                   "low_variance_high_cost", "low_variance_low_cost"]
-    # conditions = ["low_variance_low_cost"]
+    # conditions = ["v1.0"]
 
     for condition in conditions:
         if condition == "strategy_discovery":
@@ -166,10 +169,16 @@ if __name__ == "__main__":
                 pid_dict_list = habitual_pid_dict
             elif folder == "non_learning":
                 pid_dict_list = non_learning_pid_dict
+            elif folder.startswith("variants"):
+                pid_dict_list = pid_dict
             else:
                 raise ValueError("Model class not found")
 
-            combinations = get_all_combinations([491, 1743, 1756, 3326], condition, pid_dict_list)
+            if folder.startswith("variants"):
+                combinations = get_all_combinations([3315, 3316, 3317, 3318, 3323, 3324, 3325], condition,
+                                                    pid_dict_list)
+            else:
+                combinations = get_all_combinations([491, 1743, 1756, 3326], condition, pid_dict_list)
 
             # create new dataframe with the columns "pid", model_index", "model_params"
             df = pd.DataFrame(columns=["pid", "model_index", "model_params"])
@@ -201,9 +210,10 @@ if __name__ == "__main__":
                 model = row["model_index"]
 
                 try:
-                    data = pd.read_pickle(f'../../results_model_recovery/{folder}/{condition}_data/{pid}_{model}_1.pkl')
+                    data = pd.read_pickle(
+                        f'../../results_model_recovery_variants/{folder}/{condition}_data/{pid}_{model}_1.pkl')
                     model_params = pd.read_pickle(
-                        f'../../results_model_recovery/{folder}/{condition}_priors/{pid}_likelihood_{model}.pkl')
+                        f'../../results_model_recovery_variants/{folder}/{condition}_priors/{pid}_likelihood_{model}.pkl')
                 except:
                     print("pid not found", pid)
                     continue

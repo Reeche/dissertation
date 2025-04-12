@@ -64,76 +64,72 @@ def group_pid_by_bic(data):
     return res
 
 
-def confusion_matrix(data):
-    # Replace model names in "recovered_model" with the ones in rename_map
-    data["recovered_model"] = data["recovered_model"].replace(rename_map)
+def confusion_matrix(data, rename_map=None, plot=True):
+    # Custom model order
+    model_order = ["hybrid Reinforce", "MF - Reinforce", "Habitual", "Non-learning"]
 
-    # Initialize confusion matrix with actual counts
-    unique_models = data["recovered_model"].unique()
-    confusion_matrix = pd.DataFrame(0, index=unique_models, columns=unique_models)
+    if rename_map:
+        data["recovered_model"] = data["recovered_model"].replace(rename_map)
 
-    for model in unique_models:
-        # Filter for the current recovered model
+    # Ensure all models in data are included in the order list
+    all_models = set(data["recovered_model"].unique()).union(set(data["model"].unique()))
+    missing_models = all_models - set(model_order)
+    if missing_models:
+        model_order.extend(sorted(missing_models))  # Append any missing models at the end
+
+    # Initialize confusion matrix
+    confusion_matrix = pd.DataFrame(0, index=model_order, columns=model_order)
+
+    for model in model_order:
         model_data = data[data["recovered_model"] == model]
-
-        # Find the model with the lowest BIC for each participant
         min_bic_idx = model_data.groupby('pid')['BIC'].idxmin()
         lowest_bic_models = model_data.loc[min_bic_idx]
-
-        # Count occurrences of each best-fitting model
         model_counts = lowest_bic_models['model'].value_counts()
 
-        # Update the confusion matrix with actual counts
         for recovered_model, count in model_counts.items():
             confusion_matrix.loc[model, recovered_model] = count
 
-    # Compute percentage confusion matrix (normalize rows)
-    confusion_matrix_percentage = confusion_matrix.div(confusion_matrix.sum(axis=1), axis=0) * 100
-
-    # replace NaN with 0
-    confusion_matrix_percentage = confusion_matrix_percentage.fillna(0)
     confusion_matrix = confusion_matrix.fillna(0)
 
-    # Extract model names (row/column labels)
-    unique_models = confusion_matrix.index
+    # Posterior likelihood: P(True | Recovered)
+    posterior = confusion_matrix.div(confusion_matrix.sum(axis=1), axis=0) * 100
+    posterior = posterior.fillna(0)
 
-    # Calculate R^2 for each model pair; something is wrong here but maybe also not needed?
-    # r2_dict = {}
-    # for model in unique_models:
-    #     for recovered_model in unique_models:
-    #         r = np.corrcoef(confusion_matrix.loc[model], confusion_matrix.loc[recovered_model])[0, 1]
-    #         r2_dict[(model, recovered_model)] = r ** 2  # Square of correlation coefficient
-    # print(r2_dict)
+    # Inverse likelihood: P(Recovered | True)
+    inverse = posterior.div(posterior.sum(axis=0), axis=1) * 100
+    inverse = inverse.fillna(0)
 
-    # Plot the confusion matrix
-    fig, ax = plt.subplots(figsize=(8, 8))
-    cax = ax.matshow(confusion_matrix, cmap='Reds') #Wistia
+    if plot:
+        fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+        for ax, matrix, title in zip(axes, [posterior, inverse], ["Posterior Likelihood", "Inverse Likelihood"]):
+            cax = ax.matshow(matrix.loc[model_order, model_order], cmap='Reds')
+            for (i, j), val in np.ndenumerate(confusion_matrix.loc[model_order, model_order].values):
+                percentage = matrix.loc[model_order, model_order].iloc[i, j]
+                if title == "Posterior Likelihood":
+                    count = confusion_matrix.loc[model_order, model_order].iloc[i, j]
+                    label = f'{int(count)}\n({percentage:.2f}%)'
+                else:
+                    label = f'{percentage:.2f}%'
+                ax.text(j, i, label, ha='center', va='center', fontsize=12)
+            ax.set_xticks(range(len(model_order)))
+            ax.set_xticklabels(model_order, rotation=45, fontsize=12, ha='left')
+            ax.set_yticks(range(len(model_order)))
+            ax.set_yticklabels(model_order, fontsize=12)
+            ax.set_title(title, fontsize=14)
+        plt.tight_layout()
+        plt.savefig("results/sd_model_recovery.png")
+        plt.show()
+        plt.close()
 
-    # Annotate each cell with count and percentage (fontsize = 12)
-    for (i, j), val in np.ndenumerate(confusion_matrix.values):
-        percentage = confusion_matrix_percentage.iloc[i, j]
-        ax.text(j, i, f'{int(val)}\n({percentage:.2f}%)', ha='center', va='center', fontsize=12)
-
-    # Set tick labels with larger font size
-    plt.xticks(range(len(confusion_matrix.columns)), confusion_matrix.columns, rotation=45, fontsize=12, ha='left')
-    plt.yticks(range(len(confusion_matrix.index)), confusion_matrix.index, fontsize=12)
-
-    # **Adjust layout to avoid label cutoff**
-    plt.subplots_adjust(left=0.2, bottom=0.1, right=0.95, top=0.8)
-    # plt.savefig("confusion_matrix.png")
-    # plt.show()
-
-    return confusion_matrix, confusion_matrix_percentage
-
-
+    return confusion_matrix, posterior, inverse
 
 
 if __name__ == "__main__":
-    # experiment = ["low_variance_high_cost"]
+    experiment = ["strategy_discovery"]
     # recovered_model = ["habitual"]
     recovered_model = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
-    experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-                  "low_variance_low_cost"]
+    # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+    #               "low_variance_low_cost"]
     df_all = pd.DataFrame()
     for exp in experiment:
         for model in recovered_model:
@@ -159,4 +155,4 @@ if __name__ == "__main__":
             df_all = pd.concat([df_all, res])
 
     # create confusion matrix
-    confusion_matrix(df_all)
+    confusion_matrix(df_all, rename_map, plot=True)

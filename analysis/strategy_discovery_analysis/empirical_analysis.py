@@ -8,7 +8,7 @@ import random
 import statsmodels.formula.api as smf
 import os
 import statsmodels.api as sm
-from vars import clicked_pid, assign_model_names
+from vars import clicked_pid, assign_model_names, not_examined_all_pid
 
 
 ### create df
@@ -452,6 +452,17 @@ def plot_combined(click_df, actual_count, prop_counts, model, participant=None):
     ax2.tick_params(axis='y', labelcolor='green')
     ax2.set_ylim(-0.01, 0.5)
 
+    # increase tick sizes
+    ax1.tick_params(axis='x', labelsize=12)
+    ax1.tick_params(axis='y', labelsize=12)
+    ax2.tick_params(axis='y', labelsize=12)
+
+
+    # replace yticks with percentages from 0 to 100
+    # ax2.set_yticks(np.arange(0, 0.51, 0.1))
+    # ax2.set_yticklabels([f"{int(i * 100)}%" for i in np.arange(0, 0.51, 0.1)])
+
+
     # If participant data is provided, plot it as well; might not need but kept it nonetheless (chatgpt wrote this)
     # if participant:
     #     ci_pid = 1.96 * np.std(participant[1]["optimal_strategy"]) / np.sqrt(len(prop_counts))
@@ -474,6 +485,9 @@ def plot_combined(click_df, actual_count, prop_counts, model, participant=None):
     # Place a combined legend on ax1 (or fig if you want it outside the axes)
     ax1.legend(handles, labels, loc='lower right', fontsize=14)
 
+    # tight
+    fig.tight_layout()
+    
     plt.savefig(f"plots/cogsci2025/score_proportion.png")
     plt.show()
     plt.close()
@@ -487,6 +501,7 @@ if __name__ == "__main__":
 
     ## filter for clicked_pid
     click_df = click_df[click_df["pid"].isin(clicked_pid)]
+    # click_df = click_df[click_df["pid"].isin(not_examined_all_pid)]
 
     ### analysis
     # linear_regression(click_df)
@@ -495,9 +510,9 @@ if __name__ == "__main__":
 
     count_prop = classify_via_score(click_df)
 
-    plot_score(click_df)
+    # plot_score(click_df)
     # plot_confidence_interval(count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant")
-    # plot_combined(click_df, count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant", count_prop)
+    plot_combined(click_df, count_prop[0]["optimal_strategy"], count_prop[1]["optimal_strategy"], "Participant", count_prop)
 
     # print("CI: ", credible_interval(count_prop[-10:]))
     # trend(count_prop)

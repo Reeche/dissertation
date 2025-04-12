@@ -118,11 +118,11 @@ for model_type in model_types:
         # empty_tuple = (int(items[0])) #mb models
         new_list.append(empty_tuple)
 
-    print(f"Number of missing items for {exp_num}", len(new_list)) #mf
+    print(f"Number of missing items for {model_type}", len(new_list)) #mf
     # print(f"Number of missing items for {exp_num}:", new_list) #mb
 
     # print(f"Missing items for {exp_num}:", new_list) #mf
     # save the missing pid and model_index as csv, first create a df
     ## MF models only
-    df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
-    df.to_csv(f"missing_{model_type}.csv", index=False)
+    # df = pd.DataFrame(new_list, columns=['pid', 'model_index'])
+    # df.to_csv(f"missing_{model_type}.csv", index=False)

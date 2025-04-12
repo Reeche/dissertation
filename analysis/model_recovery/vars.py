@@ -29,7 +29,12 @@ hybrid_reinforce_pid_dict = {
     'high_variance_high_cost': [83, 195],
     'high_variance_low_cost': [53],
     'low_variance_high_cost': [61, 79, 100, 107, 128, 132, 166, 206],
-    'low_variance_low_cost': [42, 110, 172]
+    'low_variance_low_cost': [42, 110, 172],
+    'strategy_discovery': [3, 4, 6, 7, 9, 16, 17, 19, 23, 30, 34, 35, 41, 45, 53, 57, 58, 67, 71, 76, 78, 83, 86, 92,
+                           106, 128, 133, 138, 139, 141, 143, 146, 155, 161, 164, 165, 167, 174, 175, 177, 184, 189,
+                           194, 195, 201, 203, 206, 211, 216, 218, 219, 223, 228, 231, 232, 236, 238, 250, 255, 259,
+                           260, 262, 267, 280, 281, 291, 292, 293, 299, 305, 310, 316, 317, 318, 320, 324, 327, 328,
+                           341, 344, 347, 349, 350, 355, 356, 357, 359, 360, 361, 362, 373, 374, 375, 377]
 }
 
 # three cond clicking participants who are best explained by hybrid reinforce according to BIC
@@ -53,8 +58,14 @@ mf_reinforce_pid_dict = {
     'high_variance_high_cost': [108],
     'high_variance_low_cost': [197],
     'low_variance_high_cost': [2, 14, 36, 73, 98, 135, 138, 144, 157, 171, 181, 183],
-    'low_variance_low_cost': [115, 137, 143, 165, 170]
+    'low_variance_low_cost': [115, 137, 143, 165, 170],
+    'strategy_discovery': [2, 8, 24, 43, 48, 49, 54, 62, 68, 73, 75, 80, 85, 91, 93, 96, 99, 102, 107, 110, 113, 116,
+                           117, 120, 123, 124, 126, 131, 137, 145, 147, 149, 153, 156, 159, 166, 169, 171, 172, 178,
+                           181, 183, 185, 187, 190, 199, 200, 207, 212, 213, 220, 221, 226, 229, 233, 242, 244, 246,
+                           247, 252, 261, 263, 266, 274, 279, 286, 287, 294, 295, 296, 306, 319, 333, 337, 340, 365,
+                           367, 369, 372, 376, 378]
 }
+
 habitual_pid_dict = {
     'v1.0': [1, 17, 29, 34, 38, 45, 62, 66, 80, 85, 90, 110, 155],
     'c2.1': [26, 84, 99, 113, 145, 152, 162],
@@ -62,8 +73,14 @@ habitual_pid_dict = {
     'high_variance_high_cost': [1, 76, 169, 191],
     'high_variance_low_cost': [35, 96],
     'low_variance_high_cost': [28, 37, 45, 69, 147],
-    'low_variance_low_cost': [85, 91, 106, 186]
+    'low_variance_low_cost': [85, 91, 106, 186],
+    'strategy_discovery': [1, 10, 11, 14, 20, 22, 25, 26, 27, 29, 33, 36, 37, 39, 40, 46, 50, 51, 52, 55, 59, 65, 70,
+                           89, 95, 98, 101, 111, 115, 118, 119, 125, 129, 134, 135, 140, 142, 148, 151, 154, 162, 170,
+                           180, 186, 192, 193, 202, 204, 205, 209, 210, 214, 215, 217, 234, 235, 237, 240, 241, 249,
+                           253, 254, 257, 265, 268, 271, 276, 277, 282, 289, 300, 304, 308, 312, 313, 321, 322, 323,
+                           329, 330, 331, 332, 339, 343, 348, 358, 363, 364, 370]
 }
+
 non_learning_pid_dict = {
     'v1.0': [6, 10, 18, 24, 56, 68, 69, 94, 106, 144, 146, 165, 173],
     'c2.1': [8, 16, 20, 22, 30, 39, 41, 49, 52, 53, 58, 60, 61, 67, 72, 86, 88, 93,
@@ -73,8 +90,11 @@ non_learning_pid_dict = {
     'high_variance_high_cost': [0, 32, 47, 57, 74, 81],
     'high_variance_low_cost': [17, 23, 154, 180],
     'low_variance_high_cost': [21, 31, 124, 201],
-    'low_variance_low_cost': [12, 19, 27, 44, 52, 77, 104, 113, 130, 179, 184, 196, 200]
+    'low_variance_low_cost': [12, 19, 27, 44, 52, 77, 104, 113, 130, 179, 184, 196, 200],
+    'strategy_discovery': [18, 28, 32, 38, 56, 63, 72, 77, 82, 90, 103, 109, 122, 152, 173, 196, 239, 256, 275, 278,
+                           309, 311, 315, 335, 336, 342, 346, 352, 353, 354, 371]
 }
+
 
 def assign_model_names(row):
     if str(row['model_index']) == "3326":
@@ -87,6 +107,7 @@ def assign_model_names(row):
         return 'Non-learning'
     else:
         raise ValueError("Model class combination not found")
+
 
 rename_index = {
     3326: 'hybrid Reinforce',
@@ -101,6 +122,7 @@ rename_map = {
     'habitual': 'Habitual',
     'non_learning': 'Non-learning'
 }
+
 
 def assign_pid_dict(recovered_model):
     if recovered_model == "hybrid_reinforce":

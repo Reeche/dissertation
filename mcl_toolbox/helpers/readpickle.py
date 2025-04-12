@@ -16,8 +16,8 @@ import pandas as pd
 # object3324 = pd.read_pickle(f"../../results_sd_variant1/mcrl/strategy_discovery_data/172_3324_1.pkl")
 # object3325 = pd.read_pickle(f"../../results_sd_variant1/mcrl/strategy_discovery_data/172_3325_1.pkl")
 
-test = pd.read_pickle(f"../../results_model_recovery_sd/non_learning/strategy_discovery_priors/109_likelihood_1743.pkl")
-test2 = pd.read_pickle(f"../../results_model_recovery_sd/non_learning/strategy_discovery_data/109_3326_1.pkl")
+test = pd.read_pickle(f"../../results_model_recovery_variants/variants/3315/c1.1_priors/2_likelihood_3315.pkl")
+# test2 = pd.read_pickle(f"../../results_model_recovery_variants/variants/3315/c1.1_data/106_3324_1.pkl")
 
 
 print(2)
