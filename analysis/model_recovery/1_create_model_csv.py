@@ -14,7 +14,7 @@ The resulting csv files should be uploaded to the server and treated as pid to b
 
 # load pkl file for selected model
 #note that there is no 3326 for threecond and planningamount because it was fitted before reindexing the rl_model.csv
-models = [3326, 3325, 3324, 3323, 3318, 3317, 3316, 3315]
+models = [3326]
 exp = "strategy_discovery"
 data_path = Path(f"../../final_results/rl_hybrid_variants/data/{exp}_data")
 

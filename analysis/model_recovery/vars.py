@@ -95,32 +95,70 @@ non_learning_pid_dict = {
                            309, 311, 315, 335, 336, 342, 346, 352, 353, 354, 371]
 }
 
+### hybrid learners who are best explained by a variant
+vanilla_hybrid = [3, 4, 6, 7, 9, 16, 17, 19, 23, 30, 34, 35, 67, 71, 83, 92, 106, 128, 138, 139, 141, 143, 146, 155,
+                  161, 165, 167, 174, 177, 195, 201, 206, 211, 218, 223, 228, 232, 236, 250, 260, 262, 267, 280, 281,
+                  291, 292, 299, 310, 316, 318, 324, 328, 341, 344, 347, 349, 350, 357, 359, 360, 361, 362, 373, 374,
+                  375, 377]
+se_pid = [53, 57, 76, 184, 189, 255, 327, 356]
+pr_pid = [78, 164, 175, 203, 216, 219, 231, 259, 293, 317, 320, 355]
+pr_se_pid = [58, 86, 238]
+td_pid = [41, 45, 133, 194, 305]
 
 def assign_model_names(row):
     if str(row['model_index']) == "3326":
-        return 'hybrid Reinforce'
+        return 'plain Reinforce'
     elif str(row['model_index']) == "491":
         return 'MF - Reinforce'
     elif str(row['model_index']) == "1743":
         return 'Habitual'
     elif str(row['model_index']) == "1756":
         return 'Non-learning'
+    elif str(row['model_index']) == "3325":
+        return 'TD'
+    elif str(row['model_index']) == "3324":
+        return 'SE'
+    elif str(row['model_index']) == "3323":
+        return 'SE + TD'
+    elif str(row['model_index']) == "3318":
+        return 'PR'
+    elif str(row['model_index']) == "3317":
+        return 'PR + TD'
+    elif str(row['model_index']) == "3316":
+        return 'PR + SE'
+    elif str(row['model_index']) == "3315":
+        return 'PR + SE + TD'
     else:
         raise ValueError("Model class combination not found")
 
 
 rename_index = {
-    3326: 'hybrid Reinforce',
+    3326: 'plain Reinforce',
     491: 'MF - Reinforce',
     1743: 'Habitual',
-    1756: 'Non-learning'
+    1756: 'Non-learning',
+    3325: 'TD',
+    3324: 'SE',
+    3323: 'SE + TD',
+    3318: 'PR',
+    3317: 'PR + TD',
+    3316: 'PR + SE',
+    3315: 'PR + SE + TD'
 }
 
 rename_map = {
-    'hybrid_reinforce': 'hybrid Reinforce',
+    # 'hybrid_reinforce': 'hybrid Reinforce',
     'mf_reinforce': 'MF - Reinforce',
     'habitual': 'Habitual',
-    'non_learning': 'Non-learning'
+    'non_learning': 'Non-learning',
+    'variants/3326': 'plain Reinforce',
+    'variants/3325': 'TD',
+    'variants/3324': 'SE',
+    'variants/3323': 'SE + TD',
+    'variants/3318': 'PR',
+    'variants/3317': 'PR + TD',
+    'variants/3316': 'PR + SE',
+    'variants/3315': 'PR + SE + TD'
 }
 
 
@@ -151,3 +189,5 @@ def process_data(data, model_col, pid_col, exp):
         data[pid_col] = data[pid_col].apply(lambda x: ast.literal_eval(x))
         data[model_col] = data[model_col].apply(lambda x: ast.literal_eval(x))
     return data
+
+

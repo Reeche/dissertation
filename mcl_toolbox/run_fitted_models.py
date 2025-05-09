@@ -57,15 +57,15 @@ def strategy_discovery_adap_prop(sim_data, model):
 if __name__ == "__main__":
     # todo: this cannot run without a participant, therefore limited to the number of trials of participant
     exp_name = "strategy_discovery"
-    type = "mf"
+    type = "hybrid"
 
     if type == "mf":
         model_index = 491
     elif type == "hybrid":
-        model_index = 3326
+        model_index = 3316
 
     num_trials = 120
-    num_simulations = 1000
+    num_simulations = 1
     plotting = False
 
     if exp_name == "high_variance_high_cost" or exp_name == "low_variance_high_cost":
@@ -87,11 +87,9 @@ if __name__ == "__main__":
     fit_criterion = "likelihood"
 
     # for pid in pid_dict[exp_name]:
-    # for pid in [28, 35, 48, 63, 75, 195, 320, 335]:
-    # [13, 62, 78, 141]
-    for pid in [13]:
+    for pid in [58, 86, 238]: #pr + se
         parent_directory = Path(__file__).parents[1]
-        param_dir = parent_directory.joinpath(f"final_results/{type}/{exp_name}_priors")
+        param_dir = parent_directory.joinpath(f"results_sd_variant/mcrl/{exp_name}_priors")
         # and directory to save fit model info in
         model_info_directory = parent_directory.joinpath(f"results/mcrl/{exp_name}_data")
         create_dir(model_info_directory)
@@ -130,7 +128,7 @@ if __name__ == "__main__":
             plot_dir=plot_directory,
         )
 
-        all_data[pid] = sim_data
+        # all_data[pid] = sim_data
 
         # strategy_discovery_adap_prop(sim_data, model_index)
         # plot_num_clicks(all_data, model_index, num_trials)

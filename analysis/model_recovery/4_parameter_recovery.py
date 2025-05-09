@@ -3,7 +3,10 @@ import os
 import glob
 import matplotlib.pyplot as plt
 import pandas as pd
-from vars import assign_pid_dict, rename_index, rename_map
+from vars import assign_pid_dict, rename_index, rename_map, pid_dict
+
+import warnings
+warnings.filterwarnings("ignore")
 
 """
 For the pid best explained by hybrid, mf, habitual, and non-learning models, get the parameter of the fitted model.
@@ -16,8 +19,12 @@ Hyperparameters of the simulated models are in data
 
 def load_real_data(exp, recovered_model):
     """Loads real data CSV based on experiment and model."""
-    files = [file for file in glob.glob(os.path.join("../../final_results/parameters/", "*"))
-             if recovered_model.split('_')[0] in os.path.basename(file) and exp in os.path.basename(file)]
+    if recovered_model.startswith("variant/"):
+        files = [file for file in glob.glob(os.path.join("../reinforce_variants_comparison/parameters/", "*"))
+                 if exp in os.path.basename(file)]
+    else:
+        files = [file for file in glob.glob(os.path.join("../../final_results/parameters/", "*"))
+                 if recovered_model.split('_')[0] in os.path.basename(file) and exp in os.path.basename(file)]
 
     if len(files) > 1:
         raise ValueError(f"Multiple matching files found for {exp} and {recovered_model}: {files}")
@@ -27,7 +34,10 @@ def load_real_data(exp, recovered_model):
 
 def load_simulated_data(exp, recovered_model):
     """Loads simulated data CSV based on experiment and model."""
-    file_path = f"data/{recovered_model}_{exp}.csv"
+    if recovered_model.startswith("variant/"):
+        file_path = f"../model_recovery/data/variants/{recovered_model.split('/')[1]}_{exp}.csv"
+    else:
+        file_path = f"data/{recovered_model}_{exp}.csv"
     return pd.read_csv(file_path) if os.path.exists(file_path) else None
 
 
@@ -35,7 +45,9 @@ def extract_parameters(df, parameter):
     """Extracts and converts the parameter of interest from 'model_params'."""
     # remove rows containing nan; these are some missing pid's
     df = df.dropna(subset=["model_params"])
-    return df["model_params"].apply(lambda x: ast.literal_eval(x)[parameter])
+    df["model_params"] = df["model_params"].apply(lambda x: ast.literal_eval(x))
+    df["model_params"] = df["model_params"].apply(lambda x: x.get(parameter))
+    return df["model_params"]
 
 
 def process_experiment(exp, recovered_model, comparison_df, parameter, model_indices):
@@ -43,30 +55,49 @@ def process_experiment(exp, recovered_model, comparison_df, parameter, model_ind
     real_data = load_real_data(exp, recovered_model)
     simulated_data = load_simulated_data(exp, recovered_model)
 
+    if parameter == "subjective_cost":
+        # filter for model_indices and remove the models that are not in the list
+        simulated_data = simulated_data[simulated_data["model_index"].isin(model_indices)]
+        # remove the models that are not in the list
+        real_data = real_data[real_data["model"].isin(model_indices)]
+
     if real_data is None or simulated_data is None:
         return comparison_df  # Skip if either dataset is missing
 
+    # rename real_data "parameters" column to "model_params"
+    if real_data is not None:
+        real_data = real_data.rename(columns={"parameters": "model_params"})
+
     # Filter data based on `pid`
-    valid_pids = assign_pid_dict(recovered_model).get(exp, [])
+    if recovered_model.startswith("variant/"):
+        recovered_model = recovered_model.split("/")[1]
+        valid_pids = pid_dict[exp]
+    else:
+        valid_pids = assign_pid_dict(recovered_model).get(exp, [])
+
     real_data = real_data[real_data["pid"].isin(valid_pids)]
     simulated_data = simulated_data[simulated_data["pid"].isin(valid_pids)]
 
     for pid in real_data["pid"].unique():
         row_dict = {"exp": exp, "pid": int(pid), "recovered_model": recovered_model}
 
+        # filter real_data and simulated_data by pid
+        real_data_ = real_data[real_data["pid"] == pid]
+        simulated_data_ = simulated_data[simulated_data["pid"] == pid]
+
         # Extract the parameter value for the real data
-        real_data["parameter"] = extract_parameters(real_data, parameter)
+        real_data_["parameter"] = extract_parameters(real_data_, parameter)
 
         # Extract the parameter value for the simulated data, filtered by pid and model_index
-        simulated_data["parameter"] = extract_parameters(simulated_data, parameter)
+        simulated_data_["parameter"] = extract_parameters(simulated_data_, parameter)
 
         # Get the corresponding real parameter value
-        row_dict[parameter] = real_data.loc[real_data["pid"] == pid, "parameter"].values[0]
+        row_dict[parameter] = real_data_.loc[real_data_["pid"] == pid, "parameter"].values[0]
 
         # Now extract simulated parameters for the specific model indices
         for model_index in model_indices:
-            sim_value = simulated_data.loc[
-                (simulated_data["pid"] == pid) & (simulated_data["model_index"] == model_index),
+            sim_value = simulated_data_.loc[
+                (simulated_data_["pid"] == pid) & (simulated_data_["model_index"] == model_index),
                 "parameter"
             ].values[0]  # Extract the value for the specific parameter
             row_dict[model_index] = sim_value
@@ -87,104 +118,101 @@ def rename(df):
 
 def create_scatter_plots(parameter):
     """
-    Create 4x4 scatter plots comparing different models for the given parameter.
+    For each model, create a scatter plot comparing the true parameter vs. recovered parameter.
 
     Args:
-    - df: DataFrame containing the parameter values for each model.
     - parameter: The parameter name (e.g., "inverse_temperature") to compare.
     """
-    # load csv as df
+
+    # Load CSV as DataFrame
+    # df = pd.read_csv(f"results/variants/{parameter}.csv")
     df = pd.read_csv(f"results/sd_{parameter}.csv")
 
-    # Extract columns corresponding to the models and the parameter
-    models = df['recovered_model'].unique()  # Unique models
-    model_columns = [model.strip() for model in models]  # Clean up model names to use in column labels
+    # For variants only: replace recovered_model with the rename_index mapping (assumed defined elsewhere)
+    df["recovered_model"] = df["recovered_model"].replace(rename_index)
 
-    # Create a new figure with a 4x4 grid of subplots
-    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(16, 12))
+    # Get unique models
+    models = df['recovered_model'].unique()
 
-    for model in model_columns:
-        # filter df by model
+    for model in models:
+        # Filter for rows where recovered_model == model
         df_model = df[df['recovered_model'] == model]
-        # df_x are the values in the column with the parameter name, get also the pids
-        df_x = df_model[['pid', parameter]].dropna()
-        # replace header name by pid and model
-        df_x.columns = ['pid', model]
 
-        # iterate over each pair of models
-        for i, model_y in enumerate(model_columns):
-            # get the column of model_y
-            df_y = df_model[['pid', model_y]].dropna()
+        # Check if model column exists
+        if model not in df_model.columns:
+            print(f"Skipping model '{model}' — no recovered parameter column found.")
+            continue
 
-            ax = axes[model_columns.index(model), i]
-            # merge the dataframes on 'pid' to ensure we are comparing the same participants
-            merged_df = pd.merge(df_x, df_y, on='pid', suffixes=('_x', '_y'))
+        # Extract true and recovered parameter values
+        df_plot = df_model[['pid', parameter, model]].dropna()
 
-            # calculate correlation
-            try:
-                corr = merged_df[f"{model}_x"].corr(merged_df[f"{model_y}_y"])
-            except:
-                corr = merged_df[f"{model}"].corr(merged_df[f"{model_y}"])
-            print(f"{parameter}: Correlation between {model} and {model_y} is {corr}")
+        if df_plot.empty:
+            print(f"No valid data for model '{model}'. Skipping.")
+            continue
 
-            # calculate Kendall's tau
-            try:
-                tau = merged_df[f"{model}_x"].corr(merged_df[f"{model_y}_y"], method='kendall')
-            except:
-                tau = merged_df[f"{model}"].corr(merged_df[f"{model_y}"], method='kendall')
-            print(f"{parameter}: Kendall's tau between {model} and {model_y} is {tau}")
+        true_values = df_plot[parameter]
+        recovered_values = df_plot[model]
 
-            # plot the scatter plot on the corresponding axis if there's valid data
-            try:
-                ax.scatter(merged_df[f"{model}_x"], merged_df[f"{model_y}_y"], alpha=0.6)
-            except:
-                ax.scatter(merged_df[f"{model}"], merged_df[f"{model_y}"], alpha=0.6)
+        # Calculate correlations
+        pearson_corr = true_values.corr(recovered_values)
+        kendall_tau = true_values.corr(recovered_values, method='kendall')
 
-            # set labels and title
-            ax.set_xlabel(model)
-            ax.set_ylabel(model_y)
-            ax.set_title(f'{model} vs {model_y}')
+        print(f"{parameter} — Model: {model}")
+        print(f"Pearson correlation: {pearson_corr:.3f}")
+        print(f"Kendall's tau: {kendall_tau:.3f}")
 
-            # optionally add a line of identity (y = x) for visual comparison
-            try:
-                ax.plot([min(merged_df[f"{model}_x"]), max(merged_df[f"{model_y}_y"])],
-                    [min(merged_df[f"{model}_x"]), max(merged_df[f"{model_y}_y"])], 'k--', lw=1)
-            except:
-                ax.plot([min(merged_df[f"{model}"]), max(merged_df[f"{model_y}"])],
-                        [min(merged_df[f"{model}"]), max(merged_df[f"{model_y}"])], 'k--', lw=1)
+        # Plot scatter plot
+        plt.figure(figsize=(6, 6))
+        plt.scatter(true_values, recovered_values, alpha=0.6)
+        plt.xlabel('True parameter')
+        plt.ylabel('Recovered parameter')
+        plt.title(f'{model}: {parameter}\nPearson r={pearson_corr:.3f}, Kendall tau={kendall_tau:.3f}')
 
-    # Adjust layout for better spacing
-    plt.tight_layout()
+        # Line of identity (y = x)
+        min_val = min(true_values.min(), recovered_values.min())
+        max_val = max(true_values.max(), recovered_values.max())
+        plt.plot([min_val, max_val], [min_val, max_val], 'k--', lw=1)
 
-    # Save or show the plot
-    plt.savefig(f"sd_{parameter}_scatter_plots.png")
-    plt.show()
-    plt.close()
-
+        plt.tight_layout()
+        plt.savefig(f"results/plots/{parameter}_{model}.png", dpi=300)
+        # plt.show()
+        plt.close()
 
 
 if __name__ == "__main__":
     ### Define constants inside main block
     # EXPS = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost",
     #         "low_variance_high_cost", "low_variance_low_cost"]
-    # RECOVERED_MODELS = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
-    EXPS = ["c2.1"]
+
     RECOVERED_MODELS = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
     PARAMETERS_OF_INTEREST = ["gamma", "lr", "inverse_temperature"]
     MODEL_INDICES = [491, 3326, 1743, 1756]
 
-    ### Create the csv
-    for parameter in PARAMETERS_OF_INTEREST:
-        comparison_df = pd.DataFrame(columns=["exp", "pid", parameter, "recovered_model", *MODEL_INDICES])
-        for exp in EXPS:
-            for recovered_model in RECOVERED_MODELS:
-                comparison_df = process_experiment(exp, recovered_model, comparison_df, parameter,
-                                                   MODEL_INDICES)
+    EXPS = ["strategy_discovery"]
+    # RECOVERED_MODELS = ["variant/3324", "variant/3323",  "variant/3325", "variant/3326",
+    #                     "variant/3317", "variant/3318", "variant/3315", "variant/3316"]
+    # PARAMETERS_OF_INTEREST = ["gamma", "lr", "inverse_temperature", "subjective_cost"]
 
-        # save csv after renaming
-        comparison_df = rename(comparison_df)
-        comparison_df.to_csv(f"results/sd_{parameter}.csv", index=False)
+    ### Create the csv
+    # for parameter in PARAMETERS_OF_INTEREST:
+    #
+    #     if parameter == "subjective_cost":
+    #         MODEL_INDICES = [3315, 3316, 3323, 3324]
+    #     else:
+    #         MODEL_INDICES = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    #
+    #     comparison_df = pd.DataFrame(columns=["exp", "pid", parameter, "recovered_model", *MODEL_INDICES])
+    #
+    #     for exp in EXPS:
+    #         for recovered_model in RECOVERED_MODELS:
+    #             comparison_df = process_experiment(exp, recovered_model, comparison_df, parameter,
+    #                                                MODEL_INDICES)
+    #
+    #     # save csv after renaming
+    #     comparison_df = rename(comparison_df)
+    #
+    #     comparison_df.to_csv(f"results/variants/{parameter}.csv", index=False)
 
     ### Create scatter plots
-    # for parameter in PARAMETERS_OF_INTEREST:
-    #     create_scatter_plots(parameter)
+    for parameter in PARAMETERS_OF_INTEREST:
+        create_scatter_plots(parameter)

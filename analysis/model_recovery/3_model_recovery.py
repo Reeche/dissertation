@@ -65,8 +65,12 @@ def group_pid_by_bic(data):
 
 
 def confusion_matrix(data, rename_map=None, plot=True):
+    # order for the variants
+    model_order = ["PR + SE + TD", "PR + SE", "PR + TD", "PR", "SE + TD", "SE", "TD", "plain Reinforce"]
+
     # Custom model order
-    model_order = ["hybrid Reinforce", "MF - Reinforce", "Habitual", "Non-learning"]
+    # model_order = ["hybrid Reinforce", "MF - Reinforce", "Habitual", "Non-learning"]
+
 
     if rename_map:
         data["recovered_model"] = data["recovered_model"].replace(rename_map)
@@ -99,15 +103,36 @@ def confusion_matrix(data, rename_map=None, plot=True):
     inverse = posterior.div(posterior.sum(axis=0), axis=1) * 100
     inverse = inverse.fillna(0)
 
+    # print the confusion matrix; make it print all the values
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.float_format', '{:.2f}'.format)
+    pd.set_option('display.precision', 2)
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('display.show_dimensions', False)
+    pd.set_option('display.colheader_justify', 'center')
+    pd.set_option('display.colheader_justify', 'left')
+    pd.set_option('display.precision', 2)
+    pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
+    print("Confusion Matrix:")
+    print(confusion_matrix)
+    print("\nPosterior Likelihood:")
+    print(posterior)
+    print("\nInverse Likelihood:")
+    print(inverse)
+
     if plot:
-        fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+        fig, axes = plt.subplots(2, 1, figsize=(8, 17))
         for ax, matrix, title in zip(axes, [posterior, inverse], ["Posterior Likelihood", "Inverse Likelihood"]):
             cax = ax.matshow(matrix.loc[model_order, model_order], cmap='Reds')
             for (i, j), val in np.ndenumerate(confusion_matrix.loc[model_order, model_order].values):
                 percentage = matrix.loc[model_order, model_order].iloc[i, j]
                 if title == "Posterior Likelihood":
                     count = confusion_matrix.loc[model_order, model_order].iloc[i, j]
-                    label = f'{int(count)}\n({percentage:.2f}%)'
+                    label = f'{int(count)}\n{percentage:.2f}%'
                 else:
                     label = f'{percentage:.2f}%'
                 ax.text(j, i, label, ha='center', va='center', fontsize=12)
@@ -117,19 +142,20 @@ def confusion_matrix(data, rename_map=None, plot=True):
             ax.set_yticklabels(model_order, fontsize=12)
             ax.set_title(title, fontsize=14)
         plt.tight_layout()
-        plt.savefig("results/sd_model_recovery.png")
-        plt.show()
+        # plt.savefig("results/exp12_variants_model_recovery.png")
+        # plt.show()
         plt.close()
 
     return confusion_matrix, posterior, inverse
 
 
 if __name__ == "__main__":
-    experiment = ["strategy_discovery"]
-    # recovered_model = ["habitual"]
-    recovered_model = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
-    # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
-    #               "low_variance_low_cost"]
+    # experiment = ["strategy_discovery"]
+    recovered_model = ["variants/3323", "variants/3324", "variants/3325", "variants/3326",
+                       "variants/3315", "variants/3316", "variants/3317", "variants/3318"]
+    # recovered_model = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
+    experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
+                  "low_variance_low_cost"]
     df_all = pd.DataFrame()
     for exp in experiment:
         for model in recovered_model:

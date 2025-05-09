@@ -389,9 +389,9 @@ def bic_difference(exp, result_df):
     return None
 
 if __name__ == "__main__":
-    # experiment = ["v1.0", "c2.1", "c1.1"]
+    experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-    experiment = ["strategy_discovery"]
+    # experiment = ["strategy_discovery"]
     df_all = []
     for exp in experiment:
         # df_all = []

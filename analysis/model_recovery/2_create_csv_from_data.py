@@ -146,7 +146,7 @@ def mapping(model_class):
 
 
 if __name__ == "__main__":
-    folder_list = ["variants/3326"]
+    folder_list = ["variants/3324"]
     conditions = ["v1.0", "c2.1", "c1.1",
                   "high_variance_high_cost", "high_variance_low_cost",
                   "low_variance_high_cost", "low_variance_low_cost"]
@@ -175,7 +175,7 @@ if __name__ == "__main__":
                 raise ValueError("Model class not found")
 
             if folder.startswith("variants"):
-                combinations = get_all_combinations([3315, 3316, 3317, 3318, 3323, 3324, 3325], condition,
+                combinations = get_all_combinations([3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326], condition,
                                                     pid_dict_list)
             else:
                 combinations = get_all_combinations([491, 1743, 1756, 3326], condition, pid_dict_list)

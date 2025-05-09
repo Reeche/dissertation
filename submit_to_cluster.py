@@ -2,13 +2,17 @@ from condor_utils import submit_sub_file
 
 bid = 25
 
-exp_num = ['low_variance_low_cost']
+exp_num = ['strategy_discovery']
 # recovered_model_type = ['habitual', 'mf', 'non_learning']
 # models = [491, 3326, 1743, 1756]
 
 ## variants
-recovered_model_type = ["variants/3326", "variants/3325", "variants/3324", "variants/3323",
-                        "variants/3318", "variants/3317", "variants/3316", "variants/3315"]
+# recovered_model_type = ["variants/3326", "variants/3325", "variants/3324", "variants/3323",
+#                         "variants/3318", "variants/3317", "variants/3316", "variants/3315"]
+
+# which models to recover for
+recovered_model_type = ["variants/3326", "variants/3325", "variants/3324", "variants/3318", "variants/3316"]
+# which models should be fitted
 models = [3326, 3325, 3324, 3323, 3318, 3317, 3316, 3315]
 
 test_pid_dict = {
@@ -35,7 +39,7 @@ hybrid_reinforce_pid_dict = {
                            167, 174, 175, 177, 184, 189, 194, 195, 201, 203, 206, 211, 216, 218, 219, 223,
                            228, 231, 232, 236, 238, 250, 255, 259, 260, 262, 267, 280, 281, 291, 292, 293,
                            299, 305, 310, 316, 317, 318, 320, 324, 327, 328, 341, 344, 347, 349, 350, 355,
-                           356, 357, 359, 360, 361, 362, 373, 374, 375, 377] #n=94
+                           356, 357, 359, 360, 361, 362, 373, 374, 375, 377]  # n=94
 }
 
 mf_reinforce_pid_dict = {
@@ -50,7 +54,7 @@ mf_reinforce_pid_dict = {
                            117, 120, 123, 124, 126, 131, 137, 145, 147, 149, 153, 156, 159, 166, 169, 171, 172, 178,
                            181, 183, 185, 187, 190, 199, 200, 207, 212, 213, 220, 221, 226, 229, 233, 242, 244, 246,
                            247, 252, 261, 263, 266, 274, 279, 286, 287, 294, 295, 296, 306, 319, 333, 337, 340, 365,
-                           367, 369, 372, 376, 378] #n=81
+                           367, 369, 372, 376, 378]  # n=81
 }
 habitual_pid_dict = {
     'v1.0': [1, 17, 29, 34, 38, 45, 62, 66, 80, 85, 90, 110, 155],
@@ -64,7 +68,7 @@ habitual_pid_dict = {
                            89, 95, 98, 101, 111, 115, 118, 119, 125, 129, 134, 135, 140, 142, 148, 151, 154, 162, 170,
                            180, 186, 192, 193, 202, 204, 205, 209, 210, 214, 215, 217, 234, 235, 237, 240, 241, 249,
                            253, 254, 257, 265, 268, 271, 276, 277, 282, 289, 300, 304, 308, 312, 313, 321, 322, 323,
-                           329, 330, 331, 332, 339, 343, 348, 358, 363, 364, 370] #n=89
+                           329, 330, 331, 332, 339, 343, 348, 358, 363, 364, 370]  # n=89
 }
 non_learning_pid_dict = {
     'v1.0': [6, 10, 18, 24, 56, 68, 69, 94, 106, 144, 146, 165, 173],
@@ -77,7 +81,7 @@ non_learning_pid_dict = {
     'low_variance_high_cost': [21, 31, 124, 201],
     'low_variance_low_cost': [12, 19, 27, 44, 52, 77, 104, 113, 130, 179, 184, 196, 200],
     'strategy_discovery': [18, 28, 32, 38, 56, 63, 72, 77, 82, 90, 103, 109, 122, 152, 173, 196, 239, 256, 275, 278,
-                           309, 311, 315, 335, 336, 342, 346, 352, 353, 354, 371] #n=31
+                           309, 311, 315, 335, 336, 342, 346, 352, 353, 354, 371]  # n=31
 }
 
 pid_dict = {
@@ -104,32 +108,75 @@ pid_dict = {
                               165, 170, 172, 176, 178, 179, 184, 186, 190, 196, 200, 207],
     'strategy_discovery': list(range(1, 379))}
 
+## for SD, only fit the necessary participants for the variants
+sd_variants_dict = {
+    # these are also the particpants who are best explained by hybrid Reinforce
+    '3326': [3, 4, 6, 7, 9, 16, 17, 19, 23, 30, 34, 35, 67, 71, 83, 92, 106, 128, 138, 139, 141, 143, 146, 155, 161,
+             165, 167, 174, 177, 195, 201, 206, 211, 218, 223, 228, 232, 236, 250, 260, 262, 267, 280, 281, 291, 292,
+             299, 310, 316, 318, 324, 328, 341, 344, 347, 349, 350, 357, 359, 360, 361, 362, 373, 374, 375, 377],
+    # n=66
+    # SE participants who are best explained by hybrid reinforce as base mechanism: [53, 57, 76, 184, 189, 255, 327, 356]
+    '3324': [2, 5, 11, 15, 18, 27, 28, 48, 50, 53, 55, 56, 57, 62, 69, 70, 72, 76, 81, 82, 88, 89, 103, 105, 109, 111,
+             112, 115, 119, 122, 129, 130, 134, 137, 144, 151, 166, 169, 172, 180, 182, 184, 189, 196, 209, 220, 235,
+             239, 241, 246, 249, 252, 255, 275, 283, 284, 285, 290, 311, 321, 326, 327, 332, 335, 340, 352, 354, 356,
+             358, 378],  # n=70
+    # PR participants who are best explained by hybrid reinforce as base mechanism: [78, 164, 175, 203, 216, 219, 231, 259, 293, 317, 320, 355]
+    '3318': [8, 13, 20, 32, 38, 39, 40, 42, 61, 63, 65, 75, 78, 87, 91, 104, 125, 126, 140, 142, 148, 152, 154, 163,
+             164, 168, 170, 171, 175, 181, 186, 192, 193, 200, 202, 203, 213, 214, 216, 219, 225, 231, 254, 257, 259,
+             261, 268, 276, 282, 293, 294, 302, 312, 314, 317, 320, 330, 331, 336, 342, 355],  # n=61
+    # PR+SE participants who are best explained by hybrid reinforce as base mechanism: [58, 86, 238]
+    '3316': [12, 14, 22, 25, 36, 58, 66, 86, 90, 95, 101, 117, 173, 176, 197, 210, 224, 234, 237, 238, 240, 251, 256,
+             258, 265, 271, 273, 274, 277, 278, 279, 289, 309, 313, 315, 323, 325, 339, 343, 346, 351, 353, 363],
+    # n=43
+    # TD participants who are best explained by hybrid reinforce as base mechanism: [41, 45, 133, 194, 305]
+    '3325': [24, 37, 41, 43, 44, 45, 47, 54, 68, 80, 85, 93, 96, 98, 99, 102, 107, 113, 120, 123, 124, 131, 133, 145,
+             149, 153, 156, 159, 162, 178, 185, 187, 190, 194, 198, 199, 207, 217, 221, 226, 229, 242, 244, 247, 253,
+             263, 270, 288, 295, 296, 305, 306, 319, 333, 337, 365, 367, 372, 376]  # n=59
+}
 
+
+
+# with open("parameters.txt", "w") as parameters:
+#     for recovered_model in recovered_model_type:
+#         # if recovered_model == 'hybrid':
+#         #     pid_dict = hybrid_reinforce_pid_dict
+#         # elif recovered_model == 'mf':
+#         #     pid_dict = mf_reinforce_pid_dict
+#         # elif recovered_model == 'habitual':
+#         #     pid_dict = habitual_pid_dict
+#         # elif recovered_model == 'non_learning':
+#         #     pid_dict = non_learning_pid_dict
+#
+#         recovered_model_formatted = recovered_model.replace("/", "")  # Replace / with _
+#
+#         for exp_num_ in exp_num:
+#             if exp_num_ == 'strategy_discovery':
+#                 num_trial = 120
+#             else:
+#                 num_trial = 35
+#             for models_ in models:
+#                 pids = pid_dict.get(exp_num_)
+#                 for pid in pids:
+#                     args = [exp_num_, models_, 'likelihood', pid, num_trial, recovered_model,
+#                             recovered_model_formatted]
+#                     args_str = " ".join(str(x) for x in args) + "\n"
+#                     parameters.write(args_str)
+
+### for SD variants
 with open("parameters.txt", "w") as parameters:
     for recovered_model in recovered_model_type:
-        # if recovered_model == 'hybrid':
-        #     pid_dict = hybrid_reinforce_pid_dict
-        # elif recovered_model == 'mf':
-        #     pid_dict = mf_reinforce_pid_dict
-        # elif recovered_model == 'habitual':
-        #     pid_dict = habitual_pid_dict
-        # elif recovered_model == 'non_learning':
-        #     pid_dict = non_learning_pid_dict
-
         recovered_model_formatted = recovered_model.replace("/", "")  # Replace / with _
-
-
         for exp_num_ in exp_num:
             if exp_num_ == 'strategy_discovery':
                 num_trial = 120
             else:
                 num_trial = 35
             for models_ in models:
-                pids = pid_dict.get(exp_num_)
-                if pids:
-                    for pid in pids:
-                        args = [exp_num_, models_, 'likelihood', pid, num_trial, recovered_model, recovered_model_formatted]
-                        args_str = " ".join(str(x) for x in args) + "\n"
-                        parameters.write(args_str)
+                pids = sd_variants_dict.get(recovered_model.split("/")[1])
+                for pid in pids:
+                    args = [exp_num_, models_, 'likelihood', pid, num_trial, recovered_model,
+                            recovered_model_formatted]
+                    args_str = " ".join(str(x) for x in args) + "\n"
+                    parameters.write(args_str)
 
 submit_sub_file("sub_multiple.sub", bid)
