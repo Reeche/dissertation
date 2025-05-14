@@ -354,9 +354,8 @@ def analyse_subjective_effort(res, exp=None):
 def list_pid_lowest_bic(res):
     # for each unique model, get list of pid
     for model in res["model"].unique():
-        print(model_names[model])
-        print(res[res["model"] == model]["pid"].unique())
-        print("Number of participants:", len(res[res["model"] == model]["pid"].unique()))
+        print(model_names[model], "Number of participants:", len(res[res["model"] == model]["pid"].unique()))
+        # print(res[res["model"] == model]["pid"].unique())
     return None
 
 def bic_difference(exp, result_df):
@@ -392,9 +391,9 @@ if __name__ == "__main__":
     experiment = ["v1.0", "c2.1", "c1.1"]
     # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
     # experiment = ["strategy_discovery"]
-    df_all = []
+    # df_all = []
     for exp in experiment:
-        # df_all = []
+        df_all = []
         print(exp)
 
         data = pd.read_csv(f"data/{exp}.csv", index_col=0)
@@ -410,8 +409,8 @@ if __name__ == "__main__":
             data = pd.concat([data, vanilla_data], ignore_index=True)
 
         if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
-            # data = data[data["pid"].isin(clicking_participants[exp])]
-            data = data[data["pid"].isin(discovery_hybrid)]
+            data = data[data["pid"].isin(clicking_participants[exp])]
+            # data = data[data["pid"].isin(discovery_hybrid)]
         elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                      "low_variance_low_cost"]:
             data = data[data["pid"].isin(learning_participants[exp])]

@@ -4,7 +4,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.stats import chisquare
 import statsmodels.api as sm
-from vars import clicking_pid, assign_model_names
+from vars import clicking_pid, assign_model_names, threecond_learners
 import pymannkendall as mk
 import ast
 import numpy as np
@@ -393,13 +393,102 @@ def plot_adaptive_proportion(data, experiment, pid_mapping):
     for group, models in model_groups.items():
         calculate_and_plot(data, models, experiment, pid_mapping)
 
+def changed_strategy_after_negative_feedback(participants_df, exp):
+    """
+    Check if participants changed their strategy after negative feedback.
+    :param participants_df: DataFrame with participant strategies
+    :return: None
+    """
+    # load score data
+    score_df = pd.read_csv(f"../../data/human/{exp}/mouselab-mdp.csv")
+    participants_df = participants_df[participants_df.index.isin(clicking_pid[exp])]
+    score_df = score_df[score_df["pid"].isin(participants_df.index)]
+
+    # reshape participants_df. participants_df index is "pid" and columns are "trial". The values are the strategies
+    participants_df = participants_df.transpose()
+    participants_df = pd.melt(participants_df)
+    participants_df.columns = ["pid", "strategy"]
+    participants_df["trial_index"] = participants_df.groupby("pid").cumcount() + 1
+    participants_df = participants_df.merge(score_df[["pid", "trial_index", "score"]], on=["pid", "trial_index"])
+
+    # check if the score is negative
+    participants_df["negative_feedback"] = participants_df["score"] < 0
+    participants_df["changed_strategy"] = participants_df.groupby("pid")["strategy"].shift(1) != participants_df[
+        "strategy"]
+    print(f"Total changed strategy: {participants_df['changed_strategy'].sum()}")
+
+
+    # check if the strategy changed after negative feedback
+    participants_df["changed_after_negative_feedback"] = (participants_df["changed_strategy"] &
+                                                          participants_df["negative_feedback"])
+    print(f"Total changed strategy after negative feedback: {participants_df['changed_after_negative_feedback'].sum()}")
+    print(f"Percentage of changed strategy after negative feedback: {(participants_df['changed_after_negative_feedback'].sum() / participants_df['changed_strategy'].sum()) * 100}")
+
+    # changed count for each participant
+    changed_count_per_participant = participants_df.groupby("pid")["changed_after_negative_feedback"].sum()
+
+    # count where changed_count_per_participant > 0
+    changed_at_least_once = len(changed_count_per_participant[changed_count_per_participant > 0])
+
+    total_count = participants_df["pid"].nunique()
+
+    print(f"Total participants: {total_count}")
+    print(f"Participants who changed strategy after negative feedback: {changed_at_least_once}")
+    print(f"Proportion: {changed_at_least_once / total_count:.2%}")
+    return None
+
+def changed_expected_score_after_negative_feedback(exp):
+    """
+    Check if participants changed their expected score after negative feedback.
+    :param participants_df: DataFrame with participant strategies
+    :return: None
+    """
+    # load score data
+    score_df = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv", index_col=0)
+    score_df = score_df.drop_duplicates(subset=["pid"])
+    score_df = score_df[["pid", "pid_mer"]]
+    score_df = score_df[score_df["pid"].isin(clicking_pid[exp])]
+
+    # pid_mer is a list of lists, so we need to convert it to a list of strings
+    score_df["pid_mer"] = score_df["pid_mer"].apply(lambda x: ast.literal_eval(x))
+
+    # explode the pid_mer and add trial numbers
+    score_df = score_df.explode(['pid_mer']).reset_index(drop=False)
+
+    # add trial
+    score_df["trial_index"] = score_df.groupby("pid").cumcount() + 1
+
+    # check if the score is negative
+    score_df["negative_feedback"] = score_df["pid_mer"] < 0
+    score_df["changed_score"] = score_df.groupby("pid")["pid_mer"].shift(1) != score_df["pid_mer"]
+
+    # how many changed scores in total; count number of True values
+    print(f"Total changed expected scores: {score_df['changed_score'].sum()}")
+
+    # check if the strategy changed after negative feedback
+    score_df["changed_after_negative_feedback"] = (score_df["changed_score"] & score_df["negative_feedback"])
+    print(f"Total changed expected scores after negative feedback: {score_df['changed_after_negative_feedback'].sum()}")
+
+    # changed count for each participant
+    changed_count_per_participant = score_df.groupby("pid")["changed_after_negative_feedback"].sum()
+
+    # count where changed_count_per_participant > 0
+    changed_at_least_once = len(changed_count_per_participant[changed_count_per_participant > 0])
+
+    total_count = score_df["pid"].nunique()
+
+    print(f"Total participants: {total_count}")
+    print(f"Participants who had a change in expected score after negative feedback: {changed_at_least_once}")
+    print(f"Proportion: {changed_at_least_once / total_count:.2%}")
+    return None
 
 if __name__ == "__main__":
-    # experiments = ["v1.0", "c2.1", "c1.1"]
-    experiments = ["v1.0"]
+    experiments = ["v1.0", "c2.1", "c1.1"]
+    # experiments = ["c1.1"]
     all_pid = pd.DataFrame()
     mapping_dict = {}
     for experiment in experiments:
+        print(f"Experiment: {experiment}")
         strategy_scores = pd.read_pickle(f"../../results/strategy_scores/{experiment}_strategy_scores.pkl")
         strategy_scores = pd.DataFrame.from_dict(strategy_scores, orient='index')
         strategy_scores.index += 1  # increment by one because participants start at 1
@@ -407,29 +496,34 @@ if __name__ == "__main__":
         # ### load participanta data
         participants = pd.read_pickle(f"../../results/cm/inferred_strategies/{experiment}_training/strategies.pkl")
         # # filter for clicking participants
-        participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
+        # participants = {key: value for key, value in participants.items() if key in clicking_pid[experiment]}
+        participants = {key: value for key, value in participants.items() if key in threecond_learners}
         participants_df = pd.DataFrame.from_dict(participants, orient='index')
 
-        # ## get only used strategies
-        unique_used_strategies = pd.unique(participants_df.values.flatten())
+        ## participants who changed their strategy immediately after negative feedback
+        changed_strategy_after_negative_feedback(participants_df, experiment)
+        # changed_expected_score_after_negative_feedback(experiment)
 
-        # ##plot strategy proportions for participants
-        # # k means based on used strategy scores
-        used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
-        strategy_labels = clustering_kmeans(used_strategy_score)
-        mapping = used_strategy_score.set_index(strategy_labels.index)['label']
-
-        # ### clustering by using all strategies
-        pid_mapping = classify_strategies(participants_df, experiment)
-        # plot_all_strategy_proportions(participants_df, "pid", mapping)
-
-        #  ## load CM model data
-        model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
-        # # filter for clicking participants
-        model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+        # # ## get only used strategies
+        # unique_used_strategies = pd.unique(participants_df.values.flatten())
         #
-        # # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
-        plot_adaptive_proportion(model_data, experiment, pid_mapping)
+        # # ##plot strategy proportions for participants
+        # # # k means based on used strategy scores
+        # used_strategy_score = strategy_scores.loc[unique_used_strategies]  # important to use loc here
+        # strategy_labels = clustering_kmeans(used_strategy_score)
+        # mapping = used_strategy_score.set_index(strategy_labels.index)['label']
+        #
+        # # ### clustering by using all strategies
+        # pid_mapping = classify_strategies(participants_df, experiment)
+        # # plot_all_strategy_proportions(participants_df, "pid", mapping)
+        #
+        # #  ## load CM model data
+        # model_data = pd.read_csv(f"../../final_results/model_cm_300_fit/{experiment}.csv")
+        # # # filter for clicking participants
+        # model_data = model_data[model_data["pid"].isin(clicking_pid[experiment])]
+        # #
+        # # # adaptive_proportion_higher_than_chance(strategy_labels, participants_df)
+        # plot_adaptive_proportion(model_data, experiment, pid_mapping)
 
         ### reshape df for logisitic regression
         # df = participants_df.transpose()

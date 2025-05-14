@@ -11,7 +11,7 @@ import statsmodels.formula.api as smf
 from collections import Counter
 from scipy.stats import chisquare, chi2_contingency, wilcoxon
 import os
-from vars import clicking_pid, learning_pid
+from vars import clicking_pid, learning_pid, planningamount_learners
 
 os.environ["R_HOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects.numpy2ri
@@ -38,11 +38,12 @@ def create_click_df(data, experiment):
 
     """
     click_temp_df = data["queries"]
-    click_df = pd.DataFrame(columns=["pid", "trial", "variance", "number_of_clicks", "clicks"])
+    click_df = pd.DataFrame(columns=["pid", "trial", "variance", "number_of_clicks", "clicks", "score"])
 
     # create a list of all pid * number of trials and append their clicks
     click_df["pid"] = data["pid"]
     click_df["trial"] = data["trial_index"]
+    click_df["score"] = data["score"]
 
     # get their number of clicks
     number_of_clicks_list = []
@@ -384,6 +385,35 @@ def pid_improved_clicks_twice(exp, data, bad_pid):
     return None
 
 
+def changed_clicks_after_negative_feedback(click_df):
+    # check score of previous trial
+    click_df["previous_score"] = click_df.groupby("pid")["score"].shift(1)
+    click_df["previous_number_of_clicks"] = click_df.groupby("pid")["number_of_clicks"].shift(1)
+    # if previous score is negative and current number of click is different from previous number of clicks
+    click_df["changed_clicks_after_negative_score"] = np.where(
+        (click_df["previous_score"] < 0) & (click_df["number_of_clicks"] != click_df["previous_number_of_clicks"]),
+        1, 0)
+    # count how many trials where number of clicks changed after negative score from previous trial
+    changed_clicks_after_negative_score_count = click_df["changed_clicks_after_negative_score"].sum()
+    # how many trials with negative scores
+    negative_score_count = click_df[click_df["previous_score"] < 0].shape[0]
+    print(
+        f"Number of trials where number of clicks changed after negative score from previous trial: {changed_clicks_after_negative_score_count.sum()}")
+    print(f"Number of trials with negative scores: {negative_score_count}")
+    print(
+        f"Percentage of trials where number of clicks changed after negative score from previous trial: {changed_clicks_after_negative_score_count.sum() / negative_score_count * 100:.3f}%")
+
+    # how many participants changed their clicks after negative score
+    changed_clicks_after_negative_score_count = click_df.groupby("pid")["changed_clicks_after_negative_score"].sum()
+    changed_clicks_after_negative_score_count = changed_clicks_after_negative_score_count[
+        changed_clicks_after_negative_score_count > 0]
+    print(
+        f"Number of participants who changed their clicks after negative score from previous trial: {len(changed_clicks_after_negative_score_count)} out of {len(click_df['pid'].unique())} participants")
+    print(
+        f"Percentage of participants who changed their clicks after negative score from previous trial: {len(changed_clicks_after_negative_score_count) / len(click_df['pid'].unique()) * 100:.3f}%")
+
+    return None
+
 if __name__ == "__main__":
     experiments = ["high_variance_high_cost",
                    "high_variance_low_cost",
@@ -393,12 +423,17 @@ if __name__ == "__main__":
     # experiments = ["low_variance_low_cost"]
     click_df_all_conditions = []
     for experiment in experiments:
+        print(f"Experiment: {experiment}")
         data = pd.read_csv(f"../../data/human/{experiment}/mouselab-mdp.csv")
         click_df = create_click_df(data, experiment)
 
         # filter for participants who clicked at least once
         # good_pid = clicking_pid(click_df, experiment)
-        click_df = click_df[click_df["pid"].isin(learning_pid[experiment])]
+        # click_df = click_df[click_df["pid"].isin(learning_pid[experiment])]
+        click_df = click_df[click_df["pid"].isin(planningamount_learners)]
+
+        ## count how many trials where number of clicks changed after negative score from previous trial
+        changed_clicks_after_negative_feedback(click_df)
 
         ## participants who improved their clicks at least twice
         # pid_improved_clicks_twice(experiment, click_df, bad_pid)
@@ -422,7 +457,7 @@ if __name__ == "__main__":
         # average_clicks = click_df.groupby(["trial"])["number_of_clicks"].mean()
 
         ##plot the average clicks
-        plot_clicks(click_df)
+        # plot_clicks(click_df)
 
         ##trend test
         # trend_test(average_clicks)
@@ -431,7 +466,7 @@ if __name__ == "__main__":
         # normality_test(average_clicks) #high_variance_low_cost is not normally distributed
 
         ##append all 4 conditions into one df
-        # click_df_all_conditions.append(click_df)
+        click_df_all_conditions.append(click_df)
 
         # # get number of clicks of last trial
         # last_clicks = click_df[click_df["trial"] == 34]["number_of_clicks"]
@@ -467,5 +502,7 @@ if __name__ == "__main__":
         #     print(f"chi^ goodness of fit test for {experiment}: s={chi2}, p={p} ")
 
         # anova(click_df_all_conditions)
-    # result_df = pd.concat(click_df_all_conditions, ignore_index=True)
+
+    result_df = pd.concat(click_df_all_conditions, ignore_index=True)
+    changed_clicks_after_negative_feedback(result_df)
     # lme(result_df)
