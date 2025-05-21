@@ -9,13 +9,14 @@ import pymannkendall as mk
 import statsmodels.formula.api as smf
 import warnings
 import re
+from scipy.stats import shapiro, gaussian_kde
+from sklearn.metrics import mean_squared_error, r2_score
 
 # Set the warning filter to "ignore"
 warnings.filterwarnings("ignore")
 
 
 def plot_confidence_interval(x, pid_average, conf_interval, color, label):
-
     # plt.plot(pid_average, label=f"Participant: {pid_average[0]:.1f} to {pid_average[-1]:.1f}", color=color, linewidth=3)
     plt.plot(pid_average, label=label, color=color, linewidth=3)
 
@@ -100,9 +101,9 @@ def plot_mer(data, exp):
     data = process_data(data, "model_mer", "pid_mer", exp)
 
     y_limits = (0, 15) if exp == "c1.1" else (-5, 45) if exp == "c2.1" else (0, 50)
-    plot_models(data=data, model_name="alternatives", model_types=alternative_models,  model_col="model_mer",
+    plot_models(data=data, model_name="alternatives", model_types=alternative_models, model_col="model_mer",
                 pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
-    plot_models(data=data,model_name="MF",  model_types=mcrl_models, model_col="model_mer",
+    plot_models(data=data, model_name="MF", model_types=mcrl_models, model_col="model_mer",
                 pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
     plot_models(data=data, model_name="MB", model_types=mb_models, model_col="model_mer",
                 pid_col="pid_mer", y_limits=y_limits, ylabel="Average maximum expected return")
@@ -121,10 +122,10 @@ def plot_rewards(data, exp):
         mcrl_models = ["hybrid Reinforce", "MF - Reinforce"]
 
     ## for strategy discovery y_limits
-    plot_models(data, "alternatives", alternative_models,  "model_rewards", "pid_rewards", (-100, 10),
+    plot_models(data, "alternatives", alternative_models, "model_rewards", "pid_rewards", (-100, 10),
                 "Average score")
-    plot_models(data, "mcrl", mcrl_models,  "model_rewards", "pid_rewards", (-50, 10), "Average score")
-    plot_models(data, "mb", mb_models,  "model_rewards", "pid_rewards", (-50, 10), "Average score")
+    plot_models(data, "mcrl", mcrl_models, "model_rewards", "pid_rewards", (-50, 10), "Average score")
+    plot_models(data, "mb", mb_models, "model_rewards", "pid_rewards", (-50, 10), "Average score")
 
 
 def plot_clicks(data, exp):
@@ -133,8 +134,9 @@ def plot_clicks(data, exp):
     data["pid_clicks"] = data["pid_clicks"].apply(process_clicks)
     data["model_clicks"] = data["model_clicks"].apply(process_clicks)
 
-    plot_models(data, "alternatives", alternative_models, "model_clicks", "pid_clicks", (0, 12), "Average number of clicks")
-    plot_models(data, "mcrl", mcrl_models, "model_clicks", "pid_clicks",  (0, 12),"Average number of clicks")
+    plot_models(data, "alternatives", alternative_models, "model_clicks", "pid_clicks", (0, 12),
+                "Average number of clicks")
+    plot_models(data, "mcrl", mcrl_models, "model_clicks", "pid_clicks", (0, 12), "Average number of clicks")
     plot_models(data, "mb", mb_models, "model_clicks", "pid_clicks", (0, 12), "Average number of clicks")
 
 
@@ -202,14 +204,126 @@ def linear_regression(data, exp, criteria="clicks"):
     return None
 
 
+def residual_analysis(df, exp, criteria):
+    # plot residuals and test for normality
+
+    # keep only criteria and model columns
+    df_filtered = df[[f"model_{criteria}", f"pid_{criteria}", "model"]]
+
+    # string to lists
+    if criteria == "clicks":
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
+        df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
+
+        # for each list in list, count the length of the list in list and save as list
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
+        df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
+    else:
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
+        if exp is ["v1.0", "c1.1", "c2.1"]:
+            df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
+        else:
+            # e.g. [-146  11\n  -11   43  -54  -54\n 5411  -11  54  -11  -11  -11]
+            df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(
+                lambda x: [int(num) for num in re.sub(r'[\[\]]', '', x).split()]
+            )
+
+    # explode the model and pid columns
+    df_filtered = df_filtered.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=False)
+    residuals = df_filtered[f"model_{criteria}"] - df_filtered[f"pid_{criteria}"]
+
+    # standardize the residuals
+    residuals = (residuals - np.mean(residuals)) / np.std(residuals)
+
+    ### plot the residuals with density-based coloring
+    x = df_filtered[f"pid_{criteria}"].astype(float).values
+    y = residuals.astype(float).values
+
+    # Calculate the point density
+    xy = np.vstack([x, y])
+    z = gaussian_kde(xy)(xy)
+
+    # Sort the points by density for better visibility
+    idx = z.argsort()
+    x, y, z = x[idx], y[idx], z[idx]
+
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(x, y, c=z, cmap='viridis', s=80, edgecolor='b', alpha=0.8)
+    plt.xlabel("Predicted values", fontsize=14)
+    plt.ylabel("Residuals", fontsize=14)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.colorbar(scatter, label="Density")
+    plt.savefig(f"plots/{exp}/residuals_scatter_all_models_{criteria}_density.png")
+    plt.show()
+    plt.close()
+
+    # histogram
+    plt.figure(figsize=(8, 6))
+    plt.hist(residuals, bins=20)
+    plt.xlabel("Residuals", fontsize=14)
+    plt.ylabel("Frequency", fontsize=14)
+    plt.savefig(f"plots/{exp}/residuals_histogram_{criteria}.png")
+    plt.show()
+    plt.close()
+
+    # Shapiro-Wilk Test
+    shapiro_test = shapiro(residuals)
+    print("Shapiro-Wilk Test:", shapiro_test)
+
+    return None
+
+
+def calculate_model_metrics(df, criteria, exp=None):
+    # keep only criteria and model columns
+    df_filtered = df[[f"model_{criteria}", f"pid_{criteria}", "model"]]
+
+    # string to lists
+    if criteria == "clicks":
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
+        df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
+
+        # for each list in list, count the length of the list in list and save as list
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
+        df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
+    else:
+        df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
+
+    # if exp:
+    #     if exp in ["v1.0", "c1.1", "c2.1"]:
+    df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
+        # else: #e.g. [-146  11\n  -11   43  -54  -54\n 5411  -11  54  -11  -11  -11]
+        #     df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(
+        #         lambda x: [int(num) for num in re.sub(r'[\[\]]', '', x).split()])
+
+    # explode the model and pid columns
+    df_filtered = df_filtered.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=False)
+
+    model_metrics = {}
+
+    for model_type in df_filtered["model"].unique():
+        model_df = df_filtered[df_filtered["model"] == model_type]
+        y_true = model_df[f"pid_{criteria}"].astype(float)
+        y_pred = model_df[f"model_{criteria}"].astype(float)
+
+        r2 = r2_score(y_true, y_pred)
+        rmse = mean_squared_error(y_true, y_pred, squared=False)
+
+        model_metrics[model_type] = {"R²": r2, "RMSE": rmse}
+        print(f"Model: {model_type} | R²: {r2:.4f} | RMSE: {rmse:.4f}")
+
+    return model_metrics
+
+
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
 # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
 experiment = ["v1.0", "c2.1", "c1.1"]
+# experiment = ["strategy_discovery"]
+df_all = []
 
 for exp in experiment:
     print(exp)
-    df_all = []
     data = pd.read_csv(f"../../final_results/aggregated_data/{exp}.csv", index_col=0)
 
     if exp in ["v1.0", "c1.1", "c2.1", "strategy_discovery"]:
@@ -223,23 +337,39 @@ for exp in experiment:
     data['model'] = data.apply(assign_model_names, axis=1)
 
     if exp in ["c1.1", "c2.1", "v1.0"]:
-        plot_mer(data, exp)
+        # plot_mer(data, exp)
+        # residual_analysis(data, exp, "mer")
+        calculate_model_metrics(data, "mer", exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
         # linear_regression(data, exp, "mer")
+        # print(2)
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)
-        plot_clicks(data, exp)
+        # residual_analysis(data, exp, "clicks")
+        # calculate_model_metrics(data, "clicks" ,exp)
+        # plot_clicks(data, exp)
         # linear_regression(data, exp, "clicks")
+        print(2)
     elif exp in ["strategy_discovery"]:
-        plot_rewards(data, exp)
+        # residual_analysis(data, exp, "rewards")
+        calculate_model_metrics(data, "rewards", exp)
+        # plot_rewards(data, exp)
         # plot_clicks(data, exp)
         # linear_regression(data, exp, "rewards")
 
-    # plt.ylabel("Performance", fontsize=14)
-    # # text size
-    # plt.rcParams.update({'font.size': 14})
-    # plt.legend()
-    # plt.show()
-    # plt.close()
+    # append all data into df_all
+    df_all.append(data)
+
+# flatten
+df_all = pd.concat(df_all, ignore_index=True)
+
+print("all data")
+calculate_model_metrics(df_all, "mer")
+# plt.ylabel("Performance", fontsize=14)
+# # text size
+# plt.rcParams.update({'font.size': 14})
+# plt.legend()
+# plt.show()
+# plt.close()
