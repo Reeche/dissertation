@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from vars import (habitual_pid, mf_pid, hybrid_pid, habitual_not_examined_all_pid, habitual_examined_all_pid,
                   diss_habitual, diss_habitual_examined_all, diss_habitual_not_examined_all, diss_hybrid, diss_mf,
-                  diss_mb, diss_mcrl_examined_all, diss_mcrl_not_examined_all)
+                  diss_mb, diss_mcrl_examined_all, diss_mcrl_not_examined_all, not_examined_all_pid, examined_all_pid)
 from scipy.stats import mannwhitneyu
 
 def load_and_filter_data(file_path, participant_ids):
@@ -44,17 +44,23 @@ def compute_last_10_avg_and_compare(data, analysis_type):
 
 def plot_scores(data, analysis_type, save_path, ylim=(-180, 20)):
     """Plot the scores for different groups with labels and colors based on analysis type."""
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(7, 5))
 
     if analysis_type == "diss":
-        labels_colors = {
-            'habitual_not_all': (
-            f'Habitual participant who did not examine all, n={len(diss_habitual_not_examined_all)}', 'green'),
-            'habitual_examined_all': (
-            f'Habitual participants who examined all, n={len(diss_habitual_examined_all)}', 'red'),
-            'mcrl_not_all': (
-            f'MCRL participant who did not examine all, n={len(diss_mcrl_not_examined_all)}', 'orange'),
-            'mcrl_examined_all': (f'MCRL participants who examined all, n={len(diss_mcrl_examined_all)}', 'blue')
+        # labels_colors = {
+        #     'habitual_not_all': (
+        #     f'Habitual participant who did not examine all, n={len(diss_habitual_not_examined_all)}', 'green'),
+        #     'habitual_examined_all': (
+        #     f'Habitual participants who examined all, n={len(diss_habitual_examined_all)}', 'red'),
+        #     'mcrl_not_all': (
+        #     f'MCRL participant who did not examine all, n={len(diss_mcrl_not_examined_all)}', 'orange'),
+        #     'mcrl_examined_all': (f'MCRL participants who examined all, n={len(diss_mcrl_examined_all)}', 'blue')
+        # }
+        labels_colors = { #rldm
+            'examined_all': (
+            f'Participant who examined \nall nodes', 'blue'),
+            'not_examined_all': (
+            f'Participant who did not \nexamine all nodes', 'red'),
         }
     else:
         labels_colors = {
@@ -74,7 +80,7 @@ def plot_scores(data, analysis_type, save_path, ylim=(-180, 20)):
     plt.xlabel('Trial', fontsize=12)
     plt.ylabel('Average Score', fontsize=12)
     plt.legend(loc='lower right', fontsize=14)
-    # plt.savefig(save_path)
+    plt.savefig(save_path)
     plt.show()
     plt.close()
 
@@ -84,7 +90,7 @@ def analyze(analysis_type, file_path, participant_groups, save_path):
     filtered_data = {group: compute_average_score(load_and_filter_data(file_path, participant_groups[group]))
                      for group in participant_groups}
 
-    # plot_scores(filtered_data, analysis_type, save_path)
+    plot_scores(filtered_data, analysis_type, save_path)
     comparisons = compute_last_10_avg_and_compare(filtered_data, analysis_type)
     print("Statistical comparisons (Mann-Whitney U test):", comparisons)
 
@@ -99,9 +105,11 @@ if analysis == "diss":
         'habitual_not_all': diss_habitual_not_examined_all,
         'habitual_examined_all': diss_habitual_examined_all,
         'mcrl_not_all': diss_mcrl_not_examined_all,
-        'mcrl_examined_all': diss_mcrl_examined_all
+        'mcrl_examined_all': diss_mcrl_examined_all,
+        # 'examined_all':examined_all_pid, #rldm
+        # 'not_examined_all': not_examined_all_pid
     }
-    save_path = 'plots/individual_difference_score.png'
+    save_path = 'plots/rldm_individual_difference_score.png'
 else:
     participant_groups = {
         'habitual_not_all': habitual_not_examined_all_pid,

@@ -5,7 +5,7 @@ import numpy as np
 import statsmodels.formula.api as smf
 from scipy.stats import shapiro, gaussian_kde
 from sklearn.metrics import mean_squared_error, r2_score
-from vars import learning_participants, clicking_participants, model_dict, model_names, process_clicks, process_data
+from vars import learning_participants, clicking_participants, model_dict, model_names, process_clicks, process_data, discovery_hybrid
 import re
 # turn off user warnings
 import warnings
@@ -274,7 +274,7 @@ def residual_analysis(df, exp, criteria):
         df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
     else:
         df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
-        if exp is ["v1.0", "c1.1", "c2.1"]:
+        if exp in ["v1.0", "c1.1", "c2.1"]:
             df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
         else:
             # e.g. [-146  11\n  -11   43  -54  -54\n 5411  -11  54  -11  -11  -11]
@@ -345,10 +345,10 @@ def calculate_model_metrics(df, criteria, exp=None):
 
     # if exp:
         # if exp in ["v1.0", "c1.1", "c2.1"]:
-    df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
+    # df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
         # elif exp == "strategy_discovery": #e.g. [-146  11\n  -11   43  -54  -54\n 5411  -11  54  -11  -11  -11]
-        #     df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(
-        #         lambda x: [int(num) for num in re.sub(r'[\[\]]', '', x).split()])
+    df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(
+        lambda x: [int(num) for num in re.sub(r'[\[\]]', '', x).split()])
 
     # explode the model and pid columns
     df_filtered = df_filtered.explode([f"model_{criteria}", f"pid_{criteria}"]).reset_index(drop=False)
@@ -370,8 +370,8 @@ def calculate_model_metrics(df, criteria, exp=None):
 
 
 # conditions = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-conditions = ["v1.0", "c1.1", "c2.1"]
-# conditions = ["strategy_discovery"]
+# conditions = ["v1.0", "c1.1", "c2.1"]
+conditions = ["strategy_discovery"]
 model_name = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
 
 df_all = pd.DataFrame()
@@ -382,15 +382,16 @@ for condition in conditions:
 
     if condition in ["v1.0", "c1.1", "c2.1"]:
         data = data[data["pid"].isin(clicking_participants[condition])]
-        # residual_analysis(data, condition, "mer")
+        residual_analysis(data, condition, "mer")
         # calculate_model_metrics(data, "mer", condition)
     elif condition in ["strategy_discovery"]:
-        data = data[data["pid"].isin(clicking_participants[condition])]
+        # data = data[data["pid"].isin(clicking_participants[condition])]
+        data = data[data["pid"].isin(discovery_hybrid)]
         # residual_analysis(data, condition, "rewards")
-        # calculate_model_metrics(data, "rewards", condition)
+        calculate_model_metrics(data, "rewards", condition)
     else:
         data = data[data["pid"].isin(learning_participants[condition])]
-        # residual_analysis(data, condition, "clicks")
+        residual_analysis(data, condition, "clicks")
         # calculate_model_metrics(data, "clicks", condition)
 
     # use only data where model == 3318
@@ -427,7 +428,7 @@ for condition in conditions:
     # plt.show()
     # plt.close()
 
-    df_all = pd.concat([df_all, data])
+    # df_all = pd.concat([df_all, data])
 
-print("all data")
-calculate_model_metrics(df_all, "mer")
+# print("all data")
+# calculate_model_metrics(df_all, "mer")

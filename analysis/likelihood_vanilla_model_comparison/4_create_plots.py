@@ -220,7 +220,7 @@ def residual_analysis(df, exp, criteria):
         df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: [len(i) - 1 for i in x])
     else:
         df_filtered[f"model_{criteria}"] = df_filtered[f"model_{criteria}"].apply(lambda x: ast.literal_eval(x))
-        if exp is ["v1.0", "c1.1", "c2.1"]:
+        if exp in ["v1.0", "c1.1", "c2.1"]:
             df_filtered[f"pid_{criteria}"] = df_filtered[f"pid_{criteria}"].apply(lambda x: ast.literal_eval(x))
         else:
             # e.g. [-146  11\n  -11   43  -54  -54\n 5411  -11  54  -11  -11  -11]
@@ -318,9 +318,9 @@ def calculate_model_metrics(df, criteria, exp=None):
 # experiment = ["v1.0", "c2.1", "c1.1", "high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
 #               "low_variance_low_cost", "strategy_discovery"]
 # experiment = ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]
-experiment = ["v1.0", "c2.1", "c1.1"]
-# experiment = ["strategy_discovery"]
-df_all = []
+# experiment = ["v1.0", "c2.1", "c1.1"]
+experiment = ["strategy_discovery"]
+# df_all = []
 
 for exp in experiment:
     print(exp)
@@ -338,8 +338,8 @@ for exp in experiment:
 
     if exp in ["c1.1", "c2.1", "v1.0"]:
         # plot_mer(data, exp)
-        # residual_analysis(data, exp, "mer")
-        calculate_model_metrics(data, "mer", exp)
+        residual_analysis(data, exp, "mer")
+        # calculate_model_metrics(data, "mer", exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
         # linear_regression(data, exp, "mer")
@@ -347,26 +347,26 @@ for exp in experiment:
     elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost",
                  "low_variance_low_cost"]:
         # plot_rewards(data, exp)
-        # residual_analysis(data, exp, "clicks")
+        residual_analysis(data, exp, "clicks")
         # calculate_model_metrics(data, "clicks" ,exp)
         # plot_clicks(data, exp)
         # linear_regression(data, exp, "clicks")
         print(2)
     elif exp in ["strategy_discovery"]:
-        # residual_analysis(data, exp, "rewards")
-        calculate_model_metrics(data, "rewards", exp)
+        residual_analysis(data, exp, "rewards")
+        # calculate_model_metrics(data, "rewards", exp)
         # plot_rewards(data, exp)
         # plot_clicks(data, exp)
         # linear_regression(data, exp, "rewards")
 
     # append all data into df_all
-    df_all.append(data)
+    # df_all.append(data)
 
 # flatten
-df_all = pd.concat(df_all, ignore_index=True)
+# df_all = pd.concat(df_all, ignore_index=True)
 
-print("all data")
-calculate_model_metrics(df_all, "mer")
+# print("all data")
+# calculate_model_metrics(df_all, "mer")
 # plt.ylabel("Performance", fontsize=14)
 # # text size
 # plt.rcParams.update({'font.size': 14})

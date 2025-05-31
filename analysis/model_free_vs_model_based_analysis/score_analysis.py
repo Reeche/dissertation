@@ -49,8 +49,8 @@ def plot_actual_score(conditions, mf_clicked):
     plt.xlabel("Trial")
     plt.ylabel("Actual score")
     plt.legend()
-    # plt.show()
-    plt.savefig(f"plots/actual_score.png")
+    plt.show()
+    # plt.savefig(f"plots/actual_score.png")
     plt.close()
     return None
 
@@ -73,6 +73,7 @@ def plot_expected_score(conditions, clicked_dict):
 
         # calculate average score for each trial
         average = strategy_df.mean(axis=1)
+
 
         # plot the average
         if condition == "mf":
@@ -97,8 +98,8 @@ def plot_expected_score(conditions, clicked_dict):
     plt.xlabel("Trial")
     plt.ylabel("Expected score")
     plt.legend()
-    # plt.show()
-    plt.savefig(f"plots/expected_score.png")
+    plt.show()
+    # plt.savefig(f"plots/expected_score.png")
     plt.close()
     return None
 
@@ -155,7 +156,7 @@ def compare_actual_score(conditions, clicked_dict):
 
         # if condition is MF, remove the first 15 trials from the dataframe and reset index
         if condition == "mf":
-            data = data[data["trial_index"] >= 14]
+            data = data[data["trial_index"] >= 15]
             data["trial_index"] = data["trial_index"] - 14
 
         # keep only the columns "score", "trial_index" and "condition"
@@ -190,7 +191,7 @@ def mann_whitney_test(score_data):
     ## Mann Whitney U test
 
     # filter for first trial
-    score_data = score_data[score_data["trial"] == 14]
+    score_data = score_data[score_data["trial"] == 1]
 
     # filter data for mf
     mf_exp_score = score_data[score_data["condition"] == "mf"]
@@ -237,8 +238,8 @@ if __name__ == "__main__":
     # others = [33, 44, 27, 79, 69, 34, 61, 73, 32]
     conditions = ["mf", "mb", "stroop"]
 
-    plot_expected_score(conditions, clicked_dict)
-    # compare_expected_score(conditions, clicked_dict)
+    # plot_expected_score(conditions, clicked_dict)
+    compare_expected_score(conditions, clicked_dict)
 
     # plot_actual_score(conditions, clicked_dict)
     # compare_actual_score(conditions, clicked_dict)

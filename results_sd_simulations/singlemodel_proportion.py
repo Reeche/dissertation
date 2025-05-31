@@ -49,7 +49,7 @@ for pid in [13, 78, 141]:
     # ax1.plot(average_proportion, label="Hybrid")
 
     # add average proportion as percentage of first trial and last trial in legend
-    ax1.plot(average_proportion, label=f"Hybrid {average_proportion[0]*100:.1f}% {average_proportion[-1]*100:.1f}%")
+    ax1.plot(average_proportion, label=f"Hybrid {average_proportion[0]*100:.1f}% to {average_proportion[-1]*100:.1f}%")
 
 
     ax1.set_ylabel("Proportion of optimal Strategy", fontsize=14)
@@ -89,7 +89,7 @@ for pid in [13, 78, 141]:
     # else:
     # ax1.plot(average_proportion, label="MF")
 
-    ax1.plot(average_proportion, label=f"MF {average_proportion[0]*100:.1f}% {average_proportion[-1]*100:.1f}%")
+    ax1.plot(average_proportion, label=f"MF {average_proportion[0]*100:.1f}% to {average_proportion[-1]*100:.1f}%")
 
     ## Add 95% CI of proportion
     ci = 1.96 * np.std(all_reward_data, axis=0) / np.sqrt(len(all_reward_data))
