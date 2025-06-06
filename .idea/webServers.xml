@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="126271d7-e07b-409b-b120-44a8d03ef24d" name="MPI-IS-Cluster" url="sftp://rhe@login.cluster.is.localnet">
+        <fileTransfer rootFolder="/fast/rhe/" accessType="SFTP" host="login.cluster.is.localnet" port="22" sshConfigId="f788bf09-2ed2-4620-bef9-42b53a5de5e9" sshConfig="rhe@login.cluster.is.localnet:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
