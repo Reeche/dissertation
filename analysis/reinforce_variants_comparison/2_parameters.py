@@ -48,12 +48,12 @@ def analyse_parameters(exp, model, pid_group):
     parameters_df = pd.DataFrame(list(df["parameters"]))
 
     # create boxplots for all parameters
-    # for column in parameters_df.columns:
-    #     plt.figure()
-    #     plt.boxplot(parameters_df[column])
-    #     plt.title(column)
-    #     plt.show()
-    #     plt.close()
+    for column in parameters_df.columns:
+        plt.figure()
+        plt.boxplot(parameters_df[column])
+        plt.title(column)
+        plt.show()
+        plt.close()
 
     # create histograms for all parameters
     for column in parameters_df.columns:
@@ -109,28 +109,23 @@ def compare_parameters_between_groups(pid_groupa, pid_groupb, model):
 
 if __name__ == "__main__":
     ## create df
-    # exp_list = ['v1.0', 'c2.1', 'c1.1',
-    #             'high_variance_high_cost',
-    #             'high_variance_low_cost',
-    #             'low_variance_high_cost',
-    #             ]
-
-    # exp = str(sys.argv[1])
-    # selected_model = int(sys.argv[2])
-
-    exp = "strategy_discovery"
-    # models_list = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
+    exp_list = ['v1.0', 'c2.1', 'c1.1',
+                'high_variance_high_cost',
+                'high_variance_low_cost',
+                'low_variance_high_cost',
+                ]
 
 
+    models_list = [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]
 
     ### Create csv
-    # for exp in exp_list:
-    # create_df(f"../../final_results/rl_hybrid_variants/hybrid", selected_model, exp)  # for variants
-    # create_df(f"../../final_results/hybrid", selected_model, exp) #for vanilla models
+    for exp in exp_list:
+        create_df(f"../../final_results/rl_hybrid_variants/hybrid", selected_model, exp)  # for variants
+        create_df(f"../../final_results/hybrid", selected_model, exp) #for vanilla models
 
-    ### Merge CSV
-    # merge_csvs(exp)
+        ### Merge CSV
+        merge_csvs(exp)
 
-    ### Analyse parameters
-    analyse_parameters(exp, [3315, 3316, 3323, 3324], maladaptive_pid)
-    # compare_parameters_between_groups(sc_adaptive, sc_maladaptive, [3315, 3316, 3323, 3324])
+        ### Analyse parameters
+        analyse_parameters(exp, [3315, 3316, 3323, 3324], maladaptive_pid)
+        compare_parameters_between_groups(sc_adaptive, sc_maladaptive, [3315, 3316, 3323, 3324])

@@ -1,7 +1,0 @@
-v1.0_data
-c2.1_data
-c1.1_data
-high_variance_high_cost_data
-high_variance_low_cost_data
-low_variance_high_cost_data
-low_variance_low_cost_data

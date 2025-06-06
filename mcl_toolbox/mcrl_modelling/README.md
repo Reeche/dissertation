@@ -13,10 +13,7 @@ Files that implement the various types of learning algorithms:
 2. `lvoc_models.py` - Implements the Learned Value of Computation (LVOC) model and its variants.
 3. `reinforce_models.py` - Implements the Vanilla REINFORCE model and the baseline version of the REINFORCE model
 4. `rssl_models.py` - Implements the Rational Strategy Selection Learner (RSSL) model.
-5. `sdss_models.py` - Implements the Strategy Disovery and Strategy Selection (SDSS) model. This model combines the RSSL
-   model with the LVOC model. The RSSL model selects the strategies that are learned from reward.
-6. `hierarchical_models.py` - Implements a two-stage model, where the first stage decides whether or not to terminate
-   planning and the second stage is one of the variants of the LVOC or the REINFORCE models.
+
 
 ### How to run
 To run the model <model_index> on the same trials of the participant <pid> of the experiment <exp_num>, run the

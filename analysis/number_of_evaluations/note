@@ -1,1 +1,0 @@
-The wrong_index folder contains the fits using a wrong index (shifted by +1 since rl_models.csv started with 1 instead of 0)

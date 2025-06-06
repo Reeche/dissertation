@@ -150,7 +150,6 @@ def confusion_matrix(data, rename_map=None, plot=True):
 
 
 if __name__ == "__main__":
-    # experiment = ["strategy_discovery"]
     recovered_model = ["variants/3323", "variants/3324", "variants/3325", "variants/3326",
                        "variants/3315", "variants/3316", "variants/3317", "variants/3318"]
     # recovered_model = ["hybrid_reinforce", "mf_reinforce", "habitual", "non_learning"]
@@ -171,11 +170,11 @@ if __name__ == "__main__":
 
             res = group_pid_by_bic(data)
 
-            # model_bic = sort_by_BIC(result_df)
+            model_bic = sort_by_BIC(result_df)
 
             # print which of the pid is best explained by which model
-            # for model in res["model"].unique():
-            #     print(f"{model}: {res[res['model'] == model]['pid'].unique()}")
+            for model in res["model"].unique():
+                print(f"{model}: {res[res['model'] == model]['pid'].unique()}")
 
             # add res to df_all
             df_all = pd.concat([df_all, res])

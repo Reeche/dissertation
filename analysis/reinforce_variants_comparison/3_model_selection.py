@@ -416,12 +416,12 @@ if __name__ == "__main__":
             data = data[data["pid"].isin(learning_participants[exp])]
 
         # add BIC
-        # if exp in ["v1.0", "c1.1", "c2.1"]:
-        #     data["BIC"] = compare_pseudo_likelihood(data, 35)
-        # elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
-        #     data["BIC"] = compare_number_of_clicks_likelihood(data, 35)
-        # elif exp == "strategy_discovery":
-        #     data["BIC"] = compare_pseudo_likelihood(data, 120)
+        if exp in ["v1.0", "c1.1", "c2.1"]:
+            data["BIC"] = compare_pseudo_likelihood(data, 35)
+        elif exp in ["high_variance_high_cost", "high_variance_low_cost", "low_variance_high_cost", "low_variance_low_cost"]:
+            data["BIC"] = compare_number_of_clicks_likelihood(data, 35)
+        elif exp == "strategy_discovery":
+            data["BIC"] = compare_pseudo_likelihood(data, 120)
 
         if exp == "strategy_discovery":
             data["BIC"] = compare_loss(data, 120)
@@ -429,7 +429,7 @@ if __name__ == "__main__":
             data["BIC"] = compare_loss(data, 35)
 
         ## conduct parameter analysis for adaptive and other participants without the learning/clicking filter and for vanilla REINFORCE or RL + PR model
-        # compare_parameters_adaptive(exp, data)
+        compare_parameters_adaptive(exp, data)
 
         df_all.append(data)
 
@@ -442,12 +442,11 @@ if __name__ == "__main__":
         list_pid_lowest_bic(res)
 
         ### calculate the BIC difference between the vanilla model 3326 and the other models
-        # bic_difference(exp, result_df)
+        bic_difference(exp, result_df)
 
-        # plot_pid_grouped_by_model(exp, res, "pid_clicks")
-        # statistical_test(exp, res, "pid_clicks")
-        # analyse_subjective_effort(exp, res)
-        # parameters_analysis(res, exp)
+        plot_pid_grouped_by_model(exp, res, "pid_clicks")
+        statistical_test(exp, res, "pid_clicks")
+        analyse_subjective_effort(exp, res)
 
-    # analyse_subjective_effort(res)
-    # model_bic = sort_by_BIC(result_df)
+    analyse_subjective_effort(res)
+    model_bic = sort_by_BIC(result_df)

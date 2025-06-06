@@ -49,13 +49,13 @@ def plot_mer(condition, data):
     plt.fill_between(x, pid_average - conf_interval, pid_average + conf_interval, color='blue', alpha=0.1,
                      label='95% CI')
 
-    # plt.xlabel("Trial")
-    # # plt.ylim(0, 50)
-    # plt.ylabel("Average maximum expected return")
-    # plt.legend()
-    # # plt.savefig(f"plots/{condition}/{model_name}_mer.png")
-    # plt.show()
-    # plt.close()
+    plt.xlabel("Trial")
+    # plt.ylim(0, 50)
+    plt.ylabel("Average maximum expected return")
+    plt.legend()
+    # plt.savefig(f"plots/{condition}/{model_name}_mer.png")
+    plt.show()
+    plt.close()
 
 
 def plot_rewards(condition, data):
@@ -93,13 +93,13 @@ def plot_rewards(condition, data):
         variant_type = model_names[variant_type]
         plt.plot(model_average, label=variant_type)
 
-    # plt.xlabel("Trial")
-    # # plt.ylim(0, 50)
-    # plt.ylabel("Average actual score")
-    # plt.legend()
-    # # plt.savefig(f"plots/{condition}/{model_name}_rewards.png")
-    # plt.show()
-    # plt.close()
+    plt.xlabel("Trial")
+    # plt.ylim(0, 50)
+    plt.ylabel("Average actual score")
+    plt.legend()
+    # plt.savefig(f"plots/{condition}/{model_name}_rewards.png")
+    plt.show()
+    plt.close()
 
 
 def plot_clicks(condition, data):
@@ -394,41 +394,37 @@ for condition in conditions:
         residual_analysis(data, condition, "clicks")
         # calculate_model_metrics(data, "clicks", condition)
 
-    # use only data where model == 3318
-    # data = data[data["model"].isin([3318])]
 
-    # replace model
+    for model in model_name:
+        data = pd.read_csv(f"data/{condition}.csv")
 
-    # for model in model_name:
-    #     data = pd.read_csv(f"data/{condition}.csv")
-    #
-    #     # filter for the selected model
-    #     data = data[data["model"] == model]
-    #
-    #     # filter for adaptive participants
-    #     data = data[data["pid"].isin(clicking_participants[condition])]
-    #
-    #     # plot_mer(condition, data, model)
-    #     # plot_rewards(condition, data, model)
+        # filter for the selected model
+        data = data[data["model"] == model]
 
-    # plot_mer(condition, data)
-    # plot_rewards(condition, data)
-    # plot_clicks(condition, data) #regression analysis in this function
+        # filter for adaptive participants
+        data = data[data["pid"].isin(clicking_participants[condition])]
 
-    # linear regression
-    # linear_regression(condition, data, "clicks")
-    # linear_regression(condition, data, "mer")
-    # linear_regression(condition, data, "reward")
+        plot_mer(condition, data, model)
+        plot_rewards(condition, data, model)
 
-    # plt.xlabel("Trial", fontsize=12)
-    # plt.ylim(-4, 40)
-    # plt.ylabel("Average most expected return", fontsize=12)
-    # plt.legend(fontsize=10.5, ncol=2, loc='lower left')
-    # plt.savefig(f"plots/{condition}/variant_mer.png")
-    # plt.show()
-    # plt.close()
+    plot_mer(condition, data)
+    plot_rewards(condition, data)
+    plot_clicks(condition, data) #regression analysis in this function
 
-    # df_all = pd.concat([df_all, data])
+    ###linear regression
+    linear_regression(condition, data, "clicks")
+    linear_regression(condition, data, "mer")
+    linear_regression(condition, data, "reward")
 
-# print("all data")
-# calculate_model_metrics(df_all, "mer")
+    plt.xlabel("Trial", fontsize=12)
+    plt.ylim(-4, 40)
+    plt.ylabel("Average most expected return", fontsize=12)
+    plt.legend(fontsize=10.5, ncol=2, loc='lower left')
+    plt.savefig(f"plots/{condition}/variant_mer.png")
+    plt.show()
+    plt.close()
+
+    df_all = pd.concat([df_all, data])
+
+print("all data")
+calculate_model_metrics(df_all, "mer")

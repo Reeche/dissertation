@@ -126,12 +126,7 @@ if __name__ == "__main__":
         pid = int(files.split("_")[0])
         model = int(files.split("_")[1])
 
-        # if model in [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491]:
-        # if model in [3315, 3316, 3317, 3318, 3323, 3324, 3325, 3326]:
         if model == selected_model:
-            # p = E.participants[pid]
-            # participant_obj = ParticipantIterator(p)
-
             mf = ModelFitter(
                 exp_name=exp,
                 exp_attributes=exp_attributes,

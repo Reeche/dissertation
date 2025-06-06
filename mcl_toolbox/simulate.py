@@ -178,11 +178,11 @@ def load_attributes(parameters, condition, model_index, pid, type):
     parameters["lr"] = 0  # set to 0
 
     # if model is HR, SC, TD
-    # parameters["pr_weight"] = data[0][0]["pr_weight"]
-    # parameters["tau"] = data[0][0]["tau"]
-    # parameters["a"] = data[0][0]["a"]
-    # parameters["b"] = data[0][0]["b"]
-    # parameters["subjective_cost"] = data[0][0]["subjective_cost"]
+    parameters["pr_weight"] = data[0][0]["pr_weight"]
+    parameters["tau"] = data[0][0]["tau"]
+    parameters["a"] = data[0][0]["a"]
+    parameters["b"] = data[0][0]["b"]
+    parameters["subjective_cost"] = data[0][0]["subjective_cost"]
 
     parameters["priors"] = list(new_priors.values())
 
@@ -233,19 +233,19 @@ if __name__ == "__main__":
         print(simulation_data_["a"][-10:])
         print(reward[-10:])
 
-        # print("weights", agent.get_current_weights())
-        # plot_score(simulation_data)
-        # plot_clicks(simulation_data)
-        # simulation_data.append(simulation_data_)
-    # plot_strategy(simulation_data)
+        print("weights", agent.get_current_weights())
+        plot_score(simulation_data)
+        plot_clicks(simulation_data)
+        simulation_data.append(simulation_data_)
+        plot_strategy(simulation_data)
 
-        # if all(value in [13, 14, 15] for sublist in reward for value in sublist):
-        #     print("Model is successful. Reward: ", np.mean(reward))
-        #     print("Parameters: ", parameters)
-        #     print("Clicks: ", simulation_data["a"])
-        #     # print("Click lengths: ", [len(sublist) for sublist in simulation_data["a"][0]])
-        #     # plot_score(simulation_data)
-        #     # plot_clicks(simulation_data)
-        #     break
-        # else:
-        #     print(np.mean(reward))
+        if all(value in [13, 14, 15] for sublist in reward for value in sublist):
+            print("Model is successful. Reward: ", np.mean(reward))
+            print("Parameters: ", parameters)
+            print("Clicks: ", simulation_data["a"])
+            print("Click lengths: ", [len(sublist) for sublist in simulation_data["a"][0]])
+            plot_score(simulation_data)
+            plot_clicks(simulation_data)
+            break
+        else:
+            print(np.mean(reward))
