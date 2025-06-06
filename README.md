@@ -8,9 +8,9 @@ This repository contains the code for the dissertation "Metacognitive Reinforcem
 It contains three main components:
 1. `mcl_toolbox/computationa_microscope` contains The computational microscope, which is a tool to analyse the click sequences of human participants in the Mouselab-MDP task.
 2. `mcl_toolbox/models` contains the models, which are used to fit the click sequences of human participants in the Mouselab-MDP task.
-3. `mcl_toolbox/models` contains the analyses scripts for the analyses presented in the dissertation. 
+3. `analysis` contains the analyses scripts for the analyses presented in the dissertation. 
 
-Each of the directories contains a README file with detailed instructions on how to use the code.
+The first two directories contain a README file with detailed instructions on how to use the code.
 
 How To Use This
 ---------------
