@@ -159,3 +159,7 @@ mcl_toolbox/import_data/*.csv
 
 # remove replication
 helpers/readpickle.py
+
+.flake8
+.isort.cfg
+.pre-commit-config.yaml
